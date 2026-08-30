@@ -8,10 +8,12 @@ are in [docs/can_data.md](../docs/can_data.md).
 
 ## Steps
 
-Each step is documented under [docs/](docs).
+In processing order. Each step is documented under [docs/](docs).
 
-- [can_id_decompose](docs/can_id_decompose.md) splits a 29-bit CAN identifier
-  into priority, PGN, and source address.
+1. [can_log_loader](docs/can_log_loader.md) reads a CSV log into a stream of
+   `CanFrame(timestamp, can_id, data)` records.
+2. [can_id_decompose](docs/can_id_decompose.md) splits each frame's 29-bit
+   identifier into priority, PGN, and source address.
 
 ## Tests
 
