@@ -15,7 +15,7 @@ In processing order. Each step is documented under [docs/](docs).
 2. [can_id_decompose](docs/can_id_decompose.md) splits each frame's 29-bit
    identifier into priority, PGN, and source address.
 3. [spn_decode](docs/spn_decode.md) extracts one SPN field from a payload as a
-   physical value.
+   physical value, using the field definitions in [spn_spec](docs/spn_spec.md).
 4. [pgn_counts](docs/pgn_counts.md) counts frames per PGN, and per source address
    within each PGN.
 5. [pgn_intervals](docs/pgn_intervals.md) collects arrival intervals per
