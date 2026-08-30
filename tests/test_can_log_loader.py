@@ -39,3 +39,13 @@ def test_timestamp_is_epoch_seconds(tmp_path):
 def test_blank_lines_are_ignored(tmp_path):
     frames = list(load_can_log(_write(tmp_path, _SAMPLE + "\n")))
     assert len(frames) == 2
+
+
+def test_timestamp_without_fraction(tmp_path):
+    # some rows are logged to whole seconds, with no ".ffffff"
+    path = _write(
+        tmp_path,
+        "timestamp;id;dlc;data\n2020-11-23 08:23:08;0x18f004e6;1;0\n",
+    )
+    expected = datetime(2020, 11, 23, 8, 23, 8, tzinfo=timezone.utc).timestamp()
+    assert list(load_can_log(path))[0].timestamp == expected

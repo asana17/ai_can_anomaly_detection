@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from typing import Iterator, NamedTuple
 
-_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class CanFrame(NamedTuple):
@@ -14,9 +14,14 @@ class CanFrame(NamedTuple):
 
 def _parse_epoch(text: str) -> float:
     # Parsed as UTC so the epoch value does not depend on the machine timezone.
-    return datetime.strptime(text, _TIMESTAMP_FORMAT).replace(
+    # The fractional second is optional; some rows are logged to whole seconds.
+    date_part, _, frac = text.partition(".")
+    seconds = datetime.strptime(date_part, _TIMESTAMP_FORMAT).replace(
         tzinfo=timezone.utc
     ).timestamp()
+    if frac:
+        seconds += int(frac) / 10 ** len(frac)
+    return seconds
 
 
 def load_can_log(path) -> Iterator[CanFrame]:
