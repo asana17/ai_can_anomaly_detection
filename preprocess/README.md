@@ -18,6 +18,8 @@ In processing order. Each step is documented under [docs/](docs).
    within each PGN.
 4. [pgn_intervals](docs/pgn_intervals.md) collects arrival intervals per
    (PGN, source address) stream.
+5. [pgn_classify](docs/pgn_classify.md) flags proprietary PGNs, which have no
+   public SPN definitions to decode.
 
 ## Tests
 
