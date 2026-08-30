@@ -14,6 +14,8 @@ In processing order. Each step is documented under [docs/](docs).
    `CanFrame(timestamp, can_id, data)` records.
 2. [can_id_decompose](docs/can_id_decompose.md) splits each frame's 29-bit
    identifier into priority, PGN, and source address.
+3. [pgn_counts](docs/pgn_counts.md) counts frames per PGN, and per source address
+   within each PGN.
 
 ## Tests
 
