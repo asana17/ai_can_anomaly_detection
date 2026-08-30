@@ -1,4 +1,4 @@
-from preprocess.can_id_decompose import CanId, decompose_can_id
+from preprocess.frames.can_id_decompose import CanId, decompose_can_id
 
 
 def test_eec1_broadcast_example_from_docs():

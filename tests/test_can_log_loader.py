@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from preprocess.can_log_loader import load_can_log
+from preprocess.frames.can_log_loader import load_can_log
 
 _SAMPLE = (
     "timestamp;id;dlc;data\n"
