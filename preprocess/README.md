@@ -16,6 +16,8 @@ In processing order. Each step is documented under [docs/](docs).
    identifier into priority, PGN, and source address.
 3. [pgn_counts](docs/pgn_counts.md) counts frames per PGN, and per source address
    within each PGN.
+4. [pgn_intervals](docs/pgn_intervals.md) collects arrival intervals per
+   (PGN, source address) stream.
 
 ## Tests
 
