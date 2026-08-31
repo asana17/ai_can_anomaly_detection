@@ -34,6 +34,8 @@ Each module is documented under [docs/](docs).
 
 - [signal_state](docs/signal_state.md) keeps the latest value of each signal, so
   they can be read together as one snapshot.
+- [grid_sample](docs/grid_sample.md) samples the signal state on a fixed time grid
+  into a regular series of vectors.
 
 ## Tests
 
