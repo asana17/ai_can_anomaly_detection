@@ -18,6 +18,8 @@ Each module is documented under [docs/](docs).
    identifier into priority, PGN, and source address.
 3. [spn_decode](docs/spn_decode.md) extracts one SPN field from a payload as a
    physical value, using the field definitions in [spn_spec](docs/spn_spec.md).
+4. [frame_decode](docs/frame_decode.md) decodes all of a frame's SPNs into a
+   `{name: value}` dict.
 
 ### profile: measure the data
 
