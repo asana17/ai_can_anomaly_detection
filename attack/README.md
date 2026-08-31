@@ -7,8 +7,8 @@ Documented under [docs/](docs).
 
 ## Attacks
 
-- [spoof](docs/spoof.md) overwrites one signal to a fixed value within a time
-  window.
+- [masquerade](docs/masquerade.md) overwrites signals in place within a time
+  window, keeping the message timing normal.
 
 ## Utilities
 
