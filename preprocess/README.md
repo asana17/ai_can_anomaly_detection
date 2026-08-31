@@ -30,6 +30,11 @@ Each module is documented under [docs/](docs).
 - [pgn_classify](docs/pgn_classify.md) flags proprietary PGNs, which have no
   public SPN definitions to decode.
 
+### features: signals to model input
+
+- [signal_state](docs/signal_state.md) keeps the latest value of each signal, so
+  they can be read together as one snapshot.
+
 ## Tests
 
 Run from the repository root.
