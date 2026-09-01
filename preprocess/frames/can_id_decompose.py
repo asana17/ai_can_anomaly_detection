@@ -13,6 +13,7 @@ class CanId(NamedTuple):
 
 
 def decompose_can_id(arb_id: int) -> CanId:
+    """Return the priority, PGN, and source address encoded in a 29-bit CAN ID."""
     ident = arb_id & _EXTENDED_ID_MASK
 
     source_address = ident & 0xFF

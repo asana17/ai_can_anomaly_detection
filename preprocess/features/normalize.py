@@ -7,6 +7,7 @@ from typing import Iterable
 
 
 def fit(vectors: Iterable[list]) -> list[tuple[float, float]]:
+    """Return each signal's (mean, std) over the vectors."""
     count = mean = m2 = None
     for v in vectors:
         if count is None:
@@ -25,4 +26,5 @@ def fit(vectors: Iterable[list]) -> list[tuple[float, float]]:
 
 
 def normalize(vector: list, stats: list[tuple[float, float]]) -> list:
+    """Z-score a vector with the given (mean, std) stats."""
     return [(x - mean) / std if std else 0.0 for x, (mean, std) in zip(vector, stats)]

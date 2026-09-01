@@ -6,6 +6,7 @@ from preprocess.frames.spn_decode import SpnField
 
 
 def encode(value: float, field: SpnField) -> int:
+    """Convert a physical value to its raw integer for `field`, clamped to the field width."""
     raw = round((value - field.offset) / field.scale)
     return max(0, min(raw, (1 << field.length) - 1))
 

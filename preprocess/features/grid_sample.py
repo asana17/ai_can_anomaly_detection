@@ -11,6 +11,7 @@ from preprocess.frames.frame_decode import decode_frame
 
 
 def resample(frames: Iterable[CanFrame], period: float) -> Iterator[tuple[float, list]]:
+    """Emit (time, snapshot) at each grid tick, holding the last value between frames."""
     state = SignalState()
     next_tick = None
     for f in frames:

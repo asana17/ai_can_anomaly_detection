@@ -2,17 +2,10 @@
 
 Extracts one J1939 SPN field from a payload and returns its physical value.
 
-## What the code does
-
-- `SpnField(start_bit, length, scale, offset)` describes where a signal sits in
-  the payload and how to scale it. It carries geometry only, no name or PGN.
-- `extract_le(data, start_bit, length)` reads the raw unsigned integer using
-  J1939 little-endian (Intel) bit order.
-- `decode(data, field)` returns `raw * scale + offset` as a float, or `None` when
-  every bit of the field is set, which J1939 uses for "not available".
-
-It decodes a single field. Naming fields and grouping them into a vector are other
-steps.
+```python
+decode(data, field)              # -> physical value, or None if unavailable
+extract_le(data, start_bit, n)   # -> raw unsigned integer
+```
 
 ## Why decode
 

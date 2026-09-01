@@ -25,6 +25,7 @@ def _parse_epoch(text: str) -> float:
 
 
 def load_can_log(path) -> Iterator[CanFrame]:
+    """Yield each row of a CAN log CSV as a CanFrame(timestamp, can_id, data)."""
     with open(path) as f:
         next(f, None)   # skip the header row, which holds column names
         for line in f:

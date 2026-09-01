@@ -11,6 +11,7 @@ from preprocess.frames.can_log_loader import CanFrame
 def arrival_intervals(
     frames: Iterable[CanFrame],
 ) -> dict[tuple[int, int], list[float]]:
+    """Collect the gaps between consecutive frames of each (PGN, source address) stream."""
     last: dict[tuple[int, int], float] = {}
     intervals: dict[tuple[int, int], list[float]] = {}
     for frame in frames:

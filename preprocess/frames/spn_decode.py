@@ -13,6 +13,7 @@ class SpnField(NamedTuple):
 
 
 def extract_le(data: bytes, start_bit: int, length: int) -> int:
+    """Read `length` bits at `start_bit` as an unsigned little-endian integer."""
     value = 0
     for i in range(length):
         bit = start_bit + i
@@ -23,6 +24,7 @@ def extract_le(data: bytes, start_bit: int, length: int) -> int:
 
 
 def decode(data: bytes, field: SpnField) -> float | None:
+    """Decode one field to its physical value, or None if the field is all ones."""
     raw = extract_le(data, field.start_bit, field.length)
     if raw == (1 << field.length) - 1:   # all bits set means not available
         return None

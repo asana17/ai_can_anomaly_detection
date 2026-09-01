@@ -25,6 +25,7 @@ def masquerade(
     start: float,
     stop: float,
 ) -> list[CanFrame]:
+    """Overwrite the signals in `changes` on frames of those PGNs within [start, stop]."""
     field_changes = _names_to_fields(changes)
     out = []
     for f in frames:

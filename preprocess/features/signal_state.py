@@ -13,12 +13,15 @@ class SignalState:
         self._values = {name: None for name in self._signals}
 
     def update(self, values: dict) -> None:
+        """Overwrite the tracked signals present in `values`."""
         for name, value in values.items():
             if name in self._values:
                 self._values[name] = value
 
     def snapshot(self) -> list:
+        """Return every signal's latest value, in SIGNALS order."""
         return [self._values[name] for name in self._signals]
 
     def ready(self) -> bool:
+        """True once every signal has been seen at least once."""
         return all(value is not None for value in self._values.values())

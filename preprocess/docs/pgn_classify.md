@@ -2,6 +2,10 @@
 
 Flags whether a PGN is manufacturer-proprietary.
 
+```python
+is_proprietary_pgn(pgn)   # -> True if the PGN has no public SPN definitions
+```
+
 ## Why
 
 Standard J1939 PGNs have public SPN definitions, so their payloads decode to

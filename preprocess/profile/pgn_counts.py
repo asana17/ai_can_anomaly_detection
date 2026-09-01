@@ -10,6 +10,7 @@ from preprocess.frames.can_log_loader import CanFrame
 
 
 def count_pgns(frames: Iterable[CanFrame]) -> Counter:
+    """Count frames per PGN."""
     counts: Counter = Counter()
     for frame in frames:
         counts[decompose_can_id(frame.can_id).pgn] += 1
@@ -17,6 +18,7 @@ def count_pgns(frames: Iterable[CanFrame]) -> Counter:
 
 
 def count_pgn_senders(frames: Iterable[CanFrame]) -> dict[int, Counter]:
+    """Count frames per source address within each PGN."""
     senders: dict[int, Counter] = {}
     for frame in frames:
         ident = decompose_can_id(frame.can_id)
