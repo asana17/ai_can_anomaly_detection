@@ -101,5 +101,10 @@ periods.
    `part_1..part_3` for train and val, `part_4` for test.
 4. **Anomalies are injected only into the test split.** Training and validation
    see normal traffic exclusively.
-5. **Skip TP reassembly for now.** Whitelist the TP PGNs, and revisit only if a
-   target SPN is ever found inside a multi-packet message.
+5. **Skip TP reassembly.** Whitelist the TP PGNs, and revisit only if a target SPN
+   is ever found inside a multi-packet message.
+
+The chronological split has two caveats. Validation is a short continuous slice of
+time, enough to set a threshold but not to cover every driving condition. Train and
+test fall in different seasons, so some normal drift between them is expected, which
+can raise false positives.
