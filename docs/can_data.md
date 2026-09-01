@@ -28,9 +28,7 @@ data/
 - Each file is a contiguous recording of **~10 minutes / ~50,000 rows**.
 - Total on the order of **~560 million CAN frames**.
 
-Each file is an independent, time-contiguous capture. This matters for the
-train/val/test split. We split at **file granularity in chronological order**
-(no shuffling) to avoid temporal leakage.
+Each file is an independent capture, contiguous in time.
 
 ## CSV format
 
@@ -76,35 +74,9 @@ in the SAE J1939 standard.
   - `EEC2` (61443), accelerator pedal and engine percent load
   - `CCVS1` (65265), wheel-based vehicle speed and brake switch
   - `LFE1` (65266), engine fuel rate and instantaneous fuel economy
-- **`ETC2` (65234) is absent.** Selected gear is not available from this PGN, so
-  it must come from another PGN or be dropped.
+- **`ETC2` (65234) is absent.** Selected gear is not available from this PGN.
 - **Multi-packet transport (TP) exists but is negligible.** TP.CM (60416) and
-  TP.DT (60160) appear in small counts and do **not** carry the target SPNs. No
-  reassembly is needed, so these PGNs are simply added to the whitelist.
+  TP.DT (60160) appear in small counts and do **not** carry the target SPNs.
 
-Per-file PGN frequencies are measured, not assumed (e.g. EEC1 is about 5 Hz in
-the sampled file, not the textbook 20 ms). **Per-PGN period baselines are
-therefore measured from the training data**, not taken from the J1939 nominal
-periods.
-
-## Implications for preprocessing
-
-1. **Decode keys on the PGN, and priority and SA are kept.** The payload meaning
-   is set by the PGN alone (the same PGN has the same signal layout regardless of
-   source or priority), so the decode lookup uses the PGN only. Priority and
-   source address are retained and used by the downstream rule layer to sort
-   anomalies (spoofing from SA, DoS from priority and timing, and so on).
-2. **Measure statistics from training data only.** Normalization ranges, per-PGN
-   period baselines, and the detector threshold are all fit on the training split
-   and then applied to val and test, to avoid leakage.
-3. **Split chronologically at file granularity.** No shuffling. Default is
-   `part_1..part_3` for train and val, `part_4` for test.
-4. **Anomalies are injected only into the test split.** Training and validation
-   see normal traffic exclusively.
-5. **Skip TP reassembly.** Whitelist the TP PGNs, and revisit only if a target SPN
-   is ever found inside a multi-packet message.
-
-The chronological split has two caveats. Validation is a short continuous slice of
-time, enough to set a threshold but not to cover every driving condition. Train and
-test fall in different seasons, so some normal drift between them is expected, which
-can raise false positives.
+Per-file PGN frequencies are measured, not assumed (e.g. EEC1 is about 5 Hz in the
+sampled file, not the textbook 20 ms).
