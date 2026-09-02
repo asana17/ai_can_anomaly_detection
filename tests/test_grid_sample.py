@@ -31,7 +31,7 @@ def _all_signals(t):
 
 def test_emits_on_grid_holding_last_value():
     frames = _all_signals(0.0) + [_eec1(0.5, 1200), _eec1(2.3, 1500)]
-    out = list(resample(frames, period=1.0))
+    out = list(resample(frames, period=1.0, max_hold=5.0))
     assert [t for t, _ in out] == [1.0, 2.0]
     idx = SIGNALS.index("engine_speed")
     assert out[0][1][idx] == 1200.0  # held from t=0.5 at tick 1.0
@@ -40,4 +40,26 @@ def test_emits_on_grid_holding_last_value():
 
 def test_no_emit_until_all_signals_seen():
     frames = [_eec1(0.0, 800), _eec1(2.0, 900)]  # only EEC1, never complete
-    assert list(resample(frames, 1.0)) == []
+    assert list(resample(frames, period=1.0, max_hold=5.0)) == []
+
+
+def test_gap_is_skipped_not_filled():
+    # without max_hold the 98 second gap becomes 98 rows of held values
+    frames = (
+        _all_signals(0.0) + _all_signals(1.0) + _all_signals(2.0)
+        + _all_signals(100.0) + _all_signals(101.0)
+    )
+    out = list(resample(frames, period=1.0, max_hold=5.0))
+    assert [t for t, _ in out] == [1.0, 2.0, 101.0]
+
+
+def test_no_row_mixes_values_from_across_a_gap():
+    # only EEC1 resumes, so a row here would pair a fresh rpm with a 100 s old speed
+    frames = _all_signals(0.0) + [_eec1(t, 1500) for t in (100.0, 101.0, 102.0)]
+    assert list(resample(frames, period=1.0, max_hold=5.0)) == []
+
+
+def test_grid_restarts_from_the_frame_after_a_gap():
+    frames = _all_signals(0.0) + _all_signals(100.4) + _all_signals(101.4)
+    out = list(resample(frames, period=1.0, max_hold=5.0))
+    assert [t for t, _ in out] == [101.4]   # not 101.0, which the old grid would give
