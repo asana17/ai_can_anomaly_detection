@@ -18,3 +18,18 @@ model.
 `period` and `max_hold` go straight through to
 [grid_sample](../../preprocess/docs/grid_sample.md), which documents what they mean
 and why they default to 100 ms and 1 second.
+
+## Times and segments
+
+Each split also comes with `<split>_t`, the time of every row, and `<split>_seg`,
+its segment id. Times are what a synthesized attack window is matched against to
+label the rows it covers.
+
+A segment is a run of rows one `period` apart. Segments break between files and
+wherever the grid restarted after a gap in the recording, so only rows of one
+segment may go into a time window. A window that spanned a break would present a
+jump of hours as a transition of 100 ms, and a model reading time would learn it
+as one.
+
+Ids are numbered within a split and so repeat between splits, which the splits
+being disjoint sets of files makes harmless.
