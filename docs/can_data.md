@@ -77,19 +77,26 @@ A PGN carries one or more SPNs (individual signals such as engine speed), decode
 from the payload bytes with a fixed scale and offset. Full field definitions are
 in the SAE J1939 standard.
 
-## Profiling findings (one `part_1` file, ~50k rows, ~10 min)
+## Profiling findings (1,200 files across all four parts, 60,001,200 frames)
 
-- **57 unique PGNs**, **10 source addresses**.
-- Source address **`230`** produces ~78% of frames (the main powertrain ECU).
-- DLC distribution: `8` (vast majority), `4`, `1`, `3`.
-- **Target SPNs are present** (message, PGN):
-  - `EEC1` (61444), engine speed and engine torque
-  - `EEC2` (61443), accelerator pedal and engine percent load
-  - `CCVS1` (65265), wheel-based vehicle speed and brake switch
-  - `LFE1` (65266), engine fuel rate and instantaneous fuel economy
-- **`ETC2` (65234) is absent.** Selected gear is not available from this PGN.
-- **Multi-packet transport (TP) exists but is negligible.** TP.CM (60416) and
-  TP.DT (60160) appear in small counts and do **not** carry the target SPNs.
+- **57 unique PGNs.** One file carries 52 to 57 of them (median 55), and 52 appear
+  in every file. **10 source addresses**, of which `230`, the main powertrain ECU,
+  sends 75.9% of all frames. The next five send 3.5 to 3.9% each.
+- DLC distribution: `8` is **98.22%**, then `4` 1.19%, `1` 0.59%, `3` under 0.01%.
+- **41 PGNs are public and 16 are proprietary**, carrying 76.1% and 23.9% of frames.
+  The proprietary ones have no published SPN definitions, so they cannot be decoded.
+  See [pgn_classify](../preprocess/docs/pgn_classify.md).
+- **EEC1, EEC2, CCVS1 and LFE1 are in 100% of files** (share of frames, rate):
+  - `EEC1` (61444), 5.91%, every 20 ms, engine speed and engine torque
+  - `EEC2` (61443), 2.36%, every 50 ms, accelerator pedal and engine percent load
+  - `CCVS1` (65265), 1.18%, every 100 ms, wheel based vehicle speed
+  - `LFE1` (65266), 1.18%, every 100 ms, engine fuel rate
+- `ETC2` (61445) is in every file at 10 Hz, carrying SPN 524 selected gear and SPN
+  523 current gear. Observed values are `-1` reverse, `0` neutral and `1` to `12`,
+  with `0xFF` not available in 0.68% of frames.
+- **Multi packet transport is small and always present.** TP.CM (60416) is 0.25% of
+  frames and TP.DT (60160) is 0.74%. Neither carries the target SPNs.
 
-Per-file PGN frequencies are measured, not assumed (e.g. EEC1 is about 5 Hz in the
-sampled file, not the textbook 20 ms).
+Rates are the median gap per (PGN, source address) stream, not frames divided by
+file duration. The latter understates any file that contains a gap, which is how an
+earlier profile of one file put EEC1 at 5 Hz instead of its actual 50 Hz.
