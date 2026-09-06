@@ -74,8 +74,14 @@ How a 29-bit identifier decomposes into a PGN (message type) and a source addres
 is documented with the code in
 [preprocess/docs/can_id_decompose.md](../preprocess/docs/can_id_decompose.md).
 A PGN carries one or more SPNs (individual signals such as engine speed), decoded
-from the payload bytes with a fixed scale and offset. Full field definitions are
-in the SAE J1939 standard.
+from the payload bytes with a fixed scale and offset.
+
+Field definitions come from two places. The
+[FMS-Standard description](https://www.fms-standard.com/Truck/down_load/fms%20document_v_05_vers.07.07.2024.pdf)
+is free and defines the interface this data was recorded from, giving the byte and
+bit position, resolution, offset and repetition rate of every parameter it covers.
+It defines 44 PGNs, 18 of which are on this bus, carrying 28.6% of the frames.
+Everything outside that set needs SAE J1939-71, which is not free.
 
 ## Profiling findings (1,200 files across all four parts, 60,001,200 frames)
 
