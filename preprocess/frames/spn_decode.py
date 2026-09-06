@@ -24,8 +24,9 @@ def extract_le(data: bytes, start_bit: int, length: int) -> int:
 
 
 def decode(data: bytes, field: SpnField) -> float | None:
-    """Decode one field to its physical value, or None if the field is all ones."""
+    """Decode one field to its physical value, or None where J1939 reserves the value."""
     raw = extract_le(data, field.start_bit, field.length)
-    if raw == (1 << field.length) - 1:   # all bits set means not available
+    top_byte = raw >> max(field.length - 8, 0)
+    if top_byte >= 0xFE:        # 0xFE marks an error, 0xFF marks not available
         return None
     return raw * field.scale + field.offset

@@ -28,3 +28,20 @@ def test_decode_offset():
 def test_all_ones_is_not_available():
     field = SpnField(start_bit=0, length=16, scale=1.0, offset=0.0)
     assert decode(bytes([0xFF, 0xFF]), field) is None
+
+
+def test_error_indicator_is_dropped_too():
+    # 0xFE and 0xFE00 to 0xFEFF are the J1939 error indicators, seen on ETC1
+    byte = SpnField(start_bit=0, length=8, scale=0.4, offset=0.0)
+    word = SpnField(start_bit=0, length=16, scale=0.125, offset=0.0)
+    assert decode(bytes([0xFE]), byte) is None
+    assert decode(bytes([0x00, 0xFE]), word) is None
+    assert decode(bytes([0xFF, 0xFE]), word) is None
+
+
+def test_values_below_the_reserved_range_still_decode():
+    # 0xFB to 0xFD are reserved by J1939 but ETC2 uses 0xFB for park
+    byte = SpnField(start_bit=0, length=8, scale=1.0, offset=-125.0)
+    word = SpnField(start_bit=0, length=16, scale=0.125, offset=0.0)
+    assert decode(bytes([0xFB]), byte) == 126.0
+    assert decode(bytes([0xFF, 0xFD]), word) == 8127.875
