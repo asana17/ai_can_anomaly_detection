@@ -80,3 +80,30 @@ Every decoded value is checked against the J1939 range `spn_spec` records for it
 Across 100 files that is 5,034,836 values over 17 signals, and none of them fall
 outside. The rule layer's range check therefore starts from no false positives on
 this data.
+
+## Rules on normal data
+
+Every rule in [rules](../rules/README.md) over 584,694 evaluations, one per decoded
+frame. The share is of all of them, so it is lower than the rate each rule's own doc
+gives over the evaluations it applies to.
+
+| rule | fires | share |
+|---|---|---|
+| range_check | 0 | 0% |
+| speed_agreement | 39 | 0.0067% |
+| shaft_ratio | 26 | 0.0044% |
+| gear_ratio | 12 | 0.0021% |
+| any of them | 77 | 0.0132% |
+
+No evaluation trips two rules.
+
+## Engine speed against the input shaft
+
+An unbuilt rule. With the clutch closed the two should turn together and at p90 they
+are within 2.9 rpm, but on 2.26% of rows they differ by up to 618 rpm, sustained, at
+low speed in low gears. One case reads engine 1552 against input 934 with the
+reported slip at 0.
+
+ETC1 byte 1 holds the driveline and torque converter states that would explain it,
+but it takes three values here, 204, 205 and 221, too few to place its bits. Until
+they are placed 2.26% is two orders worse than the rules that exist.
