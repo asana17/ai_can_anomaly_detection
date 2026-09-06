@@ -27,9 +27,16 @@ test detection and never enter training.
 
 ## TODO
 
-- Assemble the train, validation, and test arrays.
-- Train the autoencoder and set the detection threshold.
-- Add the deterministic rule layer.
+- Add the deterministic rule layer. It is the floor every model is measured
+  against, and its false positive rate is measurable on normal data alone.
+- Synthesize anomalies by replacing a value with a real one from another time,
+  then keep the ones every rule passes. Those are what the models have to catch.
+- Compare PCA against a dense autoencoder on that set. Both read one instant, so
+  this measures what nonlinearity alone is worth.
+- Then widen to a stretch of time, VAR against a windowed autoencoder. A single
+  instant holds few enough relations to write as rules, so this is where the
+  autoencoder is expected to earn its place. Whether it is worth doing depends on
+  what the instant pair shows.
 - Quantize and run inference on the device.
 
 ## Tests
