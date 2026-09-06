@@ -15,9 +15,7 @@ returns None and [frame_decode](frame_decode.md) leaves the signal out.
 
 ## Why decode
 
-Decoding turns encoded bytes into physical numbers (rpm, km/h). It injects no
-relationship between signals; the autoencoder still learns those from data. It
-only cleans the input: one signal per dimension on a physical scale, with counter
-and filler bytes dropped. A cleaner input needs a smaller model, which matters
-because the device runs inference only and training is offline on a PC. The rule
-layer reuses the same physical values for its range checks.
+A signal's bits sit somewhere in a payload with a scale and offset of its own.
+Decoding gives one number per signal on a physical scale, such as rpm for engine
+speed and km/h for wheel speed. That is what makes values from different
+messages comparable, and what the rule layer checks ranges against.
