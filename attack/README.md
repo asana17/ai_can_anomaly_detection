@@ -9,6 +9,8 @@ Documented under [docs/](docs).
 
 - [masquerade](docs/masquerade.md) overwrites signals in place within a time
   window, keeping the message timing normal.
+- [replay](docs/replay.md) gives a window the payloads those messages carried at
+  another time, so the written values are ones the bus really produced.
 
 ## Utilities
 
