@@ -9,6 +9,8 @@ Documented under [docs/](docs).
   for it.
 - [speed_agreement](docs/speed_agreement.md) flags the two vehicle speeds
   disagreeing, which no single signal's range would show.
+- [shaft_ratio](docs/shaft_ratio.md) flags the output shaft turning at the wrong
+  rate for the wheel speed.
 
 A rule reads a `{name: value}` mapping, which
 [frame_decode](../preprocess/docs/frame_decode.md) produces per frame and
