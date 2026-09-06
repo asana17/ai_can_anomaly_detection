@@ -27,4 +27,4 @@ def test_signals_come_from_spec():
     assert "engine_speed" in SIGNALS
     assert "wheel_speed" in SIGNALS
     assert "yaw_rate" in SIGNALS
-    assert len(SIGNALS) == 12
+    assert len(SIGNALS) == 17

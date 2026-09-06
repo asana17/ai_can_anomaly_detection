@@ -33,6 +33,22 @@ SPEC: dict[int, list[SpnDef]] = {
         SpnDef(183, "fuel_rate", "L/h", SpnField(0, 16, 0.05, 0.0), 0.0, 3212.75),
         # SPN 184 (instant fuel economy) is always NA in this data, so it is omitted.
     ],
+    61442: [  # ETC1
+        # output shaft over wheel speed holds at 14.6 to 16.0 rpm per km/h, a fixed
+        # final drive. 15.25 matches the top gear ratio measured from engine speed
+        SpnDef(191, "output_shaft_speed", "rpm", SpnField(8, 16, 0.125, 0.0),
+               0.0, 8031.875),
+        # reported slip matches the slip the two shafts imply, 0 against 0 and
+        # 100 against 100, which places both this and the input shaft
+        SpnDef(522, "clutch_slip", "%", SpnField(24, 8, 0.4, 0.0), 0.0, 100.0),
+        SpnDef(161, "input_shaft_speed", "rpm", SpnField(40, 16, 0.125, 0.0),
+               0.0, 8031.875),
+    ],
+    61445: [  # ETC2, gears run -1 to 12 with no NA. Park would decode to 126 and
+             # trip the range check, but this truck never reports it
+        SpnDef(524, "selected_gear", "gear", SpnField(0, 8, 1.0, -125.0), -125.0, 125.0),
+        SpnDef(523, "current_gear", "gear", SpnField(24, 8, 1.0, -125.0), -125.0, 125.0),
+    ],
     65132: [  # TCO1, bytes 7-8 confirmed against CCVS1, the two agree to 0.9 km/h
              # at p99. A second reading of the same quantity, so an attack that
              # moves one message and not the other shows up as the two disagreeing

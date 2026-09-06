@@ -23,6 +23,8 @@ def _write_log(path, rpms, period=0.1, gap_after=None, gap=0.0):
         lines.append(f"{ts};0x18F009E6;8;127;125;96;127;125;135;127;255")  # VDC2
         lines.append(f"{ts};0x18F001E6;8;207;0;207;255;255;255;255;255")  # EBC1
         lines.append(f"{ts};0x18FE6CE6;8;0;0;192;192;0;0;0;0")  # TCO1
+        lines.append(f"{ts};0x18F002E6;8;205;32;28;0;252;32;28;255")  # ETC1
+        lines.append(f"{ts};0x18F005E6;8;137;0;0;137;0;0;0;0")  # ETC2
         t += period + (gap if gap_after is not None and i + 1 == gap_after else 0.0)
     path.write_text("\n".join(lines) + "\n")
     return str(path)
@@ -30,7 +32,7 @@ def _write_log(path, rpms, period=0.1, gap_after=None, gap=0.0):
 
 def test_vectorize_returns_2d_signal_rows(tmp_path):
     rows, times, segments = vectorize([_write_log(tmp_path / "a.csv", [800] * 6)], period=0.1)
-    assert rows.ndim == 2 and rows.shape[1] == 12
+    assert rows.ndim == 2 and rows.shape[1] == 17
     assert times.shape == segments.shape == (len(rows),)
 
 
@@ -68,7 +70,7 @@ def test_build_standardizes_train_and_reuses_stats(tmp_path):
     engine_speed = data["train"][:, 0]        # first signal in SIGNALS order
     assert abs(engine_speed.mean()) < 1e-4
     assert abs(engine_speed.std() - 1.0) < 1e-4
-    assert data["val"].shape[1] == 12          # normalized with train's stats
+    assert data["val"].shape[1] == 17          # normalized with train's stats
 
 
 def test_build_carries_times_and_segments_per_split(tmp_path):
