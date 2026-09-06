@@ -7,6 +7,8 @@ Documented under [docs/](docs).
 
 - [range_check](docs/range_check.md) flags a signal outside the range J1939 defines
   for it.
+- [speed_agreement](docs/speed_agreement.md) flags the two vehicle speeds
+  disagreeing, which no single signal's range would show.
 
 A rule reads a `{name: value}` mapping, which
 [frame_decode](../preprocess/docs/frame_decode.md) produces per frame and
