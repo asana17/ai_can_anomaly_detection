@@ -10,6 +10,7 @@ state = SignalState()
 state.update(decode_frame(61444, eec1_data))   # updates engine_speed, torque
 state.update(decode_frame(65265, ccvs1_data))  # updates wheel_speed
 state.snapshot()   # every signal's latest value, in SIGNALS order
+state.values()     # the same by name, leaving out any not yet seen
 ```
 
 ## Details

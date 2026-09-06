@@ -22,6 +22,10 @@ class SignalState:
         """Return every signal's latest value, in SIGNALS order."""
         return [self._values[name] for name in self._signals]
 
+    def values(self) -> dict:
+        """Every signal's latest value by name, leaving out any not yet seen."""
+        return {name: v for name, v in self._values.items() if v is not None}
+
     def ready(self) -> bool:
         """True once every signal has been seen at least once."""
         return all(value is not None for value in self._values.values())

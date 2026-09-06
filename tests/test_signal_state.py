@@ -28,3 +28,9 @@ def test_signals_come_from_spec():
     assert "wheel_speed" in SIGNALS
     assert "yaw_rate" in SIGNALS
     assert len(SIGNALS) == 17
+
+
+def test_values_gives_names_and_skips_what_has_not_arrived():
+    s = SignalState()
+    s.update({"engine_speed": 1000.0, "wheel_speed": 50.0})
+    assert s.values() == {"engine_speed": 1000.0, "wheel_speed": 50.0}
