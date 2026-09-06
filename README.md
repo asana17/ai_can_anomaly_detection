@@ -3,17 +3,15 @@
 Detects unknown anomalies on a heavy duty truck's CAN bus (J1939/FMS), meant to run
 on a small microcontroller (NUCLEO-H533RE).
 
-Two layers share the work:
+Deterministic rules catch what can be written as an invariant, a value out of range
+or two signals that must agree, like the engine and wheel speeds picking out the gear
+the transmission reports. They are in [rules/](rules).
 
-- Deterministic rules catch single signal faults, like a value out of range, an
-  unknown message ID, or bad timing.
-- An autoencoder catches multivariate faults, where each signal is plausible on its
-  own but they do not agree with each other, like a speed that does not match the
-  engine rpm.
-
-The autoencoder is trained offline on a PC on normal data only, then quantized and
-run on the device for inference. Anomalies are synthesized from the normal data to
-test detection and never enter training.
+What no invariant covers is left to a model. None is built yet, and which one to
+build is the question the TODO below works through. Whatever it turns out to be, it
+trains offline on a PC on normal data only, then quantizes and runs on the device for
+inference. Anomalies are synthesized from the normal data to test detection and never
+enter training.
 
 ## Layout
 
@@ -29,8 +27,6 @@ test detection and never enter training.
 
 ## TODO
 
-- Add the deterministic rule layer. It is the floor every model is measured
-  against, and its false positive rate is measurable on normal data alone.
 - Synthesize anomalies by replacing a value with a real one from another time,
   then keep the ones every rule passes. Those are what the models have to catch.
 - Compare PCA against a dense autoencoder on that set. Both read one instant, so
