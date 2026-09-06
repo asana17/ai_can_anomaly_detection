@@ -25,13 +25,17 @@ def _lfe1(t, lph):
     return CanFrame(t, 0x18FEF2E6, bytes([raw & 0xFF, (raw >> 8) & 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
 
 
+def _ebc1(t, pedal=0.0):
+    return CanFrame(t, 0x18F001E6, bytes([0xCF, round(pedal / 0.4), 0xCF, 255, 255, 255, 255, 255]))
+
+
 def _vdc2(t):
     # steering, yaw and lateral hold mid range values, byte 8 is NA as on the truck
     return CanFrame(t, 0x18F009E6, bytes([0x7F, 0x7D, 0x60, 0x7F, 0x7D, 0x87, 0x7F, 0xFF]))
 
 
 def _all_signals(t):
-    return [_eec1(t, 800), _eec2(t), _ccvs1(t, 0.0), _lfe1(t, 2.0), _vdc2(t)]
+    return [_eec1(t, 800), _eec2(t), _ccvs1(t, 0.0), _lfe1(t, 2.0), _vdc2(t), _ebc1(t)]
 
 
 def test_emits_on_grid_holding_last_value():

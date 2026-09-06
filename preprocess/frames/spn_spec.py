@@ -33,6 +33,11 @@ SPEC: dict[int, list[SpnDef]] = {
         SpnDef(183, "fuel_rate", "L/h", SpnField(0, 16, 0.05, 0.0), 0.0, 3212.75),
         # SPN 184 (instant fuel economy) is always NA in this data, so it is omitted.
     ],
+    61441: [  # EBC1, byte 2 confirmed by deceleration deepening with the pedal,
+             # from -0.19 m/s2 just off the stop to -1.25 m/s2 past 30%
+        SpnDef(521, "brake_pedal", "%", SpnField(8, 8, 0.4, 0.0), 0.0, 100.0),
+        # bytes 1 and 3 are status bits and 4 to 8 are always NA, so all are omitted
+    ],
     61449: [  # VDC2, positions confirmed on 196,145 moving samples
         # steering and yaw correlate at 0.99, which only two readings of one turn would
         SpnDef(1807, "steering_angle", "rad", SpnField(0, 16, 1 / 1024, -31.374),
