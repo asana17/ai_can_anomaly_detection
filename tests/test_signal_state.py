@@ -26,4 +26,5 @@ def test_ready_only_when_all_signals_seen():
 def test_signals_come_from_spec():
     assert "engine_speed" in SIGNALS
     assert "wheel_speed" in SIGNALS
-    assert len(SIGNALS) == 7
+    assert "yaw_rate" in SIGNALS
+    assert len(SIGNALS) == 10

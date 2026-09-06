@@ -14,6 +14,16 @@ to decode each one. Data only; the decoding logic is in spn_decode.
 
 ## Scope
 
-Starts with the powertrain PGNs (EEC1, EEC2, CCVS1, LFE1), verified against real
-data. More standard PGNs are added over time. Which signals finally feed the model
-is decided later from data, not fixed here.
+Fields the truck always sends as not available are omitted with a comment. A signal
+that never arrives holds `ready()` False and stops every row. VDC2 byte 8 and SPN
+184 are both that.
+
+This table does not decide what the model reads.
+
+## Verifying a layout
+
+Positions are confirmed against the data before they go in. The
+[FMS-Standard](https://www.fms-standard.com/Truck/down_load/fms%20document_v_05_vers.07.07.2024.pdf)
+says what the interface can carry, not what this truck sends. It specifies a
+longitudinal acceleration this truck never sends, and omits the yaw rate it sends
+every 100 ms.
