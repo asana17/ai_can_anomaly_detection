@@ -30,7 +30,7 @@ Each module is documented under [docs/](docs).
 - [pgn_classify](docs/pgn_classify.md) flags proprietary PGNs, which have no
   public SPN definitions to decode.
 - [summary](docs/summary.md) folds all of the above over a set of logs, which is
-  how the figures in [docs/can_data.md](../docs/can_data.md) were measured.
+  how the figures in [docs/measurements.md](../docs/measurements.md) were measured.
 
 ### features: signals to model input
 

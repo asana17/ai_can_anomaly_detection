@@ -22,7 +22,8 @@ test detection and never enter training.
 - [attack/](attack) synthesizes anomalies (masquerade) for a labeled test set.
 - [assemble/](assemble) splits the logs by time and builds the train, validation,
   and test sets.
-- [docs/can_data.md](docs/can_data.md) describes the dataset.
+- [docs/can_data.md](docs/can_data.md) describes the dataset, and
+  [docs/measurements.md](docs/measurements.md) what profiling it found.
 - `data/` holds the raw logs and is not tracked in git.
 
 ## TODO

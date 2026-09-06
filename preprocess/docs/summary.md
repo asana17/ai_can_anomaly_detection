@@ -1,8 +1,8 @@
 # summary
 
 Folds a set of logs into one set of counts. This is how the profiling findings in
-[can_data](../../docs/can_data.md) were measured, so those numbers can be checked or
-measured again on other files.
+[measurements](../../docs/measurements.md) were measured, so those numbers can be
+checked or measured again on other files.
 
 ```python
 summarize(paths)          # -> Profile, every log in paths folded together
@@ -31,7 +31,7 @@ gaps                # {(pgn, sender): Counter of bucketed gap -> count}
 python3 -m preprocess.profile.summary data/part_*/*.csv
 ```
 
-For the 1,200 file sample behind can_data:
+For the 1,200 file sample behind measurements:
 
 ```
 1200 files, 60,001,200 frames, 57 PGNs

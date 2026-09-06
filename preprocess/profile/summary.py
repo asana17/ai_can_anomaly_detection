@@ -1,7 +1,7 @@
 """Fold a set of logs into the counts that describe the dataset.
 
-This is how the profiling findings in [can_data](../../docs/can_data.md) were
-measured, so they can be checked or remeasured on any set of files.
+This is how the profiling findings in [measurements](../../docs/measurements.md)
+were measured, so they can be checked or remeasured on any set of files.
 """
 
 from __future__ import annotations

@@ -83,26 +83,4 @@ bit position, resolution, offset and repetition rate of every parameter it cover
 It defines 44 PGNs, 18 of which are on this bus, carrying 28.6% of the frames.
 Everything outside that set needs SAE J1939-71, which is not free.
 
-## Profiling findings (1,200 files across all four parts, 60,001,200 frames)
-
-- **57 unique PGNs.** One file carries 52 to 57 of them (median 55), and 52 appear
-  in every file. **10 source addresses**, of which `230`, the main powertrain ECU,
-  sends 75.9% of all frames. The next five send 3.5 to 3.9% each.
-- DLC distribution: `8` is **98.22%**, then `4` 1.19%, `1` 0.59%, `3` under 0.01%.
-- **41 PGNs are public and 16 are proprietary**, carrying 76.1% and 23.9% of frames.
-  The proprietary ones have no published SPN definitions, so they cannot be decoded.
-  See [pgn_classify](../preprocess/docs/pgn_classify.md).
-- **EEC1, EEC2, CCVS1 and LFE1 are in 100% of files** (share of frames, rate):
-  - `EEC1` (61444), 5.91%, every 20 ms, engine speed and engine torque
-  - `EEC2` (61443), 2.36%, every 50 ms, accelerator pedal and engine percent load
-  - `CCVS1` (65265), 1.18%, every 100 ms, wheel based vehicle speed
-  - `LFE1` (65266), 1.18%, every 100 ms, engine fuel rate
-- `ETC2` (61445) is in every file at 10 Hz, carrying SPN 524 selected gear and SPN
-  523 current gear. Observed values are `-1` reverse, `0` neutral and `1` to `12`,
-  with `0xFF` not available in 0.68% of frames.
-- **Multi packet transport is small and always present.** TP.CM (60416) is 0.25% of
-  frames and TP.DT (60160) is 0.74%. Neither carries the target SPNs.
-
-Rates are the median gap per (PGN, source address) stream, not frames divided by
-file duration. The latter understates any file that contains a gap, which is how an
-earlier profile of one file put EEC1 at 5 Hz instead of its actual 50 Hz.
+What profiling the logs found is in [measurements](measurements.md).
