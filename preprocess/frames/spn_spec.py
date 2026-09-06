@@ -33,6 +33,12 @@ SPEC: dict[int, list[SpnDef]] = {
         SpnDef(183, "fuel_rate", "L/h", SpnField(0, 16, 0.05, 0.0), 0.0, 3212.75),
         # SPN 184 (instant fuel economy) is always NA in this data, so it is omitted.
     ],
+    65132: [  # TCO1, bytes 7-8 confirmed against CCVS1, the two agree to 0.9 km/h
+             # at p99. A second reading of the same quantity, so an attack that
+             # moves one message and not the other shows up as the two disagreeing
+        SpnDef(1624, "tachograph_speed", "km/h", SpnField(48, 16, 1 / 256, 0.0),
+               0.0, 250.996),
+    ],
     61441: [  # EBC1, byte 2 confirmed by deceleration deepening with the pedal,
              # from -0.19 m/s2 just off the stop to -1.25 m/s2 past 30%
         SpnDef(521, "brake_pedal", "%", SpnField(8, 8, 0.4, 0.0), 0.0, 100.0),

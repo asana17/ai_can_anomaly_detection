@@ -25,6 +25,11 @@ def _lfe1(t, lph):
     return CanFrame(t, 0x18FEF2E6, bytes([raw & 0xFF, (raw >> 8) & 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
 
 
+def _tco1(t, kmh=0.0):
+    raw = round(kmh * 256)
+    return CanFrame(t, 0x18FE6CE6, bytes([0, 0, 192, 192, 0, 0, raw & 0xFF, (raw >> 8) & 0xFF]))
+
+
 def _ebc1(t, pedal=0.0):
     return CanFrame(t, 0x18F001E6, bytes([0xCF, round(pedal / 0.4), 0xCF, 255, 255, 255, 255, 255]))
 
@@ -35,7 +40,7 @@ def _vdc2(t):
 
 
 def _all_signals(t):
-    return [_eec1(t, 800), _eec2(t), _ccvs1(t, 0.0), _lfe1(t, 2.0), _vdc2(t), _ebc1(t)]
+    return [_eec1(t, 800), _eec2(t), _ccvs1(t, 0.0), _lfe1(t, 2.0), _vdc2(t), _ebc1(t), _tco1(t)]
 
 
 def test_emits_on_grid_holding_last_value():
