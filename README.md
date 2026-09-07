@@ -15,14 +15,13 @@ enter training.
 
 ## Layout
 
+- [dataset/](dataset) describes the logs and what profiling them found.
 - [preprocess/](preprocess) turns raw CAN logs into model input vectors, by reading
   the log, decomposing the ID, decoding signals, and building a normalized vector.
-- [attack/](attack) synthesizes anomalies (masquerade) for a labeled test set.
-- [rules/](rules) holds the deterministic checks that run before the model.
 - [assemble/](assemble) splits the logs by time and builds the train, validation,
   and test sets.
-- [docs/can_data.md](docs/can_data.md) describes the dataset, and
-  [docs/measurements.md](docs/measurements.md) what profiling it found.
+- [attack/](attack) synthesizes anomalies (masquerade) for a labeled test set.
+- [rules/](rules) holds the deterministic checks that run before the model.
 - `data/` holds the raw logs and is not tracked in git.
 
 ## TODO

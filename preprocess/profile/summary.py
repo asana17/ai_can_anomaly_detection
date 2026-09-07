@@ -1,6 +1,6 @@
 """Fold a set of logs into the counts that describe the dataset.
 
-This is how the profiling findings in [measurements](../../docs/measurements.md)
+This is how the profiling findings in [measurements](../../dataset/measurements.md)
 were measured, so they can be checked or remeasured on any set of files.
 """
 

@@ -27,7 +27,7 @@ beside it, which is the fault the model is trained to catch.
 
 Gaps that large are real. One log in this dataset holds a 70.6 hour one, which
 without `max_hold` becomes 2,547,687 invented rows. The whole distribution is in
-[measurements](../../docs/measurements.md).
+[measurements](../../dataset/measurements.md).
 
 Both defaults come from the dataset rather than from the module. `period` is 100 ms
 because that is how often the slowest target PGNs (CCVS1, LFE1) arrive, and a

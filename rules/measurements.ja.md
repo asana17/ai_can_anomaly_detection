@@ -2,7 +2,7 @@
 
 [instant](instant) と [rate](rate) のルールが依拠する測定と、測って採用しなかった
 候補の記録。データセット自体の測定は
-[docs/measurements.ja.md](../docs/measurements.ja.md) にある。
+[dataset/measurements.ja.md](../dataset/measurements.ja.md) にある。
 
 英語版: [`measurements.md`](measurements.md)
 

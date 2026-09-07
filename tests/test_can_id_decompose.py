@@ -2,7 +2,7 @@ from preprocess.frames.can_id_decompose import CanId, decompose_can_id
 
 
 def test_eec1_broadcast_example_from_docs():
-    # docs/can_data.md worked example: 0x18F004E6 -> EEC1
+    # dataset/can_data.md worked example: 0x18F004E6 -> EEC1
     assert decompose_can_id(0x18F004E6) == CanId(
         priority=6, pgn=61444, source_address=230
     )
