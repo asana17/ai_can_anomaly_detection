@@ -141,7 +141,7 @@ against how far the quantity itself moves.
 
 The first drifts 0.90 km/h across a 90 km/h range, so a threshold just above the
 drift still catches nearly any tampering. That pair is
-[speed_agreement](../rules/docs/speed_agreement.md). The last drifts 70 points out of
+[speed_agreement](../rules/instant/docs/speed_agreement.md). The last drifts 70 points out of
 93, which leaves almost nothing for a threshold to catch, so no rule was written for
 it, nor for the two in between.
 

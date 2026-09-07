@@ -135,7 +135,7 @@ ETC1 のバイト1が駆動系とトルクコンバータの状態を持ち、�
 | accel_pedal と driver_demand_torque | 70.0ポイント | 92.80 | 75.4% |
 
 最初の組は90 km/h の範囲に対して0.90 km/h しか離れないので、そのすぐ上に閾値を置けば
-ほとんどの改竄を捕まえられる。これが [speed_agreement](../rules/docs/speed_agreement.md)
+ほとんどの改竄を捕まえられる。これが [speed_agreement](../rules/instant/docs/speed_agreement.md)
 である。最後の組は93のうち70離れるので、閾値で捕まえられる余地がほとんど残らない。
 これにも、中間の2組にもルールを書いていない。
 

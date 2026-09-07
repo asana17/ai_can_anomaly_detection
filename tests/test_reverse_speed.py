@@ -1,4 +1,4 @@
-from rules.reverse_speed import MAX_SPEED, NAMES, violations
+from rules.instant.reverse_speed import MAX_SPEED, NAMES, violations
 
 
 def test_backing_up_slowly_passes():

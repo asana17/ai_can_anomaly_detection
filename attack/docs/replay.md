@@ -14,7 +14,7 @@ not change, so the message rate stays normal.
 
 The bytes were observed, so each signal in a replayed message stays inside its range
 and agrees with the others in that message. A written constant does neither, and
-[range_check](../../rules/docs/range_check.md) ends it. What replay breaks is the
+[range_check](../../rules/instant/docs/range_check.md) ends it. What replay breaks is the
 agreement with the messages left alone.
 
 Naming several messages moves them together, which is how an attack is aimed. Replay

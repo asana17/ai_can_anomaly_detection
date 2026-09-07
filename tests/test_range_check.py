@@ -1,5 +1,5 @@
 from preprocess.frames.spn_spec import SPEC
-from rules.range_check import LIMITS, violations
+from rules.instant.range_check import LIMITS, violations
 
 
 def test_a_normal_reading_passes():

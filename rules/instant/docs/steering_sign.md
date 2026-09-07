@@ -12,4 +12,4 @@ usable where a size check is not, and it is the only rule watching VDC2.
 
 Below 0.02 rad/s the truck is going straight and either sign is noise. Above it the
 two disagree on 0.0168% of evaluations, measured in
-[measurements](../../docs/measurements.md).
+[measurements](../../../docs/measurements.md).

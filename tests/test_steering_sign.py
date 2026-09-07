@@ -1,4 +1,4 @@
-from rules.steering_sign import MIN_SPEED, MIN_YAW, NAMES, violations
+from rules.instant.steering_sign import MIN_SPEED, MIN_YAW, NAMES, violations
 
 
 def _values(steering, yaw, speed=60.0):

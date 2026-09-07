@@ -1,4 +1,4 @@
-from rules.pedal_conflict import NAMES, PRESSED, violations
+from rules.instant.pedal_conflict import NAMES, PRESSED, violations
 
 
 def test_one_pedal_at_a_time_passes():

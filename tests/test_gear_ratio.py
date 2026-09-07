@@ -1,4 +1,4 @@
-from rules.gear_ratio import NAMES, RATIOS, nearest_gear, violations
+from rules.instant.gear_ratio import NAMES, RATIOS, nearest_gear, violations
 
 
 def _values(**over):

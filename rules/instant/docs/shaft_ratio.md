@@ -12,4 +12,4 @@ times per km/h whatever the gear or the engine is doing.
 The ratio is 14.8 to 15.6 at motorway speed and widens as the wheel slows. Below
 5 km/h it spreads to 10 to 24, so the rule stays quiet there. Above that the default
 bounds fire on 0.0073% of evaluations, measured in
-[measurements](../../docs/measurements.md).
+[measurements](../../../docs/measurements.md).

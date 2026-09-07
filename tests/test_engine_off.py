@@ -1,4 +1,4 @@
-from rules.engine_off import MUST_BE_ZERO, violations
+from rules.instant.engine_off import MUST_BE_ZERO, violations
 
 
 def test_a_stopped_engine_with_everything_still_passes():

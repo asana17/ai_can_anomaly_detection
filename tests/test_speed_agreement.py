@@ -1,4 +1,4 @@
-from rules.speed_agreement import MAX_DISAGREEMENT, violations
+from rules.instant.speed_agreement import MAX_DISAGREEMENT, violations
 
 
 def test_two_speeds_that_agree_pass():

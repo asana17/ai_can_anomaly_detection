@@ -1,4 +1,4 @@
-from rules.shaft_ratio import BOUNDS, MIN_SPEED, violations
+from rules.instant.shaft_ratio import BOUNDS, MIN_SPEED, violations
 
 BOTH = ["output_shaft_speed", "wheel_speed"]
 

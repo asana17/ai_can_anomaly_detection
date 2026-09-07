@@ -1,4 +1,4 @@
-from rules.stopped_shaft import MAX_SHAFT, NAMES, violations
+from rules.instant.stopped_shaft import MAX_SHAFT, NAMES, violations
 
 
 def test_a_stopped_truck_with_a_stopped_shaft_passes():
