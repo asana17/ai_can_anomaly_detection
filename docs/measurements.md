@@ -107,3 +107,33 @@ reported slip at 0.
 ETC1 byte 1 holds the driveline and torque converter states that would explain it,
 but it takes three values here, 204, 205 and 221, too few to place its bits. Until
 they are placed 2.26% is two orders worse than the rules that exist.
+
+## Signal pairs tested as rules
+
+Each pair below is two ways of reading the same quantity, so a rule could check that
+they agree. Whether that works depends on how far apart they drift on normal data,
+against how far the quantity itself moves.
+
+| pair | drift, p99 | the quantity's range | ratio |
+|---|---|---|---|
+| wheel_speed and tachograph_speed | 0.90 km/h | 90.10 | 1.0% |
+| engine_load and actual_engine_torque | 10.0 points | 52.00 | 19.2% |
+| lateral_accel and speed times yaw_rate | 0.69 m/s2 | 1.51 | 45.7% |
+| accel_pedal and driver_demand_torque | 70.0 points | 92.80 | 75.4% |
+
+The first drifts 0.90 km/h across a 90 km/h range, so a threshold just above the
+drift still catches nearly any tampering. That pair is
+[speed_agreement](../rules/docs/speed_agreement.md). The last drifts 70 points out of
+93, which leaves almost nothing for a threshold to catch, so no rule was written for
+it, nor for the two in between.
+
+Do not screen a pair by correlation. The last pair correlates at 0.803.
+
+## Message checks not written
+
+Four more checks are available. Every message type keeps a fixed period, a fixed
+sender and a fixed byte count, and only 57 types appear at all, all measured above.
+
+They would catch a different kind of attack, one that adds, drops or forges frames.
+Nothing here synthesizes that yet, so there is nothing to measure them against and
+none is written.
