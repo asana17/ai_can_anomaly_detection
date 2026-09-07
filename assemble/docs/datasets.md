@@ -19,21 +19,17 @@ model.
 [grid_sample](../../preprocess/docs/grid_sample.md), which documents what they mean
 and why they default to 100 ms and 1 second.
 
-## Every row is kept
+## Every row is kept, not every row is scored
 
-A stopped truck accounts for over half the rows, 16.7% with the engine off and 37.9%
-idling. They stay in.
+Over half the rows are stopped or idling. They stay in. Dropping them would break
+the segments below, and fitting the z-score without them moves each signal's spread
+by less than half.
 
-They are not the same row repeated. Over 30 files the engine off rows hold 502
-distinct vectors, since the gear, the steering and the rest still report while the
-engine does not. Fitting the z-score on all rows rather than the moving ones changes
-each signal's spread by less than half, so keeping them does not distort the scaling.
-
-Dropping them would also hide the ground three rules watch.
+The model scores only rows above 5 km/h, where the residual keeps one shape and a
+threshold carries. Below it the ground belongs to
 [engine_off](../../rules/instant/docs/engine_off.md),
 [stopped_shaft](../../rules/instant/docs/stopped_shaft.md) and
-[pedal_conflict](../../rules/instant/docs/pedal_conflict.md) only ever fire while the
-truck is not moving.
+[pedal_conflict](../../rules/instant/docs/pedal_conflict.md).
 
 ## Times and segments
 
