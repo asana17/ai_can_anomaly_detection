@@ -7,7 +7,7 @@ holds whatever the gear or the engine is doing.
 from __future__ import annotations
 
 # Measured over 178,460 evaluations above the gate, where the ratio runs 14.8 to
-# 15.6 at motorway speed and widens as the wheel slows. See docs/measurements.md.
+# 15.6 at motorway speed and widens as the wheel slows. See rules/measurements.md.
 BOUNDS = (13.0, 17.5)
 
 # Below this the wheel speed is small enough that its quantisation dominates the

@@ -7,7 +7,7 @@ while the truck is stopped. This covers that.
 from __future__ import annotations
 
 # The shaft reads up to 31 rpm with the wheels at zero, over 278,819 evaluations.
-# See docs/measurements.md.
+# See rules/measurements.md.
 MAX_SHAFT = 50.0
 
 NAMES = ["wheel_speed", "output_shaft_speed"]

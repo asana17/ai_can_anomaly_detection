@@ -7,7 +7,7 @@ where the ratio rules do not, since they all need the truck to be moving.
 from __future__ import annotations
 
 # Every one of these read exactly zero on all 97,237 stopped evaluations measured.
-# See docs/measurements.md.
+# See rules/measurements.md.
 MUST_BE_ZERO = ["fuel_rate", "actual_engine_torque", "engine_load",
                 "driver_demand_torque", "accel_pedal", "input_shaft_speed"]
 

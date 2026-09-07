@@ -6,7 +6,7 @@ negative, since the ratio rules only hold for forward gears.
 
 from __future__ import annotations
 
-# Reverse never exceeded 3.5 km/h over 87,245 evaluations. See docs/measurements.md.
+# Reverse never exceeded 3.5 km/h over 87,245 evaluations. See rules/measurements.md.
 MAX_SPEED = 10.0
 
 NAMES = ["current_gear", "wheel_speed"]

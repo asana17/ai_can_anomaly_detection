@@ -43,6 +43,11 @@ Documented under [rate/docs/](rate/docs).
 - [change_limit](rate/docs/change_limit.md) flags a signal moving faster than the
   truck can move it.
 
+## Measurements
+
+What the thresholds rest on, and the candidates that were measured and rejected, are
+in [measurements](measurements.md).
+
 ## Tests
 
 Run from the repository root.

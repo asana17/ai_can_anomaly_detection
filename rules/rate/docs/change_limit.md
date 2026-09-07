@@ -25,7 +25,7 @@ hard a truck can brake, and the steering and the yaw by how fast a driver can tu
 
 The rest move too freely to bound. A shift lets the input shaft spin to 75,000 rpm
 per second, the clutch slip follows it, and the gear number jumps several places at
-once. See [measurements](../../../docs/measurements.md).
+once. See [measurements](../../measurements.md).
 
 ## Timing
 

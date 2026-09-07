@@ -1,6 +1,6 @@
 """Flag the accelerator and the brake being pressed at once.
 
-Never seen together in 486,544 evaluations. See docs/measurements.md.
+Never seen together in 486,544 evaluations. See rules/measurements.md.
 """
 
 from __future__ import annotations

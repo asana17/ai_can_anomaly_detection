@@ -23,7 +23,7 @@ waits for a slip of zero. Under 5 km/h the wheel speed is too coarse, as in
 [shaft_ratio](shaft_ratio.md).
 
 Inside those gates it picks the wrong gear on 0.0080% of evaluations, 12 of 150,291,
-measured in [measurements](../../../docs/measurements.md).
+measured in [measurements](../../measurements.md).
 
 Gears 1 and 3 are missing from the table, too rare in the data to place, so a report
 of either is not checked. Their absence also leaves gear 2 with no near neighbour,

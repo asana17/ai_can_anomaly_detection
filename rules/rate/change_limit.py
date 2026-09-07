@@ -8,7 +8,7 @@ from __future__ import annotations
 
 # The most each signal moved per second over 25 logs, rounded up and doubled to
 # leave room. Signals not listed are unbounded in practice, the input shaft because
-# a shift lets it spin free and the gears because they jump. See docs/measurements.md.
+# a shift lets it spin free and the gears because they jump. See rules/measurements.md.
 LIMITS = {
     "yaw_rate": 3.0,            # rad/s2, observed 1.1
     "steering_angle": 40.0,     # rad/s, observed 16.4

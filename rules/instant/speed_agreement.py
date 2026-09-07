@@ -8,7 +8,7 @@ though both readings stay inside their own range.
 from __future__ import annotations
 
 # Normally the two sit within 0.9 km/h of each other at p99, and more than 2 km/h
-# apart on 0.006% of rows. See docs/measurements.md.
+# apart on 0.006% of rows. See rules/measurements.md.
 MAX_DISAGREEMENT = 2.0
 
 

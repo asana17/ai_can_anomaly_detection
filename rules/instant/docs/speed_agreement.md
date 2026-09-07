@@ -13,7 +13,7 @@ leave its own range for the pair to be wrong, which is what
 
 The default limit of 2 km/h comes from the normal spread. The two sit within 0.9 km/h
 of each other at p99 and more than 2 km/h apart on 0.006% of rows, measured in
-[measurements](../../../docs/measurements.md).
+[measurements](../../measurements.md).
 
 It reports nothing until both speeds have arrived, so a caller can pass a single
 decoded frame and get an answer only once the state holds both.

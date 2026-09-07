@@ -7,7 +7,7 @@ which way, which holds where a magnitude check does not.
 from __future__ import annotations
 
 # Below this the truck is going straight and the sign of either signal is noise.
-# Above it the two disagree on 0.0168% of evaluations. See docs/measurements.md.
+# Above it the two disagree on 0.0168% of evaluations. See rules/measurements.md.
 MIN_YAW = 0.02
 
 # Below this the wheel can be turned without the truck changing direction.
