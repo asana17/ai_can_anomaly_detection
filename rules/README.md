@@ -4,9 +4,9 @@ The deterministic layer. Each rule states an invariant the bus should hold and
 reports where it does not, so the autoencoder is left with what no rule can express.
 
 Rules sit in one of two directories by what they need to read.
-[instant/](instant) holds those that decide from a single moment. Anything needing a
-previous reading and the time since goes in `temporal/`, because it cannot be called
-the same way and it belongs to a different half of the evaluation.
+[instant/](instant) holds those that decide from a single moment. [rate/](rate) holds
+those that need the previous reading and the time since, because they cannot be
+called the same way and they belong to a different half of the evaluation.
 
 ## instant
 
@@ -34,6 +34,14 @@ Documented under [instant/docs/](instant/docs).
   the wheels stopped.
 - [reverse_speed](instant/docs/reverse_speed.md) flags reverse reported above a speed
   reverse cannot reach.
+
+## rate
+
+Each reads the current mapping, the one before it, and the seconds between.
+Documented under [rate/docs/](rate/docs).
+
+- [change_limit](rate/docs/change_limit.md) flags a signal moving faster than the
+  truck can move it.
 
 ## Tests
 
