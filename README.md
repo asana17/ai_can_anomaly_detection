@@ -22,14 +22,15 @@ enter training.
   and test sets.
 - [attack/](attack) synthesizes anomalies (masquerade) for a labeled test set.
 - [rules/](rules) holds the deterministic checks that run before the model.
+- [models/](models) holds the learned half, fit on normal rows only.
 - `data/` holds the raw logs and is not tracked in git.
 
 ## TODO
 
-- Synthesize anomalies by replacing a value with a real one from another time,
-  then keep the ones every rule passes. Those are what the models have to catch.
-- Compare PCA against a dense autoencoder on that set. Both read one instant, so
-  this measures what nonlinearity alone is worth.
+- Add a dense autoencoder beside [pca](models/docs/pca.md) and compare the two on
+  the attacked test set. Both read one instant, so the difference is what
+  nonlinearity alone is worth. Score only what the rules let through, and only
+  while the truck moves.
 - Then widen to a stretch of time, VAR against a windowed autoencoder. A single
   instant holds few enough relations to write as rules, so this is where the
   autoencoder is expected to earn its place. Whether it is worth doing depends on
