@@ -3,6 +3,7 @@ import random
 import numpy as np
 
 from assemble.attack_set import attack_set
+from assemble.datasets import vectorize
 
 SIGNALS = 17
 
@@ -43,12 +44,27 @@ def test_it_returns_a_row_for_every_grid_tick(tmp_path):
     assert len(d["t"]) == len(d["seg"]) == len(d["label"]) == len(d["rows"])
 
 
-def test_the_label_marks_the_rows_an_attack_covers(tmp_path):
+def test_the_label_marks_the_rows_an_attack_changed(tmp_path):
     d = attack_set([_write_log(tmp_path / "a.csv")], *_stats(), random.Random(0))
     assert d["attacks"], "the log should be long enough to attack"
     for a in d["attacks"]:
-        assert d["label"][a["first"]:a["last"] + 1].all()
-        assert (d["t"][a["first"]] >= a["start"]) and (d["t"][a["last"]] <= a["stop"])
+        assert d["label"][a["first"]] and d["label"][a["last"]]
+        assert d["t"][a["first"]] >= a["start"]
+        # the grid holds the last payload, so one row past the window still carries it
+        assert d["t"][a["last"]] <= a["stop"] + 0.1
+
+
+def test_only_the_rows_that_differ_from_the_clean_log_are_labelled(tmp_path):
+    log = _write_log(tmp_path / "a.csv")
+    d = attack_set([log], *_stats(), random.Random(0))
+    clean, _, _ = vectorize([log])                # mean 0 and std 1 leave rows as they are
+    assert len(clean) == len(d["rows"])
+    assert np.array_equal((clean != d["rows"]).any(axis=1), d["label"])
+
+
+def test_it_says_how_far_each_attack_moved_a_row(tmp_path):
+    d = attack_set([_write_log(tmp_path / "a.csv")], *_stats(), random.Random(0))
+    assert all(a["moved"] > 0 for a in d["attacks"])
 
 
 def test_rows_outside_every_attack_are_not_labelled(tmp_path):

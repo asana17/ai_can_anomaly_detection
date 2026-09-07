@@ -10,7 +10,7 @@ Documented under [docs/](docs).
 - [datasets](docs/datasets.md) turns the split file lists into normalized model
   arrays, with the time and segment id of every row.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
-  says which rows each one covers.
+  says which rows each one changed.
 
 ## Tests
 
