@@ -1,14 +1,15 @@
 # replay
 
-Gives a window of frames the payloads the same messages carried at another time.
+Gives a window of frames the payloads the same messages carried at another time,
+in this log or in another.
 
 ```python
-replay(frames, [65265, 65132], start=25.0, stop=30.0, source=5.0)
+replay(frames, [65265, 65132], start=25.0, stop=30.0, source=5.0, source_log=other)
 ```
 
-Every CCVS1 and TCO1 frame between t=25 and t=30 gets the bytes that message held
-20 seconds earlier, walking the source at the same pace. Frame times and counts do
-not change, so the message rate stays normal.
+Every CCVS1 and TCO1 frame between t=25 and t=30 gets the bytes that message held at
+t=5 in `source_log`, walking the source at the same pace. Frame times and counts do not
+change, so the message rate stays normal.
 
 ## Why replay rather than write a value
 
@@ -21,18 +22,23 @@ Naming several messages moves them together, which is how an attack is aimed. Re
 CCVS1 alone and the two speeds disagree. Replay CCVS1 and TCO1 together and they
 agree again, while the wheels still disagree with the engine.
 
-## Choosing the source
+## The source has to come from another log
 
-Replaying a moment like the one it replaces produces no anomaly. In four of twelve
-logs a source 20 seconds earlier left the wheel speed unchanged and no rule fired.
+Two moments of the same log are too alike to make an anomaly. Over 305 logs the
+median distance between them is under 0.25 standard deviations for every message,
+against 0.86 to 1.76 across logs.
 
-Distance in time will not fix that, since 20 seconds is nothing on a cruise and a lot
-mid shift. Pick the source at random, and drop a replay that changed no bytes.
+That is not picking values a detector will catch. An attacker who writes back what
+was nearly there has not attacked. The moment is still drawn uniformly, so how far it
+lands is whatever the other log holds.
+
+EBC1 stays weak either way, since the brake pedal reads zero on almost every row.
 
 ## What the rules catch
 
 Replaying one message at a time, over a five second window in each of 20 logs taken
-from 20 seconds earlier, counting only the windows where the bytes actually changed.
+from 20 seconds earlier in the same log, counting only the windows where the bytes
+changed. A same log source is the weak end above, so these are a floor.
 
 | replayed | injections | [instant](../../rules/instant) catches | [change_limit](../../rules/rate/docs/change_limit.md) catches |
 |---|---|---|---|

@@ -37,14 +37,15 @@ def _nearest(times: list, data: list, t: float):
 
 
 def replay(frames: Iterable[CanFrame], pgns, start: float, stop: float,
-           source: float) -> list:
+           source: float, source_log: Iterable[CanFrame] | None = None) -> list:
     """Give every `pgns` frame in [start, stop] the payload it had `source` seconds on.
 
     Frame times and counts do not change, so the message rate stays normal and only
-    the values move.
+    the values move. `source` is a time in `source_log`, the log the payload is taken
+    from, which is this one unless another is given.
     """
     frames = list(frames)
-    streams = _by_pgn(frames, set(pgns))
+    streams = _by_pgn(frames if source_log is None else list(source_log), set(pgns))
     out = []
     for f in frames:
         pgn = decompose_can_id(f.can_id).pgn
