@@ -19,6 +19,22 @@ model.
 [grid_sample](../../preprocess/docs/grid_sample.md), which documents what they mean
 and why they default to 100 ms and 1 second.
 
+## Every row is kept
+
+A stopped truck accounts for over half the rows, 16.7% with the engine off and 37.9%
+idling. They stay in.
+
+They are not the same row repeated. Over 30 files the engine off rows hold 502
+distinct vectors, since the gear, the steering and the rest still report while the
+engine does not. Fitting the z-score on all rows rather than the moving ones changes
+each signal's spread by less than half, so keeping them does not distort the scaling.
+
+Dropping them would also hide the ground three rules watch.
+[engine_off](../../rules/instant/docs/engine_off.md),
+[stopped_shaft](../../rules/instant/docs/stopped_shaft.md) and
+[pedal_conflict](../../rules/instant/docs/pedal_conflict.md) only ever fire while the
+truck is not moving.
+
 ## Times and segments
 
 Each split also comes with `<split>_t`, the time of every row, and `<split>_seg`,
