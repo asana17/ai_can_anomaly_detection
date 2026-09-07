@@ -6,7 +6,7 @@ time.
 Documented under [docs/](docs).
 
 - [split](docs/split.md) splits the log files into train, validation, and test by
-  time.
+  time, sized by the moving traffic in them.
 - [datasets](docs/datasets.md) turns the split file lists into normalized model
   arrays, with the time and segment id of every row.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
