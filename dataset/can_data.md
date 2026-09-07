@@ -80,7 +80,7 @@ Field definitions come from two places. The
 [FMS-Standard description](https://www.fms-standard.com/Truck/down_load/fms%20document_v_05_vers.07.07.2024.pdf)
 is free and defines the interface this data was recorded from, giving the byte and
 bit position, resolution, offset and repetition rate of every parameter it covers.
-It defines 44 PGNs, 18 of which are on this bus, carrying 28.6% of the frames.
+It defines 43 PGNs, 19 of which are on this bus, carrying 28.6% of the frames.
 Everything outside that set needs SAE J1939-71, which is not free.
 
 What profiling the logs found is in [measurements](measurements.md).
