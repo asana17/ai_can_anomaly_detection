@@ -97,6 +97,7 @@ gives over the evaluations it applies to.
 | engine_off | 0 | 0% |
 | pedal_conflict | 0 | 0% |
 | stopped_shaft | 0 | 0% |
+| reverse_speed | 0 | 0% |
 | any of them | 145 | 0.0248% |
 
 No evaluation trips two rules.
@@ -114,6 +115,10 @@ past the moving truck.
 
 steering_sign is the only check on VDC2. A size check on those signals does not work,
 as the table above shows, but the direction does.
+
+[change_limit](../rules/rate/docs/change_limit.md) is not in the table. It compares a
+signal with its own previous reading rather than a whole state, so its evaluations
+are not the same ones. Over 70 logs and 949,349 comparisons it fires twice.
 
 ## Engine speed against the input shaft
 
@@ -155,3 +160,42 @@ sender and a fixed byte count, and only 57 types appear at all, all measured abo
 They would catch a different kind of attack, one that adds, drops or forges frames.
 Nothing here synthesizes that yet, so there is nothing to measure them against and
 none is written.
+
+## Other shapes tested as rules
+
+Five more shapes were tried. Each is a claim that normal data should never break.
+
+| claim | how often normal data breaks it |
+|---|---|
+| reverse stays slow | never above 3.5 km/h in 87,245 |
+| a running engine burns fuel | 6.4%, from coasting cuts |
+| actual torque stays at or below demanded | 48.6% |
+| actual torque stays at or below load | 1.4% |
+| selected and current gear stay one step apart | up to 12 apart |
+
+Only the first holds, and it is
+[reverse_speed](../rules/instant/docs/reverse_speed.md). A rule built on any of the
+others would fire on normal data at the rate in the second column.
+
+## How fast each signal moves
+
+Between one frame of a message and the next of the same message, over 25 logs.
+
+| signal | most per second | signal | most per second |
+|---|---|---|---|
+| yaw_rate | 1.1 rad/s2 | fuel_rate | 94.5 L/h |
+| steering_angle | 16.4 rad/s | actual_engine_torque | 747.3 points |
+| wheel_speed | 21.0 km/h | output_shaft_speed | 3,010 rpm |
+| tachograph_speed | 41.9 km/h | engine_speed | 3,277 rpm |
+| current_gear | 80 gears | clutch_slip | 3,790 points |
+| selected_gear | 120 gears | input_shaft_speed | 75,235 rpm |
+
+The four on the left of the first three rows are bounded by what a truck can do and
+carry [change_limit](../rules/rate/docs/change_limit.md). The rest are not. A shift
+frees the input shaft, the clutch slip follows it, and the gear number jumps several
+places at once.
+
+Sampling on the 100 ms grid gives lower figures for the fast signals, 1,951 rpm per
+second for the engine against 3,277 here. A grid row spans 100 ms whatever arrived
+inside it, so five engine updates fold into one difference. Limits measured one way
+do not carry to the other.
