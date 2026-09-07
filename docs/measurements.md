@@ -93,9 +93,27 @@ gives over the evaluations it applies to.
 | speed_agreement | 39 | 0.0067% |
 | shaft_ratio | 26 | 0.0044% |
 | gear_ratio | 12 | 0.0021% |
-| any of them | 77 | 0.0132% |
+| steering_sign | 68 | 0.0116% |
+| engine_off | 0 | 0% |
+| pedal_conflict | 0 | 0% |
+| stopped_shaft | 0 | 0% |
+| any of them | 145 | 0.0248% |
 
 No evaluation trips two rules.
+
+Four of the eight compare two readings of one quantity or a fixed ratio between two.
+The other four came from asking what else holds, and are the reason the layer reaches
+past the moving truck.
+
+| rule | what it asks | how often it fails on normal data |
+|---|---|---|
+| steering_sign | do the steering angle and the yaw rate point the same way | 6 of 35,715 above 0.02 rad/s |
+| engine_off | with the engine at zero, are its six driven signals at zero | 0 of 97,237 |
+| pedal_conflict | are both pedals pressed at once | 0 of 486,544 |
+| stopped_shaft | with the wheels at zero, is the output shaft at zero | reads up to 31 rpm, limit at 50 |
+
+steering_sign is the only check on VDC2. A size check on those signals does not work,
+as the table above shows, but the direction does.
 
 ## Engine speed against the input shaft
 
