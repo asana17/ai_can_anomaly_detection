@@ -20,6 +20,8 @@ Documented under [docs/](docs).
 - [pedal_conflict](docs/pedal_conflict.md) flags both pedals pressed at once.
 - [stopped_shaft](docs/stopped_shaft.md) flags the output shaft turning with the
   wheels stopped.
+- [reverse_speed](docs/reverse_speed.md) flags reverse reported above a speed
+  reverse cannot reach.
 
 A rule reads a `{name: value}` mapping, which
 [frame_decode](../preprocess/docs/frame_decode.md) produces per frame and
