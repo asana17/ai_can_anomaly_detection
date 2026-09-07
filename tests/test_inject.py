@@ -56,3 +56,33 @@ def test_one_seed_gives_one_injection():
     a = inject(_trace(), random.Random(7))[1]
     b = inject(_trace(), random.Random(7))[1]
     assert a == b
+
+
+def _flat(seconds=60, kmh=0.0, rpm=600.0):
+    """A minute where nothing moves, so it has no strong replay to offer itself."""
+    return [f for i in range(seconds * 10)
+            for f in (_speed(i / 10, kmh), _rpm(i / 10, rpm))]
+
+
+def test_the_payload_comes_from_the_source_log():
+    trace = _flat(kmh=0.0, rpm=600.0)
+    hurt, info = inject(trace, random.Random(0), source_log=_flat(kmh=80.0, rpm=1400.0),
+                        messages=(65265,))
+    faked = [f.data for f in hurt if f.can_id == CCVS1 and
+             info["start"] <= f.timestamp <= info["stop"]]
+    assert faked and all(d == _speed(0.0, 80.0).data for d in faked)
+
+
+def test_a_message_the_source_log_does_not_carry_is_not_faked():
+    trace = _trace()
+    assert inject(trace, random.Random(0), source_log=_flat(), messages=(61449,)) is None
+
+
+def test_a_source_log_shorter_than_the_attack_gives_nothing():
+    assert inject(_trace(), random.Random(0), source_log=_flat(seconds=1)) is None
+
+
+def test_the_replay_leaves_the_times_of_the_attacked_log_alone():
+    trace = _trace()
+    hurt, _ = inject(trace, random.Random(4), source_log=_flat(kmh=80.0))
+    assert [f.timestamp for f in hurt] == [f.timestamp for f in trace]
