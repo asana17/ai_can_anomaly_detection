@@ -13,6 +13,13 @@ Documented under [docs/](docs).
   rate for the wheel speed.
 - [gear_ratio](docs/gear_ratio.md) flags the engine and wheel speeds not matching
   the reported gear.
+- [steering_sign](docs/steering_sign.md) flags the steering angle and the yaw rate
+  turning opposite ways.
+- [engine_off](docs/engine_off.md) flags a stopped engine with something it drives
+  still running.
+- [pedal_conflict](docs/pedal_conflict.md) flags both pedals pressed at once.
+- [stopped_shaft](docs/stopped_shaft.md) flags the output shaft turning with the
+  wheels stopped.
 
 A rule reads a `{name: value}` mapping, which
 [frame_decode](../preprocess/docs/frame_decode.md) produces per frame and
