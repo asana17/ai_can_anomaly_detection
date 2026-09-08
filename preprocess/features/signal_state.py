@@ -18,7 +18,7 @@ class SignalState:
             if name in self._values:
                 self._values[name] = value
 
-    def snapshot(self) -> list:
+    def row(self) -> list:
         """Return every signal's latest value, in SIGNALS order."""
         return [self._values[name] for name in self._signals]
 

@@ -16,14 +16,27 @@ enter training.
 ## Layout
 
 - [dataset/](dataset) describes the logs and what profiling them found.
-- [preprocess/](preprocess) turns raw CAN logs into model input vectors, by reading
-  the log, decomposing the ID, decoding signals, and building a normalized vector.
+- [preprocess/](preprocess) turns raw CAN logs into model input rows, by reading the
+  log, decomposing the ID, decoding signals, and z-scoring the result.
 - [assemble/](assemble) splits the logs by time and builds the train, validation,
   and test sets.
 - [attack/](attack) synthesizes anomalies (masquerade) for a labeled test set.
 - [rules/](rules) holds the deterministic checks that run before the model.
 - [models/](models) holds the learned half, fit on normal rows only.
 - `data/` holds the raw logs and is not tracked in git.
+
+## Words
+
+J1939's own terms, frame, PGN and SPN, are described in
+[dataset/can_data.md](dataset/can_data.md). These are the ones this repo chose.
+
+| word | what it is |
+|---|---|
+| log | one CSV capture, about a minute and 50,000 frames |
+| signal | one decoded SPN under a name, such as `engine_speed`, 17 in all |
+| row | every signal's latest value at one 100 ms tick |
+| residual | how far a row sits off the subspace a model fitted |
+| block | a contiguous run of logs held out of training |
 
 ## TODO
 

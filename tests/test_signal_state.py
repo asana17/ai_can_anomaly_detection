@@ -5,13 +5,13 @@ def test_holds_latest_value_per_signal():
     s = SignalState()
     s.update({"engine_speed": 1000.0})
     s.update({"engine_speed": 1200.0})
-    assert s.snapshot()[SIGNALS.index("engine_speed")] == 1200.0
+    assert s.row()[SIGNALS.index("engine_speed")] == 1200.0
 
 
 def test_unknown_signal_is_ignored():
     s = SignalState()
     s.update({"not_a_signal": 5.0})
-    assert all(v is None for v in s.snapshot())
+    assert all(v is None for v in s.row())
 
 
 def test_ready_only_when_all_signals_seen():
@@ -20,7 +20,7 @@ def test_ready_only_when_all_signals_seen():
     for name in SIGNALS:
         s.update({name: 1.0})
     assert s.ready()
-    assert s.snapshot() == [1.0] * len(SIGNALS)
+    assert s.row() == [1.0] * len(SIGNALS)
 
 
 def test_signals_come_from_spec():

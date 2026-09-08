@@ -1,4 +1,4 @@
-"""Sample the hold-last signal state on a fixed time grid."""
+"""Read the hold-last signal state into a row on a fixed time grid."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def resample(
     period: float = DEFAULT_PERIOD,
     max_hold: float = DEFAULT_MAX_HOLD,
 ) -> Iterator[tuple[float, list]]:
-    """Emit (time, snapshot) at each grid tick, holding the last value between frames.
+    """Emit (time, row) at each grid tick, holding the last value between frames.
 
     `max_hold` is how long a value may be held. A longer gap means the recording
     stopped, so no rows are emitted across it and the grid restarts from the first
@@ -34,7 +34,7 @@ def resample(
             next_tick = None
         while next_tick is not None and f.timestamp >= next_tick:
             if state.ready():
-                yield (next_tick, state.snapshot())
+                yield (next_tick, state.row())
             next_tick += period
         state.update(decode_frame(pgn, f.data))
         previous = f.timestamp
