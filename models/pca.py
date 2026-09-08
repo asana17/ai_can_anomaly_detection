@@ -7,24 +7,31 @@ moves a row off that subspace shows up in it.
 
 from __future__ import annotations
 
+from typing import NamedTuple
+
 import numpy as np
 
 
-def fit(rows: np.ndarray, components: int) -> np.ndarray:
-    """The `components` directions normal rows vary in most, as a (signals, k) basis."""
-    centred = rows - rows.mean(axis=0)
-    _, _, vt = np.linalg.svd(centred, full_matrices=False)
-    return vt[:components].T
+class Subspace(NamedTuple):
+    centre: np.ndarray      # the mean the components were taken about
+    basis: np.ndarray       # (signals, k), the directions themselves
 
 
-def residuals(rows: np.ndarray, basis: np.ndarray) -> np.ndarray:
+def subspace(rows: np.ndarray, components: int) -> Subspace:
+    """The `components` directions normal rows vary in most, about their mean."""
+    centre = rows.mean(axis=0)
+    _, _, vt = np.linalg.svd(rows - centre, full_matrices=False)
+    return Subspace(centre, vt[:components].T)
+
+
+def residuals(rows: np.ndarray, space: Subspace) -> np.ndarray:
     """How far each row sits off the subspace, one number per row."""
-    projected = (rows @ basis) @ basis.T
-    return np.linalg.norm(rows - projected, axis=1)
+    centred = rows - space.centre
+    projected = (centred @ space.basis) @ space.basis.T
+    return np.linalg.norm(centred - projected, axis=1)
 
 
-def explained(rows: np.ndarray) -> np.ndarray:
+def variance_share(rows: np.ndarray) -> np.ndarray:
     """The share of variance each component accounts for, largest first."""
-    centred = rows - rows.mean(axis=0)
-    s = np.linalg.svd(centred, compute_uv=False)
+    s = np.linalg.svd(rows - rows.mean(axis=0), compute_uv=False)
     return s ** 2 / (s ** 2).sum()

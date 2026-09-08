@@ -3,14 +3,14 @@
 Scores a row by how far it sits off the subspace normal traffic occupies.
 
 ```python
-fit(rows, components)        # -> (signals, k) basis
-residuals(rows, basis)       # -> one distance per row
-explained(rows)              # -> the share of variance each component holds
+space = subspace(train_rows, components=12)  # the 12 directions normal traffic varies in
+score = residuals(test_rows, space)          # how far each row sits off those
+variance_share(train_rows)                   # the variance each holds, to pick the 12
 ```
 
-Fit on normal rows, the components span the directions those rows vary in. Project a
-row onto them, subtract, and what is left is the residual. A row pushed off the
-subspace has a large one.
+Fit on normal rows, the components span the directions those rows vary in about their
+mean. The subspace passes through that mean, not through the origin, so `Subspace`
+carries it and `residuals` subtracts it before projecting.
 
 ## What it cannot see
 
