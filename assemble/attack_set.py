@@ -49,6 +49,7 @@ def attack_set(files, mean, std, rng: random.Random, source_logs=None,
     rows = np.asarray(rows, dtype=np.float32)
     return {
         "rows": (rows - mean) / std if rows.size else rows,
+        "raw": rows,
         "t": np.asarray(times, dtype=np.float64),
         "seg": np.asarray(segments, dtype=np.int32),
         "label": np.asarray(labels, dtype=bool),

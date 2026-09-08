@@ -3,7 +3,7 @@
 Builds the test arrays with attacks in them, and says which rows each one changed.
 
 ```python
-attack_set(files, mean, std, rng, source_logs)   # -> {rows, t, seg, label, attacks}
+attack_set(files, mean, std, rng, source_logs)   # -> {rows, raw, t, seg, label, attacks}
 ```
 
 One attack per log, chosen by [inject](../../attack/docs/inject.md). `mean` and `std`
@@ -15,6 +15,11 @@ really produces that nothing can flag. `label` is therefore True where the attac
 row differs from the untouched one, not where the attack window falls. `attacks`
 lists what was faked, the first and last row it reaches, and `moved`, the furthest it
 pushed a row in z units. Both keep what changed nothing out of the miss count.
+
+`raw` is the same rows before scaling, which is what the rules read. Reconstructing
+them from `rows` instead loses enough precision that engine_load at its ceiling of 250
+comes back as 250.0000009, and range_check calls that out of range on 15% of ordinary
+rows.
 
 Files where no attack landed still contribute their rows. The set therefore holds
 normal traffic as well, which is what false alarms are counted against.

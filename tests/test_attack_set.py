@@ -88,3 +88,10 @@ def test_one_seed_gives_one_set(tmp_path):
     b = attack_set([log], *_stats(), random.Random(3))
     assert a["attacks"] == b["attacks"]
     assert np.array_equal(a["label"], b["label"])
+
+
+def test_raw_holds_the_rows_before_scaling(tmp_path):
+    mean = np.full(SIGNALS, 3.0, dtype=np.float32)
+    std = np.full(SIGNALS, 7.0, dtype=np.float32)
+    d = attack_set([_write_log(tmp_path / "a.csv")], mean, std, random.Random(0))
+    assert np.allclose(d["rows"], (d["raw"] - mean) / std)
