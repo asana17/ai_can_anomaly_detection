@@ -37,17 +37,17 @@ def _log(path):
 
 def test_counts_frames_pgns_and_senders(tmp_path):
     p = summarize([_log(tmp_path / "a.csv")])
-    assert p.files == 1 and p.frames == 7
+    assert p.logs == 1 and p.frames == 7
     assert p.pgn_frames == Counter({EEC1: 5, PROPRIETARY: 2})
     assert p.sender_frames == Counter({230: 5, 100: 2})
     assert p.dlc_frames == Counter({8: 5, 4: 2})
-    assert p.pgns_per_file == [2]
+    assert p.pgns_per_log == [2]
 
 
-def test_pgn_files_counts_files_not_frames(tmp_path):
+def test_pgn_logs_counts_logs_not_frames(tmp_path):
     p = summarize([_log(tmp_path / "a.csv"), _log(tmp_path / "b.csv")])
-    assert p.files == 2
-    assert p.pgn_files == Counter({EEC1: 2, PROPRIETARY: 2})   # not 10 and 4
+    assert p.logs == 2
+    assert p.pgn_logs == Counter({EEC1: 2, PROPRIETARY: 2})   # not 10 and 4
 
 
 def test_public_pgns_excludes_proprietary(tmp_path):
@@ -68,6 +68,6 @@ def test_pgn_gap_takes_the_fastest_sender(tmp_path):
 
 def test_report_leads_with_the_totals(tmp_path):
     lines = report(summarize([_log(tmp_path / "a.csv")])).splitlines()
-    assert lines[0] == "1 files, 7 frames, 2 PGNs"
+    assert lines[0] == "1 logs, 7 frames, 2 PGNs"
     assert "public 1 PGNs at 71.4% of frames, proprietary 1 at 28.6%" in lines[2]
     assert any(line.startswith(f"  {EEC1} ") for line in lines)

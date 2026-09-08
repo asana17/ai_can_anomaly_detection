@@ -22,23 +22,23 @@ GAP_STEP = 0.0001
 
 class Profile:
     def __init__(self):
-        self.files = 0
+        self.logs = 0
         self.frames = 0
         self.pgn_frames = Counter()     # frames per PGN
-        self.pgn_files = Counter()      # files each PGN appears in
+        self.pgn_logs = Counter()       # logs each PGN appears in
         self.sender_frames = Counter()  # frames per source address
         self.dlc_frames = Counter()     # frames per payload length
-        self.pgns_per_file = []         # distinct PGNs in each log
+        self.pgns_per_log = []          # distinct PGNs in each log
         self.gaps = {}                  # (PGN, sender) -> gaps in GAP_STEP units
 
     def add(self, log: list) -> None:
         """Fold one log's frames into the counts."""
         counts = count_pgns(log)
-        self.files += 1
+        self.logs += 1
         self.frames += len(log)
         self.pgn_frames.update(counts)
-        self.pgn_files.update(counts.keys())
-        self.pgns_per_file.append(len(counts))
+        self.pgn_logs.update(counts.keys())
+        self.pgns_per_log.append(len(counts))
         self.dlc_frames.update(len(f.data) for f in log)
         self._add_senders(log)
         self._add_gaps(log)
@@ -93,13 +93,13 @@ def _shares(counts: Counter, total: int, limit: int) -> str:
 
 
 def _totals(profile: Profile) -> list[str]:
-    per_file = sorted(profile.pgns_per_file)
+    per_log = sorted(profile.pgns_per_log)
     public = sum(profile.pgn_frames[pgn] for pgn in public_pgns(profile))
-    everywhere = sum(1 for p, n in profile.pgn_files.items() if n == profile.files)
+    everywhere = sum(1 for p, n in profile.pgn_logs.items() if n == profile.logs)
     return [
-        f"{profile.files} files, {profile.frames:,} frames, {len(profile.pgn_frames)} PGNs",
-        f"per file {per_file[0]} to {per_file[-1]} PGNs, median "
-        f"{per_file[len(per_file) // 2]}, {everywhere} in every file",
+        f"{profile.logs} logs, {profile.frames:,} frames, {len(profile.pgn_frames)} PGNs",
+        f"per log {per_log[0]} to {per_log[-1]} PGNs, median "
+        f"{per_log[len(per_log) // 2]}, {everywhere} in every log",
         f"public {len(public_pgns(profile))} PGNs at {100 * public / profile.frames:.1f}% "
         f"of frames, proprietary {len(profile.pgn_frames) - len(public_pgns(profile))} at "
         f"{100 * (profile.frames - public) / profile.frames:.1f}%",
@@ -109,12 +109,12 @@ def _totals(profile: Profile) -> list[str]:
 
 
 def _table(profile: Profile) -> list[str]:
-    rows = [f"{'PGN':>7} {'hex':>7} {'frames':>8} {'files':>7} {'gap':>9}  kind"]
+    rows = [f"{'PGN':>7} {'hex':>7} {'frames':>8} {'logs':>7} {'gap':>9}  kind"]
     for pgn, count in profile.pgn_frames.most_common():
         kind = "proprietary" if is_proprietary_pgn(pgn) else "public"
         rows.append(
             f"{pgn:>7} {hex(pgn):>7} {100 * count / profile.frames:>7.3f}% "
-            f"{100 * profile.pgn_files[pgn] / profile.files:>6.0f}% "
+            f"{100 * profile.pgn_logs[pgn] / profile.logs:>6.0f}% "
             f"{1000 * pgn_gap(profile, pgn):>7.1f}ms  {kind}"
         )
     return rows

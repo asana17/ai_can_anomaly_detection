@@ -50,7 +50,7 @@ are not the same ones. Over 70 logs and 949,349 comparisons it fires twice.
 ### Nothing reads outside its range
 
 Every decoded value is checked against the J1939 range `spn_spec` records for it.
-Across 100 files that is 5,034,836 values over 17 signals, and none of them fall
+Across 100 logs that is 5,034,836 values over 17 signals, and none of them fall
 outside. The rule layer's range check therefore starts from no false positives on
 this data.
 

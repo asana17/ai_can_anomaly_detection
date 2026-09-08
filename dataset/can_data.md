@@ -18,28 +18,28 @@ the data is, how it is laid out, and what we learned from profiling it.
 
 ```
 data/
-  part_1/   ~2,800 CSV files
-  part_2/   ~2,800 CSV files
-  part_3/   ~2,800 CSV files
-  part_4/   ~2,800 CSV files
+  part_1/   ~2,800 logs
+  part_2/   ~2,800 logs
+  part_3/   ~2,800 logs
+  part_4/   ~2,800 logs
 ```
 
-- **~11,194 CSV files** total.
-- Each file holds exactly **50,001 rows** (1,200 of 1,200 sampled files).
+- **~11,194 logs** total.
+- Each log holds exactly **50,001 frames** (1,200 of 1,200 sampled).
 - Total on the order of **~560 million CAN frames**.
 
-Each file is an independent capture, but a file is **not** guaranteed to be
+Each log is an independent capture, but a log is **not** guaranteed to be
 contiguous in time. The recorder can stop and resume inside one, leaving a single
 long gap in an otherwise ordinary log.
 
-| span of one file | share of files |
+| span of one log | share of logs |
 |------------------|----------------|
 | about 59 s (p1 to p90 span 58.6 to 59.4 s) | about 98% |
 | over 2 minutes  | 2.2% |
 | over 10 minutes | 1.6% |
 | over 1 hour     | 0.8% |
 
-So a typical file covers about **one minute** at roughly 850 frames per second. The
+So a typical log covers about **one minute** at roughly 850 frames per second. The
 longest sampled spans **70.8 hours**, its 50,001 frames split either side of one
 70.6 hour gap.
 
