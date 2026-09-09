@@ -23,6 +23,10 @@ long, so 111 of the 1,141 possible 60 log blocks hold no driving at all.
 `driving_time` measures each log's seconds above `MIN_SPEED`. Passed as `weight` it
 makes the fractions shares of driving time. It reads every log, so keep the result.
 
+Reading every log means the cut lands where it does partly because of what the test
+period holds. No test row reaches the fit or the z-score, so nothing leaks into the
+model, but a truck on the road could not choose the cut this way.
+
 ## Calibration comes out of the training period, in blocks
 
 The threshold is read off normal rows the model never fitted, so it cannot come from
