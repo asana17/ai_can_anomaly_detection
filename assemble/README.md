@@ -7,8 +7,8 @@ Documented under [docs/](docs).
 - [grid](docs/grid.md) sets the period, max hold, segment rule and dtypes that
   train_set and attack_set both use.
 - [scale](docs/scale.md) is the mean and std every row is z-scored by, fitted once.
-- [split](docs/split.md) cuts the logs into train and test by time, sized by the
-  driving in them.
+- [split](docs/split.md) cuts the logs into train, calibration and test by time,
+  sized by the driving in them.
 - [train_set](docs/train_set.md) turns the training logs into z-scored model rows,
   with the physical values, time and segment id of each beside them.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
