@@ -28,6 +28,10 @@ Rules and models both flag single rows. A single flagged row is not an alarm her
 `HOLD` lists how many rows in a row a flag has to persist, and the report gives a
 column for each, so one row and one second sit side by side.
 
+Rows either side of a segment boundary can be hours apart. A run of flagged rows
+therefore stops at a boundary, and `change_limit` only compares rows inside one
+segment.
+
 False alarms are counted as separate stretches per hour of clean driving, not as a
 share of rows. Attacks last seconds, so counting rows for one and events for the
 other compares different things.

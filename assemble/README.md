@@ -5,8 +5,8 @@ time.
 
 Documented under [docs/](docs).
 
-- `grid.py` sets the period and max hold every row is built with, and holds the
-  segment rule and the dtypes both builders share.
+- [grid](docs/grid.md) sets the period and max hold every row is built with, and
+  holds the segment rule and the dtypes both builders share.
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
   driving in them.
 - [datasets](docs/datasets.md) turns a list of logs into z-scored model rows, with

@@ -1,10 +1,12 @@
 # datasets
 
-Reads a list of logs and returns one row every 100 ms. Each row has 17 columns,
-one per decoded value, such as `engine_speed` and `wheel_speed`.
+Takes a list of log paths and returns one row every 100 ms, each with 17 columns, one
+per decoded value, such as `engine_speed` and `wheel_speed`. It does not know which
+logs it was given. [evaluate](../../evaluate) hands it the training ones, and the
+test rows come from [attack_set](attack_set.md).
 
 ```python
-data = scaled_rows(train, period=0.1, max_hold=1.0)
+data = scaled_rows(train_logs)     # the train half, from split.md
 save(data, "out")
 ```
 
@@ -19,33 +21,18 @@ save(data, "out")
 `raw` keeps every column in its own unit, for example `engine_speed` in rpm and
 `wheel_speed` in km/h. That is what the rules read, since a rule is written in those
 units. `rows` is what a model reads. A run of rows is unbroken while each one is
-100 ms after the one before, which [Segments](#segments) sets out.
+100 ms after the one before, which [grid](grid.md) sets out.
 
 `save` writes each key to `out/<key>.npy`, and `scale` as `mean.npy` and `std.npy`.
 
-`period` is the spacing of the grid and `max_hold` the longest gap it carries
-across, 100 ms and 1 second. See [grid_sample](../../preprocess/docs/grid_sample.md).
-
 ## Why the scale comes back
 
-The test rows are not built here. [attack_set](attack_set.md) builds them, with
-attacks injected into the frames first, and it has to scale them by these same
-numbers. Fitting its own would put its rows on a different scale from the ones the
-model was fitted on.
-
-`period` and `max_hold` have to match there too. Nothing checks it, so
-[evaluate](../../evaluate) passes one pair to both.
+[attack_set](attack_set.md) builds the test rows and has to scale them with the
+`scale` fitted here, on the train logs. Fitting one from the test rows would put them
+in different units from the rows a model was fitted on.
 
 ## Stopped rows are kept
 
 Over half the rows are stopped or idling. They stay in, and the mean and std are
-taken over them too. Dropping them would break the segments below, and leaving them
-out changes each signal's spread by less than half.
-
-## Segments
-
-Inside one log the rows are continuous, one `period` apart. Between logs, and across
-a gap in the recording, they are not. `seg` numbers each continuous stretch, so two
-neighbouring rows in the array can be hours apart unless they share a `seg`.
-
-Anything that reads a row against the one before it has to check `seg` first.
+taken over them too. Dropping them would break the segments [grid](grid.md)
+describes, and leaving them out changes each signal's spread by less than half.
