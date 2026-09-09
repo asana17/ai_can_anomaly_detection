@@ -1,6 +1,11 @@
 # evaluate
 
-Runs the whole comparison over a set of logs and prints what each layer catches.
+Runs the whole comparison over a set of logs. The report gives one line to each of
+these.
+
+- the rules, which read physical values
+- PCA, which flags a row whose residual is over the threshold, one line for each
+  component count
 
 ```
 python3 -m evaluate.run "data/part_*/*.csv" out
@@ -9,9 +14,9 @@ python3 -m evaluate.run "data/part_*/*.csv" out
 A third argument sets how many logs to sample. Without it the run takes 1,200,
 spread evenly over the recording.
 
-It splits the logs, builds the arrays, injects the attacks, scores the rules, then
-sweeps PCA over its component counts. The numbers in [pca](../models/docs/pca.md)
-come from this.
+It splits the logs, builds the arrays, injects the attacks, then asks the rules and
+each model for one flag per row. The runs of flags, the counting and the table are
+the same for all of them.
 
 ## What is reused
 
@@ -22,38 +27,28 @@ are written to `out` and reused on the next run over the same logs.
 does not match it builds them again. Editing the code does not change that file, so
 delete `out` after changing what these three do.
 
-## An alarm is a run of rows, and `HOLD` says how long
+## What counts as an alarm
 
-Rules and models both flag single rows. A single flagged row is not an alarm here.
-`HOLD` lists how many rows in a row a flag has to persist, and the report gives a
-column for each, so one row and one second sit side by side.
+A flag has to persist over several rows in a row to count as an alarm. `HOLD` sets
+how many, and the report has a column for each value in it.
 
-Rows either side of a segment boundary can be hours apart. A run of flagged rows
-therefore stops at a boundary, and `change_limit` only compares rows inside one
-segment.
+A run of flagged rows ends at a segment boundary, since rows either side of one can
+be hours apart.
 
-False alarms are counted as separate stretches per hour of clean driving, not as a
-share of rows. Attacks last seconds, so counting rows for one and events for the
-other compares different things.
+Only rows above 5 km/h are scored, and an attack counts only if it reaches one and
+moved it by at least one standard deviation.
 
-## Only what the rules pass
+Detection is the number of those attacks with an alarm inside them. False alarms are
+the number of alarms raised outside any attack, per hour of the rows above 5 km/h.
 
-Detection counts the attacks the rules missed, and the false alarm rate is taken over
-the rows the rules let through. A model is credited for neither.
+## The threshold
 
-## The threshold comes from train
+It is the 99.9th percentile of the model's residual, over rows above 5 km/h that the
+rules pass.
 
-It is the 99.9th percentile of the residual over training rows that are moving and
-that the rules pass.
-
-Standard practice is a held-out set, because a model reconstructs its own training
-rows too well and the threshold comes out low. PCA does not do that here. Its
-residual p99.9 on train runs above the same figure on test, and a threshold from all
-200,644 train rows landed 1.6 times off the rate asked for against 3.4 times from
-14,659 held out rows.
-
-A model with enough parameters to fit its training rows will need a held-out set, and
-it has to be the same set for every model being compared.
+Those rows are training rows today. They have to come from a calibration set, a
+stretch of the training period kept out of the fit, and it has to be the same set for
+every model.
 
 ## Tests
 

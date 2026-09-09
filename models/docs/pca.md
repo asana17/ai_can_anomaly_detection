@@ -26,6 +26,13 @@ of normal variation in the residual, which raises the threshold and buries small
 attacks. More components fit the subspace tightly, until it starts holding the
 attacks too.
 
+## Its threshold comes from train
+
+PCA does not reconstruct its training rows better than the test rows. Its residual
+p99.9 on train runs above the same figure on test. A threshold from all 200,644 train
+rows landed 1.6 times off the rate asked for, against 3.4 times from 14,659 held out
+rows, which were too few to read a p99.9 off.
+
 ## A warning you can ignore
 
 On numpy 2.0.2 against Apple Accelerate, plain matrix multiplication raises
