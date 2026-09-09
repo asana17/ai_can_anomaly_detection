@@ -7,7 +7,9 @@ from typing import NamedTuple
 
 import numpy as np
 
-from preprocess.features.grid_sample import DEFAULT_MAX_HOLD, DEFAULT_PERIOD, resample
+from assemble.grid import starts_segment, to_arrays
+from preprocess.features.grid_sample import (DEFAULT_MAX_HOLD, DEFAULT_PERIOD,
+                                             resample)
 from preprocess.frames.can_log_loader import load_can_log
 
 
@@ -38,17 +40,13 @@ def grid_rows(
     for path in logs:
         previous = None
         for t, row in resample(load_can_log(path), period, max_hold):
-            if previous is None or t - previous > period * 1.5:
+            if starts_segment(previous, t):
                 segment += 1                # a new log, or the grid restarted
             rows.append(row)
             times.append(t)
             segments.append(segment)
             previous = t
-    return (
-        np.asarray(rows, dtype=np.float32),
-        np.asarray(times, dtype=np.float64),    # epoch seconds need the precision
-        np.asarray(segments, dtype=np.int32),
-    )
+    return to_arrays(rows, times, segments)
 
 
 def scaled_rows(
