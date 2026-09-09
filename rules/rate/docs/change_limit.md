@@ -11,6 +11,10 @@ The caller keeps the previous reading and the time since, which is what separate
 this from the rules in [instant](../../instant). Both arguments come from the same
 place, a decoded frame or a grid row, one step apart.
 
+The signal being read and the one step before it have to sit in one segment.
+[evaluate](../../../evaluate) checks that before calling, so nothing is compared
+across a break in the recording.
+
 ## Which signals
 
 Only four have a limit worth setting. The wheels and the two speeds are held by how
