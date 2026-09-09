@@ -35,5 +35,7 @@ def load_can_log(path) -> Iterator[CanFrame]:
             fields = line.split(";")
             can_id = int(fields[1], 16)
             dlc = int(fields[2])
+            if len(fields) < 3 + dlc:
+                continue    # a truncated row would decode as zeros, not as missing
             data = bytes(int(b) for b in fields[3:3 + dlc])
             yield CanFrame(_parse_epoch(fields[0]), can_id, data)
