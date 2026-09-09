@@ -8,9 +8,8 @@ attack_set(logs, scale, rng, source_logs)   # -> {rows, raw, t, seg, label, atta
 
 One attack per log, chosen by [inject](../../attack/docs/inject.md).
 
-`scale` is the mean and std [train_set](train_set.md) fitted on the training rows.
-Passing anything else puts these rows in different units from the ones a model was
-fitted on.
+`scale` is the one [train_set](train_set.md) fitted on the training rows. See
+[scale](scale.md).
 
 A replay can copy a value close to the one it replaced. The result is a row the bus
 really produces, and no detector should be asked to flag it.

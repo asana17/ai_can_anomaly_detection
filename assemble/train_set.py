@@ -3,29 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import NamedTuple
 
 import numpy as np
 
 from assemble.grid import MAX_HOLD, PERIOD, starts_segment, to_arrays
+from assemble.scale import Scale
 from preprocess.features.grid_sample import resample
 from preprocess.frames.can_log_loader import load_can_log
-
-
-class Scale(NamedTuple):
-    """The z-score fitted on train, and the only way rows are put on that scale."""
-    mean: np.ndarray
-    std: np.ndarray
-
-    def apply(self, rows: np.ndarray) -> np.ndarray:
-        return (rows - self.mean) / self.std if rows.size else rows
-
-    def undo(self, rows: np.ndarray) -> np.ndarray:
-        return rows * self.std + self.mean
-
-    def save(self, out_dir: str) -> None:
-        np.save(os.path.join(out_dir, "mean.npy"), self.mean)
-        np.save(os.path.join(out_dir, "std.npy"), self.std)
 
 
 def grid_rows(logs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

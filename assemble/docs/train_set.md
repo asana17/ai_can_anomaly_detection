@@ -15,7 +15,7 @@ save(data, "out")
 | `raw` | the same rows before scaling |
 | `t` | the time of each row, in epoch seconds |
 | `seg` | which unbroken run of rows it belongs to |
-| `scale` | the mean and std that turn one into the other |
+| `scale` | the mean and std that turn one into the other, see [scale](scale.md) |
 
 `raw` keeps every column in its own unit, for example `engine_speed` in rpm and
 `wheel_speed` in km/h. That is what the rules read, since a rule is written in those
@@ -23,12 +23,6 @@ units. `rows` is what a model reads. A run of rows is unbroken while each one is
 100 ms after the one before, which [grid](grid.md) sets out.
 
 `save` writes each key to `out/<key>.npy`, and `scale` as `mean.npy` and `std.npy`.
-
-## Why the scale comes back
-
-[attack_set](attack_set.md) builds the test rows and has to scale them with the
-`scale` fitted here, on the train logs. Fitting one from the test rows would put them
-in different units from the rows a model was fitted on.
 
 ## Stopped rows are kept
 
