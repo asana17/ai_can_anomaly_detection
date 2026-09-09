@@ -38,7 +38,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 | row | every signal's latest value at one 100 ms tick |
 | segment | a run of rows with no gap in time, broken between logs |
 | residual | how far a row sits off the subspace a model fitted |
-| block | a contiguous run of logs held out of training |
 
 ## TODO
 

@@ -19,7 +19,7 @@ slower is left to the rules.
 
 Cutting by log count can therefore leave a part with no scoreable rows. The truck is
 parked in 581 of 1,200 logs and the parked runs are long, so 111 of the 1,141
-possible 60 log blocks hold no driving at all.
+possible runs of 60 logs hold no driving at all.
 
 So the cut is made on driving time. `weight` gives each log a size, and the fraction
 is taken over the sum of those sizes instead of over the log count. `driving_time`
