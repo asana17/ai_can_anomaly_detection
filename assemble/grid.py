@@ -1,13 +1,12 @@
-"""The grid every row sits on, set in one place so no caller can pick another."""
+"""What both row builders have to agree on, so neither can pick its own."""
 
 from __future__ import annotations
 
 import numpy as np
 
-from preprocess.features.grid_sample import DEFAULT_MAX_HOLD, DEFAULT_PERIOD
 
-PERIOD = DEFAULT_PERIOD
-MAX_HOLD = DEFAULT_MAX_HOLD
+PERIOD = 0.1        # seconds between rows
+MAX_HOLD = 1.0      # seconds, the longest gap a row is built across
 
 
 def starts_segment(previous, t: float) -> bool:

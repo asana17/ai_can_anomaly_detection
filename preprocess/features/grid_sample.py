@@ -9,14 +9,11 @@ from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import CanFrame
 from preprocess.frames.frame_decode import decode_frame
 
-DEFAULT_PERIOD = 0.1        # seconds
-DEFAULT_MAX_HOLD = 1.0      # seconds
-
 
 def resample(
     frames: Iterable[CanFrame],
-    period: float = DEFAULT_PERIOD,
-    max_hold: float = DEFAULT_MAX_HOLD,
+    period: float,
+    max_hold: float,
 ) -> Iterator[tuple[float, list]]:
     """Emit (time, row) at each grid tick, holding the last value between frames.
 

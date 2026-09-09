@@ -5,8 +5,8 @@ time.
 
 Documented under [docs/](docs).
 
-- [grid](docs/grid.md) sets the period and max hold every row is built with, and
-  holds the segment rule and the dtypes both builders share.
+- [grid](docs/grid.md) sets the period, max hold, segment rule and dtypes that both
+  row builders use.
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
   driving in them.
 - [train_set](docs/train_set.md) turns the training logs into z-scored model rows,

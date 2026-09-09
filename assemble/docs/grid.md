@@ -1,7 +1,7 @@
 # grid
 
-[train_set](train_set.md) and [attack_set](attack_set.md) each build rows. They have to
-use the same settings. The settings are here.
+[train_set](train_set.md) and [attack_set](attack_set.md) each build rows. They have
+to use the same settings. The settings are here.
 
 ## The grid
 
@@ -10,7 +10,10 @@ use the same settings. The settings are here.
 | `PERIOD` | 0.1 s | the time between two rows |
 | `MAX_HOLD` | 1 s | the longest gap between frames a row may be built across |
 
-Both come from [grid_sample](../../preprocess/docs/grid_sample.md).
+`PERIOD` is 100 ms because that is how often the slowest target PGNs, CCVS1 and
+LFE1, arrive. A shorter one only repeats their last value across rows. `MAX_HOLD` is
+ten of those arrivals. What `resample` does with the two is in
+[grid_sample](../../preprocess/docs/grid_sample.md).
 
 ## Types
 

@@ -29,16 +29,14 @@ Gaps that large are real. One log in this dataset holds a 70.6 hour one, which
 without `max_hold` becomes 2,547,687 invented rows. The whole distribution is in
 [measurements](../../dataset/measurements.md).
 
-Both defaults come from the dataset rather than from the module. `period` is 100 ms
-because that is how often the slowest target PGNs (CCVS1, LFE1) arrive, and a
-shorter period only repeats their last value across rows. `max_hold` is 1 second,
-ten of those arrivals.
+`resample` has no defaults. The values this repo passes, and why, are in
+[grid](../../assemble/docs/grid.md).
 
 ## Limits
 
 - Arrival times are dropped (the rows are evenly spaced), so timing, flooding, or a
   silent signal cannot be seen from them. Those need the raw stream and rule checks.
 - If the period is shorter than a signal's update rate, that signal repeats across
-  rows, which a model reading time would take as real steadiness. At the default
-  100 ms period this is minor, since the signals update about that often. It grows
+  rows, which a model reading time would take as real steadiness. At the
+  100 ms period this repo uses this is minor, since the signals update about that often. It grows
   with a shorter period, and `max_hold` bounds how far it can go.

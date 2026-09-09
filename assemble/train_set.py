@@ -7,9 +7,8 @@ from typing import NamedTuple
 
 import numpy as np
 
-from assemble.grid import starts_segment, to_arrays
-from preprocess.features.grid_sample import (DEFAULT_MAX_HOLD, DEFAULT_PERIOD,
-                                             resample)
+from assemble.grid import MAX_HOLD, PERIOD, starts_segment, to_arrays
+from preprocess.features.grid_sample import resample
 from preprocess.frames.can_log_loader import load_can_log
 
 
@@ -29,17 +28,13 @@ class Scale(NamedTuple):
         np.save(os.path.join(out_dir, "std.npy"), self.std)
 
 
-def grid_rows(
-    logs,
-    period: float = DEFAULT_PERIOD,
-    max_hold: float = DEFAULT_MAX_HOLD,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def grid_rows(logs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Put every log on the grid, returning the rows, their times, and segment ids."""
     rows, times, segments = [], [], []
     segment = -1
     for path in logs:
         previous = None
-        for t, row in resample(load_can_log(path), period, max_hold):
+        for t, row in resample(load_can_log(path), PERIOD, MAX_HOLD):
             if starts_segment(previous, t):
                 segment += 1                # a new log, or the grid restarted
             rows.append(row)
@@ -49,13 +44,9 @@ def grid_rows(
     return to_arrays(rows, times, segments)
 
 
-def scaled_rows(
-    logs,
-    period: float = DEFAULT_PERIOD,
-    max_hold: float = DEFAULT_MAX_HOLD,
-) -> dict:
+def scaled_rows(logs) -> dict:
     """Put `logs` on the grid and z-score them on their own mean and std."""
-    rows, times, segments = grid_rows(logs, period, max_hold)
+    rows, times, segments = grid_rows(logs)
     std = rows.std(axis=0)
     std[std == 0] = 1.0                       # a constant signal stays at 0
     scale = Scale(rows.mean(axis=0), std)

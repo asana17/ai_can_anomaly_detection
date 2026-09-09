@@ -16,9 +16,9 @@ import numpy as np
 
 from assemble.attack_set import attack_set
 from assemble.train_set import Scale, save, scaled_rows
+from assemble.grid import MAX_HOLD, PERIOD
 from assemble.split import MIN_SPEED, driving_time, split
 from models.pca import residuals, subspace
-from preprocess.features.grid_sample import DEFAULT_MAX_HOLD, DEFAULT_PERIOD
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            reverse_speed, shaft_ratio, speed_agreement, steering_sign,
@@ -29,7 +29,6 @@ FILES = 1200            # logs to sample by default, spread evenly over the reco
 TRAIN = 0.75            # share of the driving time before the test cut
 DONORS = 24             # training logs the replayed payloads are taken from
 SEED = 0                # the rng the attacks are drawn with
-GRID = {"period": DEFAULT_PERIOD, "max_hold": DEFAULT_MAX_HOLD}
 COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
 TARGET = 0.1            # the false alarm rate in percent the threshold asks for
 BANDS = ((1.0, 2.0), (2.0, 4.0), (4.0, np.inf))
@@ -67,7 +66,8 @@ def built_from(train, test):
     unchanged, so delete `out` after that.
     """
     return {"logs": [train, test], "train": TRAIN, "donors": DONORS,
-            "seed": SEED, "signals": SIGNALS, **GRID}
+            "seed": SEED, "signals": SIGNALS,
+            "period": PERIOD, "max_hold": MAX_HOLD}
 
 
 def arrays_for(train, test, out_dir):
@@ -81,7 +81,7 @@ def arrays_for(train, test, out_dir):
         data["scale"] = Scale(np.load(os.path.join(out_dir, "mean.npy")),
                               np.load(os.path.join(out_dir, "std.npy")))
         return data, True
-    data = scaled_rows(train, **GRID)  # the test rows come from the attack set
+    data = scaled_rows(train)          # the test rows come from the attack set
     save(data, out_dir)
     json.dump(shape, open(kept, "w"))
     return data, False
@@ -95,7 +95,7 @@ def attacks_for(train, test, scale, out_dir, rebuilt):
                for n in ATTACKED}
         got["attacks"] = json.load(open(os.path.join(out_dir, "attacked.json")))
         return got, True
-    got = attack_set(test, scale, random.Random(SEED), **GRID,
+    got = attack_set(test, scale, random.Random(SEED),
                      source_logs=train[::max(len(train) // DONORS, 1)][:DONORS])
     for name in ATTACKED:
         np.save(os.path.join(out_dir, f"attacked_{name}.npy"), got[name])

@@ -31,13 +31,13 @@ def _write_log(path, rpms, period=0.1, gap_after=None, gap=0.0):
 
 
 def test_grid_rows_returns_2d_signal_rows(tmp_path):
-    rows, times, segments = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)], period=0.1)
+    rows, times, segments = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)])
     assert rows.ndim == 2 and rows.shape[1] == 17
     assert times.shape == segments.shape == (len(rows),)
 
 
 def test_grid_rows_keeps_the_time_of_each_row(tmp_path):
-    _, times, _ = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)], period=0.1)
+    _, times, _ = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)])
     assert times.dtype == np.float64          # epoch seconds lose 0.1 s in float32
     assert np.allclose(np.diff(times), 0.1)
 
@@ -45,7 +45,7 @@ def test_grid_rows_keeps_the_time_of_each_row(tmp_path):
 def test_segments_break_between_files(tmp_path):
     files = [_write_log(tmp_path / "a.csv", [800] * 6),
              _write_log(tmp_path / "b.csv", [900] * 6)]
-    _, _, segments = grid_rows(files, period=0.1)
+    _, _, segments = grid_rows(files)
     assert len(set(segments)) == 2
     assert segments[0] != segments[-1]
 
@@ -53,7 +53,7 @@ def test_segments_break_between_files(tmp_path):
 def test_segments_break_across_a_gap(tmp_path):
     # one file, but the log jumps 30 s after the 4th sample
     log = _write_log(tmp_path / "a.csv", [800] * 10, gap_after=4, gap=30.0)
-    _, times, segments = grid_rows([log], period=0.1, max_hold=1.0)
+    _, times, segments = grid_rows([log])
     assert len(set(segments)) == 2, "the gap must start a new segment"
     first, second = (times[segments == s] for s in sorted(set(segments)))
     assert second[0] - first[-1] > 1.0                  # the gap is not bridged
@@ -63,7 +63,7 @@ def test_segments_break_across_a_gap(tmp_path):
 
 def test_scaled_rows_standardizes_the_rows_it_was_given(tmp_path):
     log = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    data = scaled_rows([log], period=0.1)
+    data = scaled_rows([log])
 
     engine_speed = data["rows"][:, 0]         # first signal in SIGNALS order
     assert abs(engine_speed.mean()) < 1e-4
@@ -73,21 +73,21 @@ def test_scaled_rows_standardizes_the_rows_it_was_given(tmp_path):
 def test_the_scale_it_fits_puts_other_rows_on_the_same_scale(tmp_path):
     train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
     other = _write_log(tmp_path / "te.csv", [900] * 6)
-    scale = scaled_rows([train], period=0.1)["scale"]
-    rows, _, _ = grid_rows([other], period=0.1)
+    scale = scaled_rows([train])["scale"]
+    rows, _, _ = grid_rows([other])
 
     assert np.allclose(scale.undo(scale.apply(rows)), rows, atol=1e-3)
 
 
 def test_scaled_rows_carries_the_time_and_segment_of_each_row(tmp_path):
-    data = scaled_rows([_write_log(tmp_path / "tr.csv", [800] * 6)], period=0.1)
+    data = scaled_rows([_write_log(tmp_path / "tr.csv", [800] * 6)])
     assert len(data["t"]) == len(data["rows"])
     assert len(data["seg"]) == len(data["rows"])
     assert sorted(set(data["seg"])) == list(range(len(set(data["seg"]))))
 
 
 def test_save_writes_every_array(tmp_path):
-    data = scaled_rows([_write_log(tmp_path / "a.csv", [800] * 6)], period=0.1)
+    data = scaled_rows([_write_log(tmp_path / "a.csv", [800] * 6)])
     out = tmp_path / "out"
     save(data, str(out))
     for name in data:

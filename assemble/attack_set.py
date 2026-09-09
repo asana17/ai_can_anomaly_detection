@@ -7,14 +7,12 @@ import random
 import numpy as np
 
 from attack.inject import inject
-from assemble.grid import starts_segment, to_arrays
-from preprocess.features.grid_sample import DEFAULT_MAX_HOLD, DEFAULT_PERIOD, resample
+from assemble.grid import MAX_HOLD, PERIOD, starts_segment, to_arrays
+from preprocess.features.grid_sample import resample
 from preprocess.frames.can_log_loader import load_can_log
 
 
-def attack_set(logs, scale, rng: random.Random, source_logs=None,
-               period: float = DEFAULT_PERIOD,
-               max_hold: float = DEFAULT_MAX_HOLD) -> dict:
+def attack_set(logs, scale, rng: random.Random, source_logs=None) -> dict:
     """Inject one attack into each log, and put the result on train's `scale`.
 
     Every file contributes its rows whether or not an attack landed, so the set holds
@@ -29,10 +27,10 @@ def attack_set(logs, scale, rng: random.Random, source_logs=None,
         frames = list(load_can_log(path))
         made = inject(frames, rng, source_log=rng.choice(pool) if pool else None)
         hurt, span = made if made else (frames, None)
-        clean = dict(resample(frames, period, max_hold)) if span else {}
+        clean = dict(resample(frames, PERIOD, MAX_HOLD)) if span else {}
         first = len(rows)
         previous = None
-        for t, row in resample(hurt, period, max_hold):
+        for t, row in resample(hurt, PERIOD, MAX_HOLD):
             if starts_segment(previous, t):
                 segment += 1
             rows.append(row)
