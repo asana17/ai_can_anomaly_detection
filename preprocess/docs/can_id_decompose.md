@@ -21,7 +21,7 @@ Bit 25 (EDP) is 0 for standard J1939 and is not used here.
 
 ### Assembling the PGN
 
-The PGN (the message type) is not stored as one field. The code builds it from
+The PGN is not stored as one field. The code builds it from
 DP, PF, and sometimes PS, choosing by the PF value.
 
 - When `PF < 240` the frame is addressed to one ECU, so PS is a destination

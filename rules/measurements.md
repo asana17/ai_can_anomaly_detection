@@ -56,7 +56,7 @@ this data.
 
 ### How fast each signal moves
 
-Between one frame of a message and the next of the same message, over 25 logs.
+Between one frame of a PGN and the next of the same PGN, over 25 logs.
 
 | signal | most per second | signal | most per second |
 |---|---|---|---|
@@ -127,9 +127,9 @@ ETC1 byte 1 holds the driveline and torque converter states that would explain i
 but it takes three values here, 204, 205 and 221, too few to place its bits. Until
 they are placed 2.26% is two orders worse than the rules that exist.
 
-### Checks on the messages, not written
+### Checks on the PGNs, not written
 
-Four more checks are available. Every message type keeps a fixed period, a fixed
+Four more checks are available. Every PGN keeps a fixed period, a fixed
 sender and a fixed byte count, and only 57 types appear at all, all measured above.
 
 They would catch a different kind of attack, one that adds, drops or forges frames.

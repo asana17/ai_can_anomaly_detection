@@ -1,31 +1,31 @@
 # replay
 
-Gives a window of frames the payloads the same messages carried at another time,
+Gives a window of frames the payloads the same PGNs carried at another time,
 in this log or in another.
 
 ```python
 replay(frames, [65265, 65132], start=25.0, stop=30.0, source=5.0, source_log=other)
 ```
 
-Every CCVS1 and TCO1 frame between t=25 and t=30 gets the bytes that message held at
+Every CCVS1 and TCO1 frame between t=25 and t=30 gets the bytes that PGN held at
 t=5 in `source_log`, walking the source at the same pace. Frame times and counts do not
-change, so the message rate stays normal.
+change, so the frame rate stays normal.
 
 ## Why replay rather than write a value
 
-The bytes were observed, so each signal in a replayed message stays inside its range
-and agrees with the others in that message. A written constant does neither, and
+The bytes were observed, so each signal in a replayed PGN stays inside its range and
+agrees with the others in that PGN. A written constant does neither, and
 [range_check](../../rules/instant/docs/range_check.md) ends it. What replay breaks is the
-agreement with the messages left alone.
+agreement with the PGNs left alone.
 
-Naming several messages moves them together, which is how an attack is aimed. Replay
+Naming several PGNs moves them together, which is how an attack is aimed. Replay
 CCVS1 alone and the two speeds disagree. Replay CCVS1 and TCO1 together and they
 agree again, while the wheels still disagree with the engine.
 
 ## The source has to come from another log
 
 Two moments of the same log are too alike to make an anomaly. Over 305 logs the
-median distance between them is under 0.25 standard deviations for every message,
+median distance between them is under 0.25 standard deviations for every PGN,
 against 0.86 to 1.76 across logs.
 
 That is not picking values a detector will catch. An attacker who writes back what
@@ -36,7 +36,7 @@ EBC1 stays weak either way, since the brake pedal reads zero on almost every row
 
 ## What the rules catch
 
-Replaying one message at a time, over a five second window in each of 20 logs taken
+Replaying one PGN at a time, over a five second window in each of 20 logs taken
 from 20 seconds earlier in the same log, counting only the windows where the bytes
 changed. A same log source is the weak end above, so these are a floor.
 
@@ -52,7 +52,7 @@ changed. A same log source is the weak end above, so these are a floor.
 | VDC2 steering and yaw | 20 | 1 | 9 |
 | LFE1 fuel rate | 19 | 0 | 0 |
 
-Every message leaves injections the rules do not see, so replay is enough to build a
+Every PGN leaves injections the rules do not see, so replay is enough to build a
 test set the models have to earn. Replaying LFE1 is invisible to all ten.
 
 That says the rules as written do not cover these, not that no rule could. Fuel rate

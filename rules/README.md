@@ -12,7 +12,7 @@ called the same way and they belong to a different half of the evaluation.
 
 Each reads a `{name: value}` mapping, which
 [frame_decode](../preprocess/docs/frame_decode.md) produces per frame and
-[signal_state](../preprocess/docs/signal_state.md) accumulates across messages. The
+[signal_state](../preprocess/docs/signal_state.md) accumulates across PGNs. The
 same rule therefore runs on a recorded grid row and on the live state a device holds.
 
 Documented under [instant/docs/](instant/docs).

@@ -16,7 +16,7 @@ from preprocess.profile.pgn_counts import count_pgn_senders, count_pgns
 from preprocess.profile.pgn_intervals import arrival_intervals
 
 # Arrival gaps are bucketed rather than kept, so millions of frames stay in bounded
-# memory. A periodic message lands in a few buckets.
+# memory. A periodic PGN lands in a few buckets.
 GAP_STEP = 0.0001
 
 

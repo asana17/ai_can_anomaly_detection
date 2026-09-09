@@ -1,7 +1,7 @@
 # signal_state
 
 Keeps the latest value of each tracked signal, so signals that arrive in separate
-messages can be read together as one row.
+PGNs can be read together as one row.
 
 ## Example
 

@@ -48,8 +48,8 @@ def test_a_log_too_short_gives_nothing():
     assert inject(_trace(seconds=5), random.Random(0)) is None
 
 
-def test_a_log_without_a_message_to_fake_gives_nothing():
-    assert inject(_trace(), random.Random(0), messages=(65262,)) is None
+def test_a_log_without_a_pgn_to_fake_gives_nothing():
+    assert inject(_trace(), random.Random(0), pgns=(65262,)) is None
 
 
 def test_one_seed_gives_one_injection():
@@ -67,15 +67,15 @@ def _flat(seconds=60, kmh=0.0, rpm=600.0):
 def test_the_payload_comes_from_the_source_log():
     trace = _flat(kmh=0.0, rpm=600.0)
     hurt, info = inject(trace, random.Random(0), source_log=_flat(kmh=80.0, rpm=1400.0),
-                        messages=(65265,))
+                        pgns=(65265,))
     faked = [f.data for f in hurt if f.can_id == CCVS1 and
              info["start"] <= f.timestamp <= info["stop"]]
     assert faked and all(d == _speed(0.0, 80.0).data for d in faked)
 
 
-def test_a_message_the_source_log_does_not_carry_is_not_faked():
+def test_a_pgn_the_source_log_does_not_carry_is_not_faked():
     trace = _trace()
-    assert inject(trace, random.Random(0), source_log=_flat(), messages=(61449,)) is None
+    assert inject(trace, random.Random(0), source_log=_flat(), pgns=(61449,)) is None
 
 
 def test_a_source_log_shorter_than_the_attack_gives_nothing():

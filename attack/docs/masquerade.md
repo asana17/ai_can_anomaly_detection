@@ -17,7 +17,7 @@ at once.
 
 ## Why overwrite instead of inject
 
-Adding fake frames would raise the message rate and trip a timing check.
+Adding fake frames would raise the frame rate and trip a timing check.
 Overwriting keeps the rate normal, so the attack shows up only in the values.
 
 Faking one signal breaks its link to the others and is easy to spot. Faking

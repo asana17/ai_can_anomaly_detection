@@ -56,7 +56,7 @@ It reuses [pgn_counts](pgn_counts.md), [pgn_intervals](pgn_intervals.md) and
 [pgn_classify](pgn_classify.md), reading each log once and walking it in memory.
 
 Holding on to every arrival gap of a large sweep would not fit in memory, so `gaps`
-rounds each one to 0.1 ms and counts how often that value comes up. A message sent
+rounds each one to 0.1 ms and counts how often that value comes up. A PGN sent
 on a fixed period falls into one or two of those counts, which is enough to take a
 median from.
 

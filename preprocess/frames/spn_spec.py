@@ -51,7 +51,7 @@ SPEC: dict[int, list[SpnDef]] = {
     ],
     65132: [  # TCO1, bytes 7-8 confirmed against CCVS1, the two agree to 0.9 km/h
              # at p99. A second reading of the same quantity, so an attack that
-             # moves one message and not the other shows up as the two disagreeing
+             # moves one PGN and not the other shows up as the two disagreeing
         SpnDef(1624, "tachograph_speed", "km/h", SpnField(48, 16, 1 / 256, 0.0),
                0.0, 250.996),
     ],

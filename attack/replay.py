@@ -1,8 +1,8 @@
 """Replay: replace a window's payloads with ones the bus carried at another time.
 
-The written bytes were observed, so every signal in a replayed message stays inside
-its own range and agrees with the others in that message. What breaks is the
-agreement with the messages that were not replayed.
+The written bytes were observed, so every signal in a replayed PGN stays inside its
+own range and agrees with the others in that PGN. What breaks is the agreement with
+the PGNs that were not replayed.
 """
 
 from __future__ import annotations
@@ -40,7 +40,7 @@ def replay(frames: Iterable[CanFrame], pgns, start: float, stop: float,
            source: float, source_log: Iterable[CanFrame] | None = None) -> list:
     """Give every `pgns` frame in [start, stop] the payload it had `source` seconds on.
 
-    Frame times and counts do not change, so the message rate stays normal and only
+    Frame times and counts do not change, so the frame rate stays normal and only
     the values move. `source` is a time in `source_log`, the log the payload is taken
     from, which is this one unless another is given.
     """

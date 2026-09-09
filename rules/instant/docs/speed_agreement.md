@@ -7,7 +7,7 @@ violations(values, limit=2.0)   # -> both speed names, or empty
 ```
 
 CCVS1 and TCO1 each report the vehicle's speed and they come from different senders,
-so an attack that rewrites one message leaves the other alone. Neither reading has to
+so an attack that rewrites one PGN leaves the other alone. Neither reading has to
 leave its own range for the pair to be wrong, which is what
 [range_check](range_check.md) would miss.
 

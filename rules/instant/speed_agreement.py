@@ -1,7 +1,7 @@
 """Flag the two vehicle speeds disagreeing.
 
 CCVS1 and TCO1 each report the vehicle's speed, from different senders. An attack
-that rewrites one message does not move the other, so a disagreement is visible even
+that rewrites one PGN does not move the other, so a disagreement is visible even
 though both readings stay inside their own range.
 """
 

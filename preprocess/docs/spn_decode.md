@@ -18,4 +18,4 @@ returns None and [frame_decode](frame_decode.md) leaves the signal out.
 A signal's bits sit somewhere in a payload with a scale and offset of its own.
 Decoding gives one number per signal on a physical scale, such as rpm for engine
 speed and km/h for wheel speed. That is what makes values from different
-messages comparable, and what the rule layer checks ranges against.
+PGNs comparable, and what the rule layer checks ranges against.

@@ -29,7 +29,7 @@ once. See [measurements](../../measurements.md).
 
 ## Timing
 
-The limits are measured between one frame and the next of the same message, so they
+The limits are measured between one frame and the next of the same PGN, so they
 belong with a rule running at frame arrival. A grid row is a different span, 100 ms
 holding whatever arrived within it, and the same signal shows a slower rate there.
 Reusing these numbers on grid rows would let real jumps through.
