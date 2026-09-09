@@ -3,9 +3,9 @@
 Scores a row by how far it sits off the subspace normal traffic occupies.
 
 ```python
-space = subspace(train_rows, components=12)  # the 12 directions normal traffic varies in
-score = residuals(test_rows, space)          # how far each row sits off those
-variance_share(train_rows)                   # the variance each holds, to pick the 12
+space = subspace(train_rows, components=12)  # keep 12 of the 17 directions as normal
+score = residuals(test_rows, space)          # how much of a row falls outside them
+variance_share(train_rows)                   # what each direction holds, to choose 12
 ```
 
 Fit on normal rows, the components span the directions those rows vary in about their
@@ -35,24 +35,7 @@ exactly, and `python3 -W ignore` silences it.
 
 ## What it scores on this data
 
-Fit on 240,514 moving train rows, thresholds taken at the 99.9th percentile of
-23,463 moving validation rows, and run against a test set holding 139 attacks, 54 of
-which reach a moving row.
-
-| k | threshold | attacks found | false alarms |
-|---|---|---|---|
-| 2 | 6.583 | 0 of 54 | 0.003% |
-| 6 | 4.163 | 0 of 54 | 0.014% |
-| 8 | 2.285 | 2 of 54 | 0.056% |
-| 12 | 1.362 | 6 of 54 | 0.056% |
-| 16 | 0.021 | 10 of 54 | 0.098% |
-
-False alarms land near the 0.1% the threshold asks for, so the threshold carries from
-validation to test. Detection does not follow. The best of these finds under a fifth
-of the attacks.
-
-Read the last row carefully. With 16 of 17 components the subspace is nearly the
-whole space, the residual is one direction wide and the threshold is 0.021. Detection
-rises with k because the residual shrinks around it, not because the subspace has
-learned anything. This is the baseline a model with a nonlinear map has to beat, and
-it is a low one.
+Not measured on the current pipeline. The last figures were taken before the test set
+was fixed, when most injected attacks moved the state less than ordinary traffic does
+between two rows, so they said more about the test set than about PCA. Rerun
+[evaluate](../../evaluate) and put the result here.
