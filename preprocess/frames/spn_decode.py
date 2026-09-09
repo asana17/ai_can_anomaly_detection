@@ -14,6 +14,9 @@ class SpnField(NamedTuple):
 
 def extract_le(data: bytes, start_bit: int, length: int) -> int:
     """Read `length` bits at `start_bit` as an unsigned little-endian integer."""
+    if not (start_bit & 7) and not (length & 7):
+        start = start_bit >> 3                # every SPN in the spec lands here
+        return int.from_bytes(data[start:start + (length >> 3)], "little")
     value = 0
     for i in range(length):
         bit = start_bit + i
