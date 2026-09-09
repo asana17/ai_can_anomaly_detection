@@ -75,8 +75,7 @@ Over 1,200 logs the grid yields 704,493 rows.
 
 Gear coverage is far from even. Of 251,894 steady moving rows, top gear holds 48,078
 and the low gears around 1,000 each, a spread of about 44 to 1. A model trained on
-this sees the low gears rarely, so results should be read per gear rather than
-pooled.
+this sees the low gears rarely.
 
 ### Gaps between frames
 
