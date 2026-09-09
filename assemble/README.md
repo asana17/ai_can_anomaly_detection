@@ -9,8 +9,8 @@ Documented under [docs/](docs).
   holds the segment rule and the dtypes both builders share.
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
   driving in them.
-- [datasets](docs/datasets.md) turns a list of logs into z-scored model rows, with
-  the physical values, time and segment id of each beside them.
+- [train_set](docs/train_set.md) turns the training logs into z-scored model rows,
+  with the physical values, time and segment id of each beside them.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
   says which rows each one changed.
 

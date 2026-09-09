@@ -1,6 +1,6 @@
 import numpy as np
 
-from assemble.datasets import grid_rows, save, scaled_rows
+from assemble.train_set import grid_rows, save, scaled_rows
 
 
 def _ts(t):

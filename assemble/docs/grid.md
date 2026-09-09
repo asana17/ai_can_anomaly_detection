@@ -1,6 +1,6 @@
 # grid
 
-[datasets](datasets.md) and [attack_set](attack_set.md) each build rows. They have to
+[train_set](train_set.md) and [attack_set](attack_set.md) each build rows. They have to
 use the same settings. The settings are here.
 
 ## The grid

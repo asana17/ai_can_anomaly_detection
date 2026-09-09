@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 from assemble.attack_set import attack_set
-from assemble.datasets import Scale, grid_rows
+from assemble.train_set import Scale, grid_rows
 
 SIGNALS = 17
 

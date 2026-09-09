@@ -8,7 +8,7 @@ attack_set(logs, scale, rng, source_logs)   # -> {rows, raw, t, seg, label, atta
 
 One attack per log, chosen by [inject](../../attack/docs/inject.md).
 
-`scale` is the mean and std [datasets](datasets.md) fitted on the training rows.
+`scale` is the mean and std [train_set](train_set.md) fitted on the training rows.
 Passing anything else puts these rows in different units from the ones a model was
 fitted on.
 

@@ -15,7 +15,7 @@ import time
 import numpy as np
 
 from assemble.attack_set import attack_set
-from assemble.datasets import Scale, save, scaled_rows
+from assemble.train_set import Scale, save, scaled_rows
 from assemble.split import MIN_SPEED, driving_time, split
 from models.pca import residuals, subspace
 from preprocess.features.grid_sample import DEFAULT_MAX_HOLD, DEFAULT_PERIOD

@@ -1,9 +1,8 @@
-# datasets
+# train_set
 
-Takes a list of log paths and returns one row every 100 ms, each with 17 columns, one
-per decoded value, such as `engine_speed` and `wheel_speed`. It does not know which
-logs it was given. [evaluate](../../evaluate) hands it the training ones, and the
-test rows come from [attack_set](attack_set.md).
+Takes the training logs and returns one row every 100 ms, each with 17 columns, one
+per decoded value, such as `engine_speed` and `wheel_speed`. The test rows come from
+[attack_set](attack_set.md).
 
 ```python
 data = scaled_rows(train_logs)     # the train half, from split.md
