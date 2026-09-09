@@ -1,6 +1,7 @@
 """Read a CSV log of CAN frames (timestamp;id;dlc;data) into CanFrame records."""
 
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Iterator, NamedTuple
 
 _TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -12,13 +13,19 @@ class CanFrame(NamedTuple):
     data: bytes
 
 
-def _parse_epoch(text: str) -> float:
+@lru_cache(maxsize=4096)
+def _whole_seconds(date_part: str) -> float:
     # Parsed as UTC so the epoch value does not depend on the machine timezone.
-    # The fractional second is optional; some rows are logged to whole seconds.
-    date_part, _, frac = text.partition(".")
-    seconds = datetime.strptime(date_part, _TIMESTAMP_FORMAT).replace(
+    # Cached because a log holds 50,000 frames and about 60 distinct seconds.
+    return datetime.strptime(date_part, _TIMESTAMP_FORMAT).replace(
         tzinfo=timezone.utc
     ).timestamp()
+
+
+def _parse_epoch(text: str) -> float:
+    # The fractional second is optional; some rows are logged to whole seconds.
+    date_part, _, frac = text.partition(".")
+    seconds = _whole_seconds(date_part)
     if frac:
         seconds += int(frac) / 10 ** len(frac)
     return seconds
