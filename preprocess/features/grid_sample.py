@@ -20,9 +20,10 @@ def resample(
 ) -> Iterator[tuple[float, list]]:
     """Emit (time, row) at each grid tick, holding the last value between frames.
 
-    `max_hold` is how long a value may be held. A longer gap means the recording
-    stopped, so no rows are emitted across it and the grid restarts from the first
-    frame after.
+    `max_hold` is the longest gap between frames the grid carries across. A longer
+    gap means the recording stopped, so no rows are emitted across it and the grid
+    restarts from the first frame after. The gap is measured on the bus rather than
+    per signal. No stream here goes quiet while the others keep running.
     """
     state = SignalState()
     next_tick = None
