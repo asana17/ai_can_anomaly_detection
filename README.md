@@ -23,6 +23,7 @@ enter training.
 - [attack/](attack) synthesizes anomalies (masquerade) for a labeled test set.
 - [rules/](rules) holds the deterministic checks that run before the model.
 - [models/](models) holds the learned half, fit on normal rows only.
+- [evaluate/](evaluate) runs the comparison and prints what each layer catches.
 - `data/` holds the raw logs and is not tracked in git.
 
 ## Words
@@ -42,8 +43,13 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 - Add a dense autoencoder beside [pca](models/docs/pca.md) and compare the two on
   the attacked test set. Both read one instant, so the difference is what
-  nonlinearity alone is worth. Score only what the rules let through, and only
-  while the truck moves.
+  nonlinearity alone is worth. Score only while the truck moves.
+- Run [evaluate](evaluate) over all 11,194 logs and put the result in
+  [pca](models/docs/pca.md). Every run so far sampled 1,200 or fewer, which left
+  under two hours of clean driving to count false alarms in.
+- Settle whether the rules are a floor the models build on. Under one alarm
+  definition for both, PCA has found more attacks than the rules and raised fewer
+  false alarms in every run so far.
 - Then widen to a stretch of time, VAR against a windowed autoencoder. A single
   instant holds few enough relations to write as rules, so this is where the
   autoencoder is expected to earn its place. Whether it is worth doing depends on
