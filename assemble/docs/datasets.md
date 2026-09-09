@@ -2,13 +2,12 @@
 
 Turns a chronological log split into the arrays the autoencoder trains on. Each
 row is one grid tick of the signals, and the z-score is fit on train alone, then
-reused for validation and test so no future data leaks into the scaling.
+reused for test so no future data leaks into the scaling.
 
 ```python
 logs = sorted(glob("data/part_*/*.csv"))      # every log, oldest first
 train, test = split(logs, 0.75, driving_time(logs))
-train, val = hold_out(train, 0.07, blocks=5, gap=1)
-data = scaled_rows(train, val, test, period=0.1, max_hold=1.0)
+data = scaled_rows(train, test, period=0.1, max_hold=1.0)
 save(data, "out")
 ```
 

@@ -63,21 +63,20 @@ def test_segments_break_across_a_gap(tmp_path):
 
 def test_scaled_rows_standardizes_train_and_reuses_stats(tmp_path):
     train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    val = _write_log(tmp_path / "va.csv", [900] * 6)
     test = _write_log(tmp_path / "te.csv", [900] * 6)
-    data = scaled_rows([train], [val], [test], period=0.1)
+    data = scaled_rows([train], [test], period=0.1)
 
     engine_speed = data["train"][:, 0]        # first signal in SIGNALS order
     assert abs(engine_speed.mean()) < 1e-4
     assert abs(engine_speed.std() - 1.0) < 1e-4
-    assert data["val"].shape[1] == 17          # z-scored with train's stats
+    assert data["test"].shape[1] == 17          # z-scored with train's stats
 
 
 def test_scaled_rows_carries_times_and_segments_per_split(tmp_path):
-    files = {name: [_write_log(tmp_path / f"{name}.csv", [800] * 6)]
-             for name in ("tr", "va", "te")}
-    data = scaled_rows(files["tr"], files["va"], files["te"], period=0.1)
-    for split in ("train", "val", "test"):
+    logs = {name: [_write_log(tmp_path / f"{name}.csv", [800] * 6)]
+            for name in ("tr", "te")}
+    data = scaled_rows(logs["tr"], logs["te"], period=0.1)
+    for split in ("train", "test"):
         assert len(data[f"{split}_t"]) == len(data[split])
         assert len(data[f"{split}_seg"]) == len(data[split])
         # ids are numbered per split, so they repeat across splits by design
@@ -87,7 +86,7 @@ def test_scaled_rows_carries_times_and_segments_per_split(tmp_path):
 
 def test_save_writes_every_array(tmp_path):
     log = _write_log(tmp_path / "a.csv", [800] * 6)
-    data = scaled_rows([log], [log], [log], period=0.1)
+    data = scaled_rows([log], [log], period=0.1)
     out = tmp_path / "out"
     save(data, str(out))
     for name in data:

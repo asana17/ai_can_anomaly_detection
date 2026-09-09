@@ -53,7 +53,6 @@ def grid_rows(
 
 def scaled_rows(
     train_logs,
-    val_logs,
     test_logs,
     period: float = DEFAULT_PERIOD,
     max_hold: float = DEFAULT_MAX_HOLD,
@@ -67,7 +66,6 @@ def scaled_rows(
     data = {"scale": scale}
     for name, (rows, times, segments) in (
         ("train", (train, train_t, train_seg)),
-        ("val", grid_rows(val_logs, period, max_hold)),
         ("test", grid_rows(test_logs, period, max_hold)),
     ):
         data[name] = scale.apply(rows)

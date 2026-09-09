@@ -1,14 +1,12 @@
 # split
 
-Splits the logs by time, without shuffling, so later data never leaks into
-training.
+Cuts the logs into train and test by time, without shuffling, so later data never
+leaks into training.
 
 ## Example
 
 ```python
-weight = driving_time(logs)
-train, test = split(logs, 0.75, weight)
-train, val = hold_out(train, 0.07, weight, blocks=5, gap=1)
+train, test = split(logs, 0.75, driving_time(logs))
 ```
 
 Logs are ordered by their filename, which is a timestamp. `split` cuts once, and
@@ -16,29 +14,17 @@ everything after the cut is the test set.
 
 ## Size the parts in driving time, not in logs
 
-The threshold comes from rows above `MIN_SPEED`, and cutting by log count can hand a
-part none of them. The truck is parked in 581 of 1,200 logs and the parked runs are
-long, so 111 of the 1,141 possible 60 log blocks hold no driving at all.
+Only rows above `MIN_SPEED` are scored, and only they set the threshold. Everything
+slower is left to the rules.
 
-`driving_time` measures each log's seconds above `MIN_SPEED`. Passed as `weight` it
-makes the fractions shares of driving time. It reads every log, so keep the result.
+Cutting by log count can therefore leave a part with no scoreable rows. The truck is
+parked in 581 of 1,200 logs and the parked runs are long, so 111 of the 1,141
+possible 60 log blocks hold no driving at all.
 
-Reading every log means the cut lands where it does partly because of what the test
-period holds. No test row reaches the fit or the z-score, so nothing leaks into the
-model, but a truck on the road could not choose the cut this way.
+So the cut is made on driving time. `weight` gives each log a size, and the fraction
+is taken over the sum of those sizes instead of over the log count. `driving_time`
+sets each size to the seconds that log spent above `MIN_SPEED`, so `train_frac=0.75`
+gives train 75% of the driving.
 
-## Calibration comes out of the training period, in blocks
-
-The threshold is read off normal rows the model never fitted, so it cannot come from
-train itself. One contiguous block at the end of training will not do either. Over
-1,200 logs such a block ran 15% higher in residual than test at every k, which moved
-the false alarm rate by up to ten times.
-
-`hold_out` takes several contiguous blocks spread across the period, and `gap` drops
-the logs either side of each, since a log recorded a minute later is nearly the same
-log. That is
-[purged cross-validation](https://en.wikipedia.org/wiki/Purged_cross-validation) with
-an embargo. The blocks stay contiguous because shuffling logs would put later traffic
-next to earlier, which is what
-[blocked splitting](https://robjhyndman.com/publications/cv-time-series/) exists to
-prevent.
+`driving_time` runs over every log, so where the cut falls depends on the test period
+as well. That changes how big each part is, not what the model learns from it.
