@@ -31,8 +31,7 @@ Over 1,200 logs and 60,001,200 frames.
   frames and TP.DT (60160) is 0.74%. Neither carries the target SPNs.
 
 Rates are the median gap per (PGN, source address) stream, not frames divided by
-log duration. The latter understates any log that contains a gap, which is how an
-earlier profile of one log put EEC1 at 5 Hz instead of its actual 50 Hz.
+log duration. The latter understates any log that contains a gap.
 
 ### The gearbox
 
@@ -51,6 +50,18 @@ or is impossible.
 
 Top gear at 15.12 also matches the ETC1 output shaft, which turns at 15.25 rpm per
 km/h, so twelfth is close to direct.
+
+### Three of the decoded signals are one quantity
+
+While moving, wheel_speed, output_shaft_speed and tachograph_speed correlate at
+0.9999 or above. Over 200,644 moving rows the 17 signals have an effective rank of
+15, and the two smallest principal directions hold 3.1e-06 and 5.2e-07 of the
+variance.
+
+They stay decoded because a replay of one leaves the others alone, which is what
+[speed_agreement](../rules/instant/docs/speed_agreement.md) and
+[shaft_ratio](../rules/instant/docs/shaft_ratio.md) test. A model reading all three
+sees fewer free directions than its 17 columns suggest.
 
 ### How much of the time the truck drives
 
