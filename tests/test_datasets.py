@@ -61,35 +61,36 @@ def test_segments_break_across_a_gap(tmp_path):
         assert np.allclose(np.diff(run), 0.1)           # each segment is evenly spaced
 
 
-def test_scaled_rows_standardizes_train_and_reuses_stats(tmp_path):
-    train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    test = _write_log(tmp_path / "te.csv", [900] * 6)
-    data = scaled_rows([train], [test], period=0.1)
+def test_scaled_rows_standardizes_the_rows_it_was_given(tmp_path):
+    log = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
+    data = scaled_rows([log], period=0.1)
 
-    engine_speed = data["train"][:, 0]        # first signal in SIGNALS order
+    engine_speed = data["rows"][:, 0]         # first signal in SIGNALS order
     assert abs(engine_speed.mean()) < 1e-4
     assert abs(engine_speed.std() - 1.0) < 1e-4
-    assert data["test"].shape[1] == 17          # z-scored with train's stats
 
 
-def test_scaled_rows_carries_times_and_segments_per_split(tmp_path):
-    logs = {name: [_write_log(tmp_path / f"{name}.csv", [800] * 6)]
-            for name in ("tr", "te")}
-    data = scaled_rows(logs["tr"], logs["te"], period=0.1)
-    for split in ("train", "test"):
-        assert len(data[f"{split}_t"]) == len(data[split])
-        assert len(data[f"{split}_seg"]) == len(data[split])
-        # ids are numbered per split, so they repeat across splits by design
-        seg = data[f"{split}_seg"]
-        assert sorted(set(seg)) == list(range(len(set(seg))))
+def test_the_scale_it_fits_puts_other_rows_on_the_same_scale(tmp_path):
+    train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
+    other = _write_log(tmp_path / "te.csv", [900] * 6)
+    scale = scaled_rows([train], period=0.1)["scale"]
+    rows, _, _ = grid_rows([other], period=0.1)
+
+    assert np.allclose(scale.undo(scale.apply(rows)), rows, atol=1e-3)
+
+
+def test_scaled_rows_carries_the_time_and_segment_of_each_row(tmp_path):
+    data = scaled_rows([_write_log(tmp_path / "tr.csv", [800] * 6)], period=0.1)
+    assert len(data["t"]) == len(data["rows"])
+    assert len(data["seg"]) == len(data["rows"])
+    assert sorted(set(data["seg"])) == list(range(len(set(data["seg"]))))
 
 
 def test_save_writes_every_array(tmp_path):
-    log = _write_log(tmp_path / "a.csv", [800] * 6)
-    data = scaled_rows([log], [log], period=0.1)
+    data = scaled_rows([_write_log(tmp_path / "a.csv", [800] * 6)], period=0.1)
     out = tmp_path / "out"
     save(data, str(out))
     for name in data:
         assert (out / f"{name}.npy").exists() or name == "scale"
-    assert np.array_equal(np.load(out / "train_t.npy"), data["train_t"])
+    assert np.array_equal(np.load(out / "t.npy"), data["t"])
     assert np.array_equal(np.load(out / "mean.npy"), data["scale"].mean)

@@ -1,4 +1,4 @@
-"""Build the z-scored train, val and test arrays that the model reads."""
+"""Put logs on the grid and z-score them into the rows a model reads."""
 
 from __future__ import annotations
 
@@ -52,27 +52,17 @@ def grid_rows(
 
 
 def scaled_rows(
-    train_logs,
-    test_logs,
+    logs,
     period: float = DEFAULT_PERIOD,
     max_hold: float = DEFAULT_MAX_HOLD,
 ) -> dict:
-    """Z-score each split on train's stats, keeping the physical rows beside them."""
-    train, train_t, train_seg = grid_rows(train_logs, period, max_hold)
-    std = train.std(axis=0)
+    """Put `logs` on the grid and z-score them on their own mean and std."""
+    rows, times, segments = grid_rows(logs, period, max_hold)
+    std = rows.std(axis=0)
     std[std == 0] = 1.0                       # a constant signal stays at 0
-    scale = Scale(train.mean(axis=0), std)
-
-    data = {"scale": scale}
-    for name, (rows, times, segments) in (
-        ("train", (train, train_t, train_seg)),
-        ("test", grid_rows(test_logs, period, max_hold)),
-    ):
-        data[name] = scale.apply(rows)
-        data[f"{name}_raw"] = rows
-        data[f"{name}_t"] = times
-        data[f"{name}_seg"] = segments
-    return data
+    scale = Scale(rows.mean(axis=0), std)
+    return {"scale": scale, "rows": scale.apply(rows), "raw": rows,
+            "t": times, "seg": segments}
 
 
 def save(data: dict, out_dir: str) -> None:
