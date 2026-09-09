@@ -65,17 +65,17 @@ sees fewer free directions than its 17 columns suggest.
 
 ### How much of the time the truck drives
 
-Over 1,200 logs the grid yields 704,493 rows.
+Over 1,200 logs the grid yields 704,853 rows.
 
 | state | share |
 |---|---|
-| engine off | 16.3% |
-| idling, engine on and stopped | 32.2% |
-| moving | 51.5% |
+| engine off | 17.3% |
+| engine on, at or below 5 km/h | 41.0% |
+| above 5 km/h | 41.7% |
 
-Gear coverage is far from even. Of 251,894 steady moving rows, top gear holds 48,078
-and the low gears around 1,000 each, a spread of about 44 to 1. A model trained on
-this sees the low gears rarely.
+Gear coverage is far from even. Of the 293,753 rows above 5 km/h, top gear holds
+88,325 and first gear 1,713, a spread of 52 to 1. A model trained on this sees the
+low gears rarely.
 
 ### Gaps between frames
 
