@@ -3,12 +3,12 @@
 Builds the test arrays with attacks in them, and says which rows each one changed.
 
 ```python
-attack_set(files, mean, std, rng, source_logs)   # -> {rows, raw, t, seg, label, attacks}
+attack_set(logs, scale, rng, source_logs)   # -> {rows, raw, t, seg, label, attacks}
 ```
 
-One attack per log, chosen by [inject](../../attack/docs/inject.md). `mean` and `std`
-are the ones [build](datasets.md) fit on train, so an attacked row is scaled the same
-way a normal one is.
+One attack per log, chosen by [inject](../../attack/docs/inject.md). `scale` is the
+one [scaled_rows](datasets.md) fitted on train, so an attacked row lands on the same
+scale as a normal one.
 
 A replay can land on a value close to the one it replaced, leaving a row the bus
 really produces that nothing can flag. `label` is therefore True where the attacked

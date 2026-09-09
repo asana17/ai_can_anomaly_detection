@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 from assemble.attack_set import attack_set
-from assemble.datasets import vectorize
+from assemble.datasets import Scale, grid_rows
 
 SIGNALS = 17
 
@@ -34,18 +34,18 @@ def _write_log(path, seconds=40, period=0.1):
     return str(path)
 
 
-def _stats():
-    return np.zeros(SIGNALS, dtype=np.float32), np.ones(SIGNALS, dtype=np.float32)
+def _scale():
+    return Scale(np.zeros(SIGNALS, dtype=np.float32), np.ones(SIGNALS, dtype=np.float32))
 
 
 def test_it_returns_a_row_for_every_grid_tick(tmp_path):
-    d = attack_set([_write_log(tmp_path / "a.csv")], *_stats(), random.Random(0))
+    d = attack_set([_write_log(tmp_path / "a.csv")], _scale(), random.Random(0))
     assert d["rows"].shape[1] == SIGNALS
     assert len(d["t"]) == len(d["seg"]) == len(d["label"]) == len(d["rows"])
 
 
 def test_the_label_marks_the_rows_an_attack_changed(tmp_path):
-    d = attack_set([_write_log(tmp_path / "a.csv")], *_stats(), random.Random(0))
+    d = attack_set([_write_log(tmp_path / "a.csv")], _scale(), random.Random(0))
     assert d["attacks"], "the log should be long enough to attack"
     for a in d["attacks"]:
         assert d["label"][a["first"]] and d["label"][a["last"]]
@@ -56,19 +56,19 @@ def test_the_label_marks_the_rows_an_attack_changed(tmp_path):
 
 def test_only_the_rows_that_differ_from_the_clean_log_are_labelled(tmp_path):
     log = _write_log(tmp_path / "a.csv")
-    d = attack_set([log], *_stats(), random.Random(0))
-    clean, _, _ = vectorize([log])                # mean 0 and std 1 leave rows as they are
+    d = attack_set([log], _scale(), random.Random(0))
+    clean, _, _ = grid_rows([log])                # mean 0 and std 1 leave rows as they are
     assert len(clean) == len(d["rows"])
     assert np.array_equal((clean != d["rows"]).any(axis=1), d["label"])
 
 
 def test_it_says_how_far_each_attack_moved_a_row(tmp_path):
-    d = attack_set([_write_log(tmp_path / "a.csv")], *_stats(), random.Random(0))
+    d = attack_set([_write_log(tmp_path / "a.csv")], _scale(), random.Random(0))
     assert all(a["moved"] > 0 for a in d["attacks"])
 
 
 def test_rows_outside_every_attack_are_not_labelled(tmp_path):
-    d = attack_set([_write_log(tmp_path / "a.csv")], *_stats(), random.Random(0))
+    d = attack_set([_write_log(tmp_path / "a.csv")], _scale(), random.Random(0))
     covered = np.zeros(len(d["label"]), dtype=bool)
     for a in d["attacks"]:
         covered[a["first"]:a["last"] + 1] = True
@@ -76,7 +76,7 @@ def test_rows_outside_every_attack_are_not_labelled(tmp_path):
 
 
 def test_a_log_too_short_to_attack_still_contributes_rows(tmp_path):
-    d = attack_set([_write_log(tmp_path / "a.csv", seconds=5)], *_stats(), random.Random(0))
+    d = attack_set([_write_log(tmp_path / "a.csv", seconds=5)], _scale(), random.Random(0))
     assert len(d["rows"]) > 0
     assert d["attacks"] == []
     assert not d["label"].any()
@@ -84,14 +84,13 @@ def test_a_log_too_short_to_attack_still_contributes_rows(tmp_path):
 
 def test_one_seed_gives_one_set(tmp_path):
     log = _write_log(tmp_path / "a.csv")
-    a = attack_set([log], *_stats(), random.Random(3))
-    b = attack_set([log], *_stats(), random.Random(3))
+    a = attack_set([log], _scale(), random.Random(3))
+    b = attack_set([log], _scale(), random.Random(3))
     assert a["attacks"] == b["attacks"]
     assert np.array_equal(a["label"], b["label"])
 
 
 def test_raw_holds_the_rows_before_scaling(tmp_path):
-    mean = np.full(SIGNALS, 3.0, dtype=np.float32)
-    std = np.full(SIGNALS, 7.0, dtype=np.float32)
-    d = attack_set([_write_log(tmp_path / "a.csv")], mean, std, random.Random(0))
-    assert np.allclose(d["rows"], (d["raw"] - mean) / std)
+    scale = Scale(np.full(SIGNALS, 3.0, np.float32), np.full(SIGNALS, 7.0, np.float32))
+    d = attack_set([_write_log(tmp_path / "a.csv")], scale, random.Random(0))
+    assert np.allclose(d["rows"], scale.apply(d["raw"]))
