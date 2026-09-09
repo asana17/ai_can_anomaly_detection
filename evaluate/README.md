@@ -6,12 +6,21 @@ Runs the whole comparison over a set of logs and prints what each layer catches.
 python3 -m evaluate.run "data/part_*/*.csv" out
 ```
 
+A third argument sets how many logs to sample. Without it the run takes 1,200,
+spread evenly over the recording.
+
 It splits the logs, builds the arrays, injects the attacks, scores the rules, then
 sweeps PCA over its component counts. The numbers in [pca](../models/docs/pca.md)
 come from this.
 
-`driving_time` reads every log, so its result is written to `out/driving.json` and
-reused on the next run over the same logs.
+## What is reused
+
+`driving_time`, `scaled_rows` and `attack_set` each read every log, so their results
+are written to `out` and reused on the next run over the same logs.
+
+`out/built.json` holds the logs and the settings they were built from. A run that
+does not match it builds them again. Editing the code does not change that file, so
+delete `out` after changing what these three do.
 
 ## An alarm is a run of rows, and `HOLD` says how long
 
