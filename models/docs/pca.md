@@ -28,10 +28,15 @@ attacks too.
 
 ## A warning you can ignore
 
-On numpy 2.0.2 with this machine's BLAS, plain matrix multiplication raises
-`RuntimeWarning: divide by zero encountered in matmul` on ordinary finite input. It
-comes from the backend rather than from anything here, the results match `einsum`
-exactly, and `python3 -W ignore` silences it.
+On numpy 2.0.2 against Apple Accelerate, plain matrix multiplication raises
+`RuntimeWarning` for divide by zero, overflow and invalid value on ordinary finite
+input. It comes from the backend rather than from anything here. The same three
+appear in float64. Every residual stays finite. float32 and float64 agree to 2.8e-6
+relative, measured over an attacked test set on 2026-09-09. `python3 -W ignore`
+silences it.
+
+The warning is left in place. Suppressing it with `np.errstate` would hide a real
+numerical fault as well.
 
 ## What it scores on this data
 
