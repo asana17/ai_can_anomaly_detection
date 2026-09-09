@@ -1,12 +1,11 @@
 # assemble
 
-Builds the train, validation, and test sets from the preprocess pipeline, split by
-time.
+Builds the train and test sets from the preprocess pipeline, split by time.
 
 Documented under [docs/](docs).
 
-- [grid](docs/grid.md) sets the period, max hold, segment rule and dtypes that both
-  row builders use.
+- [grid](docs/grid.md) sets the period, max hold, segment rule and dtypes that
+  train_set and attack_set both use.
 - [scale](docs/scale.md) is the mean and std every row is z-scored by, fitted once.
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
   driving in them.
