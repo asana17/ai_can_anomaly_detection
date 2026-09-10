@@ -43,28 +43,24 @@ def split(logs: Iterable[str], train_frac: float, weight=None):
     return ordered[:cut], ordered[cut:]
 
 
-def hold_out(logs: Iterable[str], frac: float, weight=None, blocks: int = 1,
-             gap: int = 0):
-    """Take `blocks` stretches out of the logs, and return what is left and them.
+def hold_out(logs: Iterable[str], count: int, weight=None):
+    """Take `count` logs out of the ordered logs, and return what is left and them.
 
-    Each stretch is contiguous and sits in the middle of its share of the sequence, so
-    the calibration set covers the whole period without any of it being shuffled.
-    `gap` logs on each side are dropped from both parts, because a log next to a
-    calibration one resembles it too closely to calibrate against.
+    They are spread evenly over the weight the logs carry, which `driving_time` sets
+    to the seconds above `MIN_SPEED`, so what is taken covers the period the logs
+    given cover without any of it being shuffled.
     """
     ordered, sizes = _ordered(logs, weight)
-    upto = [0.0] + list(accumulate(sizes))
-    want = upto[-1] * frac / blocks
-    held, dropped = set(), set()
-    for i in range(blocks):
-        middle = upto[-1] * (i + 0.5) / blocks
-        start = _cut(sizes, max(middle - want / 2, 0.0))
-        stop = max(_cut(sizes, upto[start] + want), start + 1)
-        held.update(range(start, min(stop, len(ordered))))
-        dropped.update(range(max(start - gap, 0), start))
-        dropped.update(range(stop, min(stop + gap, len(ordered))))
-    dropped -= held
-    return ([p for i, p in enumerate(ordered) if i not in held and i not in dropped],
+    total = sum(sizes)
+    held: set[int] = set()
+    for i in range(min(count, len(ordered))):
+        at = min(_cut(sizes, total * (i + 0.5) / count), len(ordered) - 1)
+        while at in held:                  # one log can hold two of the stretches
+            at += 1
+        if at == len(ordered):
+            at = max(j for j in range(len(ordered)) if j not in held)
+        held.add(at)
+    return ([p for i, p in enumerate(ordered) if i not in held],
             [p for i, p in enumerate(ordered) if i in held])
 
 

@@ -45,30 +45,22 @@ def test_driving_time_counts_only_readings_above_the_minimum(tmp_path):
     assert driving_time([str(log)]) == {str(log): 0.2}   # two readings, 100 ms apart
 
 
-def test_hold_out_takes_contiguous_blocks_spread_over_the_period():
+def test_hold_out_spreads_the_logs_it_takes_over_the_period():
     logs = [f"{i:03d}.csv" for i in range(100)]
-    kept, held = hold_out(logs, 0.20, blocks=4)
-    assert len(held) == 20 and len(kept) == 80
-    runs = [held[0]]
-    for a, b in zip(held, held[1:]):
-        if int(b[:3]) != int(a[:3]) + 1:
-            runs.append(b)
-    assert len(runs) == 4, "each block has to be one unbroken stretch"
-    assert int(runs[0][:3]) < 25 and int(runs[-1][:3]) > 70
+    kept, held = hold_out(logs, 4)
+    assert len(held) == 4 and len(kept) == 96
+    assert int(held[0][:3]) < 25 and int(held[-1][:3]) > 70
 
 
-def test_hold_out_drops_the_logs_beside_each_block():
-    logs = [f"{i:03d}.csv" for i in range(100)]
-    kept, held = hold_out(logs, 0.10, blocks=2, gap=3)
-    assert len(held) == 10
-    assert len(kept) == 100 - 10 - 2 * 2 * 3
+def test_hold_out_takes_them_where_the_driving_is():
+    logs = [f"{i:03d}.csv" for i in range(10)]
+    weight = {p: (0 if i < 8 else 100) for i, p in enumerate(logs)}
+    kept, held = hold_out(logs, 2, weight)
+    assert held == ["008.csv", "009.csv"]
     assert not (set(kept) & set(held))
-    for h in held:
-        near = {f"{int(h[:3]) + d:03d}.csv" for d in (-1, 1)}
-        assert not (near & set(kept)), "a kept log must not touch a held one"
 
 
-def test_hold_out_without_a_gap_keeps_every_log():
+def test_hold_out_keeps_every_log():
     logs = [f"{i:03d}.csv" for i in range(40)]
-    kept, held = hold_out(logs, 0.25, blocks=2)
+    kept, held = hold_out(logs, 10)
     assert sorted(kept + held) == logs

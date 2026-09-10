@@ -9,13 +9,13 @@ the train one.
 ```python
 weight = driving_time(logs)
 train, test = split(logs, 0.75, weight)
-train, calibration = hold_out(train, frac, weight, blocks, gap)
+train, calibration = hold_out(train, count, weight)
 ```
 
 Logs are ordered by their filename, which is a timestamp. `split` cuts once, and
 everything after the cut is the test set.
 
-## Train, calibration and test are sized by seconds above 5 km/h
+## Train and test are sized by seconds above 5 km/h
 
 Only rows above `MIN_SPEED` are scored, and only they set the threshold. Everything
 slower is left to the rules.
@@ -38,28 +38,12 @@ falls. Nothing from it reaches the fit.
 ## The calibration set
 
 The rows that set the threshold must be ones the model never saw. `hold_out` keeps
-some training logs aside as the calibration set, and the threshold is computed from
-the calibration rows.
-
-The calibration logs are taken in blocks, from several places in the recording.
-Taking them from one place would set the threshold on the driving of that part alone.
-
-The logs on each side of a calibration block are dropped. They would otherwise be
-training logs. A hard brake or a sharp turn lasts a few seconds and can run
-across a log boundary. Without the drop, the same event would be in the fit and in
-the rows the threshold comes from.
-
-The calibration set is the same whatever `gap` is. Only the training set shrinks. How
-much this matters is unmeasured, and for PCA it should be nothing, since a subspace
-fitted on hundreds of thousands of rows cannot hold one event.
+`count` training logs aside as the calibration set, spaced out over the training
+period, and the threshold is computed from the calibration rows.
 
 | parameter | what it is |
 |---|---|
-| `frac` | how much of the training driving time becomes calibration, 0 to 1 |
-| `blocks` | how many blocks the calibration logs are taken in |
-| `gap` | logs dropped on each side of a calibration block, a count not a time |
+| `count` | how many log files become the calibration set |
+| `weight` | the seconds above 5 km/h each log holds, as in `split` |
 
-[evaluate](../../evaluate) sets all three.
-
-The calibration set comes out a little smaller than `frac` asks for, because a block
-stops at a whole log.
+[evaluate](../../evaluate) sets `count`.
