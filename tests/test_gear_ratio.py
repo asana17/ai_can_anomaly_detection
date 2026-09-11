@@ -51,3 +51,9 @@ def test_it_says_nothing_until_every_signal_has_arrived():
     v = _values()
     for name in v:
         assert violations({k: x for k, x in v.items() if k != name}) == []
+
+
+def test_a_stopped_engine_cannot_be_in_gear_and_moving():
+    values = {"engine_speed": 0.0, "wheel_speed": 60.0, "current_gear": 12,
+              "selected_gear": 12, "clutch_slip": 0}
+    assert violations(values) == NAMES

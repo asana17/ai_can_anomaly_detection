@@ -32,4 +32,7 @@ def violations(values: dict, ratios: dict = RATIOS, min_speed: float = MIN_SPEED
         return []
     if gear not in ratios or gear != selected or slip != 0:
         return []          # mid shift or with the clutch open there is no fixed ratio
+    if engine <= 0:
+        return NAMES       # the closed clutch turns the engine with the wheels, so a
+                           # stopped engine contradicts the speed above
     return [] if nearest_gear(engine / wheel, ratios) == gear else NAMES
