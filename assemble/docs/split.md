@@ -28,7 +28,9 @@ right through.
 
 ## The calibration set
 
-The rows that set the threshold must be ones the model never saw.
+The rows that set the threshold must be ones the model never saw. A model with enough
+capacity fits its own training rows, so residuals on those come out smaller than on rows
+it has not seen, and a threshold read off them would sit too low.
 
 | argument | what it decides |
 |---|---|
@@ -36,5 +38,5 @@ The rows that set the threshold must be ones the model never saw.
 | `block` | how long one calibration window is |
 | `gap` | the seconds either side of a window that go to neither part |
 
-So the windows fall `block / share` apart, and train is every row they and the gaps
-leave.
+An event such as hard braking runs for seconds, long enough to cross the edge of a
+window and land on both sides of the split. That is what `gap` is for.
