@@ -16,9 +16,9 @@ import numpy as np
 
 from assemble.attack_set import attack_set
 from assemble.scale import Scale
-from assemble.train_set import save, scaled_rows
+from assemble.train_set import grid_rows, save, scaled_rows
 from assemble.grid import MAX_HOLD, PERIOD
-from assemble.split import MIN_SPEED, driving_time, split
+from assemble.split import MIN_SPEED, driving_time, hold_out, split
 from models.pca import residuals, subspace
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
@@ -28,10 +28,11 @@ from rules.rate import change_limit
 
 FILES = 1200            # logs to sample by default, spread evenly over the recording
 TRAIN = 0.75            # share of the driving time before the test cut
+CALIBRATION = 0.10      # share of the training logs with driving that calibrate
 DONORS = 24             # training logs the replayed payloads are taken from
 SEED = 0                # the rng the attacks are drawn with
 COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
-TARGET = 0.1            # the false alarm rate in percent the threshold asks for
+TARGET = 0.1            # percent of normal rows the threshold cuts off
 BANDS = ((1.0, 2.0), (2.0, 4.0), (4.0, np.inf))
 HOLD = (1, 10)          # rows a flag must persist before it counts as an alarm
 INSTANT = (range_check, speed_agreement, shaft_ratio, gear_ratio, steering_sign,
@@ -51,7 +52,8 @@ def weights_for(logs, out_dir):
     return measured
 
 
-ARRAYS = ("rows", "raw", "t", "seg")
+ARRAYS = ("rows", "raw", "t", "seg",
+          "cal_rows", "cal_raw", "cal_t", "cal_seg")
 ATTACKED = ("rows", "raw", "t", "seg", "label")
 
 
@@ -60,21 +62,22 @@ def _have(out_dir, names):
     return all(os.path.exists(os.path.join(out_dir, n)) for n in names)
 
 
-def built_from(train, test):
+def built_from(train, calibration, test):
     """The logs and the settings the saved files were built from.
 
     A run that does not match this builds them again. Editing the code leaves it
     unchanged, so delete `out` after that.
     """
-    return {"logs": [train, test], "train": TRAIN, "donors": DONORS,
+    return {"logs": [train, calibration, test], "train": TRAIN, "donors": DONORS,
+            "calibration": CALIBRATION,
             "seed": SEED, "signals": SIGNALS,
             "period": PERIOD, "max_hold": MAX_HOLD}
 
 
-def arrays_for(train, test, out_dir):
+def arrays_for(train, calibration, test, out_dir):
     """The arrays, built once and read back on a later run over the same logs."""
     kept = os.path.join(out_dir, "built.json")
-    shape = built_from(train, test)
+    shape = built_from(train, calibration, test)
     files = [f"{n}.npy" for n in ARRAYS] + ["mean.npy", "std.npy"]
     if (os.path.exists(kept) and json.load(open(kept)) == shape
             and _have(out_dir, files)):
@@ -83,6 +86,9 @@ def arrays_for(train, test, out_dir):
                               np.load(os.path.join(out_dir, "std.npy")))
         return data, True
     data = scaled_rows(train)          # the test rows come from the attack set
+    rows, times, segments = grid_rows(calibration)
+    data["cal_rows"] = data["scale"].apply(rows)
+    data["cal_raw"], data["cal_t"], data["cal_seg"] = rows, times, segments
     save(data, out_dir)
     json.dump(shape, open(kept, "w"))
     return data, False
@@ -153,12 +159,16 @@ def main(pattern, out_dir, files=FILES):
     weight = weights_for(logs, out_dir)
 
     train, test = split(logs, TRAIN, weight)
-    print(f"{len(train)} train, {len(test)} test logs, driving "
-          f"{sum(weight[p] for p in train):.0f}s and "
+    driving = sum(1 for p in train if weight[p] > 0)
+    train, calibration = hold_out(train, max(1, int(CALIBRATION * driving)), weight)
+    print(f"{len(train)} train, {len(calibration)} calibration, "
+          f"{len(test)} test logs, "
+          f"driving {sum(weight[p] for p in train):.0f}s, "
+          f"{sum(weight[p] for p in calibration):.0f}s and "
           f"{sum(weight[p] for p in test):.0f}s", flush=True)
 
     clock = time.time()
-    data, kept = arrays_for(train, test, out_dir)
+    data, kept = arrays_for(train, calibration, test, out_dir)
     scale = data["scale"]
     how = "reused" if kept else f"in {time.time() - clock:.0f}s"
     print(f"arrays {how}, train {data['rows'].shape}", flush=True)
@@ -171,9 +181,9 @@ def main(pattern, out_dir, files=FILES):
     def moving(rows):
         return scale.undo(rows)[:, WHEEL] > MIN_SPEED
 
-    train_pass = ~rule_hits(data["raw"], data["seg"], data["t"])
+    cal_pass = ~rule_hits(data["cal_raw"], data["cal_seg"], data["cal_t"])
     tr = data["rows"][moving(data["rows"])]
-    calibrate = data["rows"][moving(data["rows"]) & train_pass]
+    calibrate = data["cal_rows"][moving(data["cal_rows"]) & cal_pass]
     rows, label = got["rows"], got["label"]
     mv = moving(rows)
     quiet = mv & ~label
@@ -181,7 +191,8 @@ def main(pattern, out_dir, files=FILES):
     reach = np.array([mv[a["first"]:a["last"] + 1].any() for a in attacks])
     moved = np.array([a["moved"] for a in attacks])
     scored = reach & (moved >= BANDS[0][0])
-    print(f"moving rows: train {len(tr)}, test {int(mv.sum())}. "
+    print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
+          f"test {int(mv.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
     rules = rule_hits(got["raw"], got["seg"], got["t"])

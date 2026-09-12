@@ -43,12 +43,33 @@ the number of alarms raised outside any attack, per hour of the rows above 5 km/
 
 ## The threshold
 
-It is the 99.9th percentile of the model's residual, over rows above 5 km/h that the
-rules pass.
+The threshold is a percentile of the model's residual over the calibration rows. The
+calibration logs are held out of the training set, so every model is measured on rows
+the model never saw. See [split](../assemble/docs/split.md).
 
-Those rows are training rows today. They have to come from a calibration set, a
-stretch of the training period kept out of the fit, and it has to be the same set for
-every model.
+The calibration logs have to be separate from the training logs. A model with enough
+capacity fits its own training rows. Residuals computed on the same rows the model
+was fitted on come out smaller than on rows it has not seen. A threshold taken from
+the training rows would then be too low, and more normal rows would sit above the
+threshold than asked for.
+
+## The calibration parameters
+
+| name | value | what it is |
+|---|---|---|
+| `TARGET` | 0.1% | the share of the calibration rows that sit above the threshold |
+| `CALIBRATION` |  | the share of the training logs with rows above 5 km/h that becomes the calibration set |
+
+None of these values was chosen by looking at the test set.
+
+- **`TARGET`** Raising the value lowers the threshold. More rows then sit above the
+  threshold, which catches more attacks and more normal rows with them. Every
+  calibration row is normal, so the share is a false positive rate. No calculation
+  produces the value.
+- **`CALIBRATION`** Raising the value moves logs from the training set into the
+  calibration set. More calibration logs bring the false positive rate closer to
+  `TARGET`. Fewer training logs give the model less to fit on. The value is the
+  smallest one that still reaches `TARGET`.
 
 ## Tests
 
