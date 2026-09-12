@@ -222,11 +222,15 @@ def main(pattern, out_dir, files=FILES):
     hours = quiet.sum() * period_of(got["t"]) / 3600
     print(f"\n{hours:.1f} hours of clean driving to raise a false alarm in")
 
+    print(f"\n{'k':>4}  {'threshold':>10}  {'on clean test':>13}")
     layers = [("rules", rules & mv)]
     for k in COMPONENTS:
         space = subspace(tr, k)
         cut = np.percentile(residuals(calibrate, space), 100 * (1 - TARGET))
-        layers.append((f"pca k={k}", (residuals(rows, space) > cut) & mv))
+        flag = residuals(rows, space) > cut
+        print(f"{k:>4}  {cut:10.4f}  {(flag & quiet).sum() / quiet.sum():13.5f}",
+              flush=True)
+        layers.append((f"pca k={k}", flag & mv))
 
     print(f"\n{'layer':>9}   " + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
           + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in HOLD))
