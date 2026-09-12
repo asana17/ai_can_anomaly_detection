@@ -53,12 +53,17 @@ was fitted on come out smaller than on rows it has not seen. A threshold taken f
 the training rows would then be too low, and more normal rows would sit above the
 threshold than asked for.
 
+An event such as hard braking can run across the boundary between a calibration log
+and the training log next to it, so the training rows near that boundary are
+dropped.
+
 ## The calibration parameters
 
 | name | value | what it is |
 |---|---|---|
 | `TARGET` | 0.1% | the share of the calibration rows that sit above the threshold |
 | `CALIBRATION` |  | the share of the training logs with rows above 5 km/h that becomes the calibration set |
+| `GAP` | 10 s | the time either side of a calibration row where training rows are dropped |
 
 None of these values was chosen by looking at the test set.
 
@@ -70,6 +75,8 @@ None of these values was chosen by looking at the test set.
   calibration set. More calibration logs bring the false positive rate closer to
   `TARGET`. Fewer training logs give the model less to fit on. The value is the
   smallest one that still reaches `TARGET`.
+- **`GAP`** Raising the value drops more training rows around each calibration log.
+  An event such as a hard brake lasts seconds, so the value only has to cover that.
 
 ## Tests
 

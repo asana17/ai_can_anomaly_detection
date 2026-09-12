@@ -29,6 +29,7 @@ from rules.rate import change_limit
 FILES = 1200            # logs to sample by default, spread evenly over the recording
 TRAIN = 0.75            # share of the driving time before the test cut
 CALIBRATION = 0.10      # share of the training logs with driving that calibrate
+GAP = 10.0              # seconds of training rows dropped around a calibration row
 DONORS = 24             # training logs the replayed payloads are taken from
 SEED = 0                # the rng the attacks are drawn with
 COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
@@ -69,9 +70,21 @@ def built_from(train, calibration, test):
     unchanged, so delete `out` after that.
     """
     return {"logs": [train, calibration, test], "train": TRAIN, "donors": DONORS,
-            "calibration": CALIBRATION,
+            "calibration": CALIBRATION, "gap": GAP,
             "seed": SEED, "signals": SIGNALS,
             "period": PERIOD, "max_hold": MAX_HOLD}
+
+
+def _apart(times, cal_times, gap):
+    """Which rows sit more than `gap` seconds from every calibration row.
+
+    A calibration log and the training log next to it can hold one event between
+    them, so the rows either side of the boundary go to neither.
+    """
+    near = np.searchsorted(cal_times, times)
+    before = cal_times[np.clip(near - 1, 0, len(cal_times) - 1)]
+    after = cal_times[np.clip(near, 0, len(cal_times) - 1)]
+    return np.minimum(np.abs(times - before), np.abs(times - after)) > gap
 
 
 def arrays_for(train, calibration, test, out_dir):
@@ -89,6 +102,10 @@ def arrays_for(train, calibration, test, out_dir):
     rows, times, segments = grid_rows(calibration)
     data["cal_rows"] = data["scale"].apply(rows)
     data["cal_raw"], data["cal_t"], data["cal_seg"] = rows, times, segments
+    keep = _apart(data["t"], np.sort(times), GAP)
+    for name in ("rows", "raw", "t", "seg"):
+        data[name] = data[name][keep]
+    print(f"the gap drops {int((~keep).sum())} training rows", flush=True)
     save(data, out_dir)
     json.dump(shape, open(kept, "w"))
     return data, False
