@@ -1,5 +1,6 @@
 import numpy as np
 
+from evaluate import run
 from evaluate.run import alarms, found, period_of, persistent
 
 ONE = np.zeros(8, dtype=np.int32)          # one segment, so nothing breaks a run
@@ -44,3 +45,16 @@ def test_found_counts_an_attack_once_however_many_rows_it_flags():
     attacks = [{"first": 1, "last": 2}, {"first": 3, "last": 5}]
     assert found(flags, attacks, np.array([True, True])) == 1
     assert found(flags, attacks, np.array([False, True])) == 0
+
+
+def test_seconds_for_measures_only_the_logs_it_lacks(tmp_path, monkeypatch):
+    asked = []
+
+    def fake(logs):
+        asked.append(list(logs))
+        return {p: 1.0 for p in logs}
+
+    monkeypatch.setattr(run, "seconds_above", fake)
+    assert run.seconds_for(["a", "b"], str(tmp_path)) == {"a": 1.0, "b": 1.0}
+    assert run.seconds_for(["b", "c"], str(tmp_path)) == {"b": 1.0, "c": 1.0}
+    assert asked == [["a", "b"], ["c"]]

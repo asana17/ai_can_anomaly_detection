@@ -42,15 +42,19 @@ INSTANT = (range_check, speed_agreement, shaft_ratio, gear_ratio, steering_sign,
 
 
 def seconds_for(logs, out_dir):
-    """The seconds each log spends above the minimum speed, measured once and kept."""
-    path = os.path.join(out_dir, "driving.json")
-    if os.path.exists(path):
-        kept = json.load(open(path))
-        if set(kept) == set(logs):
-            return kept
-    measured = seconds_above(logs)
-    json.dump(measured, open(path, "w"))
-    return measured
+    """The seconds each log spends above the minimum speed, measured once and kept.
+
+    A log's own seconds do not depend on which other logs were asked for, so the file
+    is a store of every log ever measured rather than one run's answer. A run over a
+    different set measures only the logs missing from it.
+    """
+    path = os.path.join(out_dir, "seconds.json")
+    kept = json.load(open(path)) if os.path.exists(path) else {}
+    missing = [p for p in logs if p not in kept]
+    if missing:
+        kept.update(seconds_above(missing))
+        json.dump(kept, open(path, "w"))
+    return {p: kept[p] for p in logs}
 
 
 ARRAYS = ("rows", "raw", "t", "seg",
