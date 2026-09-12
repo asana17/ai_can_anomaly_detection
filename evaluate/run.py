@@ -41,8 +41,8 @@ INSTANT = (range_check, speed_agreement, shaft_ratio, gear_ratio, steering_sign,
            engine_off, pedal_conflict, stopped_shaft, reverse_speed)
 
 
-def weights_for(logs, out_dir):
-    """The driving time of each log, measured once and kept."""
+def seconds_for(logs, out_dir):
+    """The seconds each log spends above the minimum speed, measured once and kept."""
     path = os.path.join(out_dir, "driving.json")
     if os.path.exists(path):
         kept = json.load(open(path))
@@ -181,12 +181,13 @@ def main(pattern, out_dir, files=FILES):
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))
     logs = logs[::max(len(logs) // files, 1)][:files]
-    weight = weights_for(logs, out_dir)
+    seconds = seconds_for(logs, out_dir)
 
-    train_logs, test_logs = split(logs, TRAIN, weight)
+    train_logs, test_logs = split(seconds, TRAIN)
     print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
-          f"driving {sum(weight[p] for p in train_logs):.0f}s and "
-          f"{sum(weight[p] for p in test_logs):.0f}s", flush=True)
+          f"{sum(seconds[p] for p in train_logs):.0f}s and "
+          f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",
+          flush=True)
 
     clock = time.time()
     data, kept = arrays_for(train_logs, test_logs, out_dir)

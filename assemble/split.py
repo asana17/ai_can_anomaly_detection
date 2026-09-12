@@ -36,13 +36,14 @@ def driving_time(logs: Iterable[str], min_speed: float = MIN_SPEED) -> dict[str,
     return seconds
 
 
-def split(logs: Iterable[str], train_frac: float, weight=None):
-    """Cut the ordered logs in two, everything after `train_frac` being the test set.
+def split(seconds: dict[str, float], train_frac: float):
+    """Cut the logs in two by time, everything after `train_frac` being the test set.
 
-    `weight` says how much each log counts for, so the fraction becomes a share of
-    that rather than of the log count.
+    `seconds` is what `driving_time` returns, so the fraction is a share of the seconds
+    above the minimum speed rather than of the log count.
     """
-    ordered, sizes = _ordered(logs, weight)
+    ordered = sorted(seconds, key=os.path.basename)     # filename is a timestamp
+    sizes = [seconds[p] for p in ordered]
     cut = _cut(sizes, sum(sizes) * train_frac)
     return ordered[:cut], ordered[cut:]
 
@@ -74,13 +75,6 @@ def _apart(times, windows, gap: float):
     before = windows[np.clip(near - 1, 0, len(windows) - 1)]
     after = windows[np.clip(near, 0, len(windows) - 1)]
     return np.minimum(np.abs(times - before), np.abs(times - after)) > gap
-
-
-def _ordered(logs, weight):
-    """The logs oldest first, with the weight of each."""
-    ordered = sorted(logs, key=os.path.basename)     # filename is a timestamp
-    sizes = [1.0] * len(ordered) if weight is None else [weight[p] for p in ordered]
-    return ordered, sizes
 
 
 def _cut(sizes, target: float) -> int:
