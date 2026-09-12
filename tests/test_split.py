@@ -1,4 +1,6 @@
-from assemble.split import driving_time, hold_out, split
+import numpy as np
+
+from assemble.split import WHEEL, driving_time, hold_out, split, split_rows
 
 
 def test_split_fraction_sizes():
@@ -44,6 +46,64 @@ def test_driving_time_counts_only_readings_above_the_minimum(tmp_path):
                              + [ccvs1(kmh) for kmh in (0.0, 4.0, 6.0, 80.0)]
                              + ["2020-11-23 08:00:00.000000;0x18F004E6;8;0;0;0;0;0;0;0;0"]) + "\n")
     assert driving_time([str(log)]) == {str(log): 0.2}   # two readings, 100 ms apart
+
+
+def _rows(speeds):
+    """Rows carrying only a wheel speed, one per 100 ms, with their times."""
+    raw = np.zeros((len(speeds), 17), np.float32)
+    raw[:, WHEEL] = speeds
+    return raw, np.arange(len(speeds), dtype=np.float64) * 0.1
+
+
+def test_split_rows_gives_calibration_the_share_of_the_seconds_asked_for():
+    raw, t = _rows(np.full(100000, 50.0))
+    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0)
+    assert abs(calibration_rows.mean() - 0.10) < 0.01
+
+
+def test_split_rows_cuts_calibration_into_windows_of_the_block_length():
+    raw, t = _rows(np.full(10000, 50.0))
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0)
+    edges = np.flatnonzero(np.diff(np.concatenate(
+        [[0], calibration_rows.astype(np.int8), [0]])))
+    assert set((edges[1::2] - edges[::2]).tolist()) == {200}   # 20 s at 100 ms
+
+
+def test_split_rows_spreads_the_windows_over_the_period():
+    raw, t = _rows(np.full(100000, 50.0))
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0)
+    at = np.flatnonzero(calibration_rows)
+    assert at[0] < 1000 and at[-1] > 90000
+
+
+def test_split_rows_never_calibrates_on_a_stopped_row():
+    speeds = np.full(20000, 50.0)
+    speeds[1::2] = 0.0                          # the truck stops every other row
+    raw, t = _rows(speeds)
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0)
+    assert calibration_rows.any() and not (calibration_rows & (speeds == 0.0)).any()
+
+
+def test_split_rows_measures_the_block_in_seconds_above_min_speed():
+    speeds = np.full(20000, 50.0)
+    speeds[1::2] = 0.0
+    raw, t = _rows(speeds)
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0)
+    assert abs(calibration_rows.sum() / (speeds > 5.0).sum() - 0.10) < 0.01
+
+
+def test_split_rows_puts_no_row_in_both_parts():
+    raw, t = _rows(np.full(10000, 50.0))
+    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 5.0)
+    assert not (train_rows & calibration_rows).any()
+
+
+def test_split_rows_leaves_the_gap_out_of_both_parts():
+    raw, t = _rows(np.full(10000, 50.0))
+    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 5.0)
+    assert (~train_rows & ~calibration_rows).any()
+    nearest = np.abs(t[train_rows][:, None] - t[calibration_rows][None, :]).min()
+    assert nearest > 5.0
 
 
 def test_hold_out_spreads_the_logs_it_takes_over_the_period():

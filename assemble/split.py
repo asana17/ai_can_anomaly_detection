@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import os
-from itertools import accumulate
 from typing import Iterable
 
+import numpy as np
+
+from assemble.grid import PERIOD
+from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import load_can_log
 from preprocess.frames.frame_decode import decode_frame
@@ -13,6 +16,7 @@ from preprocess.frames.frame_decode import decode_frame
 CCVS1 = 65265
 CCVS1_PERIOD = 0.1      # seconds between wheel speed readings
 MIN_SPEED = 5.0         # km/h, the speed below which nothing here is scored
+WHEEL = SIGNALS.index("wheel_speed")
 
 
 def driving_time(logs: Iterable[str], min_speed: float = MIN_SPEED) -> dict[str, float]:
@@ -41,6 +45,35 @@ def split(logs: Iterable[str], train_frac: float, weight=None):
     ordered, sizes = _ordered(logs, weight)
     cut = _cut(sizes, sum(sizes) * train_frac)
     return ordered[:cut], ordered[cut:]
+
+
+def split_rows(raw, times, share: float, block: float, gap: float,
+               min_speed: float = MIN_SPEED):
+    """Split the training rows into train and calibration, as two masks over them.
+
+    The rows that set a threshold must be ones the model never saw. Calibration takes
+    `share` of the seconds above `min_speed`, in windows of `block` seconds. Train is
+    the rest, less the rows within `gap` seconds of a window, which are in neither.
+    """
+    moving = raw[:, WHEEL] > min_speed
+    seconds = (np.cumsum(moving) - moving) * PERIOD   # above min_speed, before this row
+    calibration_rows = moving & (seconds % (block / share) < block)
+    apart = _apart(times, np.sort(times[calibration_rows]), gap)
+    return ~calibration_rows & apart, calibration_rows
+
+
+def _apart(times, windows, gap: float):
+    """Which rows sit more than `gap` seconds from every row in `windows`.
+
+    A brake or a gear change can run across the edge of a window, so the rows either
+    side of one go to neither set.
+    """
+    if not len(windows):
+        return np.ones(len(times), bool)
+    near = np.searchsorted(windows, times)
+    before = windows[np.clip(near - 1, 0, len(windows) - 1)]
+    after = windows[np.clip(near, 0, len(windows) - 1)]
+    return np.minimum(np.abs(times - before), np.abs(times - after)) > gap
 
 
 def hold_out(logs: Iterable[str], count: int, weight=None):
