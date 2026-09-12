@@ -28,12 +28,17 @@ def grid_rows(logs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return to_arrays(rows, times, segments)
 
 
+def scale_for(rows: np.ndarray) -> Scale:
+    """The mean and std to z-score on, taken from the rows a model is fitted on."""
+    std = rows.std(axis=0)
+    std[std == 0] = 1.0                       # a constant signal stays at 0
+    return Scale(rows.mean(axis=0), std)
+
+
 def scaled_rows(logs) -> dict:
     """Put `logs` on the grid and z-score them on their own mean and std."""
     rows, times, segments = grid_rows(logs)
-    std = rows.std(axis=0)
-    std[std == 0] = 1.0                       # a constant signal stays at 0
-    scale = Scale(rows.mean(axis=0), std)
+    scale = scale_for(rows)
     return {"scale": scale, "rows": scale.apply(rows), "raw": rows,
             "t": times, "seg": segments}
 
