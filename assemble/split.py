@@ -76,27 +76,6 @@ def _apart(times, windows, gap: float):
     return np.minimum(np.abs(times - before), np.abs(times - after)) > gap
 
 
-def hold_out(logs: Iterable[str], count: int, weight=None):
-    """Take `count` logs out of the ordered logs, and return what is left and them.
-
-    They are spread evenly over the weight the logs carry, which `driving_time` sets
-    to the seconds above `MIN_SPEED`, so what is taken covers the period the logs
-    given cover without any of it being shuffled.
-    """
-    ordered, sizes = _ordered(logs, weight)
-    total = sum(sizes)
-    held: set[int] = set()
-    for i in range(min(count, len(ordered))):
-        at = min(_cut(sizes, total * (i + 0.5) / count), len(ordered) - 1)
-        while at in held:                  # one log can hold two of the stretches
-            at += 1
-        if at == len(ordered):
-            at = max(j for j in range(len(ordered)) if j not in held)
-        held.add(at)
-    return ([p for i, p in enumerate(ordered) if i not in held],
-            [p for i, p in enumerate(ordered) if i in held])
-
-
 def _ordered(logs, weight):
     """The logs oldest first, with the weight of each."""
     ordered = sorted(logs, key=os.path.basename)     # filename is a timestamp

@@ -1,6 +1,6 @@
 import numpy as np
 
-from assemble.split import WHEEL, driving_time, hold_out, split, split_rows
+from assemble.split import WHEEL, driving_time, split, split_rows
 
 
 def test_split_fraction_sizes():
@@ -104,24 +104,3 @@ def test_split_rows_leaves_the_gap_out_of_both_parts():
     assert (~train_rows & ~calibration_rows).any()
     nearest = np.abs(t[train_rows][:, None] - t[calibration_rows][None, :]).min()
     assert nearest > 5.0
-
-
-def test_hold_out_spreads_the_logs_it_takes_over_the_period():
-    logs = [f"{i:03d}.csv" for i in range(100)]
-    kept, held = hold_out(logs, 4)
-    assert len(held) == 4 and len(kept) == 96
-    assert int(held[0][:3]) < 25 and int(held[-1][:3]) > 70
-
-
-def test_hold_out_takes_them_where_the_driving_is():
-    logs = [f"{i:03d}.csv" for i in range(10)]
-    weight = {p: (0 if i < 8 else 100) for i, p in enumerate(logs)}
-    kept, held = hold_out(logs, 2, weight)
-    assert held == ["008.csv", "009.csv"]
-    assert not (set(kept) & set(held))
-
-
-def test_hold_out_keeps_every_log():
-    logs = [f"{i:03d}.csv" for i in range(40)]
-    kept, held = hold_out(logs, 10)
-    assert sorted(kept + held) == logs
