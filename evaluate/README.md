@@ -41,42 +41,31 @@ moved it by at least one standard deviation.
 Detection is the number of those attacks with an alarm inside them. False alarms are
 the number of alarms raised outside any attack, per hour of the rows above 5 km/h.
 
-## The threshold
-
-The threshold is a percentile of the model's residual over the calibration rows. The
-calibration logs are held out of the training set, so every model is measured on rows
-the model never saw. See [split](../assemble/docs/split.md).
-
-The calibration logs have to be separate from the training logs. A model with enough
-capacity fits its own training rows. Residuals computed on the same rows the model
-was fitted on come out smaller than on rows it has not seen. A threshold taken from
-the training rows would then be too low, and more normal rows would sit above the
-threshold than asked for.
-
-An event such as hard braking can run across the boundary between a calibration log
-and the training log next to it, so the training rows near that boundary are
-dropped.
-
-## The calibration parameters
+## The split and calibration parameters
 
 | name | value | what it is |
 |---|---|---|
-| `TARGET` | 0.1% | the share of the calibration rows that sit above the threshold |
-| `CALIBRATION` |  | the share of the training logs with rows above 5 km/h that becomes the calibration set |
-| `GAP` | 10 s | the time either side of a calibration row where training rows are dropped |
+| `TRAIN` | 0.75 | the share of the seconds above 5 km/h before the test cut |
+| `TARGET` | 0.001 | the share of the calibration rows the threshold cuts off |
+| `CALIBRATION` | 0.10 | the share of the training seconds above 5 km/h that become the calibration set |
+| `BLOCK` | 20 s | the seconds above 5 km/h in one calibration window |
+| `GAP` | 5 s | the time either side of a calibration window where training rows are dropped |
 
-None of these values was chosen by looking at the test set.
+None of these was chosen by looking at the test set.
 
-- **`TARGET`** Raising the value lowers the threshold. More rows then sit above the
-  threshold, which catches more attacks and more normal rows with them. Every
-  calibration row is normal, so the share is a false positive rate. No calculation
-  produces the value.
-- **`CALIBRATION`** Raising the value moves logs from the training set into the
-  calibration set. More calibration logs bring the false positive rate closer to
-  `TARGET`. Fewer training logs give the model less to fit on. The value is the
-  smallest one that still reaches `TARGET`.
-- **`GAP`** Raising the value drops more training rows around each calibration log.
-  An event such as a hard brake lasts seconds, so the value only has to cover that.
+- **`TRAIN`** is where the test period starts.
+- **`TARGET`** is the false positive rate the threshold aims at. Raising it lowers the
+  threshold, which catches more attacks and more normal rows with them. A stated
+  choice, not a calculation.
+- **`CALIBRATION`** has to leave enough calibration rows to put a 1 - `TARGET`
+  quantile on. 1 / `TARGET` rows is only the floor where the quantile starts to exist,
+  and at the floor one single row holds it up. Raising it takes rows off the fit.
+- **`BLOCK`** sets how many separate situations `CALIBRATION` buys. The truck's
+  situation changes over about 20 seconds, so a window that long holds about one of
+  them.
+- **`GAP`** only has to cover the event it keeps out of both parts, which is seconds
+  for a hard brake. Every one of them costs training rows, so it stays well under
+  `BLOCK`.
 
 ## Tests
 
