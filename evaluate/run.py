@@ -33,7 +33,7 @@ GAP = 10.0              # seconds of training rows dropped around a calibration 
 DONORS = 24             # training logs the replayed payloads are taken from
 SEED = 0                # the rng the attacks are drawn with
 COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
-TARGET = 0.1            # percent of normal rows the threshold cuts off
+TARGET = 0.001          # share of normal rows the threshold cuts off
 BANDS = ((1.0, 2.0), (2.0, 4.0), (4.0, np.inf))
 HOLD = (1, 10)          # rows a flag must persist before it counts as an alarm
 INSTANT = (range_check, speed_agreement, shaft_ratio, gear_ratio, steering_sign,
@@ -219,7 +219,7 @@ def main(pattern, out_dir, files=FILES):
     layers = [("rules", rules & mv)]
     for k in COMPONENTS:
         space = subspace(tr, k)
-        cut = np.percentile(residuals(calibrate, space), 100 - TARGET)
+        cut = np.percentile(residuals(calibrate, space), 100 * (1 - TARGET))
         layers.append((f"pca k={k}", (residuals(rows, space) > cut) & mv))
 
     print(f"\n{'layer':>9}   " + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
