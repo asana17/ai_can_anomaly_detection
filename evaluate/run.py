@@ -18,7 +18,7 @@ from assemble.attack_set import attack_set
 from assemble.scale import Scale
 from assemble.train_set import grid_rows, save, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
-from assemble.split import MIN_SPEED, WHEEL, driving_time, split, split_rows
+from assemble.split import MIN_SPEED, WHEEL, seconds_above, split, split_rows
 from models.pca import residuals, subspace
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
@@ -27,9 +27,9 @@ from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
 from rules.rate import change_limit
 
 FILES = 1200            # logs to sample by default, spread evenly over the recording
-TRAIN = 0.75            # share of the driving time before the test cut
-CALIBRATION = 0.10      # share of the training driving held out to calibrate
-BLOCK = 20.0            # seconds of driving in one calibration window
+TRAIN = 0.75            # share of the seconds above MIN_SPEED before the test cut
+CALIBRATION = 0.10      # share of the training seconds above MIN_SPEED held out
+BLOCK = 20.0            # seconds above MIN_SPEED in one calibration window
 GAP = 5.0               # seconds of training rows dropped around a calibration row
 DONORS = 24             # training logs the replayed payloads are taken from
 SEED = 0                # the rng the attacks are drawn with
@@ -48,7 +48,7 @@ def seconds_for(logs, out_dir):
         kept = json.load(open(path))
         if set(kept) == set(logs):
             return kept
-    measured = driving_time(logs)
+    measured = seconds_above(logs)
     json.dump(measured, open(path, "w"))
     return measured
 
@@ -111,8 +111,8 @@ def arrays_for(train_logs, test_logs, out_dir):
 def _stretches(calibration_rows) -> int:
     """How many unbroken runs of calibration rows there are.
 
-    A window whose driving is interrupted by a stop lands in more than one run, so
-    this counts at least as many as there are windows.
+    A window a stop interrupts lands in more than one run, so this counts at least as
+    many as there are windows.
     """
     return int((calibration_rows
                 & ~np.concatenate([[False], calibration_rows[:-1]])).sum())
@@ -220,7 +220,7 @@ def main(pattern, out_dir, files=FILES):
 
     rules = rule_hits(got["raw"], got["seg"], got["t"])
     hours = quiet.sum() * period_of(got["t"]) / 3600
-    print(f"\n{hours:.1f} hours of clean driving to raise a false alarm in")
+    print(f"\n{hours:.1f} hours above MIN_SPEED with no attack in them")
 
     print(f"\n{'k':>4}  {'threshold':>10}  {'on clean test':>13}")
     detectors = [("rules", rules & mv)]

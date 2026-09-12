@@ -19,8 +19,8 @@ MIN_SPEED = 5.0         # km/h, the speed below which nothing here is scored
 WHEEL = SIGNALS.index("wheel_speed")
 
 
-def driving_time(logs: Iterable[str], min_speed: float = MIN_SPEED) -> dict[str, float]:
-    """How many seconds each log spends above `min_speed`, as a weight for the splits.
+def seconds_above(logs: Iterable[str], min_speed: float = MIN_SPEED) -> dict[str, float]:
+    """How many seconds each log spends above `min_speed`, one number per log.
 
     Every log is read, which takes about as long as building the arrays from them.
     """
@@ -39,7 +39,7 @@ def driving_time(logs: Iterable[str], min_speed: float = MIN_SPEED) -> dict[str,
 def split(seconds: dict[str, float], train_frac: float):
     """Cut the logs in two by time, everything after `train_frac` being the test set.
 
-    `seconds` is what `driving_time` returns, so the fraction is a share of the seconds
+    `seconds` is what `seconds_above` returns, so the fraction is a share of the seconds
     above the minimum speed rather than of the log count.
     """
     ordered = sorted(seconds, key=os.path.basename)     # filename is a timestamp

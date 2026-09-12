@@ -1,6 +1,6 @@
 import numpy as np
 
-from assemble.split import WHEEL, driving_time, split, split_rows
+from assemble.split import WHEEL, seconds_above, split, split_rows
 
 
 def test_split_fraction_sizes():
@@ -36,7 +36,7 @@ def test_split_gives_test_nothing_when_no_log_holds_a_scoreable_second():
     assert (train, test) == (logs, [])
 
 
-def test_driving_time_counts_only_readings_above_the_minimum(tmp_path):
+def test_seconds_above_counts_only_readings_over_the_minimum(tmp_path):
     def ccvs1(kmh):
         raw = round(kmh / 0.00390625)
         return f"2020-11-23 08:00:00.000000;0x18FEF1E6;8;0;{raw & 0xFF};{(raw >> 8) & 0xFF};0;0;0;0;0"
@@ -45,7 +45,7 @@ def test_driving_time_counts_only_readings_above_the_minimum(tmp_path):
     log.write_text("\n".join(["timestamp;id;dlc;data"]
                              + [ccvs1(kmh) for kmh in (0.0, 4.0, 6.0, 80.0)]
                              + ["2020-11-23 08:00:00.000000;0x18F004E6;8;0;0;0;0;0;0;0;0"]) + "\n")
-    assert driving_time([str(log)]) == {str(log): 0.2}   # two readings, 100 ms apart
+    assert seconds_above([str(log)]) == {str(log): 0.2}   # two readings, 100 ms apart
 
 
 def _rows(speeds):

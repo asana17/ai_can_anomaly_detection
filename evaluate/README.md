@@ -20,7 +20,7 @@ the same for all of them.
 
 ## What is reused
 
-`driving_time`, `scaled_rows` and `attack_set` each read every log, so their results
+`seconds_above`, `scaled_rows` and `attack_set` each read every log, so their results
 are written to `out` and reused on the next run over the same logs.
 
 `out/built.json` holds the logs and the settings they were built from. A run that
