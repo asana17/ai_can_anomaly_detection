@@ -28,9 +28,10 @@ def test_a_weight_sizes_the_parts_instead_of_the_log_count():
     assert test == [f"{i:03d}.csv" for i in range(1, 10)]
 
 
-def test_all_weights_zero_falls_back_to_the_log_count():
+def test_split_gives_test_nothing_when_no_log_holds_a_scoreable_second():
     logs = [f"{i:03d}.csv" for i in range(10)]
-    assert split(logs, 0.50, {p: 0 for p in logs}) == split(logs, 0.50)
+    train, test = split(logs, 0.50, {p: 0.0 for p in logs})
+    assert (train, test) == (logs, [])
 
 
 def test_driving_time_counts_only_readings_above_the_minimum(tmp_path):

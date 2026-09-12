@@ -68,7 +68,7 @@ def _ordered(logs, weight):
     """The logs oldest first, with the weight of each."""
     ordered = sorted(logs, key=os.path.basename)     # filename is a timestamp
     sizes = [1.0] * len(ordered) if weight is None else [weight[p] for p in ordered]
-    return (ordered, sizes) if sum(sizes) else (ordered, [1.0] * len(ordered))
+    return ordered, sizes
 
 
 def _cut(sizes, target: float) -> int:
