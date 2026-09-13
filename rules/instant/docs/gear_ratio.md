@@ -7,8 +7,6 @@ violations(values, min_speed, ratios=RATIOS)   # -> the three names, or empty
 nearest_gear(ratio)                            # -> the gear that ratio belongs to
 ```
 
-`min_speed` has no default. The caller sets it, and `evaluate` passes 5 km/h.
-
 Each gear turns the engine a set number of times per km/h, and the gears are 1.28
 apart, so a measured ratio picks out one of them. The rule asks whether that is the
 reported gear. There is no tolerance to choose, only the table.

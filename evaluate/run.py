@@ -70,11 +70,7 @@ def _have(out_dir, names):
 
 
 def grid_for(train_logs, out_dir):
-    """The training logs on the grid, built once and read back on a later run.
-
-    Nothing in it depends on how the rows are split afterwards, so a change to
-    `CALIBRATION`, `BLOCK` or `GAP` reads this rather than every log again.
-    """
+    """The training logs on the grid, built once and read back on a later run."""
     kept = os.path.join(out_dir, "grid.json")
     shape = {"logs": train_logs, "signals": SIGNALS,
              "period": PERIOD, "max_hold": MAX_HOLD}
@@ -90,12 +86,7 @@ def grid_for(train_logs, out_dir):
 
 
 def built_from(train_logs, test_logs):
-    """The logs and the settings the attack set was built from.
-
-    The calibration settings are in it because the attack set is put on the scale of
-    the training rows they leave. Editing the code leaves it unchanged, so delete `out`
-    after that.
-    """
+    """The logs and the settings the attack set was built from."""
     return {"logs": [train_logs, test_logs], "train": TRAIN, "donors": DONORS,
             "calibration": CALIBRATION, "block": BLOCK, "gap": GAP,
             "seed": SEED, "signals": SIGNALS,
@@ -103,11 +94,7 @@ def built_from(train_logs, test_logs):
 
 
 def arrays_for(train_logs, out_dir):
-    """The train and calibration arrays, cut out of the saved grid by time.
-
-    The whole training period goes on the grid at once, and the calibration windows
-    are cut out of it here on every run. The test rows come from the attack set.
-    """
+    """The train and calibration arrays, cut out of the saved grid by time."""
     (raw, times, segments), kept = grid_for(train_logs, out_dir)
     train_rows, calibration_rows = split_rows(raw, times, CALIBRATION, BLOCK, GAP,
                                               MIN_SPEED)
@@ -157,11 +144,7 @@ def attacks_for(train_logs, test_logs, scale, out_dir):
 
 
 def rule_hits(raw):
-    """True where an instant rule fires, read off physical values rather than scaled ones.
-
-    The rate rules stay out. They need the reading before, which a model reading one
-    instant is not given, so they belong under the windowed models only.
-    """
+    """True where an instant rule fires, read off physical values rather than scaled ones."""
     return np.array([any(check(dict(zip(SIGNALS, row))) for check in INSTANT)
                      for row in raw.tolist()], dtype=bool)
 

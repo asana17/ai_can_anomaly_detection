@@ -29,11 +29,9 @@ are written to `out` and reused on the next run over the same logs.
 settings are not in it, so a run with another `CALIBRATION`, `BLOCK` or `GAP` reads
 the saved grid.
 
-`out/built.json` holds the logs and the settings the attack set was built from.
-`CALIBRATION`, `BLOCK` and `GAP` are among them. They decide which rows are left to
-train, and the mean and std of those rows are what the attack set is z-scored on. The
-std is also the unit each attack's `moved` is measured in, which decides whether the
-attack is scored.
+`out/built.json` holds the logs and the settings the attack set was built from. It
+includes `CALIBRATION`, `BLOCK` and `GAP`, because the attack set is z-scored with the
+mean and std of the training rows they leave.
 
 Editing the code changes neither file, so delete `out` after changing what these three
 do.
@@ -55,9 +53,7 @@ the number of alarms raised outside any attack, per hour of the rows above 5 km/
 With PCA added, a row is flagged when a rule flags it or its residual is over the
 threshold.
 
-The rules here are `rules/instant` only. PCA reads one row at a time, so the rules set
-beside it read one row too. A rate rule also reads the previous row, so it waits for a
-model that reads a window of rows.
+PCA reads no window, so it is compared with `rules/instant` only.
 
 ## The split and calibration parameters
 
