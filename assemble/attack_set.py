@@ -8,6 +8,7 @@ import numpy as np
 
 from attack.inject import inject
 from assemble.grid import MAX_HOLD, PERIOD, starts_segment, to_arrays
+from assemble.split import WHEEL
 from preprocess.features.grid_sample import resample
 from preprocess.frames.can_log_loader import load_can_log
 
@@ -21,7 +22,7 @@ def attack_set(logs, scale, rng: random.Random, source_logs=None) -> dict:
     `source_logs` are the logs the replayed payloads are taken from.
     """
     pool = [list(load_can_log(p)) for p in source_logs] if source_logs else []
-    rows, times, segments, labels, attacks = [], [], [], [], []
+    rows, times, segments, labels, wheels, attacks = [], [], [], [], [], []
     segment = -1
     for path in logs:
         frames = list(load_can_log(path))
@@ -37,6 +38,7 @@ def attack_set(logs, scale, rng: random.Random, source_logs=None) -> dict:
             times.append(t)
             segments.append(segment)
             labels.append(t in clean and row != clean[t])
+            wheels.append(clean[t][WHEEL] if t in clean else row[WHEEL])
             previous = t
         covered = [i for i in range(first, len(rows)) if labels[i]]
         if span and covered:
@@ -52,5 +54,6 @@ def attack_set(logs, scale, rng: random.Random, source_logs=None) -> dict:
         "t": times,
         "seg": segments,
         "label": np.asarray(labels, dtype=bool),
+        "wheel": np.asarray(wheels, dtype=np.float32),
         "attacks": attacks,
     }

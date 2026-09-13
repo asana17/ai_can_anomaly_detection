@@ -61,7 +61,7 @@ def seconds_for(logs, out_dir):
 
 
 GRID = ("raw", "t", "seg")
-ATTACKED = ("rows", "raw", "t", "seg", "label")
+ATTACKED = ("rows", "raw", "t", "seg", "label", "wheel")
 
 
 def _have(out_dir, names):
@@ -213,14 +213,15 @@ def main(pattern, out_dir, files=None):
     tr = data["rows"][moving(data["rows"])]
     calibrate = data["calibration_rows"][moving(data["calibration_rows"]) & clean]
     rows, label = got["rows"], got["label"]
-    mv = moving(rows)
-    quiet = mv & ~label
+    mv = moving(rows)                       # what a detector reads, attack included
+    truth = got["wheel"] > MIN_SPEED        # what is scored, the speed before the attack
+    quiet = truth & ~label
     attacks = got["attacks"]
-    reach = touched(mv, attacks)
+    reach = touched(truth, attacks)
     moved = np.array([a["moved"] for a in attacks])
     scored = reach & (moved >= BANDS[0][0])
     print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
-          f"test {int(mv.sum())}. "
+          f"test {int(truth.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
     rules = rule_hits(got["raw"]) & mv

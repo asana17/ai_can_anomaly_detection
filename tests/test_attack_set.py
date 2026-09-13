@@ -4,6 +4,7 @@ import numpy as np
 
 from assemble.attack_set import attack_set
 from assemble.scale import Scale
+from assemble.split import WHEEL
 from assemble.train_set import grid_rows
 
 SIGNALS = 17
@@ -89,6 +90,13 @@ def test_one_seed_gives_one_set(tmp_path):
     b = attack_set([log], _scale(), random.Random(3))
     assert a["attacks"] == b["attacks"]
     assert np.array_equal(a["label"], b["label"])
+
+
+def test_wheel_holds_the_speed_before_the_attack(tmp_path):
+    log = _write_log(tmp_path / "a.csv")
+    d = attack_set([log], _scale(), random.Random(0))
+    clean, _, _ = grid_rows([log])
+    assert np.array_equal(d["wheel"], clean[:, WHEEL])
 
 
 def test_raw_holds_the_rows_before_scaling(tmp_path):

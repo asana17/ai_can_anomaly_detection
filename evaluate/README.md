@@ -47,6 +47,10 @@ be hours apart.
 Only rows above 5 km/h are scored, and an attack counts only if it reaches one and
 moved it by at least one standard deviation.
 
+Whether a row is above 5 km/h is decided by its speed before the attack. An attack
+that fakes a stop stays in the count. The detectors read the attacked speed, so a detector that ignores
+the row misses it.
+
 Detection is the number of those attacks with an alarm inside them. False alarms are
 the number of alarms raised outside any attack, per hour of the rows above 5 km/h.
 
