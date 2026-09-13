@@ -6,7 +6,8 @@ per decoded value, such as `engine_speed` and `wheel_speed`. The test rows come 
 
 ```python
 raw, t, seg = grid_rows(train_logs)     # the train half, from split.md
-scale = scale_for(raw[train_rows])      # train_rows from split_rows, in split.md
+moving = raw[:, WHEEL] > MIN_SPEED
+scale = scale_for(raw[train_rows & moving])   # train_rows from split_rows, in split.md
 rows = scale.apply(raw[train_rows])
 ```
 
@@ -24,6 +25,10 @@ units. `rows` is what a model reads. A run of rows is unbroken while each one is
 
 ## Stopped rows are kept
 
-Over half the rows are stopped or idling. They stay in, and the mean and std are
-taken over them too. Dropping them would break the segments [grid](grid.md)
-describes, and leaving them out changes each signal's spread by less than half.
+Many rows are stopped or idling. They stay in `rows`, since dropping them would break
+the segments [grid](grid.md) describes.
+
+The mean and std are taken only over the rows [evaluate](../../evaluate) scores,
+because those are the rows PCA is fitted on. Stopped rows spread some signals far
+wider than moving ones do, such as `clutch_slip` and `input_shaft_speed`. With them in
+the std, those signals would count for less in the residual than the others.

@@ -98,7 +98,8 @@ def arrays_for(train_logs, out_dir):
     (raw, times, segments), kept = grid_for(train_logs, out_dir)
     train_rows, calibration_rows = split_rows(raw, times, CALIBRATION, BLOCK, GAP,
                                               MIN_SPEED)
-    scale = scale_for(raw[train_rows])      # the fit never sees a calibration row
+    moving = raw[:, WHEEL] > MIN_SPEED
+    scale = scale_for(raw[train_rows & moving])     # the rows PCA is fitted on
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],
             "t": times[train_rows], "seg": segments[train_rows],
