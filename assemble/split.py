@@ -15,11 +15,10 @@ from preprocess.frames.frame_decode import decode_frame
 
 CCVS1 = 65265
 CCVS1_PERIOD = 0.1      # seconds between wheel speed readings
-MIN_SPEED = 5.0         # km/h, the speed below which nothing here is scored
 WHEEL = SIGNALS.index("wheel_speed")
 
 
-def seconds_above(logs: Iterable[str], min_speed: float = MIN_SPEED) -> dict[str, float]:
+def seconds_above(logs: Iterable[str], min_speed: float) -> dict[str, float]:
     """How many seconds each log spends above `min_speed`, one number per log.
 
     Every log is read, which takes about as long as building the arrays from them.
@@ -48,8 +47,7 @@ def split(seconds: dict[str, float], train_frac: float):
     return ordered[:cut], ordered[cut:]
 
 
-def split_rows(raw, times, share: float, block: float, gap: float,
-               min_speed: float = MIN_SPEED):
+def split_rows(raw, times, share: float, block: float, gap: float, min_speed: float):
     """Split the training rows into train and calibration, as two masks over them.
 
     The rows that set a threshold must be ones the model never saw. Calibration takes

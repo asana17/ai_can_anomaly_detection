@@ -55,6 +55,7 @@ the number of alarms raised outside any attack, per hour of the rows above 5 km/
 
 | name | value | what it is |
 |---|---|---|
+| `MIN_SPEED` | 5.0 km/h | the speed a row has to exceed to be scored |
 | `TRAIN` | 0.75 | the share of the seconds above 5 km/h before the test cut |
 | `TARGET` | 0.001 | the share of the calibration rows the threshold cuts off |
 | `CALIBRATION` | 0.10 | the share of the training seconds above 5 km/h that become the calibration set |

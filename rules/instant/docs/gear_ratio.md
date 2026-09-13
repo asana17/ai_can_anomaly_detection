@@ -3,9 +3,11 @@
 Flags the engine and wheel speeds not matching the gear the transmission reports.
 
 ```python
-violations(values, ratios=RATIOS, min_speed=5.0)   # -> the three names, or empty
-nearest_gear(ratio)                                # -> the gear that ratio belongs to
+violations(values, min_speed, ratios=RATIOS)   # -> the three names, or empty
+nearest_gear(ratio)                            # -> the gear that ratio belongs to
 ```
+
+`min_speed` has no default. The caller sets it, and `evaluate` passes 5 km/h.
 
 Each gear turns the engine a set number of times per km/h, and the gears are 1.28
 apart, so a measured ratio picks out one of them. The rule asks whether that is the

@@ -11,13 +11,14 @@ import os
 import random
 import sys
 import time
+from functools import partial
 
 import numpy as np
 
 from assemble.attack_set import attack_set
 from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
-from assemble.split import MIN_SPEED, WHEEL, seconds_above, split, split_rows
+from assemble.split import WHEEL, seconds_above, split, split_rows
 from models.pca import residuals, subspace
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
@@ -25,6 +26,7 @@ from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            stopped_shaft)
 from rules.rate import change_limit
 
+MIN_SPEED = 5.0         # km/h, the speed a row has to exceed to be scored
 TRAIN = 0.75            # share of the seconds above MIN_SPEED before the test cut
 CALIBRATION = 0.10      # share of the training seconds above MIN_SPEED held out
 BLOCK = 20.0            # seconds above MIN_SPEED in one calibration window
@@ -35,8 +37,12 @@ COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
 TARGET = 0.001          # share of normal rows the threshold cuts off
 BANDS = ((1.0, 2.0), (2.0, 4.0), (4.0, np.inf))
 HOLD = (1, 10)          # rows a flag must persist before it counts as an alarm
-INSTANT = (range_check, speed_agreement, shaft_ratio, gear_ratio, steering_sign,
-           engine_off, pedal_conflict, stopped_shaft, reverse_speed)
+INSTANT = (range_check.violations, speed_agreement.violations,
+           partial(shaft_ratio.violations, min_speed=MIN_SPEED),
+           partial(gear_ratio.violations, min_speed=MIN_SPEED),
+           partial(steering_sign.violations, min_speed=MIN_SPEED),
+           engine_off.violations, pedal_conflict.violations,
+           stopped_shaft.violations, reverse_speed.violations)
 
 
 def seconds_for(logs, out_dir):
@@ -50,7 +56,7 @@ def seconds_for(logs, out_dir):
     kept = json.load(open(path)) if os.path.exists(path) else {}
     missing = [p for p in logs if p not in kept]
     if missing:
-        kept.update(seconds_above(missing))
+        kept.update(seconds_above(missing, MIN_SPEED))
         json.dump(kept, open(path, "w"))
     return {p: kept[p] for p in logs}
 
@@ -104,7 +110,8 @@ def arrays_for(train_logs, out_dir):
     are cut out of it here on every run. The test rows come from the attack set.
     """
     (raw, times, segments), kept = grid_for(train_logs, out_dir)
-    train_rows, calibration_rows = split_rows(raw, times, CALIBRATION, BLOCK, GAP)
+    train_rows, calibration_rows = split_rows(raw, times, CALIBRATION, BLOCK, GAP,
+                                              MIN_SPEED)
     scale = scale_for(raw[train_rows])      # the fit never sees a calibration row
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],
@@ -156,7 +163,7 @@ def rule_hits(raw, segment, times):
     previous = None
     for i in range(len(raw)):
         values = dict(zip(SIGNALS, raw[i].tolist()))
-        out[i] = any(rule.violations(values) for rule in INSTANT)
+        out[i] = any(check(values) for check in INSTANT)
         if not out[i] and previous is not None and segment[i] == segment[i - 1]:
             out[i] = bool(change_limit.violations(values, previous,
                                                   float(times[i] - times[i - 1])))

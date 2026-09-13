@@ -50,7 +50,7 @@ def test_found_counts_an_attack_once_however_many_rows_it_flags():
 def test_seconds_for_measures_only_the_logs_it_lacks(tmp_path, monkeypatch):
     asked = []
 
-    def fake(logs):
+    def fake(logs, min_speed):
         asked.append(list(logs))
         return {p: 1.0 for p in logs}
 

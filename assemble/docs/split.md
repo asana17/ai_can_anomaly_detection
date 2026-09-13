@@ -6,11 +6,11 @@ train and calibration rows.
 ## Example
 
 ```python
-seconds = seconds_above(logs)
+seconds = seconds_above(logs, min_speed)
 train_logs, test_logs = split(seconds, train_frac)
 
 raw, t, seg = grid_rows(train_logs)             # from train_set.md
-train_rows, calibration_rows = split_rows(raw, t, share, block, gap)
+train_rows, calibration_rows = split_rows(raw, t, share, block, gap, min_speed)
 ```
 
 ## Train and test are sized by the seconds above the minimum speed

@@ -12,9 +12,6 @@ from __future__ import annotations
 RATIOS = {2: 179.25, 4: 108.69, 5: 87.02, 6: 67.20, 7: 52.27,
           8: 41.37, 9: 31.69, 10: 24.82, 11: 19.37, 12: 15.24}
 
-# Below this the wheel speed is too coarse for the ratio, as in shaft_ratio.
-MIN_SPEED = 5.0
-
 NAMES = ["engine_speed", "wheel_speed", "current_gear"]
 
 
@@ -23,8 +20,11 @@ def nearest_gear(ratio: float, ratios: dict = RATIOS) -> int:
     return min(ratios, key=lambda gear: max(ratios[gear] / ratio, ratio / ratios[gear]))
 
 
-def violations(values: dict, ratios: dict = RATIOS, min_speed: float = MIN_SPEED) -> list:
-    """The three names, if the speeds pick out a gear other than the reported one."""
+def violations(values: dict, min_speed: float, ratios: dict = RATIOS) -> list:
+    """The three names, if the speeds pick out a gear other than the reported one.
+
+    Below `min_speed` the wheel speed is too coarse for the ratio, as in shaft_ratio.
+    """
     engine, wheel = values.get("engine_speed"), values.get("wheel_speed")
     gear, selected = values.get("current_gear"), values.get("selected_gear")
     slip = values.get("clutch_slip")

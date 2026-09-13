@@ -3,8 +3,10 @@
 Flags the steering angle and the yaw rate turning opposite ways.
 
 ```python
-violations(values, min_yaw=0.02, min_speed=5.0)   # -> both names, or empty
+violations(values, min_speed, min_yaw=0.02)   # -> both names, or empty
 ```
+
+`min_speed` has no default. The caller sets it, and `evaluate` passes 5 km/h.
 
 Steering left turns the truck left. How much yaw a given angle produces changes with
 speed and body roll, so only the direction is checked. That is what makes this

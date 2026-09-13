@@ -3,8 +3,10 @@
 Flags the transmission output shaft turning at the wrong rate for the wheel speed.
 
 ```python
-violations(values, bounds=(13.0, 17.5), min_speed=5.0)   # -> both names, or empty
+violations(values, min_speed, bounds=(13.0, 17.5))   # -> both names, or empty
 ```
+
+`min_speed` has no default. The caller sets it, and `evaluate` passes 5 km/h.
 
 The final drive and the tyre size are fixed, so the shaft turns a set number of
 times per km/h whatever the gear or the engine is doing.
