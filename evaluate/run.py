@@ -240,28 +240,30 @@ def main(pattern, out_dir, files=None):
           f"test {int(mv.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
-    rules = rule_hits(got["raw"])
+    rules = rule_hits(got["raw"]) & mv
+    passed = quiet & ~rules                 # no attack and no rule, like calibration rows
     hours = quiet.sum() * period_of(got["t"]) / 3600
     print(f"\n{hours:.1f} hours above MIN_SPEED with no attack in them")
 
     print(f"\n{'k':>4}  {'threshold':>10}  {'on clean test':>13}")
-    detectors = [("rules", rules & mv)]
+    detectors = [("rules", np.zeros_like(rules))]
     for k in COMPONENTS:
         space = subspace(tr, k)
         cut = np.percentile(residuals(calibrate, space), 100 * (1 - TARGET))
         flag = residuals(rows, space) > cut
-        print(f"{k:>4}  {cut:10.4f}  {(flag & quiet).sum() / quiet.sum():13.5f}",
+        print(f"{k:>4}  {cut:10.4f}  {(flag & passed).sum() / passed.sum():13.5f}",
               flush=True)
-        detectors.append((f"pca k={k}", flag & mv))
+        detectors.append((f"+ pca k={k}", flag & mv))
 
-    print(f"\n{'detector':>9}   " + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
+    print(f"\n{'detector':>11}   " + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
           + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in HOLD))
+    # with PCA added, a row is flagged when a rule or PCA flags it
     for name, flag in detectors:
         cells = []
         for need in HOLD:
-            on = persistent(flag, got["seg"], need)
+            on = persistent(rules | flag, got["seg"], need)
             cells.append((found(on, attacks, scored), alarms(on & quiet) / hours))
-        print(f"{name:>9}   "
+        print(f"{name:>11}   "
               + "  ".join(f"{c:>7}/{int(scored.sum()):<3d}" for c, _ in cells)
               + "   " + "  ".join(f"{a:12.1f}" for _, a in cells))
 

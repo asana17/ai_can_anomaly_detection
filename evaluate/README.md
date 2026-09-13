@@ -1,11 +1,12 @@
 # evaluate
 
-Runs the whole comparison over a set of logs. The report gives one line to each of
-these.
+Runs the whole comparison over a set of logs. It compares these detectors.
 
-- the instant rules, which read physical values
-- PCA, which flags a row whose residual is over the threshold, one line for each
-  component count
+- the instant rules alone, which read physical values
+- the instant rules together with PCA, once for each component count
+
+PCA is there to catch what the rules miss, so the rules with PCA are compared with the
+rules alone.
 
 ```
 python3 -m evaluate.run "data/part_*/*.csv" out
@@ -51,9 +52,12 @@ moved it by at least one standard deviation.
 Detection is the number of those attacks with an alarm inside them. False alarms are
 the number of alarms raised outside any attack, per hour of the rows above 5 km/h.
 
-The floor is `rules/instant` alone. A rate rule needs the reading before, which a
-model reading one instant is not given. The rate rules join the floor for the windowed
-models.
+With PCA added, a row is flagged when a rule flags it or its residual is over the
+threshold.
+
+The rules here are `rules/instant` only. PCA reads one row at a time, so the rules set
+beside it read one row too. A rate rule also reads the previous row, so it waits for a
+model that reads a window of rows.
 
 ## The split and calibration parameters
 
@@ -75,8 +79,7 @@ None of these was chosen by looking at the test set.
 - **`CALIBRATION`** has to leave enough calibration rows to put a 1 - `TARGET`
   quantile on. 1 / `TARGET` rows is only the floor where the quantile starts to exist,
   and at the floor one single row holds it up. Raising it takes rows off the fit.
-  A stated choice, not a calculation. The report prints the share of clean test rows
-  each threshold cuts, which is the check that it reaches `TARGET`.
+  A stated choice, not a calculation.
 - **`BLOCK`** sets how many separate situations `CALIBRATION` buys. The truck's
   situation changes over about 20 seconds, so a window that long holds about one of
   them. A stated choice, not a calculation.
