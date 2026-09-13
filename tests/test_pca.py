@@ -1,6 +1,6 @@
 import numpy as np
 
-from models.pca import residuals, subspace, variance_share
+from models.pca import residuals, subspace
 
 
 def _rows(seed=0, latent=3, signals=17, n=2000, noise=0.01):
@@ -8,12 +8,6 @@ def _rows(seed=0, latent=3, signals=17, n=2000, noise=0.01):
     rng = np.random.default_rng(seed)
     return (rng.normal(size=(n, latent)) @ rng.normal(size=(latent, signals))
             + rng.normal(scale=noise, size=(n, signals)))
-
-
-def test_explained_finds_the_real_number_of_directions():
-    share = variance_share(_rows(latent=3))
-    assert share[:3].sum() > 0.999
-    assert share[3] < 0.001
 
 
 def test_a_basis_has_one_column_per_component():

@@ -29,9 +29,3 @@ def residuals(rows: np.ndarray, space: Subspace) -> np.ndarray:
     centred = rows - space.centre
     projected = (centred @ space.basis) @ space.basis.T
     return np.linalg.norm(centred - projected, axis=1)
-
-
-def variance_share(rows: np.ndarray) -> np.ndarray:
-    """The share of variance each component accounts for, largest first."""
-    s = np.linalg.svd(rows - rows.mean(axis=0), compute_uv=False)
-    return s ** 2 / (s ** 2).sum()

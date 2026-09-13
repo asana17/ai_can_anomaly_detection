@@ -7,7 +7,6 @@ gets through. PCA is the model chosen for that gap.
 ```python
 space = subspace(train_rows, components=12)  # keep 12 of the 17 directions as normal
 score = residuals(test_rows, space)          # how far each row sits off them
-variance_share(train_rows)                   # what each direction holds, to choose 12
 ```
 
 The subspace passes through the mean of the rows it was fitted on, not through the
