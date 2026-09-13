@@ -23,8 +23,8 @@ that changed nothing is not counted as a miss.
 `seg` is the segment each row belongs to, numbered as [grid](grid.md) describes.
 
 `wheel` holds the wheel speed before the attack. [evaluate](../../evaluate) uses it to
-decide whether a row is scored, meaning whether it is above 5 km/h. So an attack that
-fakes a speed of 0 still leaves the scored rows the same as with no attack.
+decide whether a row is scored. So an attack that fakes a stop still leaves the scored
+rows the same as with no attack.
 
 `raw` is the same rows before scaling, which is what the rules read. Reconstructing
 them from `rows` instead loses enough precision that engine_load at its ceiling of 250
