@@ -26,7 +26,6 @@ from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            stopped_shaft)
 from rules.rate import change_limit
 
-FILES = 1200            # logs to sample by default, spread evenly over the recording
 TRAIN = 0.75            # share of the seconds above MIN_SPEED before the test cut
 CALIBRATION = 0.10      # share of the training seconds above MIN_SPEED held out
 BLOCK = 20.0            # seconds above MIN_SPEED in one calibration window
@@ -181,10 +180,11 @@ def period_of(times):
     return float(np.median(steps[steps > 0]))
 
 
-def main(pattern, out_dir, files=FILES):
+def main(pattern, out_dir, files=None):
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))
-    logs = logs[::max(len(logs) // files, 1)][:files]
+    if files:                          # a smoke test asks for fewer
+        logs = logs[::max(len(logs) // files, 1)][:files]
     seconds = seconds_for(logs, out_dir)
 
     train_logs, test_logs = split(seconds, TRAIN)
@@ -257,4 +257,4 @@ def main(pattern, out_dir, files=FILES):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else FILES)
+    main(sys.argv[1], sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else None)

@@ -11,8 +11,9 @@ these.
 python3 -m evaluate.run "data/part_*/*.csv" out
 ```
 
-A third argument sets how many logs to sample. Without it the run takes 1,200,
-spread evenly over the recording.
+Without a third argument the run takes every log the pattern matches. Giving one samples
+that many, spread evenly over the recording, which is a smoke test and not a
+measurement.
 
 It splits the logs, builds the arrays, injects the attacks, then asks the rules and
 each model for one flag per row. The runs of flags, the counting and the table are
