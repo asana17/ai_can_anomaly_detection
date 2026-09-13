@@ -3,7 +3,7 @@
 Runs the whole comparison over a set of logs. The report gives one line to each of
 these.
 
-- the rules, which read physical values
+- the instant rules, which read physical values
 - PCA, which flags a row whose residual is over the threshold, one line for each
   component count
 
@@ -50,6 +50,10 @@ moved it by at least one standard deviation.
 
 Detection is the number of those attacks with an alarm inside them. False alarms are
 the number of alarms raised outside any attack, per hour of the rows above 5 km/h.
+
+The floor is `rules/instant` alone. A rate rule needs the reading before, which a
+model reading one instant is not given. The rate rules join the floor for the windowed
+models.
 
 ## The split and calibration parameters
 

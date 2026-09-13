@@ -24,7 +24,6 @@ from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            reverse_speed, shaft_ratio, speed_agreement, steering_sign,
                            stopped_shaft)
-from rules.rate import change_limit
 
 MIN_SPEED = 5.0         # km/h, the speed a row has to exceed to be scored
 TRAIN = 0.75            # share of the seconds above MIN_SPEED before the test cut
@@ -157,18 +156,14 @@ def attacks_for(train_logs, test_logs, scale, out_dir):
     return got, False
 
 
-def rule_hits(raw, segment, times):
-    """True where any rule fires, read off physical values rather than scaled ones."""
-    out = np.zeros(len(raw), bool)
-    previous = None
-    for i in range(len(raw)):
-        values = dict(zip(SIGNALS, raw[i].tolist()))
-        out[i] = any(check(values) for check in INSTANT)
-        if not out[i] and previous is not None and segment[i] == segment[i - 1]:
-            out[i] = bool(change_limit.violations(values, previous,
-                                                  float(times[i] - times[i - 1])))
-        previous = values
-    return out
+def rule_hits(raw):
+    """True where an instant rule fires, read off physical values rather than scaled ones.
+
+    The rate rules stay out. They need the reading before, which a model reading one
+    instant is not given, so they belong under the windowed models only.
+    """
+    return np.array([any(check(dict(zip(SIGNALS, row))) for check in INSTANT)
+                     for row in raw.tolist()], dtype=bool)
 
 
 def found(flags, attacks, pick):
@@ -231,8 +226,7 @@ def main(pattern, out_dir, files=None):
     def moving(rows):
         return scale.undo(rows)[:, WHEEL] > MIN_SPEED
 
-    clean = ~rule_hits(data["calibration_raw"], data["calibration_seg"],
-                       data["calibration_t"])
+    clean = ~rule_hits(data["calibration_raw"])
     tr = data["rows"][moving(data["rows"])]
     calibrate = data["calibration_rows"][moving(data["calibration_rows"]) & clean]
     rows, label = got["rows"], got["label"]
@@ -246,7 +240,7 @@ def main(pattern, out_dir, files=None):
           f"test {int(mv.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
-    rules = rule_hits(got["raw"], got["seg"], got["t"])
+    rules = rule_hits(got["raw"])
     hours = quiet.sum() * period_of(got["t"]) / 3600
     print(f"\n{hours:.1f} hours above MIN_SPEED with no attack in them")
 
