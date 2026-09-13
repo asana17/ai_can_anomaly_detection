@@ -71,9 +71,11 @@ None of these was chosen by looking at the test set.
 - **`CALIBRATION`** has to leave enough calibration rows to put a 1 - `TARGET`
   quantile on. 1 / `TARGET` rows is only the floor where the quantile starts to exist,
   and at the floor one single row holds it up. Raising it takes rows off the fit.
+  A stated choice, not a calculation. The report prints the share of clean test rows
+  each threshold cuts, which is the check that it reaches `TARGET`.
 - **`BLOCK`** sets how many separate situations `CALIBRATION` buys. The truck's
   situation changes over about 20 seconds, so a window that long holds about one of
-  them.
+  them. A stated choice, not a calculation.
 - **`GAP`** only has to cover the event it keeps out of both parts, which is seconds
   for a hard brake. Every one of them costs training rows, so it stays well under
   `BLOCK`.
