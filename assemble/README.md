@@ -10,8 +10,8 @@ Documented under [docs/](docs).
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
   seconds above the minimum speed in them, and the training rows into train and
   calibration.
-- [train_set](docs/train_set.md) turns the training logs into z-scored model rows,
-  with the physical values, time and segment id of each beside them.
+- [train_set](docs/train_set.md) puts the training logs on the grid, and takes the mean
+  and std their rows are z-scored by.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
   says which rows each one changed.
 

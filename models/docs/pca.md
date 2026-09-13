@@ -40,19 +40,16 @@ the directions normal rows vary in. PCA is linear, so it cannot close that gap.
 
 ## How many directions to keep
 
-There is no right number, so the comparison runs several and gives each a line.
-[evaluate](../../evaluate) labels them `k`.
+There is no right number, so [evaluate](../../evaluate) runs several, labelled `k`.
 
 Keeping fewer leaves more of the normal variation in the residual, which raises the
 threshold and hides small attacks. Keeping more fits the subspace tightly enough to
 fit the attacks too.
 
-## Its threshold comes from train
+## Its threshold
 
-PCA does not reconstruct its training rows better than the test rows. Its residual
-p99.9 on train runs above the same figure on test. A threshold from all 200,644 train
-rows landed 1.6 times off the rate asked for, against 3.4 times from 14,659 held out
-rows, which were too few to read a p99.9 off.
+The threshold is set so that `TARGET`, 0.1%, of the calibration rows have a residual
+above it. PCA is not fitted on those rows. See [evaluate](../../evaluate).
 
 ## What it scores on this data
 

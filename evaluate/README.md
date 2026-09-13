@@ -38,8 +38,8 @@ do.
 
 ## What counts as an alarm
 
-A flag has to persist over several rows in a row to count as an alarm. `HOLD` sets
-how many, and the report has a column for each value in it.
+A flag has to persist over several rows in a row to count as an alarm. `HOLD` lists
+how many, and every value in it is counted.
 
 A run of flagged rows ends at a segment boundary, since rows either side of one can
 be hours apart.
