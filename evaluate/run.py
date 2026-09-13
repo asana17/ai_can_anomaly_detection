@@ -177,6 +177,11 @@ def found(flags, attacks, pick):
                for a, keep in zip(attacks, pick) if keep)
 
 
+def touched(flags, attacks):
+    """For each attack, whether any of its rows is flagged."""
+    return np.array([flags[a["first"]:a["last"] + 1].any() for a in attacks], dtype=bool)
+
+
 def persistent(flag, segment, need):
     """True where `need` rows in a row are flagged, without crossing a segment."""
     if need <= 1:
@@ -234,7 +239,7 @@ def main(pattern, out_dir, files=None):
     mv = moving(rows)
     quiet = mv & ~label
     attacks = got["attacks"]
-    reach = np.array([mv[a["first"]:a["last"] + 1].any() for a in attacks])
+    reach = touched(mv, attacks)
     moved = np.array([a["moved"] for a in attacks])
     scored = reach & (moved >= BANDS[0][0])
     print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
@@ -268,7 +273,7 @@ def main(pattern, out_dir, files=None):
 
     print(f"\nwhat the rules leave the models, at {HOLD[-1]} rows held")
     caught = persistent(rules & mv, got["seg"], HOLD[-1])
-    left = scored & ~np.array([caught[a["first"]:a["last"] + 1].any() for a in attacks])
+    left = scored & ~touched(caught, attacks)
     print(f"  rules leave {int(left.sum())} of {int(scored.sum())} attacks")
     for lo, hi in BANDS:
         pick = left & (moved >= lo) & (moved < hi)
