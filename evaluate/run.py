@@ -15,8 +15,7 @@ import time
 import numpy as np
 
 from assemble.attack_set import attack_set
-from assemble.scale import Scale
-from assemble.train_set import grid_rows, save, scale_for
+from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.split import MIN_SPEED, WHEEL, seconds_above, split, split_rows
 from models.pca import residuals, subspace
@@ -56,8 +55,7 @@ def seconds_for(logs, out_dir):
     return {p: kept[p] for p in logs}
 
 
-ARRAYS = ("rows", "raw", "t", "seg",
-          "calibration_rows", "calibration_raw", "calibration_t", "calibration_seg")
+GRID = ("raw", "t", "seg")
 ATTACKED = ("rows", "raw", "t", "seg", "label")
 
 
@@ -66,11 +64,32 @@ def _have(out_dir, names):
     return all(os.path.exists(os.path.join(out_dir, n)) for n in names)
 
 
-def built_from(train_logs, test_logs):
-    """The logs and the settings the saved files were built from.
+def grid_for(train_logs, out_dir):
+    """The training logs on the grid, built once and read back on a later run.
 
-    A run that does not match this builds them again. Editing the code leaves it
-    unchanged, so delete `out` after that.
+    Nothing in it depends on how the rows are split afterwards, so a change to
+    `CALIBRATION`, `BLOCK` or `GAP` reads this rather than every log again.
+    """
+    kept = os.path.join(out_dir, "grid.json")
+    shape = {"logs": train_logs, "signals": SIGNALS,
+             "period": PERIOD, "max_hold": MAX_HOLD}
+    files = [f"grid_{n}.npy" for n in GRID]
+    if (os.path.exists(kept) and json.load(open(kept)) == shape
+            and _have(out_dir, files)):
+        return tuple(np.load(os.path.join(out_dir, f)) for f in files), True
+    got = grid_rows(train_logs)
+    for name, array in zip(files, got):
+        np.save(os.path.join(out_dir, name), array)
+    json.dump(shape, open(kept, "w"))
+    return got, False
+
+
+def built_from(train_logs, test_logs):
+    """The logs and the settings the attack set was built from.
+
+    The calibration settings are in it because the attack set is put on the scale of
+    the training rows they leave. Editing the code leaves it unchanged, so delete `out`
+    after that.
     """
     return {"logs": [train_logs, test_logs], "train": TRAIN, "donors": DONORS,
             "calibration": CALIBRATION, "block": BLOCK, "gap": GAP,
@@ -78,22 +97,13 @@ def built_from(train_logs, test_logs):
             "period": PERIOD, "max_hold": MAX_HOLD}
 
 
-def arrays_for(train_logs, test_logs, out_dir):
-    """The arrays, built once and read back on a later run over the same logs.
+def arrays_for(train_logs, out_dir):
+    """The train and calibration arrays, cut out of the saved grid by time.
 
     The whole training period goes on the grid at once, and the calibration windows
-    are cut out of it by time. The test rows come from the attack set.
+    are cut out of it here on every run. The test rows come from the attack set.
     """
-    kept = os.path.join(out_dir, "built.json")
-    shape = built_from(train_logs, test_logs)
-    files = [f"{n}.npy" for n in ARRAYS] + ["mean.npy", "std.npy"]
-    if (os.path.exists(kept) and json.load(open(kept)) == shape
-            and _have(out_dir, files)):
-        data = {n: np.load(os.path.join(out_dir, f"{n}.npy")) for n in ARRAYS}
-        data["scale"] = Scale(np.load(os.path.join(out_dir, "mean.npy")),
-                              np.load(os.path.join(out_dir, "std.npy")))
-        return data, True
-    raw, times, segments = grid_rows(train_logs)
+    (raw, times, segments), kept = grid_for(train_logs, out_dir)
     train_rows, calibration_rows = split_rows(raw, times, CALIBRATION, BLOCK, GAP)
     scale = scale_for(raw[train_rows])      # the fit never sees a calibration row
     data = {"scale": scale,
@@ -106,9 +116,7 @@ def arrays_for(train_logs, test_logs, out_dir):
     print(f"{int(calibration_rows.sum())} calibration rows in "
           f"{_stretches(calibration_rows)} stretches, the gap drops "
           f"{int((~train_rows & ~calibration_rows).sum())} training rows", flush=True)
-    save(data, out_dir)
-    json.dump(shape, open(kept, "w"))
-    return data, False
+    return data, kept
 
 
 def _stretches(calibration_rows) -> int:
@@ -121,10 +129,13 @@ def _stretches(calibration_rows) -> int:
                 & ~np.concatenate([[False], calibration_rows[:-1]])).sum())
 
 
-def attacks_for(train_logs, test_logs, scale, out_dir, rebuilt):
-    """The attack set, kept beside the arrays it was cut from."""
+def attacks_for(train_logs, test_logs, scale, out_dir):
+    """The attack set, built once and read back on a later run with the same settings."""
+    kept = os.path.join(out_dir, "built.json")
+    shape = built_from(train_logs, test_logs)
     files = [f"attacked_{n}.npy" for n in ATTACKED] + ["attacked.json"]
-    if not rebuilt and _have(out_dir, files):
+    if (os.path.exists(kept) and json.load(open(kept)) == shape
+            and _have(out_dir, files)):
         got = {n: np.load(os.path.join(out_dir, f"attacked_{n}.npy"))
                for n in ATTACKED}
         got["attacks"] = json.load(open(os.path.join(out_dir, "attacked.json")))
@@ -135,6 +146,7 @@ def attacks_for(train_logs, test_logs, scale, out_dir, rebuilt):
     for name in ATTACKED:
         np.save(os.path.join(out_dir, f"attacked_{name}.npy"), got[name])
     json.dump(got["attacks"], open(os.path.join(out_dir, "attacked.json"), "w"))
+    json.dump(shape, open(kept, "w"))
     return got, False
 
 
@@ -194,13 +206,13 @@ def main(pattern, out_dir, files=None):
           flush=True)
 
     clock = time.time()
-    data, kept = arrays_for(train_logs, test_logs, out_dir)
+    data, kept = arrays_for(train_logs, out_dir)
     scale = data["scale"]
-    how = "reused" if kept else f"in {time.time() - clock:.0f}s"
-    print(f"arrays {how}, train {data['rows'].shape}", flush=True)
+    how = "reused" if kept else f"built in {time.time() - clock:.0f}s"
+    print(f"grid {how}, train {data['rows'].shape}", flush=True)
 
     clock = time.time()
-    got, kept = attacks_for(train_logs, test_logs, scale, out_dir, not kept)
+    got, kept = attacks_for(train_logs, test_logs, scale, out_dir)
     how = "reused" if kept else f"in {time.time() - clock:.0f}s"
     print(f"attack set {how}, {len(got['attacks'])} attacks", flush=True)
 

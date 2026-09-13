@@ -21,12 +21,21 @@ the same for all of them.
 
 ## What is reused
 
-`seconds_above`, `scaled_rows` and `attack_set` each read every log, so their results
+`seconds_above`, `grid_rows` and `attack_set` each read every log, so their results
 are written to `out` and reused on the next run over the same logs.
 
-`out/built.json` holds the logs and the settings they were built from. A run that
-does not match it builds them again. Editing the code does not change that file, so
-delete `out` after changing what these three do.
+`out/grid.json` holds the training logs the grid was built from. The calibration
+settings are not in it, so a run with another `CALIBRATION`, `BLOCK` or `GAP` reads
+the saved grid.
+
+`out/built.json` holds the logs and the settings the attack set was built from.
+`CALIBRATION`, `BLOCK` and `GAP` are among them. They decide which rows are left to
+train, and the mean and std of those rows are what the attack set is z-scored on. The
+std is also the unit each attack's `moved` is measured in, which decides whether the
+attack is scored.
+
+Editing the code changes neither file, so delete `out` after changing what these three
+do.
 
 ## What counts as an alarm
 
