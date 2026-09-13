@@ -1,8 +1,6 @@
-"""Put logs on the grid and z-score them into the rows a model reads."""
+"""Put logs on the grid and take the scale a model's rows are z-scored on."""
 
 from __future__ import annotations
-
-import os
 
 import numpy as np
 
@@ -33,21 +31,3 @@ def scale_for(rows: np.ndarray) -> Scale:
     std = rows.std(axis=0)
     std[std == 0] = 1.0                       # a constant signal stays at 0
     return Scale(rows.mean(axis=0), std)
-
-
-def scaled_rows(logs) -> dict:
-    """Put `logs` on the grid and z-score them on their own mean and std."""
-    rows, times, segments = grid_rows(logs)
-    scale = scale_for(rows)
-    return {"scale": scale, "rows": scale.apply(rows), "raw": rows,
-            "t": times, "seg": segments}
-
-
-def save(data: dict, out_dir: str) -> None:
-    """Write each array in `data` to `out_dir` as a .npy file."""
-    os.makedirs(out_dir, exist_ok=True)
-    for name, value in data.items():
-        if isinstance(value, Scale):
-            value.save(out_dir)               # as mean.npy and std.npy
-        else:
-            np.save(os.path.join(out_dir, f"{name}.npy"), value)

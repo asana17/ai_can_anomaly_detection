@@ -1,6 +1,6 @@
 import numpy as np
 
-from assemble.train_set import grid_rows, save, scaled_rows
+from assemble.train_set import grid_rows, scale_for
 
 
 def _ts(t):
@@ -61,11 +61,12 @@ def test_segments_break_across_a_gap(tmp_path):
         assert np.allclose(np.diff(run), 0.1)           # each segment is evenly spaced
 
 
-def test_scaled_rows_standardizes_the_rows_it_was_given(tmp_path):
+def test_scale_for_standardizes_the_rows_it_was_given(tmp_path):
     log = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    data = scaled_rows([log])
+    rows, _, _ = grid_rows([log])
+    scaled = scale_for(rows).apply(rows)
 
-    engine_speed = data["rows"][:, 0]         # first signal in SIGNALS order
+    engine_speed = scaled[:, 0]               # first signal in SIGNALS order
     assert abs(engine_speed.mean()) < 1e-4
     assert abs(engine_speed.std() - 1.0) < 1e-4
 
@@ -73,24 +74,7 @@ def test_scaled_rows_standardizes_the_rows_it_was_given(tmp_path):
 def test_the_scale_it_fits_puts_other_rows_on_the_same_scale(tmp_path):
     train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
     other = _write_log(tmp_path / "te.csv", [900] * 6)
-    scale = scaled_rows([train])["scale"]
+    scale = scale_for(grid_rows([train])[0])
     rows, _, _ = grid_rows([other])
 
     assert np.allclose(scale.undo(scale.apply(rows)), rows, atol=1e-3)
-
-
-def test_scaled_rows_carries_the_time_and_segment_of_each_row(tmp_path):
-    data = scaled_rows([_write_log(tmp_path / "tr.csv", [800] * 6)])
-    assert len(data["t"]) == len(data["rows"])
-    assert len(data["seg"]) == len(data["rows"])
-    assert sorted(set(data["seg"])) == list(range(len(set(data["seg"]))))
-
-
-def test_save_writes_every_array(tmp_path):
-    data = scaled_rows([_write_log(tmp_path / "a.csv", [800] * 6)])
-    out = tmp_path / "out"
-    save(data, str(out))
-    for name in data:
-        assert (out / f"{name}.npy").exists() or name == "scale"
-    assert np.array_equal(np.load(out / "t.npy"), data["t"])
-    assert np.array_equal(np.load(out / "mean.npy"), data["scale"].mean)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import NamedTuple
 
 import numpy as np
@@ -18,7 +17,3 @@ class Scale(NamedTuple):
 
     def undo(self, rows: np.ndarray) -> np.ndarray:
         return rows * self.std + self.mean
-
-    def save(self, out_dir: str) -> None:
-        np.save(os.path.join(out_dir, "mean.npy"), self.mean)
-        np.save(os.path.join(out_dir, "std.npy"), self.std)

@@ -5,24 +5,22 @@ per decoded value, such as `engine_speed` and `wheel_speed`. The test rows come 
 [attack_set](attack_set.md).
 
 ```python
-data = scaled_rows(train_logs)     # the train half, from split.md
-save(data, "out")
+raw, t, seg = grid_rows(train_logs)     # the train half, from split.md
+scale = scale_for(raw[train_rows])      # train_rows from split_rows, in split.md
+rows = scale.apply(raw[train_rows])
 ```
 
-| key | what it holds |
+| name | what it holds |
 |---|---|
-| `rows` | the z-scored rows |
-| `raw` | the same rows before scaling |
+| `raw` | the rows before scaling |
 | `t` | the time of each row, in epoch seconds |
 | `seg` | which unbroken run of rows it belongs to |
-| `scale` | the mean and std that turn one into the other, see [scale](scale.md) |
+| `scale` | the mean and std that turn `raw` into `rows`, see [scale](scale.md) |
 
 `raw` keeps every column in its own unit, for example `engine_speed` in rpm and
 `wheel_speed` in km/h. That is what the rules read, since a rule is written in those
 units. `rows` is what a model reads. A run of rows is unbroken while each one is
 100 ms after the one before, which [grid](grid.md) sets out.
-
-`save` writes each key to `out/<key>.npy`, and `scale` as `mean.npy` and `std.npy`.
 
 ## Stopped rows are kept
 
