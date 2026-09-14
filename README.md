@@ -23,6 +23,7 @@ enter training.
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
+  The last full run is in [evaluate/results.md](evaluate/results.md).
 - `data/` holds the raw logs and is not tracked in git.
 
 ## Words

@@ -53,10 +53,7 @@ above it. PCA is not fitted on those rows. See [evaluate](../../evaluate).
 
 ## What it scores on this data
 
-Not measured on the current pipeline. The last figures were taken before the test set
-was fixed, when most injected attacks moved the state less than ordinary traffic does
-between two rows, so they said more about the test set than about PCA. Rerun
-[evaluate](../../evaluate) and put the result here.
+See [evaluate/results.md](../../evaluate/results.md).
 
 ## A warning you can ignore
 
