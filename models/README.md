@@ -7,6 +7,7 @@ Documented under [docs/](docs).
 
 - [pca](docs/pca.md) scores a row by how far it sits off the subspace normal traffic
   occupies.
+- [autoencoder](docs/autoencoder.md) scores a row by its reconstruction error.
 
 Each is fit on normal rows only, from [assemble](../assemble). Attacks come from
 [attack](../attack) and are never seen during fitting.
