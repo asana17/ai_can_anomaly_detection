@@ -5,11 +5,14 @@ Runs the whole comparison over a set of logs. It compares these detectors.
 - the instant rules alone, which read physical values
 - the instant rules together with PCA, once for each component count
 - the instant rules together with a linear autoencoder, once for each component count
+- the instant rules together with a nonlinear autoencoder, once for each component
+  count and each `HIDDEN`
 
 The models are there to catch what the rules miss, so each is compared with the rules
 alone. The component count `k` is how many numbers a row is compressed into. PCA keeps
-`k` components, and the autoencoder gets the same `k` as `latent_dim`, so the two are
-compared at the same `k`.
+`k` components, and each autoencoder gets the same `k` as `latent_dim`, so all of them
+are compared at the same `k`. The linear and nonlinear autoencoders differ only in the
+hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
 ```
 python3 -m evaluate.run "data/part_*/*.csv" out
@@ -98,11 +101,12 @@ None of these was chosen by looking at the test set.
 | name | value | how it was set |
 |---|---|---|
 | `EPOCHS` | 500 | a cap. The report shows how many epochs each fit ran, and fewer than 500 means it stopped on its own. |
-| `BATCH` | 1024 | from 1024 and 4096, on how close the linear autoencoder's training loss came to PCA's and how long it took. No attack was used. |
+| `BATCH` | 1024 | from 1024 and 4096, on how close the linear autoencoder's training loss came to PCA's and how long it took. No attack was used. The nonlinear autoencoder uses the same value. |
 | `RATE` | 1e-3 | Adam's default in PyTorch |
 | `IMPROVEMENT` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |
 | `PATIENCE` | 10 | the default `patience` of the same |
 | `TORCH_SEED` | 0 | a stated choice |
+| `HIDDEN` | 32, 64, 128 | a stated choice. All of them are at least `signals`, so `latent_dim` stays the narrowest layer at every `k`. Each is reported. |
 
 `BATCH` was compared at every `k`. Up to `k` 14 the two sizes came within 0.3% of each
 other and within 0.8% of PCA, and 1024 took less time at every `k`. At `k` 16 1024

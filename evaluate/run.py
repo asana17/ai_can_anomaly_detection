@@ -20,7 +20,7 @@ from assemble.attack_set import attack_set
 from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.split import WHEEL, seconds_above, split, split_rows
-from models.autoencoder import LinearAutoencoder, fit
+from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
 from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
 from preprocess.features.signal_state import SIGNALS
@@ -45,6 +45,7 @@ RATE = 1e-3             # Adam's learning rate
 IMPROVEMENT = 1e-4      # share of the best loss an epoch must cut, fit's threshold
 PATIENCE = 10           # epochs in a row without that before training stops
 TORCH_SEED = 0          # the torch rng each autoencoder is built and trained with
+HIDDEN = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each one reported
 INSTANT = (range_check.violations, speed_agreement.violations,
            partial(shaft_ratio.violations, min_speed=MIN_SPEED),
            partial(gear_ratio.violations, min_speed=MIN_SPEED),
@@ -243,8 +244,9 @@ def main(pattern, out_dir, files=None):
         return f"+ {model} k={k}"
 
     # the first table prints a row as each model is fitted, so the width is set up front
+    models = ["pca", "linear ae"] + [f"nonlinear ae h={h}" for h in HIDDEN]
     width = max(len(name) for name in ["detector", "rules"]
-                + [label(model, k) for k in COMPONENTS for model in ("pca", "linear ae")])
+                + [label(model, k) for k in COMPONENTS for model in models])
 
     print(f"\n{'detector':>{width}}  {'threshold':>10}  {'on clean test':>13}  "
           f"{'epochs':>6}")
@@ -266,6 +268,14 @@ def main(pattern, out_dir, files=None):
                      threshold=IMPROVEMENT, patience=PATIENCE)
         add(label("linear ae", k), reconstruction_errors(calibrate, linear),
             reconstruction_errors(rows, linear), len(losses))
+        for h in HIDDEN:
+            torch.manual_seed(TORCH_SEED)
+            nonlinear = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
+            losses = fit(tr, nonlinear, epochs=EPOCHS, batch=BATCH, rate=RATE,
+                         threshold=IMPROVEMENT, patience=PATIENCE)
+            add(label(f"nonlinear ae h={h}", k),
+                reconstruction_errors(calibrate, nonlinear),
+                reconstruction_errors(rows, nonlinear), len(losses))
 
     print(f"\n{'detector':>{width}}   "
           + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
