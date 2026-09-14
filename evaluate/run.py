@@ -34,7 +34,7 @@ DONORS = 24             # training logs the replayed payloads are taken from
 SEED = 0                # the rng the attacks are drawn with
 COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
 TARGET = 0.001          # share of normal rows the threshold cuts off
-BANDS = ((1.0, 2.0), (2.0, 4.0), (4.0, np.inf))
+MOVED = 1.0             # z distance a replay must push a row by to be an anomaly
 HOLD = (1, 10)          # rows a flag must persist before it counts as an alarm
 INSTANT = (range_check.violations, speed_agreement.violations,
            partial(shaft_ratio.violations, min_speed=MIN_SPEED),
@@ -220,7 +220,7 @@ def main(pattern, out_dir, files=None):
     attacks = got["attacks"]
     reach = touched(truth, attacks)
     moved = np.array([a["moved"] for a in attacks])
-    scored = reach & (moved >= BANDS[0][0])
+    scored = reach & (moved >= MOVED)
     print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
           f"test {int(truth.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
@@ -251,14 +251,6 @@ def main(pattern, out_dir, files=None):
         print(f"{name:>11}   "
               + "  ".join(f"{c:>7}/{int(scored.sum()):<3d}" for c, _ in cells)
               + "   " + "  ".join(f"{a:12.1f}" for _, a in cells))
-
-    print(f"\nwhat the rules leave the models, at {HOLD[-1]} rows held")
-    caught = persistent(rules & mv, got["seg"], HOLD[-1])
-    left = scored & ~touched(caught, attacks)
-    print(f"  rules leave {int(left.sum())} of {int(scored.sum())} attacks")
-    for lo, hi in BANDS:
-        pick = left & (moved >= lo) & (moved < hi)
-        print(f"    moved {lo:g} to {hi:g}: {int(pick.sum())}")
 
 
 if __name__ == "__main__":

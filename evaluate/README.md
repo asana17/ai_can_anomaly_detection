@@ -44,8 +44,10 @@ how many, and every value in it is counted.
 A run of flagged rows ends at a segment boundary, since rows either side of one can
 be hours apart.
 
-Only rows above 5 km/h are scored, and an attack counts only if it reaches one and
-moved it by at least one standard deviation.
+Only rows above 5 km/h are scored. An attack is counted when it reaches one of them
+and its largest change to a row, as the norm over the z-scored signals, is at least
+`MOVED`. `MOVED` 1.0 is a judgement that drops replays whose copied values nearly
+match the ones they overwrite.
 
 Whether a row is above 5 km/h is decided by its speed before the attack. An attack
 that fakes a stop stays in the count. The detectors read the attacked speed, so a detector that ignores
