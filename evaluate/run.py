@@ -14,11 +14,14 @@ import time
 from functools import partial
 
 import numpy as np
+import torch
 
 from assemble.attack_set import attack_set
 from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.split import WHEEL, seconds_above, split, split_rows
+from models.autoencoder import LinearAutoencoder, fit
+from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
@@ -36,6 +39,12 @@ COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
 TARGET = 0.001          # share of normal rows the threshold cuts off
 MOVED = 1.0             # z distance a replay must push a row by to be an anomaly
 HOLD = (1, 10)          # rows a flag must persist before it counts as an alarm
+EPOCHS = 500            # the most passes an autoencoder may make over the training rows
+BATCH = 1024            # training rows in each update of an autoencoder's weights
+RATE = 1e-3             # Adam's learning rate
+IMPROVEMENT = 1e-4      # share of the best loss an epoch must cut, fit's threshold
+PATIENCE = 10           # epochs in a row without that before training stops
+TORCH_SEED = 0          # the torch rng each autoencoder is built and trained with
 INSTANT = (range_check.violations, speed_agreement.violations,
            partial(shaft_ratio.violations, min_speed=MIN_SPEED),
            partial(gear_ratio.violations, min_speed=MIN_SPEED),
@@ -230,25 +239,44 @@ def main(pattern, out_dir, files=None):
     hours = quiet.sum() * period_of(got["t"]) / 3600
     print(f"\n{hours:.1f} hours above MIN_SPEED with no attack in them")
 
-    print(f"\n{'k':>4}  {'threshold':>10}  {'on clean test':>13}")
+    def label(model, k):
+        return f"+ {model} k={k}"
+
+    # the first table prints a row as each model is fitted, so the width is set up front
+    width = max(len(name) for name in ["detector", "rules"]
+                + [label(model, k) for k in COMPONENTS for model in ("pca", "linear ae")])
+
+    print(f"\n{'detector':>{width}}  {'threshold':>10}  {'on clean test':>13}  "
+          f"{'epochs':>6}")
     detectors = [("rules", np.zeros_like(rules))]
+
+    def add(name, calibration_scores, scores, epochs=""):
+        cut = np.percentile(calibration_scores, 100 * (1 - TARGET))
+        flag = scores > cut
+        print(f"{name:>{width}}  {cut:10.4g}  "
+              f"{(flag & passed).sum() / passed.sum():13.5f}  {epochs:>6}", flush=True)
+        detectors.append((name, flag & mv))
+
     for k in COMPONENTS:
         space = subspace(tr, k)
-        cut = np.percentile(residuals(calibrate, space), 100 * (1 - TARGET))
-        flag = residuals(rows, space) > cut
-        print(f"{k:>4}  {cut:10.4f}  {(flag & passed).sum() / passed.sum():13.5f}",
-              flush=True)
-        detectors.append((f"+ pca k={k}", flag & mv))
+        add(label("pca", k), residuals(calibrate, space), residuals(rows, space))
+        torch.manual_seed(TORCH_SEED)
+        linear = LinearAutoencoder(signals=tr.shape[1], latent_dim=k)
+        losses = fit(tr, linear, epochs=EPOCHS, batch=BATCH, rate=RATE,
+                     threshold=IMPROVEMENT, patience=PATIENCE)
+        add(label("linear ae", k), reconstruction_errors(calibrate, linear),
+            reconstruction_errors(rows, linear), len(losses))
 
-    print(f"\n{'detector':>11}   " + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
+    print(f"\n{'detector':>{width}}   "
+          + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
           + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in HOLD))
-    # with PCA added, a row is flagged when a rule or PCA flags it
+    # with a model added, a row is flagged when a rule or the model flags it
     for name, flag in detectors:
         cells = []
         for need in HOLD:
             on = persistent(rules | flag, got["seg"], need)
             cells.append((found(on, attacks, scored), alarms(on & quiet) / hours))
-        print(f"{name:>11}   "
+        print(f"{name:>{width}}   "
               + "  ".join(f"{c:>7}/{int(scored.sum()):<3d}" for c, _ in cells)
               + "   " + "  ".join(f"{a:12.1f}" for _, a in cells))
 

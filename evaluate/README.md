@@ -4,9 +4,12 @@ Runs the whole comparison over a set of logs. It compares these detectors.
 
 - the instant rules alone, which read physical values
 - the instant rules together with PCA, once for each component count
+- the instant rules together with a linear autoencoder, once for each component count
 
-PCA is there to catch what the rules miss, so the rules with PCA are compared with the
-rules alone.
+The models are there to catch what the rules miss, so each is compared with the rules
+alone. The component count `k` is how many numbers a row is compressed into. PCA keeps
+`k` components, and the autoencoder gets the same `k` as `latent_dim`, so the two are
+compared at the same `k`.
 
 ```
 python3 -m evaluate.run "data/part_*/*.csv" out
@@ -56,10 +59,11 @@ the row misses it.
 Detection is the number of those attacks with an alarm inside them. False alarms are
 the number of alarms raised outside any attack, per hour of the rows above 5 km/h.
 
-With PCA added, a row is flagged when a rule flags it or its residual is over the
-threshold.
+With a model added, a row is flagged when a rule flags it or the model's score is over
+its threshold. PCA's score is the residual, the autoencoder's the reconstruction error.
+Each threshold comes from the calibration rows at `TARGET`.
 
-PCA reads no window, so it is compared with `rules/instant` only.
+Neither model reads a window, so both are compared with `rules/instant` only.
 
 ## The split and calibration parameters
 
@@ -88,6 +92,21 @@ None of these was chosen by looking at the test set.
 - **`GAP`** only has to cover the event it keeps out of both parts, which is seconds
   for a hard brake. Every one of them costs training rows, so it stays well under
   `BLOCK`.
+
+## The autoencoder parameters
+
+| name | value | how it was set |
+|---|---|---|
+| `EPOCHS` | 500 | a cap. The report shows how many epochs each fit ran, and fewer than 500 means it stopped on its own. |
+| `BATCH` | 1024 | from 1024 and 4096, on how close the linear autoencoder's training loss came to PCA's and how long it took. No attack was used. |
+| `RATE` | 1e-3 | Adam's default in PyTorch |
+| `IMPROVEMENT` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |
+| `PATIENCE` | 10 | the default `patience` of the same |
+| `TORCH_SEED` | 0 | a stated choice |
+
+`BATCH` was compared at every `k`. Up to `k` 14 the two sizes came within 0.3% of each
+other and within 0.8% of PCA, and 1024 took less time at every `k`. At `k` 16 1024
+came within 13% and 4096 within 98%.
 
 ## Tests
 
