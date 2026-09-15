@@ -15,10 +15,10 @@ are compared at the same `k`. The linear and nonlinear autoencoders differ only 
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
 ```
-python3 -m evaluate.pc.run "data/part_*/*.csv" out
+python3 -m evaluate.pc.run "data/part_*/*.csv" out runs_repo
 ```
 
-Without a third argument the run takes every log the pattern matches. Giving one samples
+Without a fourth argument the run takes every log the pattern matches. Giving one samples
 that many, spread evenly over the recording, which is a smoke test and not a
 measurement.
 
@@ -30,6 +30,7 @@ Documented under [docs/](docs).
 
 - [pc_run](docs/pc_run.md) says what is reused, what counts as an alarm, and how each
   parameter was set.
+- [run_record](docs/run_record.md) says what each run keeps.
 
 ## Tests
 

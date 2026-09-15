@@ -1,6 +1,6 @@
 """Run the whole comparison over a set of logs and print what each detector catches.
 
-    python3 -m evaluate.pc.run "data/part_*/*.csv" out [logs]
+    python3 -m evaluate.pc.run "data/part_*/*.csv" out runs_repo [logs]
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ from assemble.attack_set import attack_set
 from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.split import WHEEL, seconds_above, split, split_rows
+from evaluate.pc.record import begin, record
 from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
 from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
@@ -193,7 +194,9 @@ def period_of(times):
     return float(np.median(steps[steps > 0]))
 
 
-def main(pattern, out_dir, files=None):
+def main(pattern, out_dir, runs_repo, files=None):
+    run = begin(runs_repo)
+    weights = {}
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))
     if files:                          # a smoke test asks for fewer
@@ -251,21 +254,29 @@ def main(pattern, out_dir, files=None):
     print(f"\n{'detector':>{width}}  {'threshold':>10}  {'on clean test':>13}  "
           f"{'epochs':>6}")
     detectors = [("rules", np.zeros_like(rules))]
+    thresholds = []
 
     def add(name, calibration_scores, scores, epochs=""):
         cut = np.percentile(calibration_scores, 100 * (1 - TARGET))
         flag = scores > cut
-        print(f"{name:>{width}}  {cut:10.4g}  "
-              f"{(flag & passed).sum() / passed.sum():13.5f}  {epochs:>6}", flush=True)
+        clean = (flag & passed).sum() / passed.sum()
+        print(f"{name:>{width}}  {cut:10.4g}  {clean:13.5f}  {epochs:>6}", flush=True)
         detectors.append((name, flag & mv))
+        thresholds.append({"detector": name, "threshold": float(cut),
+                           "on_clean_test": float(clean),
+                           "epochs": epochs if epochs != "" else None})
 
     for k in COMPONENTS:
         space = subspace(tr, k)
+        weights[f"pca.k{k}.centre"] = torch.from_numpy(space.centre)
+        # safetensors refuses the transposed view subspace returns
+        weights[f"pca.k{k}.basis"] = torch.from_numpy(space.basis).contiguous()
         add(label("pca", k), residuals(calibrate, space), residuals(rows, space))
         torch.manual_seed(TORCH_SEED)
         linear = LinearAutoencoder(signals=tr.shape[1], latent_dim=k)
         losses = fit(tr, linear, epochs=EPOCHS, batch=BATCH, rate=RATE,
                      threshold=IMPROVEMENT, patience=PATIENCE)
+        weights.update({f"linear_ae.k{k}.{n}": t for n, t in linear.state_dict().items()})
         add(label("linear ae", k), reconstruction_errors(calibrate, linear),
             reconstruction_errors(rows, linear), len(losses))
         for h in HIDDEN:
@@ -273,6 +284,8 @@ def main(pattern, out_dir, files=None):
             nonlinear = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
             losses = fit(tr, nonlinear, epochs=EPOCHS, batch=BATCH, rate=RATE,
                          threshold=IMPROVEMENT, patience=PATIENCE)
+            weights.update({f"nonlinear_ae.h{h}.k{k}.{n}": t
+                            for n, t in nonlinear.state_dict().items()})
             add(label(f"nonlinear ae h={h}", k),
                 reconstruction_errors(calibrate, nonlinear),
                 reconstruction_errors(rows, nonlinear), len(losses))
@@ -281,6 +294,7 @@ def main(pattern, out_dir, files=None):
           + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
           + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in HOLD))
     # with a model added, a row is flagged when a rule or the model flags it
+    detection = []
     for name, flag in detectors:
         cells = []
         for need in HOLD:
@@ -289,7 +303,23 @@ def main(pattern, out_dir, files=None):
         print(f"{name:>{width}}   "
               + "  ".join(f"{c:>7}/{int(scored.sum()):<3d}" for c, _ in cells)
               + "   " + "  ".join(f"{a:12.1f}" for _, a in cells))
+        detection.append({"detector": name,
+                          "found": {str(n): int(c) for n, (c, _) in zip(HOLD, cells)},
+                          "alarms_per_hour": {str(n): float(a)
+                                              for n, (_, a) in zip(HOLD, cells)}})
+
+    record(run, weights, {
+        "seeds": {"SEED": SEED, "TORCH_SEED": TORCH_SEED},
+        "hyperparameters": {
+            "MIN_SPEED": MIN_SPEED, "TRAIN": TRAIN, "CALIBRATION": CALIBRATION,
+            "BLOCK": BLOCK, "GAP": GAP, "DONORS": DONORS, "COMPONENTS": COMPONENTS,
+            "TARGET": TARGET, "MOVED": MOVED, "HOLD": HOLD, "EPOCHS": EPOCHS,
+            "BATCH": BATCH, "RATE": RATE, "IMPROVEMENT": IMPROVEMENT,
+            "PATIENCE": PATIENCE, "HIDDEN": HIDDEN, "logs": len(logs)},
+        "metrics": {"hours": float(hours), "attacks_scored": int(scored.sum()),
+                    "thresholds": thresholds, "detection": detection}})
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else None)
+    main(sys.argv[1], sys.argv[2], sys.argv[3],
+         int(sys.argv[4]) if len(sys.argv) > 4 else None)
