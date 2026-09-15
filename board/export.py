@@ -1,15 +1,21 @@
-"""Write one nonlinear autoencoder from a run out as float and int8 ONNX.
+"""Write one nonlinear autoencoder from a run out as float and int8 ONNX, and keep them.
 
-    python3 -m board.export "data/part_*/*.csv" out run_dir k h dest
+    python3 -m board.export "data/part_*/*.csv" out runs_clone started k h
 """
 
 from __future__ import annotations
 
 import glob
+import json
 import os
+import platform
 import sys
+import tempfile
+import time
 
 import numpy as np
+import onnx
+import onnxruntime
 import torch
 from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
                                       QuantFormat, QuantType, quantize_static)
@@ -17,6 +23,7 @@ from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
 from assemble.split import WHEEL, split
+from evaluate.pc.record import git
 from evaluate.pc.run import Settings, arrays_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder
 
@@ -33,36 +40,62 @@ class Rows(CalibrationDataReader):
         return None if batch is None else {self.name: batch.astype(np.float32)}
 
 
-def main(pattern, out_dir, run_dir, k, h, dest):
+def main(pattern, out_dir, runs_clone, started, k, h):
     settings = Settings()
-    os.makedirs(dest, exist_ok=True)
+    exported = time.localtime()
+    stamp = time.strftime("%Y%m%d-%H%M%S", exported)
+    commit = git("rev-parse", "HEAD").strip()
+    uncommitted = git("status", "--porcelain").splitlines()
+    run = os.path.join("results", started)
+
+    # checked before the rows, which can take long to build
+    prefix = f"nonlinear_ae.h{h}.k{k}."
+    weights = load_file(os.path.join(runs_clone, run, "weights.safetensors"))
+    state = {name[len(prefix):]: tensor for name, tensor in weights.items()
+             if name.startswith(prefix)}
+    if not state:
+        raise ValueError(f"{run} holds no nonlinear autoencoder at k={k} h={h}")
+
     logs = sorted(glob.glob(pattern))
     train_logs, _ = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
     data, _ = arrays_for(train_logs, out_dir, settings)
     moving = data["scale"].undo(data["rows"])[:, WHEEL] > settings.MIN_SPEED
     tr = data["rows"][moving]               # the same training rows as evaluate.pc.run
 
-    prefix = f"nonlinear_ae.h{h}.k{k}."
-    weights = load_file(os.path.join(run_dir, "weights.safetensors"))
     model = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
-    model.load_state_dict({name[len(prefix):]: tensor for name, tensor in weights.items()
-                           if name.startswith(prefix)})
+    model.load_state_dict(state)
+    model.eval()
 
+    path = os.path.join("board", stamp)
+    dest = os.path.join(runs_clone, path)
+    os.makedirs(dest)                       # raises rather than overwrite an export
     name = f"nonlinear_ae_k{k}_h{h}"
     float_path = os.path.join(dest, f"{name}_float.onnx")
-    model.eval()
     torch.onnx.export(model, torch.zeros(1, tr.shape[1]), float_path, dynamo=False,
                       input_names=["row"], output_names=["out"],
                       dynamic_axes={"row": {0: "batch"}, "out": {0: "batch"}})
+    with tempfile.TemporaryDirectory() as scratch:
+        prepared = os.path.join(scratch, f"{name}_prepared.onnx")
+        quant_pre_process(float_path, prepared)
+        quantize_static(prepared, os.path.join(dest, f"{name}_int8.onnx"),
+                        Rows(tr, "row", settings.BATCH), quant_format=QuantFormat.QDQ,
+                        per_channel=True, activation_type=QuantType.QInt8,
+                        weight_type=QuantType.QInt8,
+                        calibrate_method=CalibrationMethod.MinMax)
 
-    prepared = os.path.join(dest, f"{name}_prepared.onnx")
-    quant_pre_process(float_path, prepared)
-    quantize_static(prepared, os.path.join(dest, f"{name}_int8.onnx"),
-                    Rows(tr, "row", settings.BATCH), quant_format=QuantFormat.QDQ,
-                    per_channel=True, activation_type=QuantType.QInt8,
-                    weight_type=QuantType.QInt8, calibrate_method=CalibrationMethod.MinMax)
+    meta = {"run": run, "k": k, "h": h,
+            "commit": commit, "uncommitted": uncommitted,
+            "versions": {"python": platform.python_version(), "numpy": np.__version__,
+                         "torch": torch.__version__, "onnx": onnx.__version__,
+                         "onnxruntime": onnxruntime.__version__},
+            "exported": time.strftime("%Y-%m-%dT%H:%M:%S%z", exported)}
+    with open(os.path.join(dest, "meta.json"), "w") as f:
+        json.dump(meta, f, indent=2)
+    git("-C", runs_clone, "add", path)
+    git("-C", runs_clone, "commit", "-m", f"add {path} from {run} k={k} h={h}")
+    git("-C", runs_clone, "push")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), int(sys.argv[5]),
-         sys.argv[6])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]),
+         int(sys.argv[6]))
