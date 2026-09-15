@@ -1,7 +1,7 @@
 import numpy as np
 
-from evaluate import run
-from evaluate.run import alarms, found, period_of, persistent, touched
+from evaluate.pc import run
+from evaluate.pc.run import alarms, found, period_of, persistent, touched
 
 ONE = np.zeros(8, dtype=np.int32)          # one segment, so nothing breaks a run
 

@@ -53,7 +53,7 @@ above it. PCA is not fitted on those rows. See [evaluate](../../evaluate).
 
 ## What it scores on this data
 
-See [evaluate/results.md](../../evaluate/results.md).
+See [evaluate/pc/results.md](../../evaluate/pc/results.md).
 
 ## A warning you can ignore
 

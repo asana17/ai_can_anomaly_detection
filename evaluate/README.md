@@ -15,7 +15,7 @@ are compared at the same `k`. The linear and nonlinear autoencoders differ only 
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
 ```
-python3 -m evaluate.run "data/part_*/*.csv" out
+python3 -m evaluate.pc.run "data/part_*/*.csv" out
 ```
 
 Without a third argument the run takes every log the pattern matches. Giving one samples

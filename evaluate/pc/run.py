@@ -1,6 +1,6 @@
 """Run the whole comparison over a set of logs and print what each detector catches.
 
-    python3 -m evaluate.run "data/part_*/*.csv" out [logs]
+    python3 -m evaluate.pc.run "data/part_*/*.csv" out [logs]
 """
 
 from __future__ import annotations
