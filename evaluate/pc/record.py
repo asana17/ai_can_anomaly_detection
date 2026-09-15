@@ -24,12 +24,12 @@ def git(*args):
                           check=True).stdout
 
 
-def begin(runs_repo):
-    """Claim `results/<start time>/` in `runs_repo`, and note the code it starts from."""
+def begin(runs_clone):
+    """Claim `results/<start time>/` in `runs_clone`, and note the code it starts from."""
     started = time.time()
     stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(started))
-    os.makedirs(os.path.join(runs_repo, "results", stamp))  # raises rather than overwrite
-    return {"repo": runs_repo, "stamp": stamp, "started": started,
+    os.makedirs(os.path.join(runs_clone, "results", stamp))  # raises rather than overwrite
+    return {"repo": runs_clone, "stamp": stamp, "started": started,
             "commit": git("rev-parse", "HEAD").strip(),
             "uncommitted": git("status", "--porcelain").splitlines()}
 

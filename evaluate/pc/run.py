@@ -1,6 +1,6 @@
 """Run the whole comparison over a set of logs and print what each detector catches.
 
-    python3 -m evaluate.pc.run "data/part_*/*.csv" out runs_repo [logs]
+    python3 -m evaluate.pc.run "data/part_*/*.csv" out runs_clone [logs]
 """
 
 from __future__ import annotations
@@ -207,9 +207,9 @@ def period_of(times):
     return float(np.median(steps[steps > 0]))
 
 
-def main(pattern, out_dir, runs_repo, files=None):
+def main(pattern, out_dir, runs_clone, files=None):
     settings = Settings()
-    run = begin(runs_repo)
+    run = begin(runs_clone)
     weights = {}
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))

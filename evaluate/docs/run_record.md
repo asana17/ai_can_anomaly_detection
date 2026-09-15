@@ -1,6 +1,6 @@
 # run record
 
-`runs_repo` is a clone of [asana17/ai_can_anomaly_detection_runs](https://github.com/asana17/ai_can_anomaly_detection_runs). Each run adds `results/<start time>/`
+`runs_clone` is a clone of [asana17/ai_can_anomaly_detection_runs](https://github.com/asana17/ai_can_anomaly_detection_runs). Each run adds `results/<start time>/`
 to it, then commits and pushes that directory. A run never writes into an existing
 directory, so earlier runs stay as they were.
 
