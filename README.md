@@ -7,9 +7,9 @@ Deterministic rules catch what can be written as an invariant, a value out of ra
 or two signals that must agree, like the engine and wheel speeds picking out the gear
 the transmission reports. They are in [rules/](rules).
 
-What no invariant covers is left to a model. [PCA](models/docs/pca.md) is built, and a
-dense autoencoder is next. A model trains offline on a PC on normal data only, then
-quantizes and runs on the device for inference. Anomalies are synthesized from the normal data to test detection and never
+What no invariant covers is left to a model, [PCA](models/docs/pca.md) or a linear or
+nonlinear [autoencoder](models/docs/autoencoder.md). A model trains offline on a PC on
+normal data only, then quantizes and runs on the device for inference. Anomalies are synthesized from the normal data to test detection and never
 enter training.
 
 ## Setup
