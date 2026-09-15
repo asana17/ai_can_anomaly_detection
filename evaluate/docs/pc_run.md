@@ -74,7 +74,7 @@ None of these was chosen by looking at the test set.
 
 | name | value | how it was set |
 |---|---|---|
-| `EPOCHS` | 500 | a cap. The report shows how many epochs each fit ran, and fewer than 500 means it stopped on its own. |
+| `EPOCHS` | 1000 | a cap. The report shows how many epochs each fit ran, and fewer than 1000 means it stopped on its own. Raised from 500, where 8 of the 24 nonlinear fits were cut off, on whether fits stop on their own and never on detection. |
 | `BATCH` | 1024 | from 1024 and 4096, on how close the linear autoencoder's training loss came to PCA's and how long it took. No attack was used. The nonlinear autoencoder uses the same value. |
 | `RATE` | 1e-3 | Adam's default in PyTorch |
 | `IMPROVEMENT` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |

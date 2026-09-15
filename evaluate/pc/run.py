@@ -46,7 +46,7 @@ class Settings:
     TARGET: float = 0.001       # share of normal rows the threshold cuts off
     MOVED: float = 1.0          # z distance a replay must push a row by to be an anomaly
     HOLD: tuple = (1, 10)       # rows a flag must persist before it counts as an alarm
-    EPOCHS: int = 500           # the most passes an autoencoder may make over the rows
+    EPOCHS: int = 1000          # the most passes an autoencoder may make over the rows
     BATCH: int = 1024           # training rows in each update of an autoencoder's weights
     RATE: float = 1e-3          # Adam's learning rate
     IMPROVEMENT: float = 1e-4   # share of the best loss an epoch must cut, fit's threshold
