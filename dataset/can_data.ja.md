@@ -13,6 +13,21 @@
 - **内容**: 正常トラフィックのみ。記録内に攻撃・異常は含まれない。
 - **原典**: トゥルク大学(University of Turku)J1939 トラックデータセット。
   https://etsin.fairdata.fi/dataset/7586f24f-c91b-41df-92af-283524de8b3e/data
+- **ライセンス**: CC BY 4.0、オープンアクセス。
+
+## 入手方法
+
+上の Etsin のページから `part_1.tar.xz` から `part_4.tar.xz` を `data/` にダウンロードする。
+合計で約 3 GB。各アーカイブは展開するとそれぞれ `part_N/` になるので、名前を変える必要は
+ない。
+
+```
+cd data
+tar -xJf part_1.tar.xz
+tar -xJf part_2.tar.xz
+tar -xJf part_3.tar.xz
+tar -xJf part_4.tar.xz
+```
 
 ## ディスク上の構成
 

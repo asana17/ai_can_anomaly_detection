@@ -13,6 +13,21 @@ the data is, how it is laid out, and what we learned from profiling it.
 - **Content**: normal traffic only. There are no attacks or anomalies in the recordings.
 - **Origin**: University of Turku J1939 truck dataset.
   https://etsin.fairdata.fi/dataset/7586f24f-c91b-41df-92af-283524de8b3e/data
+- **License**: CC BY 4.0, open access.
+
+## Getting it
+
+Download `part_1.tar.xz` to `part_4.tar.xz` from the Etsin page above into `data/`,
+about 3 GB in all. Each archive unpacks into its own `part_N/`, so nothing needs
+renaming.
+
+```
+cd data
+tar -xJf part_1.tar.xz
+tar -xJf part_2.tar.xz
+tar -xJf part_3.tar.xz
+tar -xJf part_4.tar.xz
+```
 
 ## On-disk layout
 

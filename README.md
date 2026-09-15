@@ -23,6 +23,8 @@ python3 -m pip install -r requirements.txt
 Converting a model for the board also needs [ST Edge AI Core](https://www.st.com/en/development-tools/stedgeai-core.html)
 4.0.1 with its STM32 MCU component. It does not install through pip.
 
+The logs go in `data/`, see [dataset/can_data.md](dataset/can_data.md#getting-it).
+
 ## Layout
 
 - [dataset/](dataset) describes the logs and what profiling them found.
