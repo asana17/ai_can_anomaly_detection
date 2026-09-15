@@ -12,6 +12,17 @@ dense autoencoder is next. A model trains offline on a PC on normal data only, t
 quantizes and runs on the device for inference. Anomalies are synthesized from the normal data to test detection and never
 enter training.
 
+## Setup
+
+Python 3.9. ONNX Runtime 1.19.2 is the last version that installs on it.
+
+```
+python3 -m pip install -r requirements.txt
+```
+
+Converting a model for the board also needs [ST Edge AI Core](https://www.st.com/en/development-tools/stedgeai-core.html)
+4.0.1 with its STM32 MCU component. It does not install through pip.
+
 ## Layout
 
 - [dataset/](dataset) describes the logs and what profiling them found.
