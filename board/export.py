@@ -40,6 +40,35 @@ class Rows(CalibrationDataReader):
         return None if batch is None else {self.name: batch.astype(np.float32)}
 
 
+def load(run_dir, k, h):
+    """The `state_dict` of the run's nonlinear autoencoder at `k` and `h`."""
+    prefix = f"nonlinear_ae.h{h}.k{k}."
+    weights = load_file(os.path.join(run_dir, "weights.safetensors"))
+    state = {name[len(prefix):]: tensor for name, tensor in weights.items()
+             if name.startswith(prefix)}
+    if not state:
+        raise ValueError(f"{run_dir} holds no nonlinear autoencoder at k={k} h={h}")
+    return state
+
+
+def write(model, rows, dest, name, batch):
+    """Write `model` into a new `dest` as float ONNX, and as int8 quantized on `rows`."""
+    os.makedirs(dest)                       # raises rather than overwrite an export
+    float_path = os.path.join(dest, f"{name}_float.onnx")
+    model.eval()
+    torch.onnx.export(model, torch.zeros(1, rows.shape[1]), float_path, dynamo=False,
+                      input_names=["row"], output_names=["out"],
+                      dynamic_axes={"row": {0: "batch"}, "out": {0: "batch"}})
+    with tempfile.TemporaryDirectory() as scratch:
+        prepared = os.path.join(scratch, f"{name}_prepared.onnx")
+        quant_pre_process(float_path, prepared)
+        quantize_static(prepared, os.path.join(dest, f"{name}_int8.onnx"),
+                        Rows(rows, "row", batch), quant_format=QuantFormat.QDQ,
+                        per_channel=True, activation_type=QuantType.QInt8,
+                        weight_type=QuantType.QInt8,
+                        calibrate_method=CalibrationMethod.MinMax)
+
+
 def main(pattern, out_dir, runs_clone, started, k, h):
     settings = Settings()
     exported = time.localtime()
@@ -47,14 +76,7 @@ def main(pattern, out_dir, runs_clone, started, k, h):
     commit = git("rev-parse", "HEAD").strip()
     uncommitted = git("status", "--porcelain").splitlines()
     run = os.path.join("results", started)
-
-    # checked before the rows, which can take long to build
-    prefix = f"nonlinear_ae.h{h}.k{k}."
-    weights = load_file(os.path.join(runs_clone, run, "weights.safetensors"))
-    state = {name[len(prefix):]: tensor for name, tensor in weights.items()
-             if name.startswith(prefix)}
-    if not state:
-        raise ValueError(f"{run} holds no nonlinear autoencoder at k={k} h={h}")
+    state = load(os.path.join(runs_clone, run), k, h)   # before the rows, which take long
 
     logs = sorted(glob.glob(pattern))
     train_logs, _ = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
@@ -64,24 +86,9 @@ def main(pattern, out_dir, runs_clone, started, k, h):
 
     model = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
     model.load_state_dict(state)
-    model.eval()
-
     path = os.path.join("board", stamp)
     dest = os.path.join(runs_clone, path)
-    os.makedirs(dest)                       # raises rather than overwrite an export
-    name = f"nonlinear_ae_k{k}_h{h}"
-    float_path = os.path.join(dest, f"{name}_float.onnx")
-    torch.onnx.export(model, torch.zeros(1, tr.shape[1]), float_path, dynamo=False,
-                      input_names=["row"], output_names=["out"],
-                      dynamic_axes={"row": {0: "batch"}, "out": {0: "batch"}})
-    with tempfile.TemporaryDirectory() as scratch:
-        prepared = os.path.join(scratch, f"{name}_prepared.onnx")
-        quant_pre_process(float_path, prepared)
-        quantize_static(prepared, os.path.join(dest, f"{name}_int8.onnx"),
-                        Rows(tr, "row", settings.BATCH), quant_format=QuantFormat.QDQ,
-                        per_channel=True, activation_type=QuantType.QInt8,
-                        weight_type=QuantType.QInt8,
-                        calibrate_method=CalibrationMethod.MinMax)
+    write(model, tr, dest, f"nonlinear_ae_k{k}_h{h}", settings.BATCH)
 
     meta = {"run": run, "k": k, "h": h,
             "commit": commit, "uncommitted": uncommitted,
