@@ -56,20 +56,21 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Run [evaluate](evaluate) over all 11,194 logs and put the result in
-  [pca](models/docs/pca.md). Every run so far sampled 1,200 or fewer, which left
-  under two hours of clean driving to count false alarms in.
-- Add a dense autoencoder beside [pca](models/docs/pca.md) and compare the two on
-  the attacked test set. Both read one instant, so the difference is what
-  nonlinearity alone is worth. Score only while the truck moves.
-- Settle whether the rules are a floor the models build on. Under one alarm
-  definition for both, PCA has found more attacks than the rules and raised fewer
-  false alarms in every run so far.
-- Then widen to a stretch of time, VAR against a windowed autoencoder. A single
-  instant holds few enough relations to write as rules, so this is where the
-  autoencoder is expected to earn its place. Whether it is worth doing depends on
-  what the instant pair shows.
-- Quantize and run inference on the device.
+- Run [evaluate](evaluate) over every log again, so the fitted models are kept in the
+  runs repository.
+- Measure on normal rows how far the int8 scores and thresholds move from the float
+  ones, under `evaluate/board`.
+- Generate C code with ST Edge AI Core and run inference on the board under μT-Kernel,
+  with rows sent from the PC over UART.
+- Port the preprocessing to C and feed real CAN frames to the board.
+- Add kinds of anomaly beyond replay to the attacked test set, designed against the
+  rules.
+- Add Isolation Forest beside the autoencoders, as a baseline that does not
+  reconstruct.
+- Restate [dataset/measurements.md](dataset/measurements.md) over every log.
+- Settle whether the rules are a floor the models build on.
+- Then widen to a stretch of time, VAR against a windowed autoencoder, if the instant
+  models show it is worth doing.
 
 ## Tests
 
