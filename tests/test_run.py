@@ -61,8 +61,8 @@ def test_seconds_for_measures_only_the_logs_it_lacks(tmp_path, monkeypatch):
         return {p: 1.0 for p in logs}
 
     monkeypatch.setattr(run, "seconds_above", fake)
-    assert run.seconds_for(["a", "b"], str(tmp_path)) == {"a": 1.0, "b": 1.0}
-    assert run.seconds_for(["b", "c"], str(tmp_path)) == {"b": 1.0, "c": 1.0}
+    assert run.seconds_for(["a", "b"], str(tmp_path), run.Settings()) == {"a": 1.0, "b": 1.0}
+    assert run.seconds_for(["b", "c"], str(tmp_path), run.Settings()) == {"b": 1.0, "c": 1.0}
     assert asked == [["a", "b"], ["c"]]
 
 

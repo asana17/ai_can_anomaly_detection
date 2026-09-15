@@ -11,6 +11,7 @@ import os
 import random
 import sys
 import time
+from dataclasses import asdict, dataclass
 from functools import partial
 
 import numpy as np
@@ -29,33 +30,42 @@ from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            reverse_speed, shaft_ratio, speed_agreement, steering_sign,
                            stopped_shaft)
 
-MIN_SPEED = 5.0         # km/h, the speed a row has to exceed to be scored
-TRAIN = 0.75            # share of the seconds above MIN_SPEED before the test cut
-CALIBRATION = 0.10      # share of the training seconds above MIN_SPEED held out
-BLOCK = 20.0            # seconds above MIN_SPEED in one calibration window
-GAP = 5.0               # seconds of training rows dropped around a calibration row
-DONORS = 24             # training logs the replayed payloads are taken from
-SEED = 0                # the rng the attacks are drawn with
-COMPONENTS = (2, 4, 6, 8, 10, 12, 14, 16)
-TARGET = 0.001          # share of normal rows the threshold cuts off
-MOVED = 1.0             # z distance a replay must push a row by to be an anomaly
-HOLD = (1, 10)          # rows a flag must persist before it counts as an alarm
-EPOCHS = 500            # the most passes an autoencoder may make over the training rows
-BATCH = 1024            # training rows in each update of an autoencoder's weights
-RATE = 1e-3             # Adam's learning rate
-IMPROVEMENT = 1e-4      # share of the best loss an epoch must cut, fit's threshold
-PATIENCE = 10           # epochs in a row without that before training stops
-TORCH_SEED = 0          # the torch rng each autoencoder is built and trained with
-HIDDEN = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each one reported
-INSTANT = (range_check.violations, speed_agreement.violations,
-           partial(shaft_ratio.violations, min_speed=MIN_SPEED),
-           partial(gear_ratio.violations, min_speed=MIN_SPEED),
-           partial(steering_sign.violations, min_speed=MIN_SPEED),
-           engine_off.violations, pedal_conflict.violations,
-           stopped_shaft.violations, reverse_speed.violations)
+
+@dataclass(frozen=True)
+class Settings:
+    """Every value a run is made with, kept together so a run can record all of them."""
+
+    MIN_SPEED: float = 5.0      # km/h, the speed a row has to exceed to be scored
+    TRAIN: float = 0.75         # share of the seconds above MIN_SPEED before the test cut
+    CALIBRATION: float = 0.10   # share of the training seconds above MIN_SPEED held out
+    BLOCK: float = 20.0         # seconds above MIN_SPEED in one calibration window
+    GAP: float = 5.0            # seconds of training rows dropped around a calibration row
+    DONORS: int = 24            # training logs the replayed payloads are taken from
+    SEED: int = 0               # the rng the attacks are drawn with
+    COMPONENTS: tuple = (2, 4, 6, 8, 10, 12, 14, 16)
+    TARGET: float = 0.001       # share of normal rows the threshold cuts off
+    MOVED: float = 1.0          # z distance a replay must push a row by to be an anomaly
+    HOLD: tuple = (1, 10)       # rows a flag must persist before it counts as an alarm
+    EPOCHS: int = 500           # the most passes an autoencoder may make over the rows
+    BATCH: int = 1024           # training rows in each update of an autoencoder's weights
+    RATE: float = 1e-3          # Adam's learning rate
+    IMPROVEMENT: float = 1e-4   # share of the best loss an epoch must cut, fit's threshold
+    PATIENCE: int = 10          # epochs in a row without that before training stops
+    TORCH_SEED: int = 0         # the torch rng each autoencoder is built and trained with
+    HIDDEN: tuple = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each reported
 
 
-def seconds_for(logs, out_dir):
+def instant(settings):
+    """The instant rules, with the speed the moving ones start at."""
+    return (range_check.violations, speed_agreement.violations,
+            partial(shaft_ratio.violations, min_speed=settings.MIN_SPEED),
+            partial(gear_ratio.violations, min_speed=settings.MIN_SPEED),
+            partial(steering_sign.violations, min_speed=settings.MIN_SPEED),
+            engine_off.violations, pedal_conflict.violations,
+            stopped_shaft.violations, reverse_speed.violations)
+
+
+def seconds_for(logs, out_dir, settings):
     """The seconds each log spends above the minimum speed, measured once and kept.
 
     A log's own seconds do not depend on which other logs were asked for, so the file
@@ -66,7 +76,7 @@ def seconds_for(logs, out_dir):
     kept = json.load(open(path)) if os.path.exists(path) else {}
     missing = [p for p in logs if p not in kept]
     if missing:
-        kept.update(seconds_above(missing, MIN_SPEED))
+        kept.update(seconds_above(missing, settings.MIN_SPEED))
         json.dump(kept, open(path, "w"))
     return {p: kept[p] for p in logs}
 
@@ -96,20 +106,21 @@ def grid_for(train_logs, out_dir):
     return got, False
 
 
-def built_from(train_logs, test_logs):
+def built_from(train_logs, test_logs, settings):
     """The logs and the settings the attack set was built from."""
-    return {"logs": [train_logs, test_logs], "train": TRAIN, "donors": DONORS,
-            "calibration": CALIBRATION, "block": BLOCK, "gap": GAP,
-            "seed": SEED, "signals": SIGNALS,
-            "period": PERIOD, "max_hold": MAX_HOLD}
+    return {"logs": [train_logs, test_logs], "train": settings.TRAIN,
+            "donors": settings.DONORS, "calibration": settings.CALIBRATION,
+            "block": settings.BLOCK, "gap": settings.GAP, "seed": settings.SEED,
+            "signals": SIGNALS, "period": PERIOD, "max_hold": MAX_HOLD}
 
 
-def arrays_for(train_logs, out_dir):
+def arrays_for(train_logs, out_dir, settings):
     """The train and calibration arrays, cut out of the saved grid by time."""
     (raw, times, segments), kept = grid_for(train_logs, out_dir)
-    train_rows, calibration_rows = split_rows(raw, times, CALIBRATION, BLOCK, GAP,
-                                              MIN_SPEED)
-    moving = raw[:, WHEEL] > MIN_SPEED
+    train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
+                                              settings.BLOCK, settings.GAP,
+                                              settings.MIN_SPEED)
+    moving = raw[:, WHEEL] > settings.MIN_SPEED
     scale = scale_for(raw[train_rows & moving])     # the rows PCA is fitted on
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],
@@ -134,10 +145,10 @@ def _stretches(calibration_rows) -> int:
                 & ~np.concatenate([[False], calibration_rows[:-1]])).sum())
 
 
-def attacks_for(train_logs, test_logs, scale, out_dir):
+def attacks_for(train_logs, test_logs, scale, out_dir, settings):
     """The attack set, built once and read back on a later run with the same settings."""
     kept = os.path.join(out_dir, "built.json")
-    shape = built_from(train_logs, test_logs)
+    shape = built_from(train_logs, test_logs, settings)
     files = [f"attacked_{n}.npy" for n in ATTACKED] + ["attacked.json"]
     if (os.path.exists(kept) and json.load(open(kept)) == shape
             and _have(out_dir, files)):
@@ -145,9 +156,10 @@ def attacks_for(train_logs, test_logs, scale, out_dir):
                for n in ATTACKED}
         got["attacks"] = json.load(open(os.path.join(out_dir, "attacked.json")))
         return got, True
-    got = attack_set(test_logs, scale, random.Random(SEED),
-                     source_logs=train_logs[::max(len(train_logs) // DONORS, 1)]
-                     [:DONORS])
+    donors = settings.DONORS
+    got = attack_set(test_logs, scale, random.Random(settings.SEED),
+                     source_logs=train_logs[::max(len(train_logs) // donors, 1)]
+                     [:donors])
     for name in ATTACKED:
         np.save(os.path.join(out_dir, f"attacked_{name}.npy"), got[name])
     json.dump(got["attacks"], open(os.path.join(out_dir, "attacked.json"), "w"))
@@ -155,9 +167,10 @@ def attacks_for(train_logs, test_logs, scale, out_dir):
     return got, False
 
 
-def rule_hits(raw):
+def rule_hits(raw, settings):
     """True where an instant rule fires, read off physical values rather than scaled ones."""
-    return np.array([any(check(dict(zip(SIGNALS, row))) for check in INSTANT)
+    checks = instant(settings)
+    return np.array([any(check(dict(zip(SIGNALS, row))) for check in checks)
                      for row in raw.tolist()], dtype=bool)
 
 
@@ -195,50 +208,51 @@ def period_of(times):
 
 
 def main(pattern, out_dir, runs_repo, files=None):
+    settings = Settings()
     run = begin(runs_repo)
     weights = {}
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))
     if files:                          # a smoke test asks for fewer
         logs = logs[::max(len(logs) // files, 1)][:files]
-    seconds = seconds_for(logs, out_dir)
+    seconds = seconds_for(logs, out_dir, settings)
 
-    train_logs, test_logs = split(seconds, TRAIN)
+    train_logs, test_logs = split(seconds, settings.TRAIN)
     print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
           f"{sum(seconds[p] for p in train_logs):.0f}s and "
           f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",
           flush=True)
 
     clock = time.time()
-    data, kept = arrays_for(train_logs, out_dir)
+    data, kept = arrays_for(train_logs, out_dir, settings)
     scale = data["scale"]
     how = "reused" if kept else f"built in {time.time() - clock:.0f}s"
     print(f"grid {how}, train {data['rows'].shape}", flush=True)
 
     clock = time.time()
-    got, kept = attacks_for(train_logs, test_logs, scale, out_dir)
+    got, kept = attacks_for(train_logs, test_logs, scale, out_dir, settings)
     how = "reused" if kept else f"in {time.time() - clock:.0f}s"
     print(f"attack set {how}, {len(got['attacks'])} attacks", flush=True)
 
     def moving(rows):
-        return scale.undo(rows)[:, WHEEL] > MIN_SPEED
+        return scale.undo(rows)[:, WHEEL] > settings.MIN_SPEED
 
-    clean = ~rule_hits(data["calibration_raw"])
+    clean = ~rule_hits(data["calibration_raw"], settings)
     tr = data["rows"][moving(data["rows"])]
     calibrate = data["calibration_rows"][moving(data["calibration_rows"]) & clean]
     rows, label = got["rows"], got["label"]
     mv = moving(rows)                       # what a detector reads, attack included
-    truth = got["wheel"] > MIN_SPEED        # what is scored, the speed before the attack
+    truth = got["wheel"] > settings.MIN_SPEED   # what is scored, the speed before it
     quiet = truth & ~label
     attacks = got["attacks"]
     reach = touched(truth, attacks)
     moved = np.array([a["moved"] for a in attacks])
-    scored = reach & (moved >= MOVED)
+    scored = reach & (moved >= settings.MOVED)
     print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
           f"test {int(truth.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
-    rules = rule_hits(got["raw"]) & mv
+    rules = rule_hits(got["raw"], settings) & mv
     passed = quiet & ~rules                 # no attack and no rule, like calibration rows
     hours = quiet.sum() * period_of(got["t"]) / 3600
     print(f"\n{hours:.1f} hours above MIN_SPEED with no attack in them")
@@ -247,9 +261,9 @@ def main(pattern, out_dir, runs_repo, files=None):
         return f"+ {model} k={k}"
 
     # the first table prints a row as each model is fitted, so the width is set up front
-    models = ["pca", "linear ae"] + [f"nonlinear ae h={h}" for h in HIDDEN]
+    models = ["pca", "linear ae"] + [f"nonlinear ae h={h}" for h in settings.HIDDEN]
     width = max(len(name) for name in ["detector", "rules"]
-                + [label(model, k) for k in COMPONENTS for model in models])
+                + [label(model, k) for k in settings.COMPONENTS for model in models])
 
     print(f"\n{'detector':>{width}}  {'threshold':>10}  {'on clean test':>13}  "
           f"{'epochs':>6}")
@@ -257,7 +271,7 @@ def main(pattern, out_dir, runs_repo, files=None):
     thresholds = []
 
     def add(name, calibration_scores, scores, epochs=""):
-        cut = np.percentile(calibration_scores, 100 * (1 - TARGET))
+        cut = np.percentile(calibration_scores, 100 * (1 - settings.TARGET))
         flag = scores > cut
         clean = (flag & passed).sum() / passed.sum()
         print(f"{name:>{width}}  {cut:10.4g}  {clean:13.5f}  {epochs:>6}", flush=True)
@@ -266,24 +280,27 @@ def main(pattern, out_dir, runs_repo, files=None):
                            "on_clean_test": float(clean),
                            "epochs": epochs if epochs != "" else None})
 
-    for k in COMPONENTS:
+    def fitted(model):
+        return fit(tr, model, epochs=settings.EPOCHS, batch=settings.BATCH,
+                   rate=settings.RATE, threshold=settings.IMPROVEMENT,
+                   patience=settings.PATIENCE)
+
+    for k in settings.COMPONENTS:
         space = subspace(tr, k)
         weights[f"pca.k{k}.centre"] = torch.from_numpy(space.centre)
         # safetensors refuses the transposed view subspace returns
         weights[f"pca.k{k}.basis"] = torch.from_numpy(space.basis).contiguous()
         add(label("pca", k), residuals(calibrate, space), residuals(rows, space))
-        torch.manual_seed(TORCH_SEED)
+        torch.manual_seed(settings.TORCH_SEED)
         linear = LinearAutoencoder(signals=tr.shape[1], latent_dim=k)
-        losses = fit(tr, linear, epochs=EPOCHS, batch=BATCH, rate=RATE,
-                     threshold=IMPROVEMENT, patience=PATIENCE)
+        losses = fitted(linear)
         weights.update({f"linear_ae.k{k}.{n}": t for n, t in linear.state_dict().items()})
         add(label("linear ae", k), reconstruction_errors(calibrate, linear),
             reconstruction_errors(rows, linear), len(losses))
-        for h in HIDDEN:
-            torch.manual_seed(TORCH_SEED)
+        for h in settings.HIDDEN:
+            torch.manual_seed(settings.TORCH_SEED)
             nonlinear = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
-            losses = fit(tr, nonlinear, epochs=EPOCHS, batch=BATCH, rate=RATE,
-                         threshold=IMPROVEMENT, patience=PATIENCE)
+            losses = fitted(nonlinear)
             weights.update({f"nonlinear_ae.h{h}.k{k}.{n}": t
                             for n, t in nonlinear.state_dict().items()})
             add(label(f"nonlinear ae h={h}", k),
@@ -291,31 +308,29 @@ def main(pattern, out_dir, runs_repo, files=None):
                 reconstruction_errors(rows, nonlinear), len(losses))
 
     print(f"\n{'detector':>{width}}   "
-          + "  ".join(f"found in {n}".rjust(11) for n in HOLD)
-          + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in HOLD))
+          + "  ".join(f"found in {n}".rjust(11) for n in settings.HOLD)
+          + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in settings.HOLD))
     # with a model added, a row is flagged when a rule or the model flags it
     detection = []
     for name, flag in detectors:
         cells = []
-        for need in HOLD:
+        for need in settings.HOLD:
             on = persistent(rules | flag, got["seg"], need)
             cells.append((found(on, attacks, scored), alarms(on & quiet) / hours))
         print(f"{name:>{width}}   "
               + "  ".join(f"{c:>7}/{int(scored.sum()):<3d}" for c, _ in cells)
               + "   " + "  ".join(f"{a:12.1f}" for _, a in cells))
         detection.append({"detector": name,
-                          "found": {str(n): int(c) for n, (c, _) in zip(HOLD, cells)},
+                          "found": {str(n): int(c)
+                                    for n, (c, _) in zip(settings.HOLD, cells)},
                           "alarms_per_hour": {str(n): float(a)
-                                              for n, (_, a) in zip(HOLD, cells)}})
+                                              for n, (_, a) in zip(settings.HOLD, cells)}})
 
+    values = asdict(settings)
+    seeds = {name: values.pop(name) for name in ("SEED", "TORCH_SEED")}
     record(run, weights, {
-        "seeds": {"SEED": SEED, "TORCH_SEED": TORCH_SEED},
-        "hyperparameters": {
-            "MIN_SPEED": MIN_SPEED, "TRAIN": TRAIN, "CALIBRATION": CALIBRATION,
-            "BLOCK": BLOCK, "GAP": GAP, "DONORS": DONORS, "COMPONENTS": COMPONENTS,
-            "TARGET": TARGET, "MOVED": MOVED, "HOLD": HOLD, "EPOCHS": EPOCHS,
-            "BATCH": BATCH, "RATE": RATE, "IMPROVEMENT": IMPROVEMENT,
-            "PATIENCE": PATIENCE, "HIDDEN": HIDDEN, "logs": len(logs)},
+        "seeds": seeds,
+        "hyperparameters": {**values, "logs": len(logs)},
         "metrics": {"hours": float(hours), "attacks_scored": int(scored.sum()),
                     "thresholds": thresholds, "detection": detection}})
 
