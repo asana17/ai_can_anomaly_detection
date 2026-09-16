@@ -12,7 +12,6 @@ import random
 import sys
 import time
 from dataclasses import asdict, dataclass
-from functools import partial
 
 import numpy as np
 import torch
@@ -21,14 +20,12 @@ from assemble.attack_set import attack_set
 from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.split import WHEEL, seconds_above, split, split_rows
+from evaluate.counting import detection, scored_set, training_rows
 from evaluate.pc.record import begin, record
 from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
 from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
 from preprocess.features.signal_state import SIGNALS
-from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
-                           reverse_speed, shaft_ratio, speed_agreement, steering_sign,
-                           stopped_shaft)
 
 
 @dataclass(frozen=True)
@@ -53,16 +50,6 @@ class Settings:
     PATIENCE: int = 10          # epochs in a row without that before training stops
     TORCH_SEED: int = 1         # the torch rng each autoencoder is built and trained with
     HIDDEN: tuple = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each reported
-
-
-def instant(settings):
-    """The instant rules, with the speed the moving ones start at."""
-    return (range_check.violations, speed_agreement.violations,
-            partial(shaft_ratio.violations, min_speed=settings.MIN_SPEED),
-            partial(gear_ratio.violations, min_speed=settings.MIN_SPEED),
-            partial(steering_sign.violations, min_speed=settings.MIN_SPEED),
-            engine_off.violations, pedal_conflict.violations,
-            stopped_shaft.violations, reverse_speed.violations)
 
 
 def seconds_for(logs, out_dir, settings):
@@ -167,46 +154,6 @@ def attacks_for(train_logs, test_logs, scale, out_dir, settings):
     return got, False
 
 
-def rule_hits(raw, settings):
-    """True where an instant rule fires, read off physical values rather than scaled ones."""
-    checks = instant(settings)
-    return np.array([any(check(dict(zip(SIGNALS, row))) for check in checks)
-                     for row in raw.tolist()], dtype=bool)
-
-
-def found(flags, attacks, pick):
-    """How many of the picked attacks have a flagged row."""
-    return sum(flags[a["first"]:a["last"] + 1].any()
-               for a, keep in zip(attacks, pick) if keep)
-
-
-def touched(flags, attacks):
-    """For each attack, whether any of its rows is flagged."""
-    return np.array([flags[a["first"]:a["last"] + 1].any() for a in attacks], dtype=bool)
-
-
-def persistent(flag, segment, need):
-    """True where `need` rows in a row are flagged, without crossing a segment."""
-    if need <= 1:
-        return flag
-    out, run = np.zeros(len(flag), bool), 0
-    for i in range(len(flag)):
-        run = run + 1 if flag[i] and i and segment[i] == segment[i - 1] else int(flag[i])
-        out[i] = run >= need
-    return out
-
-
-def alarms(flag):
-    """How many separate stretches of flagged rows there are."""
-    return int((flag & ~np.concatenate([[False], flag[:-1]])).sum())
-
-
-def period_of(times):
-    """The grid period, taken from the commonest step between rows."""
-    steps = np.diff(times)
-    return float(np.median(steps[steps > 0]))
-
-
 def main(pattern, out_dir, runs_clone, files=None):
     settings = Settings()
     run = begin(runs_clone)
@@ -234,27 +181,15 @@ def main(pattern, out_dir, runs_clone, files=None):
     how = "reused" if kept else f"in {time.time() - clock:.0f}s"
     print(f"attack set {how}, {len(got['attacks'])} attacks", flush=True)
 
-    def moving(rows):
-        return scale.undo(rows)[:, WHEEL] > settings.MIN_SPEED
-
-    clean = ~rule_hits(data["calibration_raw"], settings)
-    tr = data["rows"][moving(data["rows"])]
-    calibrate = data["calibration_rows"][moving(data["calibration_rows"]) & clean]
-    rows, label = got["rows"], got["label"]
-    mv = moving(rows)                       # what a detector reads, attack included
-    truth = got["wheel"] > settings.MIN_SPEED   # what is scored, the speed before it
-    quiet = truth & ~label
-    attacks = got["attacks"]
-    reach = touched(truth, attacks)
-    moved = np.array([a["moved"] for a in attacks])
-    scored = reach & (moved >= settings.MOVED)
+    tr, calibrate = training_rows(data, scale, settings)
+    test = scored_set(got, scale, settings)
+    rows, mv, quiet, rules = test["rows"], test["mv"], test["quiet"], test["rules"]
+    attacks, scored, hours = test["attacks"], test["scored"], test["hours"]
     print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
-          f"test {int(truth.sum())}. "
+          f"test {int(test['truth'].sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
-    rules = rule_hits(got["raw"], settings) & mv
     passed = quiet & ~rules                 # no attack and no rule, like calibration rows
-    hours = quiet.sum() * period_of(got["t"]) / 3600
     print(f"\n{hours:.1f} hours above MIN_SPEED with no attack in them")
 
     def label(model, k):
@@ -311,20 +246,16 @@ def main(pattern, out_dir, runs_clone, files=None):
           + "  ".join(f"found in {n}".rjust(11) for n in settings.HOLD)
           + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in settings.HOLD))
     # with a model added, a row is flagged when a rule or the model flags it
-    detection = []
+    detections = []
     for name, flag in detectors:
-        cells = []
-        for need in settings.HOLD:
-            on = persistent(rules | flag, got["seg"], need)
-            cells.append((found(on, attacks, scored), alarms(on & quiet) / hours))
+        cells = detection(flag, test, settings)
         print(f"{name:>{width}}   "
-              + "  ".join(f"{c:>7}/{int(scored.sum()):<3d}" for c, _ in cells)
-              + "   " + "  ".join(f"{a:12.1f}" for _, a in cells))
-        detection.append({"detector": name,
-                          "found": {str(n): int(c)
-                                    for n, (c, _) in zip(settings.HOLD, cells)},
-                          "alarms_per_hour": {str(n): float(a)
-                                              for n, (_, a) in zip(settings.HOLD, cells)}})
+              + "  ".join(f"{c['found']:>7}/{int(scored.sum()):<3d}" for c in cells)
+              + "   " + "  ".join(f"{c['alarms_per_hour']:12.1f}" for c in cells))
+        detections.append({"detector": name,
+                           "found": {str(c["hold"]): int(c["found"]) for c in cells},
+                           "alarms_per_hour": {str(c["hold"]): float(c["alarms_per_hour"])
+                                               for c in cells}})
 
     values = asdict(settings)
     seeds = {name: values.pop(name) for name in ("SEED", "TORCH_SEED")}
@@ -332,7 +263,7 @@ def main(pattern, out_dir, runs_clone, files=None):
         "seeds": seeds,
         "hyperparameters": {**values, "logs": len(logs)},
         "metrics": {"hours": float(hours), "attacks_scored": int(scored.sum()),
-                    "thresholds": thresholds, "detection": detection}})
+                    "thresholds": thresholds, "detection": detections}})
 
 
 if __name__ == "__main__":

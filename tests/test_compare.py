@@ -5,8 +5,8 @@ import torch
 from safetensors.torch import save_file
 
 from board.export import write
-from evaluate.board.compare import (detection, onnx_residuals, sources_for,
-                                    threshold_for)
+from evaluate.board.compare import onnx_residuals, sources_for, threshold_for
+from evaluate.counting import detection
 from evaluate.pc.run import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals
 
@@ -61,24 +61,23 @@ def test_the_threshold_cuts_off_the_target_share():
     assert (scores > threshold_for(scores, 0.01)).sum() == 10
 
 
-def test_an_attack_is_found_when_a_row_of_it_is_over_the_threshold():
-    scores = np.zeros(100)
-    scores[1] = 10.0
-    got = detection(scores, cut=1.0, test=_test_set(scores), settings=Settings())
+def test_an_attack_is_found_when_a_row_of_it_is_flagged():
+    flag = np.zeros(100, dtype=bool)
+    flag[1] = True
+    got = detection(flag, _test_set(flag), Settings())
     assert [c["found"] for c in got] == [1, 0]      # one row cannot hold for ten
 
 
-def test_a_source_under_the_threshold_everywhere_finds_nothing():
-    scores = np.zeros(100)
-    got = detection(scores, cut=1.0, test=_test_set(scores), settings=Settings())
+def test_a_model_that_flags_nothing_finds_nothing():
+    flag = np.zeros(100, dtype=bool)
+    got = detection(flag, _test_set(flag), Settings())
     assert [c["found"] for c in got] == [0, 0]
 
 
 def test_alarms_outside_an_attack_are_counted_by_the_hour():
-    scores = np.zeros(100)
-    scores[50:60] = 10.0
-    got = detection(scores, cut=1.0, test=_test_set(scores, hours=2.0),
-                    settings=Settings())
+    flag = np.zeros(100, dtype=bool)
+    flag[50:60] = True
+    got = detection(flag, _test_set(flag, hours=2.0), Settings())
     assert [c["alarms_per_hour"] for c in got] == [0.5, 0.5]
 
 

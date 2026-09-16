@@ -13,10 +13,10 @@ import sys
 import numpy as np
 import onnxruntime
 
-from assemble.split import WHEEL, split
+from assemble.split import split
 from board.export import load
-from evaluate.pc.run import (Settings, alarms, arrays_for, attacks_for, found, persistent,
-                             period_of, rule_hits, seconds_for, touched)
+from evaluate.counting import detection, scored_set, training_rows
+from evaluate.pc.run import Settings, arrays_for, attacks_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder, residuals
 
 
@@ -25,25 +25,9 @@ def rows_for(pattern, out_dir, settings):
     logs = sorted(glob.glob(pattern))
     train_logs, test_logs = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
     data, _ = arrays_for(train_logs, out_dir, settings)
-    scale = data["scale"]
-
-    def moving(rows):
-        return scale.undo(rows)[:, WHEEL] > settings.MIN_SPEED
-
-    calibration = data["calibration_rows"][
-        moving(data["calibration_rows"])
-        & ~rule_hits(data["calibration_raw"], settings)]
-
-    got, _ = attacks_for(train_logs, test_logs, scale, out_dir, settings)
-    truth = got["wheel"] > settings.MIN_SPEED
-    quiet = truth & ~got["label"]
-    moved = np.array([a["moved"] for a in got["attacks"]])
-    test = {"rows": got["rows"], "seg": got["seg"], "mv": moving(got["rows"]),
-            "quiet": quiet, "attacks": got["attacks"],
-            "rules": rule_hits(got["raw"], settings) & moving(got["rows"]),
-            "scored": touched(truth, got["attacks"]) & (moved >= settings.MOVED),
-            "hours": float(quiet.sum() * period_of(got["t"]) / 3600)}
-    return calibration, test
+    _, calibration = training_rows(data, data["scale"], settings)
+    got, _ = attacks_for(train_logs, test_logs, data["scale"], out_dir, settings)
+    return calibration, scored_set(got, data["scale"], settings)
 
 
 def onnx_residuals(path, rows, batch=8192):
@@ -74,18 +58,6 @@ def threshold_for(scores, target):
     return float(np.percentile(scores, 100 * (1 - target)))
 
 
-def detection(scores, cut, test, settings):
-    """How many attacks `scores` over `cut` find, and how many alarms fall outside one."""
-    flag = (scores > cut) & test["mv"]
-    out = []
-    for need in settings.HOLD:
-        on = persistent(test["rules"] | flag, test["seg"], need)
-        out.append({"hold": need,
-                    "found": found(on, test["attacks"], test["scored"]),
-                    "alarms_per_hour": alarms(on & test["quiet"]) / test["hours"]})
-    return out
-
-
 def main(pattern, out_dir, runs_clone, *exports):
     settings = Settings()
     calibration, test = rows_for(pattern, out_dir, settings)
@@ -102,7 +74,7 @@ def main(pattern, out_dir, runs_clone, *exports):
         for name, score in sources.items():
             # the model and the int8 ONNX keep a threshold of their own scores
             cut = threshold_for(score(calibration), settings.TARGET)
-            cells = detection(score(test["rows"]), cut, test, settings)
+            cells = detection((score(test["rows"]) > cut) & test["mv"], test, settings)
             print(f"{name:>6}  {cut:12.6g}  "
                   + "  ".join(f"{c['found']:>7}/{scored:<3d}" for c in cells)
                   + "   " + "  ".join(f"{c['alarms_per_hour']:12.1f}" for c in cells),
