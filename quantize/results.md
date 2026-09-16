@@ -11,7 +11,159 @@ python3 -u -m evaluate.quantize.compare "data/part_*/*.csv" out runs_clone 20260
 
 Quantizing all 24 took 14 s. Measuring all 24 took 58 s, at 7.17 GB peak.
 
-## Report
+## What the measurement settles
+
+None of these models needs quantizing to reach the board, so quantizing them only costs
+detection. In float, the largest of the 24 takes 7.0% of the board's flash and 0.21% of
+its SRAM. Going to int8 frees at most 20,550 B, which is 3.9% of a flash the float model
+was already inside, and it spends 1,976 to 2,648 B more RAM to do it. At k=2 h=32 the
+int8 build is 124 B larger than the float one.
+
+What it costs is attacks, at every one of the 24 fits. Read against what a fit adds to
+the 373 attacks the rules find on their own, the cheapest fits are k=8 and 10, at 1.3 to
+6.4%: k=8 h=128 keeps 296 of the 300 it adds, k=10 h=128 keeps 241 of 253. The dearest
+are k=2 and 4, where 52 to 100% of a small addition goes, k=4 h=128 keeping none of its
+79. k=6 and 12 lose 13 to 41%. k=14 and 16 lose 98 to 145 attacks, though those k had
+already missed `TARGET` in `results/20260916-001002`.
+
+So int8 is for a model that does not fit in float, which none of these is. A windowed
+model is where that could change, since its weights grow with the window.
+
+If an int8 model is used, it needs the threshold taken from its own scores, 1.09 to 6.38
+times the model's at k=2 to 12 and 31.7 to 112 times at k=14 and 16, which `export`
+records in `meta.json`.
+
+## Each model
+
+Attacks found at 10 rows held, out of 862. `held TARGET` is whether that fit's threshold
+held `TARGET` on the clean test rows of `results/20260916-001002`, from
+[evaluate/pc/results.md](../evaluate/pc/results.md).
+
+The rules find 373 of the 862 on their own, so what a fit adds is its `model` column
+less 373, and what survives quantizing is its `int8` column less 373.
+
+| k | h | model | int8 | lost | int8 threshold over the model's | held `TARGET` |
+|---|---|---|---|---|---|---|
+| 2 | 32 | 394 | 380 | 14 | 1.81 | yes |
+| 2 | 64 | 390 | 381 | 9 | 1.28 | yes |
+| 2 | 128 | 388 | 377 | 11 | 1.51 | yes |
+| 4 | 32 | 413 | 392 | 21 | 1.73 | yes |
+| 4 | 64 | 440 | 376 | 64 | 5.33 | yes |
+| 4 | 128 | 452 | 373 | 79 | 6.38 | yes |
+| 6 | 32 | 486 | 469 | 17 | 1.25 | yes |
+| 6 | 64 | 530 | 466 | 64 | 2.01 | yes |
+| 6 | 128 | 531 | 507 | 24 | 1.31 | yes |
+| 8 | 32 | 544 | 533 | 11 | 1.09 | yes |
+| 8 | 64 | 582 | 572 | 10 | 1.23 | yes |
+| 8 | 128 | 673 | 669 | 4 | 1.24 | no |
+| 10 | 32 | 596 | 573 | 23 | 1.53 | yes |
+| 10 | 64 | 619 | 573 | 46 | 1.96 | yes |
+| 10 | 128 | 626 | 614 | 12 | 1.49 | yes |
+| 12 | 32 | 546 | 523 | 23 | 1.78 | yes |
+| 12 | 64 | 530 | 508 | 22 | 2.19 | yes |
+| 12 | 128 | 589 | 516 | 73 | 5.67 | yes |
+| 14 | 32 | 573 | 439 | 134 | 112.25 | no |
+| 14 | 64 | 638 | 529 | 109 | 33.07 | no |
+| 14 | 128 | 599 | 501 | 98 | 31.73 | no |
+| 16 | 32 | 623 | 497 | 126 | 42.84 | no |
+| 16 | 64 | 605 | 460 | 145 | 51.77 | no |
+| 16 | 128 | 534 | 398 | 136 | 49.39 | no |
+
+Six fits lose more than 90 attacks, all at k=14 or 16. All six are among the seven that
+missed `TARGET` in `results/20260916-001002`. The seventh, k=8 h=128, loses 4.
+
+## The threshold
+
+The model and the int8 file each take a threshold from the calibration rows of
+`results/20260916-001002` at `TARGET`, from their own scores for those rows.
+
+The widest pair is k=16 h=128, at 9.6e-05 for the model and 4.7e-03 for the int8 file.
+[export](docs/export.md) records each int8 threshold in `meta.json`.
+
+Why the int8 threshold divided by the model's threshold grows with k is not measured.
+
+## The alarms
+
+Alarms an hour at 10 rows held rise at three fits, by 0.4 at k=4 h=128, 0.1 at k=8 h=128
+and 0.5 at k=10 h=64. They fall or hold at the other 21.
+
+## What float costs
+
+`stedgeai analyze --target stm32h5` on each float and int8 file of the export, with what
+the ST runtime adds to each. The NUCLEO-H533RE carries 512 KB of flash and 272 KB of
+SRAM, which is the datasheet rather than anything measured here.
+
+| k | h | float flash | of flash | float ram | int8 flash | int8 ram |
+|---|---|---|---|---|---|---|
+| 2 | 32 | 7,106 B | 1.4% | 196 B | 7,230 B | 2,172 B |
+| 2 | 64 | 12,234 B | 2.3% | 324 B | 9,022 B | 2,524 B |
+| 2 | 128 | 22,474 B | 4.3% | 580 B | 12,610 B | 3,228 B |
+| 4 | 32 | 7,626 B | 1.5% | 196 B | 7,376 B | 2,172 B |
+| 4 | 64 | 13,262 B | 2.5% | 324 B | 9,296 B | 2,524 B |
+| 4 | 128 | 24,526 B | 4.7% | 580 B | 13,140 B | 3,228 B |
+| 6 | 32 | 8,146 B | 1.6% | 196 B | 7,522 B | 2,172 B |
+| 6 | 64 | 14,298 B | 2.7% | 324 B | 9,570 B | 2,524 B |
+| 6 | 128 | 26,586 B | 5.1% | 580 B | 13,670 B | 3,228 B |
+| 8 | 32 | 8,666 B | 1.7% | 196 B | 7,668 B | 2,172 B |
+| 8 | 64 | 15,326 B | 2.9% | 324 B | 9,844 B | 2,524 B |
+| 8 | 128 | 28,642 B | 5.5% | 580 B | 14,196 B | 3,228 B |
+| 10 | 32 | 9,190 B | 1.8% | 196 B | 7,814 B | 2,172 B |
+| 10 | 64 | 16,362 B | 3.1% | 324 B | 10,118 B | 2,524 B |
+| 10 | 128 | 30,698 B | 5.9% | 580 B | 14,730 B | 3,228 B |
+| 12 | 32 | 9,710 B | 1.9% | 196 B | 7,960 B | 2,172 B |
+| 12 | 64 | 17,394 B | 3.3% | 324 B | 10,396 B | 2,524 B |
+| 12 | 128 | 32,754 B | 6.2% | 580 B | 15,264 B | 3,228 B |
+| 14 | 32 | 10,234 B | 2.0% | 196 B | 8,106 B | 2,172 B |
+| 14 | 64 | 18,426 B | 3.5% | 324 B | 10,670 B | 2,524 B |
+| 14 | 128 | 34,810 B | 6.6% | 580 B | 15,794 B | 3,228 B |
+| 16 | 32 | 10,746 B | 2.0% | 196 B | 8,252 B | 2,172 B |
+| 16 | 64 | 19,450 B | 3.7% | 324 B | 10,940 B | 2,524 B |
+| 16 | 128 | 36,866 B | 7.0% | 580 B | 16,316 B | 3,228 B |
+
+Every float fit is inside the flash, the largest at 7.0% of it, and every one takes
+0.21% or less of the SRAM.
+
+Against that, int8 frees 250 to 20,550 B of flash at 23 of the 24 fits, and at k=2 h=32
+it takes 124 B more than float. It spends 1,976 to 2,648 B more RAM at every fit,
+because the int8 runtime carries more than the float one.
+
+## Size on the board
+
+The int8 files on their own, without the runtime the table above adds. `flash` is
+`weights (ro)`, `ram` is `ram (total)`, and `macc` is one multiply-accumulate per
+inference of one row.
+
+| k | h | flash | ram | macc |
+|---|---|---|---|---|
+| 2 | 32 | 1,548 B | 408 B | 1,299 |
+| 2 | 64 | 3,020 B | 760 B | 2,579 |
+| 2 | 128 | 5,964 B | 1,464 B | 5,139 |
+| 4 | 32 | 1,684 B | 408 B | 1,429 |
+| 4 | 64 | 3,284 B | 760 B | 2,837 |
+| 4 | 128 | 6,484 B | 1,464 B | 5,653 |
+| 6 | 32 | 1,820 B | 408 B | 1,559 |
+| 6 | 64 | 3,548 B | 760 B | 3,095 |
+| 6 | 128 | 7,004 B | 1,464 B | 6,167 |
+| 8 | 32 | 1,956 B | 408 B | 1,689 |
+| 8 | 64 | 3,812 B | 760 B | 3,353 |
+| 8 | 128 | 7,524 B | 1,464 B | 6,681 |
+| 10 | 32 | 2,092 B | 408 B | 1,819 |
+| 10 | 64 | 4,076 B | 760 B | 3,611 |
+| 10 | 128 | 8,044 B | 1,464 B | 7,195 |
+| 12 | 32 | 2,228 B | 408 B | 1,949 |
+| 12 | 64 | 4,340 B | 760 B | 3,869 |
+| 12 | 128 | 8,564 B | 1,464 B | 7,709 |
+| 14 | 32 | 2,364 B | 408 B | 2,079 |
+| 14 | 64 | 4,604 B | 760 B | 4,127 |
+| 14 | 128 | 9,084 B | 1,464 B | 8,223 |
+| 16 | 32 | 2,500 B | 408 B | 2,209 |
+| 16 | 64 | 4,868 B | 760 B | 4,385 |
+| 16 | 128 | 9,604 B | 1,464 B | 8,737 |
+
+`h` sets the size. At one `h` the flash grows by 136 B, 264 B and 520 B per step of k,
+and the ram does not move at all.
+
+## What `evaluate.quantize.compare` printed
 
 ```
 206227 calibration rows, 862 attacks scored in 17.5 hours
@@ -67,64 +219,4 @@ Quantizing all 24 took 14 s. Measuring all 24 took 58 s, at 7.17 GB peak.
   k=16 h=128    int8    0.00474523      563/862      398/862           76.1           0.2
 ```
 
-The `torch` rows repeat the run's own table, which is the check that the rows and the
-counting here are the run's.
-
-## The int8 file needs its own threshold
-
-Every int8 file thresholds above the model it came from, and the gap widens with k.
-
-| k | int8 threshold over the model's |
-|---|---|
-| 2 to 10 | 1.09 to 2.01 times, except 5.33 at k=4 h=64 and 6.38 at k=4 h=128 |
-| 12 | 1.78 to 5.67 times |
-| 14 | 31.7 to 112 times |
-| 16 | 42.8 to 51.8 times |
-
-At k=16 h=128 the model thresholds at 9.6e-05 and the int8 file at 4.7e-03. A board
-given the model's threshold there would flag almost every row. So the threshold of the
-int8 file's own calibration scores is what a board has to be given, and
-[export](docs/export.md) records it in `meta.json`.
-
-Why the gap widens with k is not measured. A larger `latent_dim` leaves less to
-reconstruct, so the model's scores fall towards 1e-4, while the error int8 adds does
-not fall with them.
-
-## What the quantization costs
-
-Both sides hold their own threshold, so what is left between the two rows is detection.
-
-| k | attacks lost at 10 rows held, out of 862 |
-|---|---|
-| 2 | 9 to 14 |
-| 4 | 21 to 79 |
-| 6 | 17 to 64 |
-| 8 | 4 to 11 |
-| 10 | 12 to 46 |
-| 12 | 22 to 73 |
-| 14 | 98 to 134 |
-| 16 | 126 to 145 |
-
-The worst is k=16 h=64, from 605 to 460. Every fit loses something and none gains.
-
-Alarms an hour at 10 rows held rise at three fits, by 0.4 at k=4 h=128, 0.1 at k=8
-h=128 and 0.5 at k=10 h=64. They fall or hold at the other 21. So the losses are not
-bought back by a looser threshold anywhere.
-
-The fit that finds the most, k=8 h=128 at 673, keeps 669. k=8 loses least of all the k,
-4 to 11 attacks. The large k lose most, and those are the k the run already reports as
-missing `TARGET`.
-
-## Size on the board
-
-`stedgeai analyze --target stm32h5` on k=8 h=64, from an earlier export of the same
-weights.
-
-| | float | int8 |
-|---|---|---|
-| flash | 13,412 B | 3,812 B |
-| RAM | 324 B | 760 B |
-| macc | 3,481 | 3,353 |
-
-The int8 file needs more RAM because it holds the quantized and dequantized buffers at
-once. The model has 3,353 parameters, which is 36h + 2hk + k + 17 at k=8 h=64.
+The `torch` rows match the run's own table.
