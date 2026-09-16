@@ -19,7 +19,7 @@ import torch
 from assemble.attack_set import attack_set
 from assemble.train_set import grid_rows, scale_for
 from assemble.grid import MAX_HOLD, PERIOD
-from assemble.split import WHEEL, seconds_above, split, split_rows
+from assemble.split import moving, seconds_above, split, split_rows
 from evaluate.counting import detection, scored_set, training_rows
 from evaluate.pc.record import begin, record
 from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
@@ -107,8 +107,8 @@ def arrays_for(train_logs, out_dir, settings):
     train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
                                               settings.BLOCK, settings.GAP,
                                               settings.MIN_SPEED)
-    moving = raw[:, WHEEL] > settings.MIN_SPEED
-    scale = scale_for(raw[train_rows & moving])     # the rows PCA is fitted on
+    above = moving(raw, settings.MIN_SPEED)
+    scale = scale_for(raw[train_rows & above])      # the rows PCA is fitted on
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],
             "t": times[train_rows], "seg": segments[train_rows],

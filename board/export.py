@@ -22,7 +22,7 @@ from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
-from assemble.split import WHEEL, split
+from assemble.split import moving, split
 from evaluate.pc.record import git
 from evaluate.pc.run import Settings, arrays_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder
@@ -93,8 +93,8 @@ def main(pattern, out_dir, runs_clone, started):
     logs = sorted(glob.glob(pattern))
     train_logs, _ = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
     data, _ = arrays_for(train_logs, out_dir, settings)
-    moving = data["scale"].undo(data["rows"])[:, WHEEL] > settings.MIN_SPEED
-    tr = data["rows"][moving]               # the same training rows as evaluate.pc.run
+    above = moving(data["scale"].undo(data["rows"]), settings.MIN_SPEED)
+    tr = data["rows"][above]                # the same training rows as evaluate.pc.run
 
     models = []
     for k, h, state in states:

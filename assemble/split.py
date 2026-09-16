@@ -18,6 +18,11 @@ CCVS1_PERIOD = 0.1      # seconds between wheel speed readings
 WHEEL = SIGNALS.index("wheel_speed")
 
 
+def moving(raw: np.ndarray, min_speed: float) -> np.ndarray:
+    """True where a row's wheel speed is above `min_speed`, read off physical values."""
+    return raw[:, WHEEL] > min_speed
+
+
 def seconds_above(logs: Iterable[str], min_speed: float) -> dict[str, float]:
     """How many seconds each log spends above `min_speed`, one number per log.
 
@@ -54,9 +59,9 @@ def split_rows(raw, times, share: float, block: float, gap: float, min_speed: fl
     `share` of the seconds above `min_speed`, in windows of `block` seconds. Train is
     the rest, less the rows within `gap` seconds of a window, which are in neither.
     """
-    moving = raw[:, WHEEL] > min_speed
-    seconds = (np.cumsum(moving) - moving) * PERIOD   # above min_speed, before this row
-    calibration_rows = moving & (seconds % (block / share) < block)
+    above = moving(raw, min_speed)
+    seconds = (np.cumsum(above) - above) * PERIOD   # above min_speed, before this row
+    calibration_rows = above & (seconds % (block / share) < block)
     apart = _apart(times, np.sort(times[calibration_rows]), gap)
     return ~calibration_rows & apart, calibration_rows
 

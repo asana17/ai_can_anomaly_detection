@@ -1,6 +1,6 @@
 import numpy as np
 
-from assemble.split import WHEEL, seconds_above, split, split_rows
+from assemble.split import WHEEL, moving, seconds_above, split, split_rows
 
 
 def test_split_fraction_sizes():
@@ -53,6 +53,11 @@ def _rows(speeds):
     raw = np.zeros((len(speeds), 17), np.float32)
     raw[:, WHEEL] = speeds
     return raw, np.arange(len(speeds), dtype=np.float64) * 0.1
+
+
+def test_moving_is_the_rows_over_the_speed_given():
+    raw, _ = _rows([0.0, 4.9, 5.0, 5.1, 80.0])
+    assert moving(raw, 5.0).tolist() == [False, False, False, True, True]
 
 
 def test_split_rows_gives_calibration_the_share_of_the_seconds_asked_for():

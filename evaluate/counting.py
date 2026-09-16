@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-from assemble.split import WHEEL
+from assemble.split import moving
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            reverse_speed, shaft_ratio, speed_agreement, steering_sign,
@@ -69,17 +69,17 @@ def period_of(times):
 
 def training_rows(data, scale, settings):
     """The moving training rows, and the calibration rows with no instant rule on them."""
-    def moving(rows):
-        return scale.undo(rows)[:, WHEEL] > settings.MIN_SPEED
+    def above(rows):
+        return moving(scale.undo(rows), settings.MIN_SPEED)
 
     clean = ~rule_hits(data["calibration_raw"], settings)
-    return (data["rows"][moving(data["rows"])],
-            data["calibration_rows"][moving(data["calibration_rows"]) & clean])
+    return (data["rows"][above(data["rows"])],
+            data["calibration_rows"][above(data["calibration_rows"]) & clean])
 
 
 def scored_set(got, scale, settings):
     """The attacked rows, what a detector reads in them, and what an alarm is counted in."""
-    mv = scale.undo(got["rows"])[:, WHEEL] > settings.MIN_SPEED
+    mv = moving(scale.undo(got["rows"]), settings.MIN_SPEED)
     truth = got["wheel"] > settings.MIN_SPEED   # what is scored, the speed before it
     quiet = truth & ~got["label"]
     moved = np.array([a["moved"] for a in got["attacks"]])
