@@ -7,7 +7,7 @@ float and int8 ONNX for that, and keeps them in the runs repository.
 ## Running it
 
 ```
-python3 -u -m board.export "data/part_*/*.csv" out runs_clone started
+python3 -u -m quantize.export "data/part_*/*.csv" out runs_clone started
 ```
 
 | argument | what it is |
@@ -22,7 +22,7 @@ which `k` and `h` it fitted, and all of them are written.
 
 ## What it writes
 
-Each export adds `board/<export time>/` to `runs_clone`, then commits and pushes that
+Each export adds `quantize/<export time>/` to `runs_clone`, then commits and pushes that
 directory. It never writes into an existing directory, and never into the run's.
 
 | file | holds |
@@ -41,7 +41,7 @@ model is only a step on the way, so it is not kept.
 | key in `meta.json` | holds |
 |---|---|
 | `run` | the run the weights came from, as `results/<start time>` |
-| `models` | the `k` and `h` of every autoencoder in the directory |
+| `models` | the `k` and `h` of every autoencoder in the directory, each with the `int8_threshold` its int8 file scores the run's calibration rows at, at `TARGET` |
 | `commit` | the commit of this repository the export ran from |
 | `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |
 | `versions` | Python, NumPy, torch, ONNX and ONNX Runtime |

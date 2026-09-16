@@ -4,7 +4,7 @@ import pytest
 import torch
 from safetensors.torch import save_file
 
-from board.export import fits_in, load, write
+from quantize.export import fits_in, load, write
 from models.autoencoder import NonlinearAutoencoder
 
 

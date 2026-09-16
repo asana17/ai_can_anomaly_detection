@@ -1,6 +1,6 @@
 """Measure what quantizing a run's model to int8 costs.
 
-    python3 -m evaluate.board.compare "data/part_*/*.csv" out runs_clone exported...
+    python3 -m evaluate.quantize.compare "data/part_*/*.csv" out runs_clone exported...
 """
 
 from __future__ import annotations
@@ -11,13 +11,12 @@ import os
 import sys
 
 import numpy as np
-import onnxruntime
 
 from assemble.split import split
-from board.export import load
 from evaluate.counting import detection, scored_set, training_rows
 from evaluate.pc.run import Settings, arrays_for, attacks_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder, residuals
+from quantize.export import load, onnx_residuals, threshold_for
 
 
 def rows_for(pattern, out_dir, settings):
@@ -30,20 +29,9 @@ def rows_for(pattern, out_dir, settings):
     return calibration, scored_set(got, data["scale"], settings)
 
 
-def onnx_residuals(path, rows, batch=8192):
-    """Each row's mean squared reconstruction error from the ONNX file at `path`."""
-    session = onnxruntime.InferenceSession(path, providers=["CPUExecutionProvider"])
-    out = []
-    for fed in np.array_split(np.asarray(rows, dtype=np.float32),
-                              max(len(rows) // batch, 1)):
-        got = session.run(None, {"row": fed})[0]
-        out.append(((got - fed) ** 2).mean(axis=1))
-    return np.concatenate(out)
-
-
 def models_in(runs_clone, exported):
     """Where an export sits, what it says of itself, and the `k` and `h` it holds."""
-    export_dir = os.path.join(runs_clone, "board", exported)
+    export_dir = os.path.join(runs_clone, "quantize", exported)
     meta = json.load(open(os.path.join(export_dir, "meta.json")))
     # an export from before several models fitted in one directory names one pair
     listed = meta.get("models") or [{"k": meta["k"], "h": meta["h"]}]
@@ -59,11 +47,6 @@ def sources_for(runs_clone, export_dir, run, k, h, signals):
             "int8": lambda rows: onnx_residuals(int8, rows)}
 
 
-def threshold_for(scores, target):
-    """The score a run cuts `target` of the calibration rows off at."""
-    return float(np.percentile(scores, 100 * (1 - target)))
-
-
 def main(pattern, out_dir, runs_clone, *exports):
     settings = Settings()
     calibration, test = rows_for(pattern, out_dir, settings)
@@ -73,7 +56,7 @@ def main(pattern, out_dir, runs_clone, *exports):
 
     for exported in exports:
         export_dir, meta, models = models_in(runs_clone, exported)
-        print(f"\nboard/{exported}, {meta['run']}")
+        print(f"\nquantize/{exported}, {meta['run']}")
         print(f"{'model':>12}  {'source':>6}  {'threshold':>12}  "
               + "  ".join(f"found in {n}".rjust(11) for n in settings.HOLD)
               + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in settings.HOLD))

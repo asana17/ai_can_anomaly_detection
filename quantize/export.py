@@ -1,6 +1,6 @@
 """Write every nonlinear autoencoder of a run out as float and int8 ONNX, and keep them.
 
-    python3 -m board.export "data/part_*/*.csv" out runs_clone started
+    python3 -m quantize.export "data/part_*/*.csv" out runs_clone started
 """
 
 from __future__ import annotations
@@ -22,7 +22,8 @@ from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
-from assemble.split import moving, split
+from assemble.split import split
+from evaluate.counting import training_rows
 from evaluate.pc.record import git
 from evaluate.pc.run import Settings, arrays_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder
@@ -59,6 +60,22 @@ def fits_in(run_dir):
     return sorted((k, h) for h, k in got)
 
 
+def onnx_residuals(path, rows, batch=8192):
+    """Each row's mean squared reconstruction error from the ONNX file at `path`."""
+    session = onnxruntime.InferenceSession(path, providers=["CPUExecutionProvider"])
+    out = []
+    for fed in np.array_split(np.asarray(rows, dtype=np.float32),
+                              max(len(rows) // batch, 1)):
+        got = session.run(None, {"row": fed})[0]
+        out.append(((got - fed) ** 2).mean(axis=1))
+    return np.concatenate(out)
+
+
+def threshold_for(scores, target):
+    """The score that cuts `target` of the calibration rows off."""
+    return float(np.percentile(scores, 100 * (1 - target)))
+
+
 def write(models, rows, dest, batch):
     """Write each model into a new `dest` as float ONNX, and as int8 quantized on `rows`."""
     os.makedirs(dest)                       # raises rather than overwrite an export
@@ -93,19 +110,26 @@ def main(pattern, out_dir, runs_clone, started):
     logs = sorted(glob.glob(pattern))
     train_logs, _ = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
     data, _ = arrays_for(train_logs, out_dir, settings)
-    above = moving(data["scale"].undo(data["rows"]), settings.MIN_SPEED)
-    tr = data["rows"][above]                # the same training rows as evaluate.pc.run
+    # the same training and calibration rows as evaluate.pc.run
+    tr, calibration = training_rows(data, data["scale"], settings)
 
     models = []
     for k, h, state in states:
         model = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
         model.load_state_dict(state)
         models.append((f"nonlinear_ae_k{k}_h{h}", model))
-    path = os.path.join("board", stamp)
+    path = os.path.join("quantize", stamp)
     dest = os.path.join(runs_clone, path)
     write(models, tr, dest, settings.BATCH)
 
-    meta = {"run": run, "models": [{"k": k, "h": h} for k, h in wanted],
+    # the board reads the int8 file, so it needs a threshold of that file's own scores
+    cuts = {name: threshold_for(onnx_residuals(os.path.join(dest, f"{name}_int8.onnx"),
+                                               calibration), settings.TARGET)
+            for name, _ in models}
+    meta = {"run": run,
+            "models": [{"k": k, "h": h,
+                        "int8_threshold": cuts[f"nonlinear_ae_k{k}_h{h}"]}
+                       for k, h in wanted],
             "commit": commit, "uncommitted": uncommitted,
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "onnx": onnx.__version__,

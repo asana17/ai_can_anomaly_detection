@@ -4,9 +4,8 @@ import numpy as np
 import torch
 from safetensors.torch import save_file
 
-from board.export import write
-from evaluate.board.compare import (models_in, onnx_residuals, sources_for,
-                                    threshold_for)
+from evaluate.quantize.compare import models_in, sources_for
+from quantize.export import onnx_residuals, threshold_for, write
 from evaluate.counting import detection
 from evaluate.pc.run import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals
@@ -26,7 +25,7 @@ def _export(tmp_path, model, rows, meta=None):
     run.mkdir(parents=True)
     save_file({f"nonlinear_ae.h8.k4.{n}": t for n, t in model.state_dict().items()},
               str(run / "weights.safetensors"))
-    dest = tmp_path / "board" / "20260101-010000"
+    dest = tmp_path / "quantize" / "20260101-010000"
     write([("nonlinear_ae_k4_h8", model)], rows, str(dest), batch=128)
     (dest / "meta.json").write_text(json.dumps(
         meta or {"run": "results/20260101-000000", "models": [{"k": 4, "h": 8}]}))

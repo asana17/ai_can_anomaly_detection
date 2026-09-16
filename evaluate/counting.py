@@ -1,6 +1,6 @@
 """The rows a detector reads, and how the flags it raises are counted.
 
-`evaluate.pc.run` and `evaluate.board.compare` both score rows this way, so a number
+`evaluate.pc.run` and `evaluate.quantize.compare` both score rows this way, so a number
 from one is a number from the other.
 """
 

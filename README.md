@@ -35,7 +35,7 @@ The logs go in `data/`, see [dataset/can_data.md](dataset/can_data.md#getting-it
 - [attack/](attack) synthesizes anomalies for a labeled test set.
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
-- [board/](board) puts the models on the NUCLEO-H533RE.
+- [quantize/](quantize) writes the models out as ONNX for the NUCLEO-H533RE.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   The last full run is in [evaluate/pc/results.md](evaluate/pc/results.md).
 - `data/` holds the raw logs and is not tracked in git.
@@ -59,7 +59,7 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Run [evaluate](evaluate) over every log again, so the fitted models are kept in the
   runs repository.
 - Measure on normal rows how far the int8 scores and thresholds move from the float
-  ones, under `evaluate/board`.
+  ones, under `evaluate/quantize`.
 - Generate C code with ST Edge AI Core and run inference on the board under μT-Kernel,
   with rows sent from the PC over UART.
 - Port the preprocessing to C and feed real CAN frames to the board.

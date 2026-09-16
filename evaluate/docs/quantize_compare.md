@@ -1,16 +1,16 @@
-# board compare
+# quantize compare
 
 Measures what quantizing a model to int8 costs.
 
 ```
-python3 -m evaluate.board.compare "data/part_*/*.csv" out runs_clone exported...
+python3 -m evaluate.quantize.compare "data/part_*/*.csv" out runs_clone exported...
 ```
 
-`exported` is a directory under `board/` in the runs repository, such as
+`exported` is a directory under `quantize/` in the runs repository, such as
 `20260916-082021`. The `meta.json` in that directory names the run and every `k` and
 `h` the directory holds. Each of them is measured.
 
-[pc run](pc_run.md) trains one model. [export](../../board/docs/export.md) quantizes a
+[pc run](pc_run.md) trains one model. [export](../../quantize/docs/export.md) quantizes a
 copy of that model to int8. `compare` then puts the model and the int8 ONNX through the
 same two steps.
 
