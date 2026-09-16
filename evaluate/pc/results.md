@@ -2,10 +2,10 @@
 
 Two full runs over all 11,194 logs, on 2026-09-16. They differ only in `TORCH_SEED`.
 
-| run | `TORCH_SEED` | commit | took | peak memory |
-|---|---|---|---|---|
-| `results/20260916-001002` | 0 | `c997f8c` | 6 h 36 min | 6.21 GB |
-| `results/20260916-064753` | 1 | `4329c2a` | 6 h 27 min | 6.22 GB |
+| called here | recorded as | `TORCH_SEED` | commit | took | peak memory |
+|---|---|---|---|---|---|
+| run 1 | `results/20260916-001002` | 0 | `c997f8c` | 6 h 36 min | 6.21 GB |
+| run 2 | `results/20260916-064753` | 1 | `4329c2a` | 6 h 27 min | 6.22 GB |
 
 `4329c2a` changes `TORCH_SEED` and nothing else. k, `HIDDEN` and `HOLD` are not chosen
 here, so every value is reported.
@@ -14,7 +14,23 @@ here, so every value is reported.
 python3 -u -m evaluate.pc.run "data/part_*/*.csv" out runs_clone
 ```
 
-## The first run
+## What the two runs settle
+
+The nonlinear autoencoder is the one worth adding to the rules. The rules find 373 of
+the 862 attacks on their own at 10 rows held. The best nonlinear fit holding `TARGET`
+adds 253 to that in run 1 and 274 in run 2, at the rules' own 0.2 alarms an hour, while
+PCA and the linear autoencoder add at most 163 and 164 and stay within 2 attacks of each
+other everywhere.
+
+Changing `TORCH_SEED` does not disturb that. It moves a single fit by up to 66 attacks,
+which is well short of the 253 and 274, so the second run repeats the finding rather
+than qualifying it.
+
+These runs do not say which k and `HIDDEN` to take. Two `HIDDEN` at one k differ by up
+to 129 attacks, the seed moves one fit by up to 66, and 5 of the 24 fits changed whether
+they hold `TARGET` between the runs. Picking one of them needs more runs than two.
+
+## Run 1
 
 ```
 6585 train and 4609 test logs, 206977s and 69031s above the minimum speed
@@ -113,37 +129,34 @@ moving rows: train 1760019, calibration 206227, test 689738. 862 attacks reach a
 
 ## Every fit stopped on its own
 
-No fit of either run reached `EPOCHS` 1000. In the first run the longest nonlinear fit
-ran 750 epochs, at k=10 h=64, and the linear fits ran 14 to 59. So the epochs column
-reports where training stopped improving, never where the cap cut it off.
+No fit of either run reached `EPOCHS` 1000. In run 1 the longest nonlinear fit
+ran 750 epochs, at k=10 h=64, and the linear fits ran 14 to 59.
 
 ## The thresholds
 
-The threshold comes from the calibration rows at `TARGET` 0.001, and the column beside
-it is the share of clean test rows above that threshold.
+The `threshold` column comes from the calibration rows at `TARGET` 0.001. The
+`on clean test` column is the share of clean test rows above that threshold.
 
 The nonlinear autoencoder holds `TARGET` at 17 of its 24 fits. It misses at k=14 and
 16 for every `HIDDEN`, letting through up to 0.00204, and at k=8 with h=128, at
 0.00103.
 
-PCA and the linear autoencoder hold it at six of the eight k. At k=10 PCA lets through
+PCA and the linear autoencoder hold `TARGET` at six of the eight k. At k=10 PCA lets through
 0.00137 and the linear autoencoder 0.00124. At k=12 both let through about 0.0144,
-14 times the target, which shows as over 6 alarms an hour at 10 rows held.
+14.5 times the target, at 6.2 and 6.4 alarms an hour at 10 rows held.
 
 ## What the models add to the rules
 
 The rules alone find 373 of the 862 attacks at 10 rows held, at 0.2 alarms an hour.
 
 PCA and the linear autoencoder stay within 2 attacks of each other at every k and both
-`HOLD`. Among the k whose threshold holds `TARGET` they add almost nothing at k=2, 4, 6
-and 16, and up to 163 attacks at k=14.
+`HOLD`. Among the k whose threshold holds `TARGET`, the linear autoencoder adds 1
+attack at k=2, 4 and 16, 8 at k=6, 41 at k=8 and 163 at k=14.
 
 Among the nonlinear fits that hold `TARGET`, the most found at 10 rows held is 626, at
 k=10 with h=128, 253 more than the rules alone, at 0.2 alarms an hour.
 
-## What the second run changes
-
-Only the nonlinear autoencoder moves.
+## What run 2 changes
 
 | | run 1 | run 2 |
 |---|---|---|
@@ -152,13 +165,13 @@ Only the nonlinear autoencoder moves.
 | linear fits | 14 to 59 epochs | 14 to 72 epochs |
 
 Five fits crossed `TARGET` between the runs. h=32 k=2, h=128 k=2 and h=32 k=8 stopped
-holding it, and h=128 k=8 and h=128 k=14 started. The worst is h=32 k=8, which goes
-from 0.00065 to 0.00523, five times the target, and from 0.3 to 2.0 alarms an hour at
-10 rows held.
+holding `TARGET`, and h=128 k=8 and h=128 k=14 started. The largest change is h=32 k=8,
+which goes from 0.00065 to 0.00523, five times the target, and from 0.3 to 2.0 alarms
+an hour at 10 rows held.
 
 Attacks found at 10 rows held move by 18.2 on average and by up to 66, at h=64 k=12.
-PCA repeats run 1 exactly. The linear autoencoder moves by at most 3 attacks, since
-`TORCH_SEED` sets its initial weights too.
+PCA finds exactly what it found in run 1. The linear autoencoder moves by at most 3
+attacks between the runs, since `TORCH_SEED` sets its initial weights too.
 
-So a gap of a few tens of attacks between one k or `HIDDEN` and another is inside what
-the seed alone moves. These two runs cannot order the fits by what they find.
+The largest gap between two `HIDDEN` at the same k in run 1 is 129 attacks, at k=8. The
+seed moves a single fit by up to 66.
