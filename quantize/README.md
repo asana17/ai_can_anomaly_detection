@@ -9,4 +9,5 @@ Documented under [docs/](docs).
   the calibration rows at.
 
 What the int8 files cost in detection is measured by
-[evaluate.quantize.compare](../evaluate/docs/quantize_compare.md).
+[evaluate.quantize.compare](../evaluate/docs/quantize_compare.md), and what it came to
+is in [results](results.md).
