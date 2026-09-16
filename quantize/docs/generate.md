@@ -2,8 +2,7 @@
 
 The board runs C code that ST Edge AI Core generates from an ONNX file. `generate`
 generates that code from every float file of one [export](export.md), and keeps it in
-the runs repository. Someone without ST Edge AI Core can then build it, and it records
-the code the board ran.
+the runs repository, where it records the code the board ran.
 
 ## Running it
 
