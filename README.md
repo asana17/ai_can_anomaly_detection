@@ -58,8 +58,11 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Generate C code with ST Edge AI Core and run inference on the board under μT-Kernel,
-  with rows sent from the PC over UART.
+- Run one generated model on the board under μT-Kernel on a few rows built into the
+  firmware, and compare its outputs with ONNX Runtime's. Build, flash and read the
+  output by hand first.
+- Automate the build, the flash and reading the output over UART.
+- Send rows from the PC over UART and read the scores back.
 - Port the preprocessing to C and feed real CAN frames to the board.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
