@@ -7,7 +7,8 @@ python3 -m evaluate.board.compare "data/part_*/*.csv" out runs_clone exported...
 ```
 
 `exported` is a directory under `board/` in the runs repository, such as
-`20260916-082021`. The `meta.json` in that directory names the run, `k` and `h`.
+`20260916-082021`. The `meta.json` in that directory names the run and every `k` and
+`h` the directory holds. Each of them is measured.
 
 [pc run](pc_run.md) trains one model. [export](../../board/docs/export.md) quantizes a
 copy of that model to int8. `compare` then puts the model and the int8 ONNX through the

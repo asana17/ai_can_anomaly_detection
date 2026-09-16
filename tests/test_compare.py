@@ -5,7 +5,8 @@ import torch
 from safetensors.torch import save_file
 
 from board.export import write
-from evaluate.board.compare import onnx_residuals, sources_for, threshold_for
+from evaluate.board.compare import (models_in, onnx_residuals, sources_for,
+                                    threshold_for)
 from evaluate.counting import detection
 from evaluate.pc.run import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals
@@ -20,15 +21,15 @@ def _rows(n=512):
     return np.random.default_rng(0).normal(size=(n, 17)).astype(np.float32)
 
 
-def _export(tmp_path, model, rows):
+def _export(tmp_path, model, rows, meta=None):
     run = tmp_path / "results" / "20260101-000000"
     run.mkdir(parents=True)
     save_file({f"nonlinear_ae.h8.k4.{n}": t for n, t in model.state_dict().items()},
               str(run / "weights.safetensors"))
     dest = tmp_path / "board" / "20260101-010000"
-    write(model, rows, str(dest), "nonlinear_ae_k4_h8", batch=128)
+    write([("nonlinear_ae_k4_h8", model)], rows, str(dest), batch=128)
     (dest / "meta.json").write_text(json.dumps(
-        {"run": "results/20260101-000000", "k": 4, "h": 8}))
+        meta or {"run": "results/20260101-000000", "models": [{"k": 4, "h": 8}]}))
     return "20260101-010000"
 
 
@@ -42,18 +43,35 @@ def _test_set(scores, hours=1.0):
             "scored": np.ones(1, dtype=bool), "hours": hours}
 
 
+def _sources(tmp_path, exported):
+    export_dir, meta, models = models_in(str(tmp_path), exported)
+    k, h = models[0]
+    return sources_for(str(tmp_path), export_dir, meta["run"], k, h, 17)
+
+
 def test_the_fit_scores_the_rows_it_was_saved_from(tmp_path):
     model, rows = _model(), _rows()
-    _export(tmp_path, model, rows)
-    _, sources = sources_for(str(tmp_path), "20260101-010000", 17)
+    sources = _sources(tmp_path, _export(tmp_path, model, rows))
     assert np.allclose(sources["torch"](rows), residuals(rows, model))
 
 
 def test_the_int8_file_scores_every_row(tmp_path):
     rows = _rows()
-    _export(tmp_path, _model(), rows)
-    _, sources = sources_for(str(tmp_path), "20260101-010000", 17)
+    sources = _sources(tmp_path, _export(tmp_path, _model(), rows))
     assert sources["int8"](rows).shape == (len(rows),)
+
+
+def test_every_model_an_export_lists_is_read(tmp_path):
+    exported = _export(tmp_path, _model(), _rows(),
+                       meta={"run": "results/20260101-000000",
+                             "models": [{"k": 4, "h": 8}, {"k": 6, "h": 32}]})
+    assert models_in(str(tmp_path), exported)[2] == [(4, 8), (6, 32)]
+
+
+def test_an_export_naming_one_pair_on_its_own_is_still_read(tmp_path):
+    exported = _export(tmp_path, _model(), _rows(),
+                       meta={"run": "results/20260101-000000", "k": 4, "h": 8})
+    assert models_in(str(tmp_path), exported)[2] == [(4, 8)]
 
 
 def test_the_threshold_cuts_off_the_target_share():
@@ -83,6 +101,6 @@ def test_alarms_outside_an_attack_are_counted_by_the_hour():
 
 def test_onnx_residuals_reads_the_rows_it_is_given(tmp_path):
     model, rows = _model(), _rows()
-    write(model, rows, str(tmp_path / "out"), "ae", batch=128)
+    write([("ae", model)], rows, str(tmp_path / "out"), batch=128)
     got = onnx_residuals(str(tmp_path / "out" / "ae_float.onnx"), rows[:8])
     assert np.allclose(got, residuals(rows[:8], model), atol=1e-6)

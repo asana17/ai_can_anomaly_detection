@@ -41,16 +41,22 @@ def onnx_residuals(path, rows, batch=8192):
     return np.concatenate(out)
 
 
-def sources_for(runs_clone, exported, signals):
-    """The run's model and the int8 ONNX an export quantized from that model."""
+def models_in(runs_clone, exported):
+    """Where an export sits, what it says of itself, and the `k` and `h` it holds."""
     export_dir = os.path.join(runs_clone, "board", exported)
     meta = json.load(open(os.path.join(export_dir, "meta.json")))
-    k, h = meta["k"], meta["h"]
+    # an export from before several models fitted in one directory names one pair
+    listed = meta.get("models") or [{"k": meta["k"], "h": meta["h"]}]
+    return export_dir, meta, [(m["k"], m["h"]) for m in listed]
+
+
+def sources_for(runs_clone, export_dir, run, k, h, signals):
+    """The run's model and the int8 ONNX an export quantized from that model."""
     model = NonlinearAutoencoder(signals=signals, latent_dim=k, hidden=h)
-    model.load_state_dict(load(os.path.join(runs_clone, meta["run"]), k, h))
+    model.load_state_dict(load(os.path.join(runs_clone, run), k, h))
     int8 = os.path.join(export_dir, f"nonlinear_ae_k{k}_h{h}_int8.onnx")
-    return meta, {"torch": lambda rows: residuals(rows, model),
-                  "int8": lambda rows: onnx_residuals(int8, rows)}
+    return {"torch": lambda rows: residuals(rows, model),
+            "int8": lambda rows: onnx_residuals(int8, rows)}
 
 
 def threshold_for(scores, target):
@@ -66,19 +72,23 @@ def main(pattern, out_dir, runs_clone, *exports):
           f"{test['hours']:.1f} hours", flush=True)
 
     for exported in exports:
-        meta, sources = sources_for(runs_clone, exported, calibration.shape[1])
-        print(f"\nboard/{exported}, {meta['run']} k={meta['k']} h={meta['h']}")
-        print(f"{'source':>6}  {'threshold':>12}  "
+        export_dir, meta, models = models_in(runs_clone, exported)
+        print(f"\nboard/{exported}, {meta['run']}")
+        print(f"{'model':>12}  {'source':>6}  {'threshold':>12}  "
               + "  ".join(f"found in {n}".rjust(11) for n in settings.HOLD)
               + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in settings.HOLD))
-        for name, score in sources.items():
-            # the model and the int8 ONNX keep a threshold of their own scores
-            cut = threshold_for(score(calibration), settings.TARGET)
-            cells = detection((score(test["rows"]) > cut) & test["mv"], test, settings)
-            print(f"{name:>6}  {cut:12.6g}  "
-                  + "  ".join(f"{c['found']:>7}/{scored:<3d}" for c in cells)
-                  + "   " + "  ".join(f"{c['alarms_per_hour']:12.1f}" for c in cells),
-                  flush=True)
+        for k, h in models:
+            sources = sources_for(runs_clone, export_dir, meta["run"], k, h,
+                                  calibration.shape[1])
+            for name, score in sources.items():
+                # the model and the int8 ONNX keep a threshold of their own scores
+                cut = threshold_for(score(calibration), settings.TARGET)
+                cells = detection((score(test["rows"]) > cut) & test["mv"], test,
+                                  settings)
+                print(f"{f'k={k} h={h}':>12}  {name:>6}  {cut:12.6g}  "
+                      + "  ".join(f"{c['found']:>7}/{scored:<3d}" for c in cells)
+                      + "   " + "  ".join(f"{c['alarms_per_hour']:12.1f}" for c in cells),
+                      flush=True)
 
 
 if __name__ == "__main__":
