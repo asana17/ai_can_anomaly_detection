@@ -31,6 +31,8 @@ Documented under [docs/](docs).
 - [pc_run](docs/pc_run.md) says what is reused, what counts as an alarm, and how each
   parameter was set.
 - [run_record](docs/run_record.md) says what each run keeps.
+- [board_compare](docs/board_compare.md) says how the cost of quantizing a model to
+  int8 is measured.
 
 ## Tests
 
