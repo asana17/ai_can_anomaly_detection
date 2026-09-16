@@ -9,8 +9,9 @@ the transmission reports. They are in [rules/](rules).
 
 What no invariant covers is left to a model, [PCA](models/docs/pca.md) or a linear or
 nonlinear [autoencoder](models/docs/autoencoder.md). A model trains offline on a PC on
-normal data only, then quantizes and runs on the device for inference. Anomalies are synthesized from the normal data to test detection and never
-enter training.
+normal data only, then runs on the device for inference, in float since the float model
+fits. Anomalies are synthesized from the normal data to test detection and never enter
+training.
 
 ## Setup
 
@@ -57,10 +58,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Run [evaluate](evaluate) over every log again, so the fitted models are kept in the
-  runs repository.
-- Measure on normal rows how far the int8 scores and thresholds move from the float
-  ones, under `evaluate/quantize`.
 - Generate C code with ST Edge AI Core and run inference on the board under μT-Kernel,
   with rows sent from the PC over UART.
 - Port the preprocessing to C and feed real CAN frames to the board.
