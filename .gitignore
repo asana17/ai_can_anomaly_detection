@@ -3,3 +3,20 @@ data/
 .tar.xz
 out/
 st_ai_ws/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# C build artifacts
+*.o
+*.so
+*.dylib
+*.dSYM/
+preprocess_c/compare/compare
+preprocess_c/compare/*_output.txt
+preprocess_c/test/test_*
+!preprocess_c/test/test_*.c
+preprocess_c/test/debug_gap
