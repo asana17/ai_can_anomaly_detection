@@ -1,0 +1,41 @@
+From 088f2ddac5cf8d6fbf1e7227dbb7460ade4c0ac5 Mon Sep 17 00:00:00 2001
+From: asana17 <kei17.kaight084@gmail.com>
+Date: Wed, 19 Aug 2026 00:49:38 +0900
+Subject: [PATCH] fix(armv8m/interrupt.c): undefined sN_INTVEC macro
+
+---
+ sysdepend/stm32_cube/cpu/core/armv8m/interrupt.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sysdepend/stm32_cube/cpu/core/armv8m/interrupt.c b/sysdepend/stm32_cube/cpu/core/armv8m/interrupt.c
+index 0db8a4a..dfba4d9 100644
+--- a/sysdepend/stm32_cube/cpu/core/armv8m/interrupt.c
++++ b/sysdepend/stm32_cube/cpu/core/armv8m/interrupt.c
+@@ -24,7 +24,7 @@
+ #include "cpu_status.h"
+ 
+ /* HLL Interrupt Handler Table */
+-LOCAL UW hllint_tbl[sN_INTVEC];
++LOCAL UW hllint_tbl[N_INTVEC];
+ 
+ /* ------------------------------------------------------------------------ */
+ /*
+@@ -70,7 +70,7 @@ EXPORT ER knl_define_inthdr( INT intno, ATR intatr, FP inthdr )
+ 		if ( (intatr & TA_HLNG) != 0 ) {
+ 			hllint_tbl[intno] = (UW)inthdr;
+ 			inthdr = knl_hll_inthdr;
+-		}		
++		}
+ 	} else 	{	/* Clear interrupt handler */
+ 		inthdr = (FP)knl_exctbl_o[N_SYSVEC + intno];
+ 	}
+@@ -118,4 +118,4 @@ EXPORT ER knl_init_interrupt( void )
+ 	return E_OK;
+ }
+ 
+-#endif	/* defined(MTKBSP_STM32CUBE) && defined(MTKBSP_CPU_CORE_ARMV8M) */
+\ No newline at end of file
++#endif	/* defined(MTKBSP_STM32CUBE) && defined(MTKBSP_CPU_CORE_ARMV8M) */
+-- 
+2.50.1 (Apple Git-155)
+
