@@ -3,3 +3,4 @@ data/
 .tar.xz
 out/
 st_ai_ws/
+.DS_Store
