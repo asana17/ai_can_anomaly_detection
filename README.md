@@ -37,6 +37,8 @@ The logs go in `data/`, see [dataset/can_data.md](dataset/can_data.md#getting-it
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
 - [quantize/](quantize) writes the models out as ONNX for the NUCLEO-H533RE.
+- [board/](board) holds our μT-Kernel application for the NUCLEO-H533RE.
+  [board/docs/setup.md](board/docs/setup.md) builds and flashes it from nothing.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
   quantizing their models costs is in [quantize/results.md](quantize/results.md).
@@ -58,14 +60,11 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Lay the board work out so a script can build it, and write down how to set the
-  environment up from nothing. It is done when an LED blinks from our own μT-Kernel
-  program.
-- Build, flash and read the output back over UART in one command.
-- Run one generated model on the board on a few rows built into the firmware, and
-  compare its outputs with ONNX Runtime's.
-- Send rows from the PC over UART and read the scores back.
-- Port the preprocessing to C and feed real CAN frames to the board.
+- Feed preprocessed rows built into the firmware through a row queue to a task that
+  echoes them over UART.
+- Replace the echo with one generated model, and compare its outputs with ONNX
+  Runtime's on the same rows.
+- Port the preprocessing to C and feed real CAN frames to the same row queue.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
