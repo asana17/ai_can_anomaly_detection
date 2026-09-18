@@ -58,10 +58,12 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Run one generated model on the board under μT-Kernel on a few rows built into the
-  firmware, and compare its outputs with ONNX Runtime's. Build, flash and read the
-  output by hand first.
-- Automate the build, the flash and reading the output over UART.
+- Lay the board work out so a script can build it, and write down how to set the
+  environment up from nothing. It is done when an LED blinks from our own μT-Kernel
+  program.
+- Build, flash and read the output back over UART in one command.
+- Run one generated model on the board on a few rows built into the firmware, and
+  compare its outputs with ONNX Runtime's.
 - Send rows from the PC over UART and read the scores back.
 - Port the preprocessing to C and feed real CAN frames to the board.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
