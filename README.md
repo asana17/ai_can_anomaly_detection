@@ -68,10 +68,12 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Put `out/` and the runs repo on Hugging Face in one place, the dataset linked from
-  the model card, so others can fetch a model with the data it was trained on. The data
-  is CC BY 4.0, so the dataset credits it. The cache checks the logs and settings but not
-  the code version.
+- Run `evaluate.pc.run` once on the dataset read from Hugging Face, to check the whole
+  path works.
+- Have the runs repo scripts push to Hugging Face. Today they push to GitHub, and the
+  Hugging Face copy is uploaded by hand.
+- Record the commit `assemble.dataset` ran from in the dataset. It records the logs and
+  the settings only.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Next is the model in the build, step 3 there.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
@@ -82,6 +84,8 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Settle whether the rules are a floor the models build on.
 - Then widen to a stretch of time, VAR against a windowed autoencoder, if the instant
   models show it is worth doing.
+- Rerun the linear autoencoder checks in the runs repo's `checks/` from a committed
+  script, on the current dataset.
 
 ## Tests
 
