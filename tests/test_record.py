@@ -4,7 +4,7 @@ import os
 import pytest
 import torch
 
-from common import hf_upload, runs_repo
+from common import hf_upload, hub_dirs
 from evaluate.pc import record
 
 
@@ -25,7 +25,7 @@ class Hub:
 
 
 def test_record_keeps_both_files_and_uploads_them(tmp_path, monkeypatch):
-    monkeypatch.setattr(runs_repo, "HfApi", Hub)
+    monkeypatch.setattr(hub_dirs, "HfApi", Hub)
     monkeypatch.setattr(hf_upload, "HfApi", Hub)
     Hub.uploaded = []
     run = record.start_run("user/runs", str(tmp_path))
@@ -43,7 +43,7 @@ def test_a_failed_upload_leaves_the_files(tmp_path, monkeypatch, capsys):
         def upload_folder(self, **kwargs):
             raise ConnectionError("offline")
 
-    monkeypatch.setattr(runs_repo, "HfApi", Failing)
+    monkeypatch.setattr(hub_dirs, "HfApi", Failing)
     monkeypatch.setattr(hf_upload, "HfApi", Failing)
     run = record.start_run("user/runs", str(tmp_path))
     with pytest.raises(ConnectionError):
@@ -53,7 +53,7 @@ def test_a_failed_upload_leaves_the_files(tmp_path, monkeypatch, capsys):
 
 
 def test_claim_refuses_a_directory_the_repository_holds(tmp_path, monkeypatch):
-    monkeypatch.setattr(runs_repo, "HfApi", Hub)
+    monkeypatch.setattr(hub_dirs, "HfApi", Hub)
     monkeypatch.setattr(hf_upload, "HfApi", Hub)
     with pytest.raises(FileExistsError):
-        runs_repo.claim("user/runs", "results/20260101-000000", str(tmp_path))
+        hub_dirs.claim("user/runs", "results/20260101-000000", str(tmp_path))

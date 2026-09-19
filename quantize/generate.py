@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 
-from common.runs_repo import claim, download, upload
+from common.hub_dirs import claim, download, upload
 from evaluate.pc.record import git
 
 TARGET = "stm32h5"

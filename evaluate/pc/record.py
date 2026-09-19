@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from safetensors.torch import save_file
 
-from common.runs_repo import claim, upload
+from common.hub_dirs import claim, upload
 
 
 def git(*args):

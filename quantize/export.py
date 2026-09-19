@@ -22,7 +22,7 @@ from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
 from common.load_dataset import arrays_from, fetch
-from common.runs_repo import claim, download, upload
+from common.hub_dirs import claim, download, upload
 from common.settings import Settings
 from evaluate.counting import training_rows
 from evaluate.pc.record import git
