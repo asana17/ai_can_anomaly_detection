@@ -11,7 +11,8 @@ this repository. This repository holds only what we wrote:
 
 | path | what it is |
 |---|---|
-| `board/application/` | our application, `usermain` |
+| `board/application/` | our applications, one folder each with its own `usermain` |
+| `board/application/alive/` | the one this page checks, the LED and the count |
 | `board/patches/` | a fix to mtk3_bsp2 `1ab52cc`, which does not build for this board without it |
 | `board/prepare.py` | adds mtk3_bsp2 and our application to a generated project |
 
@@ -55,11 +56,12 @@ Windows. Whether the upgrade works from macOS is not known.
 
 ## 2. Add mtk3_bsp2 and our application
 
-Run this before the project is opened in CubeIDE, which rewrites the project files while
-it is open. Running it again changes nothing.
+The last argument is the application to build, a folder of `board/application/`. Run
+this before the project is opened in CubeIDE, which rewrites the project files while it
+is open. Running it again changes nothing.
 
 ```
-python3 ~/ai_can_detection/board/prepare.py ~/NUCLEO-H533RE/ai_can_detection
+python3 ~/ai_can_detection/board/prepare.py ~/NUCLEO-H533RE/ai_can_detection alive
 ```
 
 Where this differs from the BSP2 document:
@@ -69,10 +71,11 @@ Where this differs from the BSP2 document:
   port is up.
 - mtk3_bsp2 is checked out at `1ab52cc` with its submodule at the commit `1ab52cc`
   records. The document's `--recursive` clone takes the latest.
-- Our application is the folder `application` in the project, a link to
-  `board/application`.
+- Our application is the folder `application` in the project, a link to the chosen
+  folder of `board/application/`.
 
-After CubeMX generates again, run `prepare.py` again.
+After CubeMX generates again, run `prepare.py` again. To build another application,
+close the project in CubeIDE, run `prepare.py` with that folder, and open it again.
 
 ## 3. Build and flash in CubeIDE
 

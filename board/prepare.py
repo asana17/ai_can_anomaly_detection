@@ -1,6 +1,9 @@
-"""Add mtk3_bsp2 and our application to a CubeMX project, and start μT-Kernel from `main`.
+"""Add mtk3_bsp2 and one of our applications to a CubeMX project, and start μT-Kernel.
 
-    python3 board/prepare.py project_dir
+    python3 board/prepare.py project_dir app
+
+`app` is a folder of `board/application/`. Running it again with another `app` switches
+the project to that one.
 
 Run it before the project is imported into CubeIDE, which rewrites `.cproject` and
 `.project` while the project is open.
@@ -19,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BSP_URL = "https://github.com/tron-forum/mtk3_bsp2.git"
 BSP_BASE = "1ab52cc"
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
-APP = os.path.join(HERE, "application")
+APPS = os.path.join(HERE, "application")
 MARKER = "/* USER CODE BEGIN WHILE */"
 START = ("void knl_start_mtkernel(void);", "knl_start_mtkernel();")
 TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
@@ -128,10 +131,11 @@ def configure(cproject):
     return _write(head, root)
 
 
-def link_app(project, app=APP):
+def link_app(project, app):
     """`.project` with the folder `LINK` linked to `app`, our application.
 
-    A link already there is pointed at `app`, in case this repository moved.
+    A link already there is pointed at `app`, in case this repository moved or another
+    application is chosen.
     """
     head, root = _parse(project, "projectDescription")
     links = root.find("linkedResources")
@@ -161,16 +165,21 @@ def _rewrite(path, change):
     return True
 
 
-def main(project_dir):
+def main(project_dir, app):
     path = os.path.join(project_dir, "Core", "Src", "main.c")
     if not os.path.exists(path):
         raise SystemExit(f"no {path}, is {project_dir} the directory with the .ioc?")
+    app_dir = os.path.join(APPS, app)
+    if not os.path.isdir(app_dir):
+        raise SystemExit(f"no {app_dir}, the applications are "
+                         f"{', '.join(sorted(os.listdir(APPS)))}")
     print(f"mtk3_bsp2: {add_bsp(project_dir)}")
     for name, file, change in (("main.c", path, start_kernel),
                                (".cproject", os.path.join(project_dir, ".cproject"), configure),
-                               (".project", os.path.join(project_dir, ".project"), link_app)):
+                               (".project", os.path.join(project_dir, ".project"),
+                                lambda text: link_app(text, app_dir))):
         print(f"{name}: {'changed' if _rewrite(file, change) else 'already done'}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2])
