@@ -24,11 +24,11 @@ python3 -m pip install -r requirements.txt
 Converting a model for the board also needs [ST Edge AI Core](https://www.st.com/en/development-tools/stedgeai-core.html)
 4.0.1 with its STM32 MCU component. It does not install through pip.
 
-The logs go in `data/`, see [dataset/can_data.md](dataset/can_data.md#getting-it).
+The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-it).
 
 ## Layout
 
-- [dataset/](dataset) describes the logs and what profiling them found.
+- [can_data/](can_data) describes the logs and what profiling them found.
 - [preprocess/](preprocess) turns raw CAN logs into rows, by reading the log,
   decomposing the ID, decoding signals, and putting them on a 100 ms grid.
 - [assemble/](assemble) splits the logs by time and builds the train, calibration,
@@ -47,7 +47,7 @@ The logs go in `data/`, see [dataset/can_data.md](dataset/can_data.md#getting-it
 ## Words
 
 J1939's own terms, frame, PGN and SPN, are described in
-[dataset/can_data.md](dataset/can_data.md). These are the ones this repo chose.
+[can_data/can_data.md](can_data/can_data.md). These are the ones this repo chose.
 
 | word | what it is |
 |---|---|
@@ -69,7 +69,7 @@ J1939's own terms, frame, PGN and SPN, are described in
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
   reconstruct.
-- Restate [dataset/measurements.md](dataset/measurements.md) over every log.
+- Restate [can_data/measurements.md](can_data/measurements.md) over every log.
 - Settle whether the rules are a floor the models build on.
 - Then widen to a stretch of time, VAR against a windowed autoencoder, if the instant
   models show it is worth doing.

@@ -1,7 +1,7 @@
 # summary
 
 Folds a set of logs into one set of counts. This is how the profiling findings in
-[measurements](../../dataset/measurements.md) were measured, so those numbers can be
+[measurements](../../can_data/measurements.md) were measured, so those numbers can be
 checked or measured again on other logs.
 
 ```python

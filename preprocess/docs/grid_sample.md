@@ -27,7 +27,7 @@ beside it, which is the fault the model is trained to catch.
 
 Gaps that large are real. One log in this dataset holds a 70.6 hour one, which
 without `max_hold` becomes 2,547,687 invented rows. The whole distribution is in
-[measurements](../../dataset/measurements.md).
+[measurements](../../can_data/measurements.md).
 
 `resample` has no defaults. The values this repo passes, and why, are in
 [grid](../../assemble/docs/grid.md).

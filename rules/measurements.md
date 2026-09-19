@@ -2,7 +2,7 @@
 
 What the rules in [instant](instant) and [rate](rate) were built on, and what was
 measured and rejected. The dataset itself is in
-[dataset/measurements.md](../dataset/measurements.md).
+[can_data/measurements.md](../can_data/measurements.md).
 
 日本語版: [`measurements.ja.md`](measurements.ja.md)
 
