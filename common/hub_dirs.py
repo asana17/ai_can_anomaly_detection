@@ -14,6 +14,7 @@ import time
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
 
 from common import hf_upload
+from common.git import source
 
 
 def download(repo, path, local_dir, repo_type="model"):
@@ -59,13 +60,25 @@ def claim(repo, path, local_dir, repo_type="model"):
     return folder
 
 
+def new_dir(repo, kind, local_dir, repo_type="model"):
+    """Claim `kind/<now>/`, and return its path in `repo` and its folder in `local_dir`.
+
+    The folder is made. It raises as `claim` does.
+    """
+    path = f"{kind}/{time.strftime('%Y%m%d-%H%M%S')}"
+    folder = claim(repo, path, local_dir, repo_type)
+    os.makedirs(folder)
+    return path, folder
+
+
 def upload(repo, path, local_dir, message, repo_type="model"):
     """Upload directory `path` of `local_dir` to `repo` in one commit.
 
-    It is returned as `{repo, revision, path}`, the revision being that commit.
+    It prints and returns it as `{repo, revision, path}`, the revision being that commit.
     """
     commit = hf_upload.upload(repo, os.path.join(local_dir, path), message,
                               repo_type=repo_type, path_in_repo=path)
+    print(f"{repo} {commit.oid} {path}", flush=True)
     return {"repo": repo, "revision": commit.oid, "path": path}
 
 
@@ -79,3 +92,25 @@ def write_meta(folder, meta, started, finished):
         json.dump({**meta, "started": time.strftime(stamp, time.localtime(started)),
                    "finished": time.strftime(stamp, time.localtime(finished))},
                   f, indent=2)
+
+
+def reuse_or_make(repo, kind, inputs, local_dir, write, rebuild=False,
+                  repo_type="model"):
+    """The directory under `kind/` made from `inputs`, as `{repo, revision, path}`.
+
+    It is the one `repo` holds already, unless `rebuild`. Otherwise a new one is claimed,
+    `write(folder)` writes its files and returns what to add to `meta.json`, and it is
+    uploaded with `inputs` and the commit in `meta.json`.
+    """
+    found = find(repo, kind, inputs, local_dir, repo_type)
+    if found and not rebuild:
+        print(f"{found['path']} at {found['revision']} has the same inputs, pass it on "
+              f"or run again with --rebuild", flush=True)
+        return found
+    started = time.time()
+    path, folder = new_dir(repo, kind, local_dir, repo_type)
+    code = source()
+    meta = write(folder) or {}
+    write_meta(folder, {"inputs": inputs, **meta, **code}, started, time.time())
+    return upload(repo, path, local_dir, f"add {path} from {code['commit'][:7]}",
+                  repo_type)

@@ -10,11 +10,9 @@ import glob
 import hashlib
 import json
 import os
-import time
 
 from assemble.split import seconds_above
-from common.git import source
-from common.hub_dirs import claim, find, upload, write_meta
+from common.hub_dirs import reuse_or_make
 from common.settings import Settings
 
 
@@ -39,22 +37,9 @@ def main(data_dir, pattern, local_dir, repo, rebuild=False):
                   for p in glob.glob(os.path.join(data_dir, pattern)))
     inputs = {"logs": logs_digest(data_dir, logs), "count": len(logs),
               "min_speed": min_speed}
-    found = find(repo, "seconds", inputs, local_dir, repo_type="dataset")
-    if found and not rebuild:
-        print(f"{found['path']} at {found['revision']} has the same logs and "
-              f"MIN_SPEED, pass it on or run again with --rebuild", flush=True)
-        return found
-    started = time.time()
-    path = f"seconds/{time.strftime('%Y%m%d-%H%M%S', time.localtime(started))}"
-    folder = claim(repo, path, local_dir, repo_type="dataset")
-    code = source()
-    os.makedirs(folder)
-    write_seconds(folder, data_dir, logs, min_speed)
-    write_meta(folder, {"inputs": inputs, **code}, started, time.time())
-    made = upload(repo, path, local_dir, f"add {path} from {code['commit'][:7]}",
-                  repo_type="dataset")
-    print(f"{made['repo']} {made['revision']} {made['path']}", flush=True)
-    return made
+    return reuse_or_make(repo, "seconds", inputs, local_dir,
+                         lambda folder: write_seconds(folder, data_dir, logs, min_speed),
+                         rebuild, repo_type="dataset")
 
 
 if __name__ == "__main__":
