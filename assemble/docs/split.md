@@ -61,3 +61,9 @@ it has not seen, and a threshold read off them would sit too low.
 
 An event such as hard braking runs for seconds, long enough to cross the edge of a
 window and land on both sides of the split. That is what `gap` is for.
+
+## The gap around the test block
+
+An event can cross the edge of the test block as it crosses a calibration window.
+`apart_from_test(times, start, end, gap)` drops the train rows within `gap` of the test
+block, `start` and `end` being its first and last frame times.

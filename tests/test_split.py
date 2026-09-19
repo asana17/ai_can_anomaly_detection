@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from assemble import split as split_stage
-from assemble.split import WHEEL, moving, seconds_above, split, split_rows
+from assemble.split import (WHEEL, apart_from_test, moving, seconds_above, split,
+                            split_rows)
 
 
 def test_the_last_fold_tests_on_the_last_block():
@@ -132,6 +133,12 @@ def test_split_rows_leaves_the_gap_out_of_both_parts():
     assert (~train_rows & ~calibration_rows).any()
     nearest = np.abs(t[train_rows][:, None] - t[calibration_rows][None, :]).min()
     assert nearest > 5.0
+
+
+def test_rows_within_the_gap_of_the_test_block_are_dropped():
+    times = np.array([0.0, 4.0, 6.0, 20.0, 34.0, 36.0])
+    kept = apart_from_test(times, start=10.0, end=30.0, gap=5.0)
+    assert kept.tolist() == [True, True, False, False, False, True]
 
 
 SECONDS = {f"part_1/{i:03d}.csv": 1.0 for i in range(8)}

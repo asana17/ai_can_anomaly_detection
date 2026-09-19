@@ -79,6 +79,14 @@ def split_rows(raw, times, share: float, block: float, gap: float, min_speed: fl
     return ~calibration_rows & apart, calibration_rows
 
 
+def apart_from_test(times, start: float, end: float, gap: float):
+    """Which rows sit more than `gap` seconds outside the test block, `start` to `end`.
+
+    The rows within `gap` of it go to neither train nor calibration.
+    """
+    return (times < start - gap) | (times > end + gap)
+
+
 def _apart(times, windows, gap: float):
     """Which rows sit more than `gap` seconds from every row in `windows`.
 
