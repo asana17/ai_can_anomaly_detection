@@ -18,9 +18,9 @@ import time
 import numpy as np
 
 from assemble.attack_set import attack_set
-from assemble.split import seconds_above, split
-from assemble.train_set import grid_rows
-from common.load_dataset import ATTACKED, GRID, arrays_from, built_with, grid_with
+from assemble.split import moving, seconds_above, split, split_rows
+from assemble.train_set import grid_rows, scale_for
+from common.load_dataset import ATTACKED, GRID, built_with, grid_with
 from common.settings import Settings
 
 
@@ -59,6 +59,17 @@ def grid_for(train_logs, out_dir):
     return False
 
 
+def fit_scale(out_dir, settings):
+    """Fit the scale on the train rows of the grid in `out_dir`, and write it there."""
+    raw, times = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
+    train_rows, _ = split_rows(raw, times, settings.CALIBRATION, settings.BLOCK,
+                               settings.GAP, settings.MIN_SPEED)
+    # the rows PCA is fitted on
+    scale = scale_for(raw[train_rows & moving(raw, settings.MIN_SPEED)])
+    np.save(os.path.join(out_dir, "scale.npy"), np.stack([scale.mean, scale.std]))
+    return scale
+
+
 def attacks_for(train_logs, test_logs, scale, out_dir, settings):
     """Build the attack set in `out_dir`, unless it is there with the same settings."""
     shape = {"logs": [train_logs, test_logs], **built_with(settings)}
@@ -92,7 +103,7 @@ def main(pattern, out_dir):
     print(f"grid {how} in {time.time() - clock:.0f}s", flush=True)
 
     clock = time.time()
-    scale = arrays_from(out_dir, settings)["scale"]
+    scale = fit_scale(out_dir, settings)
     kept = attacks_for(train_logs, test_logs, scale, out_dir, settings)
     how = "reused" if kept else "built"
     print(f"attack set {how} in {time.time() - clock:.0f}s", flush=True)

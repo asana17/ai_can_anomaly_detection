@@ -41,3 +41,14 @@ def test_arrays_from_refuses_a_grid_built_otherwise(tmp_path, monkeypatch):
     monkeypatch.setattr("common.load_dataset.PERIOD", 0.2)
     with pytest.raises(ValueError):
         arrays_from(str(tmp_path), Settings())
+
+
+def test_arrays_from_puts_the_rows_on_the_saved_scale(tmp_path, monkeypatch):
+    raw = np.array([[10.0, 1.0], [20.0, 3.0]], np.float32)
+    monkeypatch.setattr(dataset, "grid_rows", lambda logs: (
+        raw, np.array([0.0, 0.1]), np.zeros(2, np.int32)))
+    monkeypatch.setattr("common.load_dataset.split_rows", lambda *args: (
+        np.array([True, True]), np.array([False, False])))
+    dataset.grid_for(["a"], str(tmp_path))
+    np.save(tmp_path / "scale.npy", np.array([[10.0, 1.0], [2.0, 1.0]], np.float32))
+    assert (arrays_from(str(tmp_path), Settings())["rows"] == [[0, 0], [5, 2]]).all()

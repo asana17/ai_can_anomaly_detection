@@ -8,8 +8,8 @@ import os
 import numpy as np
 
 from assemble.grid import MAX_HOLD, PERIOD
-from assemble.split import moving, split_rows
-from assemble.train_set import scale_for
+from assemble.scale import Scale
+from assemble.split import split_rows
 from preprocess.features.signal_state import SIGNALS
 
 GRID = ("raw", "t", "seg")
@@ -38,14 +38,13 @@ def _logs(out_dir, name, expected):
 
 
 def arrays_from(out_dir, settings):
-    """The train and calibration arrays, cut out of the grid by time."""
+    """The train and calibration arrays, cut out of the grid by time, on the saved scale."""
     _logs(out_dir, "grid.json", grid_with())
     raw, times, segments = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in GRID)
     train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
                                               settings.BLOCK, settings.GAP,
                                               settings.MIN_SPEED)
-    above = moving(raw, settings.MIN_SPEED)
-    scale = scale_for(raw[train_rows & above])      # the rows PCA is fitted on
+    scale = Scale(*np.load(os.path.join(out_dir, "scale.npy")))
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],
             "t": times[train_rows], "seg": segments[train_rows],
