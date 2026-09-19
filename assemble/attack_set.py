@@ -13,21 +13,32 @@ from preprocess.features.grid_sample import resample
 from preprocess.frames.can_log_loader import load_can_log
 
 
-def attack_set(logs, scale, rng: random.Random, source_logs=None) -> dict:
+def inject_frames(logs, rng: random.Random, source_logs=None):
+    """Inject one attack into each log, and yield its frames before and after it.
+
+    Each item is the path, the frames, the frames with the attack in, and the attack's
+    span, or the same frames twice and None when no attack landed. `source_logs` are
+    the logs the replayed payloads are taken from.
+    """
+    pool = [list(load_can_log(p)) for p in source_logs] if source_logs else []
+    for path in logs:
+        frames = list(load_can_log(path))
+        made = inject(frames, rng, source_log=rng.choice(pool) if pool else None)
+        hurt, span = made if made else (frames, None)
+        yield path, frames, hurt, span
+
+
+def grid_rows_injected(logs, scale, rng: random.Random, source_logs=None) -> dict:
     """Inject one attack into each log, and put the result on train's `scale`.
 
     Every file contributes its rows whether or not an attack landed, so the set holds
     normal traffic to measure false alarms against. `attacks` says where each one
     sits, as the first and last row it covers, and how far it moved one.
-    `source_logs` are the logs the replayed payloads are taken from.
+    `source_logs` go to `inject_frames`.
     """
-    pool = [list(load_can_log(p)) for p in source_logs] if source_logs else []
     rows, times, segments, labels, wheels, attacks = [], [], [], [], [], []
     segment = -1
-    for path in logs:
-        frames = list(load_can_log(path))
-        made = inject(frames, rng, source_log=rng.choice(pool) if pool else None)
-        hurt, span = made if made else (frames, None)
+    for _, frames, hurt, span in inject_frames(logs, rng, source_logs):
         clean = dict(resample(frames, PERIOD, MAX_HOLD)) if span else {}
         first = len(rows)
         previous = None

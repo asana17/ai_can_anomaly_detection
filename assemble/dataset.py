@@ -18,7 +18,7 @@ import time
 import numpy as np
 from huggingface_hub import HfApi
 
-from assemble.attack_set import attack_set
+from assemble.attack_set import grid_rows_injected
 from assemble.split import moving, seconds_above, split, split_rows
 from assemble.train_set import grid_rows, scale_for
 from common.load_dataset import ATTACKED, GRID, built_with, grid_with
@@ -82,9 +82,9 @@ def attacks_for(train_logs, test_logs, scale, out_dir, settings):
     if _kept(out_dir, "built.json", shape, files):
         return True
     donors = settings.DONORS
-    got = attack_set(test_logs, scale, random.Random(settings.SEED),
-                     source_logs=train_logs[::max(len(train_logs) // donors, 1)]
-                     [:donors])
+    got = grid_rows_injected(test_logs, scale, random.Random(settings.SEED),
+                             source_logs=train_logs[::max(len(train_logs) // donors, 1)]
+                             [:donors])
     for name in ATTACKED:
         np.save(os.path.join(out_dir, f"attacked_{name}.npy"), got[name])
     json.dump(got["attacks"], open(os.path.join(out_dir, "attacked.json"), "w"))
