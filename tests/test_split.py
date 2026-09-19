@@ -1,38 +1,58 @@
 import numpy as np
+import pytest
 
 from assemble.split import WHEEL, moving, seconds_above, split, split_rows
 
 
-def test_split_fraction_sizes():
+def test_the_last_fold_tests_on_the_last_block():
     logs = [f"{i:03d}.csv" for i in range(100)]
-    train, test = split({p: 1.0 for p in logs}, 0.70)
-    assert (len(train), len(test)) == (70, 30)
+    train, test = split({p: 1.0 for p in logs}, 4, 3)
+    assert (train, test) == (logs[:75], logs[75:])
+
+
+def test_the_first_fold_tests_on_the_first_block():
+    logs = [f"{i:03d}.csv" for i in range(100)]
+    train, test = split({p: 1.0 for p in logs}, 4, 0)
+    assert (train, test) == (logs[25:], logs[:25])
+
+
+def test_a_middle_fold_trains_on_both_sides():
+    logs = [f"{i:03d}.csv" for i in range(100)]
+    train, test = split({p: 1.0 for p in logs}, 4, 1)
+    assert (train, test) == (logs[:25] + logs[50:], logs[25:50])
+
+
+def test_a_fold_outside_the_blocks_is_refused():
+    for fold in (-1, 4):
+        with pytest.raises(ValueError):
+            split({"a.csv": 1.0}, 4, fold)
 
 
 def test_orders_by_filename_before_splitting():
     logs = ["c.csv", "a.csv", "b.csv"]  # not in order
-    train, test = split({p: 1.0 for p in logs}, 0.34)
+    train, test = split({p: 1.0 for p in logs}, 3, 2)
     assert train + test == ["a.csv", "b.csv", "c.csv"]
 
 
-def test_the_two_parts_cover_everything_once():
+def test_every_fold_covers_everything_once():
     logs = [f"{i:04d}.csv" for i in range(50)]
-    train, test = split({p: 1.0 for p in logs}, 0.70)
-    assert train + test == sorted(logs)
+    for fold in range(4):
+        train, test = split({p: 1.0 for p in logs}, 4, fold)
+        assert sorted(train + test) == sorted(logs)
 
 
 def test_the_seconds_size_the_parts_instead_of_the_log_count():
     logs = [f"{i:03d}.csv" for i in range(10)]
     seconds = {p: (100.0 if i < 2 else 0.0) for i, p in enumerate(logs)}
     seconds["009.csv"] = 100.0                    # the only moving traffic late on
-    train, test = split(seconds, 0.34)
-    assert train == ["000.csv"]                   # a third of the moving traffic
-    assert test == [f"{i:03d}.csv" for i in range(1, 10)]
+    train, test = split(seconds, 3, 0)
+    assert test == ["000.csv"]                    # a third of the moving traffic
+    assert train == [f"{i:03d}.csv" for i in range(1, 10)]
 
 
 def test_split_gives_test_nothing_when_no_log_holds_a_scoreable_second():
     logs = [f"{i:03d}.csv" for i in range(10)]
-    train, test = split({p: 0.0 for p in logs}, 0.50)
+    train, test = split({p: 0.0 for p in logs}, 2, 1)
     assert (train, test) == (logs, [])
 
 

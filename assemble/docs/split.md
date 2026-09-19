@@ -7,7 +7,7 @@ train and calibration rows.
 
 ```python
 seconds = seconds_above(logs, min_speed)
-train_logs, test_logs = split(seconds, train_frac)
+train_logs, test_logs = split(seconds, n_splits, fold)   # block `fold` of `n_splits` is test
 
 raw, t, seg = grid_rows(train_logs)             # from train_set.md
 train_rows, calibration_rows = split_rows(raw, t, share, block, gap, min_speed)

@@ -40,16 +40,22 @@ def seconds_above(logs: Iterable[str], min_speed: float) -> dict[str, float]:
     return seconds
 
 
-def split(seconds: dict[str, float], train_frac: float):
-    """Cut the logs in two by time, everything after `train_frac` being the test set.
+def split(seconds: dict[str, float], n_splits: int, fold: int):
+    """Cut the logs by time into `n_splits` blocks, block `fold` being the test set.
 
-    `seconds` is what `seconds_above` returns, so the fraction is a share of the seconds
-    above the minimum speed rather than of the log count.
+    `seconds` is what `seconds_above` returns, so the blocks are equal shares of the
+    seconds above the minimum speed rather than of the log count. Train is every other
+    block, before and after the test one.
     """
+    if not 0 <= fold < n_splits:
+        raise ValueError(f"fold {fold} is not one of the {n_splits} blocks")
     ordered = sorted(seconds, key=os.path.basename)     # filename is a timestamp
     sizes = [seconds[p] for p in ordered]
-    cut = _cut(sizes, sum(sizes) * train_frac)
-    return ordered[:cut], ordered[cut:]
+    start = _cut(sizes, sum(sizes) * (fold / n_splits))
+    end = len(ordered)                          # the last block runs to the last log
+    if fold < n_splits - 1:
+        end = _cut(sizes, sum(sizes) * ((fold + 1) / n_splits))
+    return ordered[:start] + ordered[end:], ordered[start:end]
 
 
 def split_rows(raw, times, share: float, block: float, gap: float, min_speed: float):

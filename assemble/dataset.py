@@ -98,7 +98,7 @@ def main(pattern, out_dir, repo, branch):
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))
     seconds = seconds_for(logs, out_dir, settings)
-    train_logs, test_logs = split(seconds, settings.TRAIN)
+    train_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)
     print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
           f"{sum(seconds[p] for p in train_logs):.0f}s and "
           f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",

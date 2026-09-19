@@ -11,6 +11,8 @@ class Settings:
 
     MIN_SPEED: float = 5.0      # km/h, the speed a row has to exceed to be scored
     TRAIN: float = 0.75         # share of the seconds above MIN_SPEED before the test cut
+    N_SPLITS: int = 4           # blocks the seconds above MIN_SPEED are cut into, by time
+    FOLD: int = 3               # the block that is the test set, 0 the first
     CALIBRATION: float = 0.10   # share of the training seconds above MIN_SPEED held out
     BLOCK: float = 20.0         # seconds above MIN_SPEED in one calibration window
     GAP: float = 5.0            # seconds of training rows dropped around a calibration row
