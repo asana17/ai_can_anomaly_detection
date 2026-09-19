@@ -39,6 +39,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [quantize/](quantize) writes the models out as ONNX for the NUCLEO-H533RE.
 - [board/](board) holds our μT-Kernel applications for the NUCLEO-H533RE, one folder
   each. [board/docs/setup.md](board/docs/setup.md) builds and flashes one from nothing.
+  [board/docs/goal.md](board/docs/goal.md) is what the board is building towards, the
+  TRON Programming Contest 2026 entry, and the order it is built in.
 - [common/](common) holds the settings of a run and the rows built from the logs, which
   `evaluate`, `quantize` and `board` all read.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
@@ -62,11 +64,9 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Add a board application that feeds the rows `board/rows.py` writes through a row
-  queue to a task that echoes them over UART.
-- Replace the echo with one generated model, and compare its outputs with ONNX
-  Runtime's on the same rows.
-- Port the preprocessing to C and feed real CAN frames to the same row queue.
+- Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
+  due 2026-09-30. Next is the task skeleton in `board/application/rows`, whose first
+  echo version ran on the board.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
