@@ -70,8 +70,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 - Run `evaluate.pc.run` once on the dataset read from Hugging Face, to check the whole
   path works.
-- Have the runs repo scripts push to Hugging Face. Today they push to GitHub, and the
-  Hugging Face copy is uploaded by hand.
 - Record the commit `assemble.dataset` ran from in the dataset. It records the logs and
   the settings only.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),

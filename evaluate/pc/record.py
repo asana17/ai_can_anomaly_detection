@@ -1,8 +1,8 @@
 """Keep each run of the comparison in the runs repository.
 
-A run's weights and numbers are worth keeping, but `out` is only a cache. So each run
-gets its own directory in a clone of it, committed and pushed there.
-`begin` claims the directory when the run starts, and `record` fills it at the end.
+`start_run` claims `results/<start time>/` when the run starts and notes the code it
+starts from. `end_run` writes the weights and the numbers into it at the end, and
+uploads it.
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ import numpy as np
 import torch
 from safetensors.torch import save_file
 
+from common.runs import claim, upload
+
 
 def git(*args):
     """What a git command prints."""
@@ -24,18 +26,20 @@ def git(*args):
                           check=True).stdout
 
 
-def begin(runs_clone):
-    """Claim `results/<start time>/` in `runs_clone`, and note the code it starts from."""
+def start_run(runs_repo, runs_dir):
+    """Claim `results/<start time>/`, and note the code the run starts from."""
     started = time.time()
     stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(started))
-    os.makedirs(os.path.join(runs_clone, "results", stamp))  # raises rather than overwrite
-    return {"repo": runs_clone, "stamp": stamp, "started": started,
+    path = f"results/{stamp}"
+    os.makedirs(claim(runs_repo, path, runs_dir))
+    return {"repo": runs_repo, "dir": runs_dir, "path": path, "stamp": stamp,
+            "started": started,
             "commit": git("rev-parse", "HEAD").strip(),
             "uncommitted": git("status", "--porcelain").splitlines()}
 
 
-def record(run, weights, meta):
-    """Write the weights and `meta` into the run's directory, then commit and push it."""
+def end_run(run, weights, meta):
+    """Write the weights and `meta`, and add them to the runs repository."""
     finished = time.time()
     meta = {"commit": run["commit"], "uncommitted": run["uncommitted"], **meta,
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
@@ -44,11 +48,9 @@ def record(run, weights, meta):
                                      time.localtime(run["started"])),
             "finished": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(finished)),
             "seconds": round(finished - run["started"])}
-    path = os.path.join("results", run["stamp"])
-    save_file(weights, os.path.join(run["repo"], path, "weights.safetensors"))
-    with open(os.path.join(run["repo"], path, "meta.json"), "w") as f:
+    folder = os.path.join(run["dir"], run["path"])
+    save_file(weights, os.path.join(folder, "weights.safetensors"))
+    with open(os.path.join(folder, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    git("-C", run["repo"], "add", path)
-    git("-C", run["repo"], "commit", "-m",
-        f"add {run['stamp']} from {run['commit'][:7]}")
-    git("-C", run["repo"], "push")
+    upload(run["repo"], run["path"], run["dir"],
+           f"add {run['stamp']} from {run['commit'][:7]}")

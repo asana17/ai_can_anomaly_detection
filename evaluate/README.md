@@ -15,7 +15,7 @@ are compared at the same `k`. The linear and nonlinear autoencoders differ only 
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
 ```
-python3 -m evaluate.pc.run repo revision out runs_clone
+python3 -m evaluate.pc.run repo revision out runs_repo runs_dir
 ```
 
 The run fetches `revision` of `repo`, the Hugging Face dataset

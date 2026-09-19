@@ -7,23 +7,25 @@ float and int8 ONNX for that, and keeps them in the runs repository.
 ## Running it
 
 ```
-python3 -u -m quantize.export repo revision out runs_clone started
+python3 -u -m quantize.export repo revision out runs_repo runs_dir started
 ```
 
 | argument | what it is |
 |---|---|
 | `repo`, `revision` | the Hugging Face dataset the run read, as its `meta.json` names it under `dataset` |
 | `out` | where that dataset is fetched to |
-| `runs_clone` | a clone of the [runs repository](../../evaluate/docs/run_record.md), the same one `evaluate.pc.run` takes |
-| `started` | the run's `<start time>` under `results/`, such as `20260915-223031` |
+| `runs_repo`, `runs_dir` | the [runs repository](../../evaluate/docs/run_record.md) and its local copy, the same ones `evaluate.pc.run` takes |
+| `started` | the run's `<start time>` under `results/`, such as `20260916-001002` |
 
-Which autoencoders are written is not an argument. The run's `weights.safetensors` says
-which `k` and `h` it fitted, and all of them are written.
+The run's directory is downloaded into `runs_dir`. Which autoencoders are written is not
+an argument. The run's `weights.safetensors` says which `k` and `h` it fitted, and all of
+them are written.
 
 ## What it writes
 
-Each export adds `quantize/<export time>/` to `runs_clone`, then commits and pushes that
-directory. It never writes into an existing directory, and never into the run's.
+Each export writes `quantize/<export time>/` into `runs_dir` and uploads it to
+`runs_repo` in one commit, the way a [run](../../evaluate/docs/run_record.md) does. It
+never writes into the run's.
 
 | file | holds |
 |---|---|

@@ -1,6 +1,6 @@
 """Measure what quantizing a run's model to int8 costs.
 
-    python3 -m evaluate.quantize.compare repo revision out runs_clone exported...
+    python3 -m evaluate.quantize.compare repo revision out runs_repo runs_dir exported...
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import sys
 import numpy as np
 
 from common.load_dataset import arrays_from, attacks_from, fetch
+from common.runs import download
 from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
 from models.autoencoder import NonlinearAutoencoder, residuals
@@ -26,25 +27,24 @@ def rows_for(out_dir, settings):
     return calibration, scored_set(got, data["scale"], settings)
 
 
-def models_in(runs_clone, exported):
-    """Where an export sits, what it says of itself, and the `k` and `h` it holds."""
-    export_dir = os.path.join(runs_clone, "quantize", exported)
+def models_in(export_dir):
+    """What an export says of itself, and the `k` and `h` it holds."""
     meta = json.load(open(os.path.join(export_dir, "meta.json")))
     # an export from before several models fitted in one directory names one pair
     listed = meta.get("models") or [{"k": meta["k"], "h": meta["h"]}]
-    return export_dir, meta, [(m["k"], m["h"]) for m in listed]
+    return meta, [(m["k"], m["h"]) for m in listed]
 
 
-def sources_for(runs_clone, export_dir, run, k, h, signals):
+def sources_for(run_dir, export_dir, k, h, signals):
     """The run's model and the int8 ONNX an export quantized from that model."""
     model = NonlinearAutoencoder(signals=signals, latent_dim=k, hidden=h)
-    model.load_state_dict(load(os.path.join(runs_clone, run), k, h))
+    model.load_state_dict(load(run_dir, k, h))
     int8 = os.path.join(export_dir, f"nonlinear_ae_k{k}_h{h}_int8.onnx")
     return {"torch": lambda rows: residuals(rows, model),
             "int8": lambda rows: onnx_residuals(int8, rows)}
 
 
-def main(repo, revision, out_dir, runs_clone, *exports):
+def main(repo, revision, out_dir, runs_repo, runs_dir, *exports):
     settings = Settings()
     fetch(repo, revision, out_dir)
     calibration, test = rows_for(out_dir, settings)
@@ -53,14 +53,15 @@ def main(repo, revision, out_dir, runs_clone, *exports):
           f"{test['hours']:.1f} hours", flush=True)
 
     for exported in exports:
-        export_dir, meta, models = models_in(runs_clone, exported)
+        export_dir = download(runs_repo, f"quantize/{exported}", runs_dir)
+        meta, models = models_in(export_dir)
+        run_dir = download(runs_repo, meta["run"], runs_dir)
         print(f"\nquantize/{exported}, {meta['run']}")
         print(f"{'model':>12}  {'source':>6}  {'threshold':>12}  "
               + "  ".join(f"found in {n}".rjust(11) for n in settings.HOLD)
               + "   " + "  ".join(f"alarms/h {n}".rjust(12) for n in settings.HOLD))
         for k, h in models:
-            sources = sources_for(runs_clone, export_dir, meta["run"], k, h,
-                                  calibration.shape[1])
+            sources = sources_for(run_dir, export_dir, k, h, calibration.shape[1])
             for name, score in sources.items():
                 # the model and the int8 ONNX keep a threshold of their own scores
                 cut = threshold_for(score(calibration), settings.TARGET)
@@ -73,4 +74,4 @@ def main(repo, revision, out_dir, runs_clone, *exports):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], *sys.argv[5:])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], *sys.argv[6:])

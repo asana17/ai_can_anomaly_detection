@@ -7,22 +7,22 @@ the runs repository, where it records the code the board ran.
 ## Running it
 
 ```
-python3 -u -m quantize.generate stedgeai runs_clone exported
+python3 -u -m quantize.generate stedgeai runs_repo runs_dir exported
 ```
 
 | argument | what it is |
 |---|---|
 | `stedgeai` | the ST Edge AI Core command line tool |
-| `runs_clone` | a clone of the [runs repository](../../evaluate/docs/run_record.md), the one the export went into |
+| `runs_repo`, `runs_dir` | the [runs repository](../../evaluate/docs/run_record.md) the export went into, and its local copy |
 | `exported` | the export's `<export time>` under `quantize/`, such as `20260916-221145` |
 
-Which models are generated is not an argument. Every model the export's `meta.json`
-lists is generated. The int8 files are not, since the board runs float.
+The export's directory is downloaded into `runs_dir`. Which models are generated is not
+an argument. Every model the export's `meta.json` lists is generated. The int8 files are not, since the board runs float.
 
 ## What it writes
 
-Each call adds `board/<generate time>/` to `runs_clone`, then commits and pushes that
-directory. It never writes into an existing directory.
+Each call writes `board/<generate time>/` into `runs_dir` and uploads it to `runs_repo`
+in one commit, the way a [run](../../evaluate/docs/run_record.md) does.
 
 Every model gets its own `nonlinear_ae_k{k}_h{h}/` inside. The generator names every
 file `network`, so the board application includes the same names for any model. The

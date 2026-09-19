@@ -1,44 +1,55 @@
 import json
-import subprocess
+import os
 
 import pytest
 import torch
 
+from common import runs
 from evaluate.pc import record
 
 
-def _git(*args):
-    return subprocess.run(["git", *args], capture_output=True, text=True,
-                          check=True).stdout
+class Hub:
+    """Stands in for HfApi, logged in, with `files` in the repository."""
+
+    files = ["results/20260101-000000/meta.json"]
+    uploaded = []
+
+    def whoami(self):
+        return {"name": "test"}
+
+    def list_repo_files(self, repo):
+        return self.files
+
+    def upload_folder(self, **kwargs):
+        self.uploaded.append(kwargs)
 
 
-def _clone(tmp_path):
-    """A clone of an empty bare repository, standing in for the runs repository."""
-    remote, clone = tmp_path / "remote.git", tmp_path / "clone"
-    _git("init", "-q", "--bare", "-b", "main", str(remote))
-    _git("clone", "-q", str(remote), str(clone))
-    _git("-C", str(clone), "config", "user.name", "test")
-    _git("-C", str(clone), "config", "user.email", "test@example.com")
-    _git("-C", str(clone), "commit", "-q", "--allow-empty", "-m", "init")
-    _git("-C", str(clone), "push", "-q", "-u", "origin", "main")
-    return remote, clone
+def test_record_keeps_both_files_and_uploads_them(tmp_path, monkeypatch):
+    monkeypatch.setattr(runs, "HfApi", Hub)
+    Hub.uploaded = []
+    run = record.start_run("user/runs", str(tmp_path))
+    record.end_run(run, {"pca.k2.centre": torch.zeros(17)}, {"seeds": {"SEED": 0}})
 
-
-def test_begin_refuses_a_directory_an_earlier_run_made(tmp_path, monkeypatch):
-    monkeypatch.setattr(record.time, "time", lambda: 1_758_000_000.0)
-    record.begin(str(tmp_path))
-    with pytest.raises(FileExistsError):
-        record.begin(str(tmp_path))
-
-
-def test_record_writes_both_files_and_pushes_them(tmp_path):
-    remote, clone = _clone(tmp_path)
-    run = record.begin(str(clone))
-    record.record(run, {"pca.k2.centre": torch.zeros(17)}, {"seeds": {"SEED": 0}})
-
-    directory = clone / "results" / run["stamp"]
-    meta = json.loads((directory / "meta.json").read_text())
-    assert (directory / "weights.safetensors").exists()
+    folder = tmp_path / "results" / run["stamp"]
+    meta = json.loads((folder / "meta.json").read_text())
+    assert sorted(os.listdir(folder)) == ["meta.json", "weights.safetensors"]
     assert meta["seeds"] == {"SEED": 0} and meta["commit"] == run["commit"]
-    pushed = _git("--git-dir", str(remote), "log", "--format=%s", "-1", "main")
-    assert pushed.strip() == f"add {run['stamp']} from {run['commit'][:7]}"
+    assert Hub.uploaded[0]["path_in_repo"] == f"results/{run['stamp']}"
+
+
+def test_a_failed_upload_leaves_the_files(tmp_path, monkeypatch):
+    class Failing(Hub):
+        def upload_folder(self, **kwargs):
+            raise ConnectionError("offline")
+
+    monkeypatch.setattr(runs, "HfApi", Failing)
+    run = record.start_run("user/runs", str(tmp_path))
+    with pytest.raises(ConnectionError):
+        record.end_run(run, {"pca.k2.centre": torch.zeros(17)}, {})
+    assert (tmp_path / "results" / run["stamp"] / "weights.safetensors").exists()
+
+
+def test_claim_refuses_a_directory_the_repository_holds(tmp_path, monkeypatch):
+    monkeypatch.setattr(runs, "HfApi", Hub)
+    with pytest.raises(FileExistsError):
+        runs.claim("user/runs", "results/20260101-000000", str(tmp_path))

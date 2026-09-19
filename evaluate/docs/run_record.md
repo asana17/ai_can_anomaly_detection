@@ -1,8 +1,13 @@
 # run record
 
-`runs_clone` is a clone of [asana17/ai_can_anomaly_detection_runs](https://github.com/asana17/ai_can_anomaly_detection_runs). Each run adds `results/<start time>/`
-to it, then commits and pushes that directory. A run never writes into an existing
-directory, so earlier runs stay as they were.
+`runs_repo` is a Hugging Face model repository, such as
+[asana17/ai_can_anomaly_detection_runs](https://huggingface.co/asana17/ai_can_anomaly_detection_runs).
+`runs_dir` is a local directory laid out like it.
+
+When a run starts, it checks that `hf auth login` works and that `results/<start time>/`
+is in neither place, then makes that directory in `runs_dir`. At the end it writes the
+files there and uploads the directory in one commit. If the upload fails, the files stay
+in `runs_dir` and the run prints the `hf upload` command that uploads them later.
 
 | file | holds |
 |---|---|

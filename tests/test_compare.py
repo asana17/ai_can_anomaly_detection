@@ -43,9 +43,10 @@ def _test_set(scores, hours=1.0):
 
 
 def _sources(tmp_path, exported):
-    export_dir, meta, models = models_in(str(tmp_path), exported)
+    export_dir = str(tmp_path / "quantize" / exported)
+    meta, models = models_in(export_dir)
     k, h = models[0]
-    return sources_for(str(tmp_path), export_dir, meta["run"], k, h, 17)
+    return sources_for(str(tmp_path / meta["run"]), export_dir, k, h, 17)
 
 
 def test_the_fit_scores_the_rows_it_was_saved_from(tmp_path):
@@ -64,13 +65,13 @@ def test_every_model_an_export_lists_is_read(tmp_path):
     exported = _export(tmp_path, _model(), _rows(),
                        meta={"run": "results/20260101-000000",
                              "models": [{"k": 4, "h": 8}, {"k": 6, "h": 32}]})
-    assert models_in(str(tmp_path), exported)[2] == [(4, 8), (6, 32)]
+    assert models_in(str(tmp_path / "quantize" / exported))[1] == [(4, 8), (6, 32)]
 
 
 def test_an_export_naming_one_pair_on_its_own_is_still_read(tmp_path):
     exported = _export(tmp_path, _model(), _rows(),
                        meta={"run": "results/20260101-000000", "k": 4, "h": 8})
-    assert models_in(str(tmp_path), exported)[2] == [(4, 8)]
+    assert models_in(str(tmp_path / "quantize" / exported))[1] == [(4, 8)]
 
 
 def test_the_threshold_cuts_off_the_target_share():

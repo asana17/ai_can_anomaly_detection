@@ -1,6 +1,6 @@
 """Write every nonlinear autoencoder of a run out as float and int8 ONNX, and keep them.
 
-    python3 -m quantize.export repo revision out runs_clone started
+    python3 -m quantize.export repo revision out runs_repo runs_dir started
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
 from common.load_dataset import arrays_from, fetch
+from common.runs import claim, download, upload
 from common.settings import Settings
 from evaluate.counting import training_rows
 from evaluate.pc.record import git
@@ -94,14 +95,16 @@ def write(models, rows, dest, batch):
                             calibrate_method=CalibrationMethod.MinMax)
 
 
-def main(repo, revision, out_dir, runs_clone, started):
+def main(repo, revision, out_dir, runs_repo, runs_dir, started):
     settings = Settings()
     exported = time.localtime()
     stamp = time.strftime("%Y%m%d-%H%M%S", exported)
+    path = f"quantize/{stamp}"
+    dest = claim(runs_repo, path, runs_dir)
     commit = git("rev-parse", "HEAD").strip()
     uncommitted = git("status", "--porcelain").splitlines()
-    run = os.path.join("results", started)
-    run_dir = os.path.join(runs_clone, run)
+    run = f"results/{started}"
+    run_dir = download(runs_repo, run, runs_dir)
     wanted = fits_in(run_dir)               # every fit the run saved, none of them picked
     states = [(k, h, load(run_dir, k, h)) for k, h in wanted]
 
@@ -115,8 +118,6 @@ def main(repo, revision, out_dir, runs_clone, started):
         model = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
         model.load_state_dict(state)
         models.append((f"nonlinear_ae_k{k}_h{h}", model))
-    path = os.path.join("quantize", stamp)
-    dest = os.path.join(runs_clone, path)
     write(models, tr, dest, settings.BATCH)
 
     # the board reads the int8 file, so it needs a threshold of that file's own scores
@@ -134,11 +135,8 @@ def main(repo, revision, out_dir, runs_clone, started):
             "exported": time.strftime("%Y-%m-%dT%H:%M:%S%z", exported)}
     with open(os.path.join(dest, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    git("-C", runs_clone, "add", path)
-    git("-C", runs_clone, "commit", "-m",
-        f"add {path} from {run}, {len(wanted)} models")
-    git("-C", runs_clone, "push")
+    upload(runs_repo, path, runs_dir, f"add {path} from {run}, {len(wanted)} models")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])

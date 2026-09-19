@@ -1,6 +1,6 @@
 """Run the whole comparison over a set of logs and print what each detector catches.
 
-    python3 -m evaluate.pc.run repo revision out runs_clone
+    python3 -m evaluate.pc.run repo revision out runs_repo runs_dir
 """
 
 from __future__ import annotations
@@ -14,15 +14,15 @@ import torch
 from common.load_dataset import arrays_from, attacks_from, fetch
 from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
-from evaluate.pc.record import begin, record
+from evaluate.pc.record import end_run, start_run
 from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
 from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
 
 
-def main(repo, revision, out_dir, runs_clone):
+def main(repo, revision, out_dir, runs_repo, runs_dir):
     settings = Settings()
-    run = begin(runs_clone)
+    run = start_run(runs_repo, runs_dir)
     weights = {}
     dataset = {"repo": repo, "revision": fetch(repo, revision, out_dir)}
 
@@ -113,7 +113,7 @@ def main(repo, revision, out_dir, runs_clone):
 
     values = asdict(settings)
     seeds = {name: values.pop(name) for name in ("SEED", "TORCH_SEED")}
-    record(run, weights, {
+    end_run(run, weights, {
         "dataset": dataset,
         "seeds": seeds,
         "hyperparameters": {**values, "logs": logs},
@@ -122,4 +122,4 @@ def main(repo, revision, out_dir, runs_clone):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
