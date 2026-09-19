@@ -1,9 +1,9 @@
-"""Build the grid of the training logs and the attacked test rows, into `out`.
+"""Build the dataset from the logs into `out`, and upload it to Hugging Face.
 
-    python3 -m assemble.dataset "data/part_*/*.csv" out
+    python3 -m assemble.dataset "data/part_*/*.csv" out repo branch
 
-Each step keeps what it built in `out`, and a later call with the same logs and
-settings reads it back rather than build it again.
+Putting the logs on the grid and building the attack set take long, so a step is skipped
+when `out` already holds what it would build from the same logs and settings.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import sys
 import time
 
 import numpy as np
+from huggingface_hub import HfApi
 
 from assemble.attack_set import attack_set
 from assemble.split import moving, seconds_above, split, split_rows
@@ -91,7 +92,7 @@ def attacks_for(train_logs, test_logs, scale, out_dir, settings):
     return False
 
 
-def main(pattern, out_dir):
+def main(pattern, out_dir, repo, branch):
     settings = Settings()
     os.makedirs(out_dir, exist_ok=True)
     logs = sorted(glob.glob(pattern))
@@ -112,6 +113,13 @@ def main(pattern, out_dir):
     how = "reused" if kept else "built"
     print(f"attack set {how} in {time.time() - clock:.0f}s", flush=True)
 
+    hub = HfApi()
+    hub.create_branch(repo, repo_type="dataset", branch=branch, exist_ok=True)
+    commit = hub.upload_folder(repo_id=repo, repo_type="dataset", revision=branch,
+                               folder_path=out_dir, allow_patterns=["*.json", "*.npy"],
+                               commit_message=f"build from {len(logs)} logs")
+    print(f"revision {commit.oid}")
+
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

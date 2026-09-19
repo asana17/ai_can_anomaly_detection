@@ -1,6 +1,7 @@
 numpy==2.0.2
 torch==2.8.0
 safetensors==0.7.0
+huggingface_hub==1.8.0
 onnx==1.16.2
 onnxruntime==1.19.2
 pytest==8.4.2

@@ -1,18 +1,37 @@
 # dataset
 
-Builds the grid of the training logs, which the train and calibration rows are cut
-from, and the attacked test rows, and writes them into `out`.
-Putting the logs on the grid and building the attack set take long, so each is written
-once and read back from `out` after that.
+Builds the dataset from the logs and uploads it to Hugging Face. The dataset is the
+training logs on the grid, which the train and calibration rows are cut from, the scale,
+and the attacked test rows.
+
+## Running it
 
 ```
-python3 -m assemble.dataset "data/part_*/*.csv" out
+python3 -m assemble.dataset "data/part_*/*.csv" out repo branch
 ```
+
+The call ends by uploading to `repo`, so log in first with `hf auth login`, using a
+token that can write to it.
+
+| argument | what it is |
+|---|---|
+| `out` | where the files are written, and read back on a later call |
+| `repo` | the Hugging Face dataset they are uploaded to |
+| `branch` | the branch of `repo` they go to, made if it is not there |
+
+When the upload is done it prints `revision <commit hash>`. That commit of `repo` holds
+exactly the files this call wrote.
+
+## What it builds
 
 It measures each log's seconds above `MIN_SPEED`, [splits](split.md) the logs, puts the
 training logs on the [grid](train_set.md), fits the scale to their train rows, and
-builds the [attack set](attack_set.md) on that scale. A step whose logs and settings
-match what is in `out` already is not run again.
+builds the [attack set](attack_set.md) on that scale.
+
+Putting the logs on the grid and building the attack set take long, so a step whose
+logs and settings match what `out` already holds is skipped.
+
+## What it writes
 
 | file | holds |
 |---|---|

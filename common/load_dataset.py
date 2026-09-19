@@ -1,4 +1,8 @@
-"""Read the training, calibration and attacked test rows assemble.dataset built."""
+"""Read the training, calibration and attacked test rows assemble.dataset built.
+
+The dataset is fetched from Hugging Face into `out`. A file already there with the same
+content is not downloaded again.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +10,7 @@ import json
 import os
 
 import numpy as np
+from huggingface_hub import HfApi, snapshot_download
 
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.scale import Scale
@@ -14,6 +19,13 @@ from preprocess.features.signal_state import SIGNALS
 
 GRID = ("raw", "t", "seg")
 ATTACKED = ("rows", "raw", "t", "seg", "label", "wheel")
+
+
+def fetch(repo, revision, out_dir):
+    """Put the dataset at `revision` into `out_dir`, and return the commit it names."""
+    commit = HfApi().dataset_info(repo, revision=revision).sha
+    snapshot_download(repo, repo_type="dataset", revision=commit, local_dir=out_dir)
+    return commit
 
 
 def grid_with():

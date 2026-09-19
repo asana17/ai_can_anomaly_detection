@@ -1,6 +1,6 @@
 """Write `n` attacked rows around one replay out as a C header, for the firmware to read.
 
-    python3 -m board.rows out n
+    python3 -m board.rows repo revision out n
 
 The rows are the scaled ones `evaluate.pc.run` scores, read from the same dataset. Each
 float is written as its float32 bits in hex, so the board reads exactly those values.
@@ -13,7 +13,7 @@ import sys
 
 import numpy as np
 
-from common.load_dataset import attacks_from
+from common.load_dataset import attacks_from, fetch
 from common.settings import Settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -46,8 +46,9 @@ def header(rows, source):
     return "\n".join(lines)
 
 
-def main(out_dir, n):
+def main(repo, revision, out_dir, n):
     settings = Settings()
+    fetch(repo, revision, out_dir)
     got = attacks_from(out_dir, settings)
     attacks, rows = got["attacks"], got["rows"]
     # the first replay that moved a row far enough to count as an anomaly
@@ -63,4 +64,4 @@ def main(out_dir, n):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], int(sys.argv[2]))
+    main(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]))

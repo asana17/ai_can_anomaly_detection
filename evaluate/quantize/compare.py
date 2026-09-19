@@ -1,6 +1,6 @@
 """Measure what quantizing a run's model to int8 costs.
 
-    python3 -m evaluate.quantize.compare out runs_clone exported...
+    python3 -m evaluate.quantize.compare repo revision out runs_clone exported...
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import sys
 
 import numpy as np
 
-from common.load_dataset import arrays_from, attacks_from
+from common.load_dataset import arrays_from, attacks_from, fetch
 from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
 from models.autoencoder import NonlinearAutoencoder, residuals
@@ -44,8 +44,9 @@ def sources_for(runs_clone, export_dir, run, k, h, signals):
             "int8": lambda rows: onnx_residuals(int8, rows)}
 
 
-def main(out_dir, runs_clone, *exports):
+def main(repo, revision, out_dir, runs_clone, *exports):
     settings = Settings()
+    fetch(repo, revision, out_dir)
     calibration, test = rows_for(out_dir, settings)
     scored = int(test["scored"].sum())
     print(f"{len(calibration)} calibration rows, {scored} attacks scored in "
@@ -72,4 +73,4 @@ def main(out_dir, runs_clone, *exports):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], *sys.argv[3:])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], *sys.argv[5:])

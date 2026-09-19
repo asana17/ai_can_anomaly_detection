@@ -1,6 +1,6 @@
 """Write every nonlinear autoencoder of a run out as float and int8 ONNX, and keep them.
 
-    python3 -m quantize.export out runs_clone started
+    python3 -m quantize.export repo revision out runs_clone started
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
-from common.load_dataset import arrays_from
+from common.load_dataset import arrays_from, fetch
 from common.settings import Settings
 from evaluate.counting import training_rows
 from evaluate.pc.record import git
@@ -94,7 +94,7 @@ def write(models, rows, dest, batch):
                             calibrate_method=CalibrationMethod.MinMax)
 
 
-def main(out_dir, runs_clone, started):
+def main(repo, revision, out_dir, runs_clone, started):
     settings = Settings()
     exported = time.localtime()
     stamp = time.strftime("%Y%m%d-%H%M%S", exported)
@@ -105,6 +105,7 @@ def main(out_dir, runs_clone, started):
     wanted = fits_in(run_dir)               # every fit the run saved, none of them picked
     states = [(k, h, load(run_dir, k, h)) for k, h in wanted]
 
+    dataset = {"repo": repo, "revision": fetch(repo, revision, out_dir)}
     data = arrays_from(out_dir, settings)
     # the same training and calibration rows as evaluate.pc.run
     tr, calibration = training_rows(data, data["scale"], settings)
@@ -122,7 +123,7 @@ def main(out_dir, runs_clone, started):
     cuts = {name: threshold_for(onnx_residuals(os.path.join(dest, f"{name}_int8.onnx"),
                                                calibration), settings.TARGET)
             for name, _ in models}
-    meta = {"run": run,
+    meta = {"run": run, "dataset": dataset,
             "models": [{"k": k, "h": h,
                         "int8_threshold": cuts[f"nonlinear_ae_k{k}_h{h}"]}
                        for k, h in wanted],
@@ -140,4 +141,4 @@ def main(out_dir, runs_clone, started):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

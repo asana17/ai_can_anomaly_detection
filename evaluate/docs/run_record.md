@@ -18,6 +18,7 @@ are the z-score every model's rows are put on.
 |---|---|
 | `commit` | the commit of this repository the run started from |
 | `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |
+| `dataset` | the Hugging Face dataset the run read, its `repo` and the full commit of its `revision` |
 | `seeds` | `SEED` and `TORCH_SEED` |
 | `hyperparameters` | the other values in `common/settings.py`, and how many logs were read |
 | `metrics` | the hours scored, the attacks scored, and each row of both tables |

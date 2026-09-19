@@ -21,6 +21,10 @@ Python 3.9. ONNX Runtime 1.19.2 is the last version that installs on it.
 python3 -m pip install -r requirements.txt
 ```
 
+A run reads its dataset from Hugging Face, which needs no login. Building one and
+uploading it with [assemble.dataset](assemble/docs/dataset.md) needs `hf auth login`
+with a token that can write.
+
 Converting a model for the board also needs [ST Edge AI Core](https://www.st.com/en/development-tools/stedgeai-core.html)
 4.0.1 with its STM32 MCU component. It does not install through pip.
 

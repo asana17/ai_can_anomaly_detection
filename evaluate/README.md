@@ -15,11 +15,12 @@ are compared at the same `k`. The linear and nonlinear autoencoders differ only 
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
 ```
-python3 -m evaluate.pc.run out runs_clone
+python3 -m evaluate.pc.run repo revision out runs_clone
 ```
 
-`out` is the dataset [assemble.dataset](../assemble/docs/dataset.md) built. The run
-reads the rows and the attacks from it, then asks the rules and each model for one flag
+The run fetches `revision` of `repo`, the Hugging Face dataset
+[assemble.dataset](../assemble/docs/dataset.md) uploads, into `out`. It reads the rows
+and the attacks from there, then asks the rules and each model for one flag
 per row. The runs of flags, the counting and the table are
 the same for all of them.
 

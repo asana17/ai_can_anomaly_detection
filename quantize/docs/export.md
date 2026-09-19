@@ -7,12 +7,13 @@ float and int8 ONNX for that, and keeps them in the runs repository.
 ## Running it
 
 ```
-python3 -u -m quantize.export out runs_clone started
+python3 -u -m quantize.export repo revision out runs_clone started
 ```
 
 | argument | what it is |
 |---|---|
-| `out` | the dataset the run read, built by [assemble.dataset](../../assemble/docs/dataset.md) |
+| `repo`, `revision` | the Hugging Face dataset the run read, as its `meta.json` names it under `dataset` |
+| `out` | where that dataset is fetched to |
 | `runs_clone` | a clone of the [runs repository](../../evaluate/docs/run_record.md), the same one `evaluate.pc.run` takes |
 | `started` | the run's `<start time>` under `results/`, such as `20260915-223031` |
 
@@ -40,6 +41,7 @@ model is only a step on the way, so it is not kept.
 | key in `meta.json` | holds |
 |---|---|
 | `run` | the run the weights came from, as `results/<start time>` |
+| `dataset` | the Hugging Face dataset the calibration rows came from, its `repo` and the full commit of its `revision` |
 | `models` | the `k` and `h` of every autoencoder in the directory, each with the `int8_threshold` its int8 file scores the run's calibration rows at, at `TARGET` |
 | `commit` | the commit of this repository the export ran from |
 | `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |

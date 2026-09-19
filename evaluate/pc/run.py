@@ -1,6 +1,6 @@
 """Run the whole comparison over a set of logs and print what each detector catches.
 
-    python3 -m evaluate.pc.run out runs_clone
+    python3 -m evaluate.pc.run repo revision out runs_clone
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from dataclasses import asdict
 import numpy as np
 import torch
 
-from common.load_dataset import arrays_from, attacks_from
+from common.load_dataset import arrays_from, attacks_from, fetch
 from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
 from evaluate.pc.record import begin, record
@@ -20,10 +20,11 @@ from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
 
 
-def main(out_dir, runs_clone):
+def main(repo, revision, out_dir, runs_clone):
     settings = Settings()
     run = begin(runs_clone)
     weights = {}
+    dataset = {"repo": repo, "revision": fetch(repo, revision, out_dir)}
 
     data = arrays_from(out_dir, settings)
     scale = data["scale"]
@@ -113,6 +114,7 @@ def main(out_dir, runs_clone):
     values = asdict(settings)
     seeds = {name: values.pop(name) for name in ("SEED", "TORCH_SEED")}
     record(run, weights, {
+        "dataset": dataset,
         "seeds": seeds,
         "hyperparameters": {**values, "logs": logs},
         "metrics": {"hours": float(hours), "attacks_scored": int(scored.sum()),
@@ -120,4 +122,4 @@ def main(out_dir, runs_clone):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
