@@ -72,6 +72,9 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
   reconstruct.
 - Restate [can_data/measurements.md](can_data/measurements.md) over every log.
+- Publish `out/` as a GitHub Release asset, tagged at the commit that built it, since
+  building it takes hours (not timed). The data is CC BY 4.0, so the release credits it. The
+  cache checks the logs and settings but not the code version.
 - Settle whether the rules are a floor the models build on.
 - Then widen to a stretch of time, VAR against a windowed autoencoder, if the instant
   models show it is worth doing.
