@@ -5,7 +5,7 @@ import pytest
 
 from assemble import split as split_stage
 from assemble.grid import moving
-from assemble.split import apart_from_test, seconds_above, split, split_rows
+from assemble.split import apart_from_test, split, split_rows
 from preprocess.features.signal_state import SIGNALS
 
 
@@ -59,18 +59,6 @@ def test_split_gives_test_nothing_when_no_log_holds_a_scoreable_second():
     logs = [f"{i:03d}.csv" for i in range(10)]
     train, test = split({p: 0.0 for p in logs}, 2, 1)
     assert (train, test) == (logs, [])
-
-
-def test_seconds_above_counts_only_readings_over_the_minimum(tmp_path):
-    def ccvs1(kmh):
-        raw = round(kmh / 0.00390625)
-        return f"2020-11-23 08:00:00.000000;0x18FEF1E6;8;0;{raw & 0xFF};{(raw >> 8) & 0xFF};0;0;0;0;0"
-
-    log = tmp_path / "a.csv"
-    log.write_text("\n".join(["timestamp;id;dlc;data"]
-                             + [ccvs1(kmh) for kmh in (0.0, 4.0, 6.0, 80.0)]
-                             + ["2020-11-23 08:00:00.000000;0x18F004E6;8;0;0;0;0;0;0;0;0"]) + "\n")
-    assert seconds_above([str(log)], 5.0) == {str(log): 0.2}   # two readings, 100 ms apart
 
 
 def _rows(speeds):

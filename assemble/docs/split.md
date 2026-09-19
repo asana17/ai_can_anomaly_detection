@@ -6,7 +6,7 @@ train and calibration rows.
 ## Example
 
 ```python
-seconds = seconds_above(logs, min_speed)
+seconds = seconds_above(logs, min_speed)      # from seconds.md
 train_logs, test_logs = split(seconds, n_splits, fold)   # block `fold` of `n_splits` is test
 
 raw, t, seg = grid_rows(train_logs)             # from train_set.md
@@ -43,9 +43,9 @@ slower is left to the rules.
 The truck is parked for long runs of consecutive logs, so a part chosen by log count
 alone can hold no scoreable row at all.
 
-So the cut is made on the seconds above `min_speed`. `seconds_above` counts them one
-log at a time, giving 0 for a log the truck sat still through and the log's whole length
-for one it drove right through.
+So the cut is made on the seconds above `min_speed`. [seconds](seconds.md) counts them
+one log at a time, giving 0 for a log the truck sat still through and the log's whole
+length for one it drove right through.
 
 ## The calibration set
 

@@ -8,44 +8,19 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from typing import Iterable
 
 import numpy as np
 
 from assemble.grid import PERIOD, moving
 from common.hub_dirs import download, reuse_or_make
 from common.settings import Settings
-from preprocess.frames.can_id_decompose import decompose_can_id
-from preprocess.frames.can_log_loader import load_can_log
-from preprocess.frames.frame_decode import decode_frame
-
-CCVS1 = 65265
-CCVS1_PERIOD = 0.1      # seconds between wheel speed readings
-
-
-def seconds_above(logs: Iterable[str], min_speed: float) -> dict[str, float]:
-    """How many seconds each log spends above `min_speed`, one number per log.
-
-    Every log is read, which takes about as long as building the arrays from them.
-    """
-    seconds = {}
-    for path in logs:
-        readings = 0
-        for f in load_can_log(path):
-            if decompose_can_id(f.can_id).pgn == CCVS1:
-                speed = decode_frame(CCVS1, f.data).get("wheel_speed")
-                if speed is not None and speed > min_speed:
-                    readings += 1
-        seconds[path] = readings * CCVS1_PERIOD
-    return seconds
-
 
 def split(seconds: dict[str, float], n_splits: int, fold: int):
     """Cut the logs by time into `n_splits` blocks, block `fold` being the test set.
 
-    `seconds` is what `seconds_above` returns, so the blocks are equal shares of the
-    seconds above the minimum speed rather than of the log count. Train is every other
-    block, before and after the test one.
+    `seconds` is what seconds_above in assemble.seconds returns, so the blocks are equal
+    shares of the seconds above the minimum speed rather than of the log count. Train is
+    every other block, before and after the test one.
     """
     if not 0 <= fold < n_splits:
         raise ValueError(f"fold {fold} is not one of the {n_splits} blocks")

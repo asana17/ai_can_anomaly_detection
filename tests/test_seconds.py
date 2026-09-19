@@ -57,3 +57,15 @@ def test_the_digest_changes_with_a_log_s_size(tmp_path):
     before = seconds.logs_digest(data, ["part_1/a.csv", "part_1/b.csv"])
     (tmp_path / "data" / "part_1" / "a.csv").write_text("1")
     assert seconds.logs_digest(data, ["part_1/a.csv", "part_1/b.csv"]) != before
+
+
+def test_seconds_above_counts_only_readings_over_the_minimum(tmp_path):
+    def ccvs1(kmh):
+        raw = round(kmh / 0.00390625)
+        return f"2020-11-23 08:00:00.000000;0x18FEF1E6;8;0;{raw & 0xFF};{(raw >> 8) & 0xFF};0;0;0;0;0"
+
+    log = tmp_path / "a.csv"
+    log.write_text("\n".join(["timestamp;id;dlc;data"]
+                             + [ccvs1(kmh) for kmh in (0.0, 4.0, 6.0, 80.0)]
+                             + ["2020-11-23 08:00:00.000000;0x18F004E6;8;0;0;0;0;0;0;0;0"]) + "\n")
+    assert seconds.seconds_above([str(log)], 5.0) == {str(log): 0.2}   # two readings, 100 ms apart
