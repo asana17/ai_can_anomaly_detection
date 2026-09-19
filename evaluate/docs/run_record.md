@@ -18,7 +18,7 @@ under `linear_ae.k{k}.` or `nonlinear_ae.h{h}.k{k}.`.
 | `commit` | the commit of this repository the run started from |
 | `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |
 | `seeds` | `SEED` and `TORCH_SEED` |
-| `hyperparameters` | the other values set at the top of `run.py`, and how many logs were read |
+| `hyperparameters` | the other values in `common/settings.py`, and how many logs were read |
 | `metrics` | the hours scored, the attacks scored, and each row of both tables |
 | `versions` | Python, NumPy, torch and the platform |
 | `started`, `finished`, `seconds` | when the run started and ended, and how long it took |

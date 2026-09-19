@@ -6,152 +6,22 @@
 from __future__ import annotations
 
 import glob
-import json
 import os
-import random
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 
 import numpy as np
 import torch
 
-from assemble.attack_set import attack_set
-from assemble.train_set import grid_rows, scale_for
-from assemble.grid import MAX_HOLD, PERIOD
-from assemble.split import moving, seconds_above, split, split_rows
+from assemble.split import split
+from common.dataset import arrays_for, attacks_for, seconds_for
+from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
 from evaluate.pc.record import begin, record
 from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
 from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
-from preprocess.features.signal_state import SIGNALS
-
-
-@dataclass(frozen=True)
-class Settings:
-    """Every value a run is made with, kept together so a run can record all of them."""
-
-    MIN_SPEED: float = 5.0      # km/h, the speed a row has to exceed to be scored
-    TRAIN: float = 0.75         # share of the seconds above MIN_SPEED before the test cut
-    CALIBRATION: float = 0.10   # share of the training seconds above MIN_SPEED held out
-    BLOCK: float = 20.0         # seconds above MIN_SPEED in one calibration window
-    GAP: float = 5.0            # seconds of training rows dropped around a calibration row
-    DONORS: int = 24            # training logs the replayed payloads are taken from
-    SEED: int = 0               # the rng the attacks are drawn with
-    COMPONENTS: tuple = (2, 4, 6, 8, 10, 12, 14, 16)
-    TARGET: float = 0.001       # share of normal rows the threshold cuts off
-    MOVED: float = 1.0          # z distance a replay must push a row by to be an anomaly
-    HOLD: tuple = (1, 10)       # rows a flag must persist before it counts as an alarm
-    EPOCHS: int = 1000          # the most passes an autoencoder may make over the rows
-    BATCH: int = 1024           # training rows in each update of an autoencoder's weights
-    RATE: float = 1e-3          # Adam's learning rate
-    IMPROVEMENT: float = 1e-4   # share of the best loss an epoch must cut, fit's threshold
-    PATIENCE: int = 10          # epochs in a row without that before training stops
-    TORCH_SEED: int = 3         # the torch rng each autoencoder is built and trained with
-    HIDDEN: tuple = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each reported
-
-
-def seconds_for(logs, out_dir, settings):
-    """The seconds each log spends above the minimum speed, measured once and kept.
-
-    A log's own seconds do not depend on which other logs were asked for, so the file
-    is a store of every log ever measured rather than one run's answer. A run over a
-    different set measures only the logs missing from it.
-    """
-    path = os.path.join(out_dir, "seconds.json")
-    kept = json.load(open(path)) if os.path.exists(path) else {}
-    missing = [p for p in logs if p not in kept]
-    if missing:
-        kept.update(seconds_above(missing, settings.MIN_SPEED))
-        json.dump(kept, open(path, "w"))
-    return {p: kept[p] for p in logs}
-
-
-GRID = ("raw", "t", "seg")
-ATTACKED = ("rows", "raw", "t", "seg", "label", "wheel")
-
-
-def _have(out_dir, names):
-    """True once every one of `names` is on disk."""
-    return all(os.path.exists(os.path.join(out_dir, n)) for n in names)
-
-
-def grid_for(train_logs, out_dir):
-    """The training logs on the grid, built once and read back on a later run."""
-    kept = os.path.join(out_dir, "grid.json")
-    shape = {"logs": train_logs, "signals": SIGNALS,
-             "period": PERIOD, "max_hold": MAX_HOLD}
-    files = [f"grid_{n}.npy" for n in GRID]
-    if (os.path.exists(kept) and json.load(open(kept)) == shape
-            and _have(out_dir, files)):
-        return tuple(np.load(os.path.join(out_dir, f)) for f in files), True
-    got = grid_rows(train_logs)
-    for name, array in zip(files, got):
-        np.save(os.path.join(out_dir, name), array)
-    json.dump(shape, open(kept, "w"))
-    return got, False
-
-
-def built_from(train_logs, test_logs, settings):
-    """The logs and the settings the attack set was built from."""
-    return {"logs": [train_logs, test_logs], "train": settings.TRAIN,
-            "donors": settings.DONORS, "calibration": settings.CALIBRATION,
-            "block": settings.BLOCK, "gap": settings.GAP, "seed": settings.SEED,
-            "signals": SIGNALS, "period": PERIOD, "max_hold": MAX_HOLD}
-
-
-def arrays_for(train_logs, out_dir, settings):
-    """The train and calibration arrays, cut out of the saved grid by time."""
-    (raw, times, segments), kept = grid_for(train_logs, out_dir)
-    train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
-                                              settings.BLOCK, settings.GAP,
-                                              settings.MIN_SPEED)
-    above = moving(raw, settings.MIN_SPEED)
-    scale = scale_for(raw[train_rows & above])      # the rows PCA is fitted on
-    data = {"scale": scale,
-            "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],
-            "t": times[train_rows], "seg": segments[train_rows],
-            "calibration_rows": scale.apply(raw[calibration_rows]),
-            "calibration_raw": raw[calibration_rows],
-            "calibration_t": times[calibration_rows],
-            "calibration_seg": segments[calibration_rows]}
-    print(f"{int(calibration_rows.sum())} calibration rows in "
-          f"{_stretches(calibration_rows)} stretches, the gap drops "
-          f"{int((~train_rows & ~calibration_rows).sum())} training rows", flush=True)
-    return data, kept
-
-
-def _stretches(calibration_rows) -> int:
-    """How many unbroken runs of calibration rows there are.
-
-    A window a stop interrupts lands in more than one run, so this counts at least as
-    many as there are windows.
-    """
-    return int((calibration_rows
-                & ~np.concatenate([[False], calibration_rows[:-1]])).sum())
-
-
-def attacks_for(train_logs, test_logs, scale, out_dir, settings):
-    """The attack set, built once and read back on a later run with the same settings."""
-    kept = os.path.join(out_dir, "built.json")
-    shape = built_from(train_logs, test_logs, settings)
-    files = [f"attacked_{n}.npy" for n in ATTACKED] + ["attacked.json"]
-    if (os.path.exists(kept) and json.load(open(kept)) == shape
-            and _have(out_dir, files)):
-        got = {n: np.load(os.path.join(out_dir, f"attacked_{n}.npy"))
-               for n in ATTACKED}
-        got["attacks"] = json.load(open(os.path.join(out_dir, "attacked.json")))
-        return got, True
-    donors = settings.DONORS
-    got = attack_set(test_logs, scale, random.Random(settings.SEED),
-                     source_logs=train_logs[::max(len(train_logs) // donors, 1)]
-                     [:donors])
-    for name in ATTACKED:
-        np.save(os.path.join(out_dir, f"attacked_{name}.npy"), got[name])
-    json.dump(got["attacks"], open(os.path.join(out_dir, "attacked.json"), "w"))
-    json.dump(shape, open(kept, "w"))
-    return got, False
 
 
 def main(pattern, out_dir, runs_clone, files=None):

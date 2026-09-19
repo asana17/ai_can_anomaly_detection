@@ -23,9 +23,10 @@ from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
 from assemble.split import split
+from common.dataset import arrays_for, seconds_for
+from common.settings import Settings
 from evaluate.counting import training_rows
 from evaluate.pc.record import git
-from evaluate.pc.run import Settings, arrays_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder
 
 

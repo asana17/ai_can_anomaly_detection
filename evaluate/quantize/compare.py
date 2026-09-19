@@ -13,8 +13,9 @@ import sys
 import numpy as np
 
 from assemble.split import split
+from common.dataset import arrays_for, attacks_for, seconds_for
+from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
-from evaluate.pc.run import Settings, arrays_for, attacks_for, seconds_for
 from models.autoencoder import NonlinearAutoencoder, residuals
 from quantize.export import load, onnx_residuals, threshold_for
 
