@@ -2,7 +2,8 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from board.prepare import DEFINE, MARKER, TOOLS, configure, link_folder, start_kernel
+from board.prepare import (COMMON, DEFINES, MARKER, TEST_COMMON, TOOLS, configure, link_folder,
+                           link_folders, start_kernel)
 
 MAIN_C = ("  }\r\n"
           "\r\n"
@@ -63,13 +64,15 @@ def test_both_tools_get_the_define_and_the_include_paths():
                                  "<?fileVersion 4.0.0?><cproject>")
     root = ET.fromstring(configured.split("?>", 2)[2])
     for tool in TOOLS:
-        assert DEFINE in _values(root, tool, "definedsymbols")
-        assert _values(root, tool, "includepaths")[-3:] == [
+        assert set(DEFINES) <= set(_values(root, tool, "definedsymbols"))
+        assert _values(root, tool, "includepaths")[-4:] == [
             '"${workspace_loc:/${ProjName}/mtk3_bsp2/mtkernel/kernel/knlinc}"',
             '"${workspace_loc:/${ProjName}/common}"',
+            '"${workspace_loc:/${ProjName}/test_common}"',
             '"${workspace_loc:/${ProjName}/Unity/src}"']
-    assert _values(root, TOOLS[1], "definedsymbols") == ["DEBUG", DEFINE]
-    assert [e.get("name") for e in root.iter("entry")] == ["Core", "mtk3_bsp2", "Unity/src", "application", "common"]
+    assert _values(root, TOOLS[1], "definedsymbols") == ["DEBUG", *DEFINES]
+    assert [e.get("name") for e in root.iter("entry")] == [
+        "Core", "mtk3_bsp2", "Unity/src", "application", "common", "test_common"]
 
 
 def test_configuring_twice_changes_nothing():
@@ -101,3 +104,13 @@ def test_a_second_folder_gets_its_own_link():
     root = ET.fromstring(both.split("?>", 1)[1])
     assert [(l.findtext("name"), l.findtext("location")) for l in root.iter("link")] == [
         ("application", "/repo/board/application/rows"), ("common", "/repo/board/common")]
+
+
+def test_the_app_and_both_shared_folders_are_linked():
+    project = "<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n</projectDescription>\n"
+    once = link_folders(project, "/repo/board/application/rows")
+    assert link_folders(once, "/repo/board/application/rows") == once
+    root = ET.fromstring(once.split("?>", 1)[1])
+    assert [(l.findtext("name"), l.findtext("location")) for l in root.iter("link")] == [
+        ("application", "/repo/board/application/rows"), ("common", COMMON),
+        ("test_common", TEST_COMMON)]

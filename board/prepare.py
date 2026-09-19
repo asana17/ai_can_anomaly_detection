@@ -1,5 +1,5 @@
-"""Add mtk3_bsp2, Unity, our shared code and one of our applications to a CubeMX
-project, and start μT-Kernel.
+"""Add mtk3_bsp2, Unity, our shared code, our test helpers and one of our applications
+to a CubeMX project, and start μT-Kernel.
 
     python3 board/prepare.py project_dir app
 
@@ -27,14 +27,17 @@ UNITY_BASE = "b6763fb"     # v2.7.0
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
 APPS = os.path.join(HERE, "application")
 COMMON = os.path.join(HERE, "common")
+TEST_COMMON = os.path.join(HERE, "test_common")
 MARKER = "/* USER CODE BEGIN WHILE */"
 START = ("void knl_start_mtkernel(void);", "knl_start_mtkernel();")
 TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
          "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler")
-DEFINE = "_STM32CUBE_NUCLEO_H533_"
+DEFINES = ("_STM32CUBE_NUCLEO_H533_",
+           "UNITY_INCLUDE_CONFIG_H")    # Unity reads test_common/unity_config.h
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
-            "mtk3_bsp2/mtkernel/kernel/knlinc", "common", "Unity/src")
-SOURCES = ("mtk3_bsp2", "Unity/src", "application", "common")
+            "mtk3_bsp2/mtkernel/kernel/knlinc", "common", "test_common",
+            "Unity/src")
+SOURCES = ("mtk3_bsp2", "Unity/src", "application", "common", "test_common")
 
 
 def git(*args):
@@ -126,7 +129,7 @@ def _add_value(option, value):
 
 
 def configure(cproject):
-    """`.cproject` with the define, include paths and source folders mtk3_bsp2 needs.
+    """`.cproject` with the defines, include paths and source folders mtk3_bsp2 needs.
 
     Every build configuration gets them, the same as Properties, Paths and Symbols.
     """
@@ -134,8 +137,9 @@ def configure(cproject):
     for tool in root.iter("tool"):
         if tool.get("superClass") not in TOOLS:
             continue
-        _add_value(_list_option(tool, "definedsymbols", "Define symbols (-D)",
-                                "definedSymbols"), DEFINE)
+        defines = _list_option(tool, "definedsymbols", "Define symbols (-D)", "definedSymbols")
+        for define in DEFINES:
+            _add_value(defines, define)
         includes = _list_option(tool, "includepaths", "Include paths (-I)", "includePath")
         for path in INCLUDES:
             _add_value(includes, f'"${{workspace_loc:/${{ProjName}}/{path}}}"')
@@ -170,6 +174,14 @@ def link_folder(project, name, location):
     return _write(head, root)
 
 
+def link_folders(project, app_dir):
+    """`.project` with `application`, `common` and `test_common` linked."""
+    for name, location in (("application", app_dir), ("common", COMMON),
+                           ("test_common", TEST_COMMON)):
+        project = link_folder(project, name, location)
+    return project
+
+
 def _rewrite(path, change):
     """Apply `change` to the file, and say whether it changed anything."""
     with open(path, newline="") as f:
@@ -195,8 +207,7 @@ def main(project_dir, app):
     for name, file, change in (("main.c", path, start_kernel),
                                (".cproject", os.path.join(project_dir, ".cproject"), configure),
                                (".project", os.path.join(project_dir, ".project"),
-                                lambda text: link_folder(link_folder(text, "application", app_dir),
-                                                         "common", COMMON))):
+                                lambda text: link_folders(text, app_dir))):
         print(f"{name}: {'changed' if _rewrite(file, change) else 'already done'}")
 
 

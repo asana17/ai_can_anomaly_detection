@@ -75,6 +75,8 @@ Where this differs from the BSP2 document:
   folder of `board/application/`.
 - The folder `common` in the project links to `board/common/`, code the applications
   share.
+- The folder `test_common` links to `board/test_common/`, what the test applications
+  share.
 - [Unity](https://github.com/ThrowTheSwitch/Unity), the test framework the test
   applications use, is cloned at v2.7.0 into the folder `Unity`. Its `src` is built.
 
