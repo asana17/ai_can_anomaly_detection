@@ -68,10 +68,14 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Run `evaluate.pc.run` once on the dataset read from Hugging Face, to check the whole
-  path works.
-- Record the commit `assemble.dataset` ran from in the dataset. It records the logs and
-  the settings only.
+- Split the pipeline into a base (the split, grid and scale), attack sets built on a
+  base, training and scoring, each written once to its own directory on Hugging Face.
+  A new attack set can then be scored without training again. Each records the commit
+  it ran from.
+- Put today's dataset in that layout, with the attacked test frames as Parquet in its
+  attack set, so the frames go 1:1 with the rows a run scored. The CAN side needs them.
+- Check the whole path on a small dataset, then score one other split, the first 25%
+  of the time as test.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Next is the model in the build, step 3 there.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
