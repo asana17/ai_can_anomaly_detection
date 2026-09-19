@@ -23,7 +23,8 @@ def grid_with():
 
 def built_with(settings):
     """The settings the attack set is built with, as `built.json` keeps them."""
-    return {"train": settings.TRAIN, "donors": settings.DONORS,
+    return {"min_speed": settings.MIN_SPEED, "train": settings.TRAIN,
+            "donors": settings.DONORS,
             "calibration": settings.CALIBRATION, "block": settings.BLOCK,
             "gap": settings.GAP, "seed": settings.SEED, **grid_with()}
 
@@ -39,7 +40,8 @@ def _logs(out_dir, name, expected):
 
 def arrays_from(out_dir, settings):
     """The train and calibration arrays, cut out of the grid by time, on the saved scale."""
-    _logs(out_dir, "grid.json", grid_with())
+    # the split and the scale follow the settings the attack set was built with
+    _logs(out_dir, "built.json", built_with(settings))
     raw, times, segments = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in GRID)
     train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
                                               settings.BLOCK, settings.GAP,

@@ -16,7 +16,7 @@ match what is in `out` already is not run again.
 
 | file | holds |
 |---|---|
-| `seconds.json` | each log's seconds above `MIN_SPEED`, kept for every log ever measured |
+| `seconds.json` | `MIN_SPEED`, and each log's seconds above it, kept for every log ever measured |
 | `grid.json` | the training logs and the grid settings the grid was built with |
 | `grid_raw.npy`, `grid_t.npy`, `grid_seg.npy` | the training logs on the grid |
 | `scale.npy` | the [scale](scale.md) fitted to the train rows, its mean then its std |

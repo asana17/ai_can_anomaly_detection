@@ -29,14 +29,18 @@ def seconds_for(logs, out_dir, settings):
 
     A log's own seconds do not depend on which other logs were asked for, so the file
     is a store of every log ever measured rather than one call's answer. A call over a
-    different set measures only the logs missing from it.
+    different set measures only the logs missing from it. A different `MIN_SPEED`
+    measures them all again.
     """
     path = os.path.join(out_dir, "seconds.json")
-    kept = json.load(open(path)) if os.path.exists(path) else {}
+    store = json.load(open(path)) if os.path.exists(path) else {}
+    if store.get("min_speed") != settings.MIN_SPEED:
+        store = {"min_speed": settings.MIN_SPEED, "seconds": {}}
+    kept = store["seconds"]
     missing = [p for p in logs if p not in kept]
     if missing:
         kept.update(seconds_above(missing, settings.MIN_SPEED))
-        json.dump(kept, open(path, "w"))
+        json.dump(store, open(path, "w"))
     return {p: kept[p] for p in logs}
 
 
