@@ -37,8 +37,10 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
 - [quantize/](quantize) writes the models out as ONNX for the NUCLEO-H533RE.
-- [board/](board) holds our μT-Kernel application for the NUCLEO-H533RE.
-  [board/docs/setup.md](board/docs/setup.md) builds and flashes it from nothing.
+- [board/](board) holds our μT-Kernel applications for the NUCLEO-H533RE, one folder
+  each. [board/docs/setup.md](board/docs/setup.md) builds and flashes one from nothing.
+- [common/](common) holds the settings of a run and the rows built from the logs, which
+  `evaluate`, `quantize` and `board` all read.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
   quantizing their models costs is in [quantize/results.md](quantize/results.md).
@@ -60,8 +62,8 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Feed preprocessed rows built into the firmware through a row queue to a task that
-  echoes them over UART.
+- Add a board application that feeds the rows `board/rows.py` writes through a row
+  queue to a task that echoes them over UART.
 - Replace the echo with one generated model, and compare its outputs with ONNX
   Runtime's on the same rows.
 - Port the preprocessing to C and feed real CAN frames to the same row queue.
