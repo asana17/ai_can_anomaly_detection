@@ -1,6 +1,9 @@
+import json
+
 import numpy as np
 import pytest
 
+from assemble import split as split_stage
 from assemble.split import WHEEL, moving, seconds_above, split, split_rows
 
 
@@ -129,3 +132,23 @@ def test_split_rows_leaves_the_gap_out_of_both_parts():
     assert (~train_rows & ~calibration_rows).any()
     nearest = np.abs(t[train_rows][:, None] - t[calibration_rows][None, :]).min()
     assert nearest > 5.0
+
+
+SECONDS = {f"part_1/{i:03d}.csv": 1.0 for i in range(8)}
+
+
+def test_the_stage_writes_the_fold_s_logs(tmp_path, hub):
+    hub.files = {"seconds/20260101-000000/seconds.json": SECONDS}
+    made = split_stage.main("u/d", "abc", "seconds/20260101-000000", str(tmp_path))
+    got = json.loads((tmp_path / made["path"] / "split.json").read_text())
+    assert got["test"] == sorted(SECONDS)[6:]         # FOLD 3 of 4, the last quarter
+    meta = json.loads((tmp_path / made["path"] / "meta.json").read_text())
+    assert meta["seconds"] == {"repo": "u/d", "revision": "abc",
+                               "path": "seconds/20260101-000000"}
+
+
+def test_the_stage_names_a_split_of_the_same_seconds(tmp_path, hub):
+    inputs = {"seconds": "seconds/20260101-000000", "n_splits": 4, "fold": 3}
+    hub.files = {"splits/20260101-000000/meta.json": {"inputs": inputs}}
+    found = split_stage.main("u/d", "abc", "seconds/20260101-000000", str(tmp_path))
+    assert found["path"] == "splits/20260101-000000" and hub.uploaded == []

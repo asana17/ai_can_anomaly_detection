@@ -17,10 +17,10 @@ from common import hf_upload
 from common.git import source
 
 
-def download(repo, path, local_dir, repo_type="model"):
-    """Directory `path` of `repo`, downloaded into `local_dir`."""
-    snapshot_download(repo, repo_type=repo_type, allow_patterns=[f"{path}/*"],
-                      local_dir=local_dir)
+def download(repo, path, local_dir, repo_type="model", revision=None):
+    """Directory `path` of `repo` at `revision`, downloaded into `local_dir`."""
+    snapshot_download(repo, repo_type=repo_type, revision=revision,
+                      allow_patterns=[f"{path}/*"], local_dir=local_dir)
     return os.path.join(local_dir, path)
 
 

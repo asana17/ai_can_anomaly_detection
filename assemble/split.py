@@ -1,13 +1,20 @@
-"""Split the logs by time, without shuffling, and take a calibration set out."""
+"""Split the logs by time, without shuffling, and take a calibration set out.
+
+    python3 -m assemble.split repo revision seconds/<time> local_dir [--rebuild]
+"""
 
 from __future__ import annotations
 
+import argparse
+import json
 import os
 from typing import Iterable
 
 import numpy as np
 
 from assemble.grid import PERIOD
+from common.hub_dirs import download, reuse_or_make
+from common.settings import Settings
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import load_can_log
@@ -93,3 +100,37 @@ def _cut(sizes, target: float) -> int:
         run += sizes[i]
         i += 1
     return i
+
+
+def write_split(folder, repo, revision, seconds_path, local_dir, settings):
+    """Write `split.json`, the train and test logs of `FOLD`, cut on `seconds_path` of
+    `repo` at `revision`, and return the reference to it for `meta.json`."""
+    got = download(repo, seconds_path, local_dir, repo_type="dataset", revision=revision)
+    seconds = json.load(open(os.path.join(got, "seconds.json")))
+    train_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)
+    print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
+          f"{sum(seconds[p] for p in train_logs):.0f}s and "
+          f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",
+          flush=True)
+    with open(os.path.join(folder, "split.json"), "w") as f:
+        json.dump({"train": train_logs, "test": test_logs}, f)
+    return {"seconds": {"repo": repo, "revision": revision, "path": seconds_path}}
+
+
+def main(repo, revision, seconds_path, local_dir, rebuild=False):
+    settings = Settings()
+    inputs = {"seconds": seconds_path, "n_splits": settings.N_SPLITS,
+              "fold": settings.FOLD}
+    return reuse_or_make(repo, "splits", inputs, local_dir,
+                         lambda folder: write_split(folder, repo, revision, seconds_path,
+                                                    local_dir, settings),
+                         rebuild, repo_type="dataset")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    for name in ("repo", "revision", "seconds_path", "local_dir"):
+        parser.add_argument(name)
+    parser.add_argument("--rebuild", action="store_true")
+    args = parser.parse_args()
+    main(args.repo, args.revision, args.seconds_path, args.local_dir, args.rebuild)

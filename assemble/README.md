@@ -10,8 +10,8 @@ Documented under [docs/](docs).
 - [seconds](docs/seconds.md) measures each log's seconds above the minimum speed, and
   uploads them.
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
-  seconds above the minimum speed in them, and the training rows into train and
-  calibration.
+  seconds above the minimum speed in them, and uploads the cut. It also cuts the
+  training rows into train and calibration.
 - [train_set](docs/train_set.md) puts the training logs on the grid, and takes the mean
   and std their rows are z-scored by.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
