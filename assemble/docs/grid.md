@@ -24,3 +24,7 @@ Rows are `float32`, times `float64`, segments `int32`. Times are epoch seconds, 
 
 `seg` is the segment id of each row. It changes at a log boundary and after a gap in
 the recording.
+
+## Moving rows
+
+`moving(raw, min_speed)` is True where a row's `wheel_speed` is above `min_speed`.

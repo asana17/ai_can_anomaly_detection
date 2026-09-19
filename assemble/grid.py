@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import numpy as np
 
+from preprocess.features.signal_state import SIGNALS
 
 PERIOD = 0.1        # seconds between rows
 MAX_HOLD = 1.0      # seconds, the longest gap a row is built across
+
+
+def moving(raw: np.ndarray, min_speed: float) -> np.ndarray:
+    """True where a row's wheel speed is above `min_speed`, read off physical values."""
+    return raw[:, SIGNALS.index("wheel_speed")] > min_speed
 
 
 def starts_segment(previous, t: float) -> bool:

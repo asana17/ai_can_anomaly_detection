@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-from assemble.split import moving
+from assemble.grid import moving
 from preprocess.features.signal_state import SIGNALS
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            reverse_speed, shaft_ratio, speed_agreement, steering_sign,

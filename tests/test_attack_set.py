@@ -4,8 +4,8 @@ import numpy as np
 
 from assemble.attack_set import grid_rows_injected
 from assemble.scale import Scale
-from assemble.split import WHEEL
 from assemble.train_set import grid_rows
+from preprocess.features import signal_state
 
 SIGNALS = 17
 
@@ -97,7 +97,7 @@ def test_wheel_holds_the_speed_before_the_attack(tmp_path):
     log = _write_log(tmp_path / "a.csv")
     d = grid_rows_injected([log], _scale(), random.Random(0))
     clean, _, _ = grid_rows([log])
-    assert np.array_equal(d["wheel"], clean[:, WHEEL])
+    assert np.array_equal(d["wheel"], clean[:, signal_state.SIGNALS.index("wheel_speed")])
 
 
 def test_raw_holds_the_rows_before_scaling(tmp_path):

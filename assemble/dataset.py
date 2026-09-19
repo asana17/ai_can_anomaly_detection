@@ -19,7 +19,8 @@ import numpy as np
 from huggingface_hub import HfApi
 
 from assemble.attack_set import grid_rows_injected
-from assemble.split import moving, seconds_above, split, split_rows
+from assemble.grid import moving
+from assemble.split import seconds_above, split, split_rows
 from assemble.train_set import grid_rows, scale_for
 from common.hf_upload import upload
 from common.load_dataset import ATTACKED, GRID, built_with, grid_with

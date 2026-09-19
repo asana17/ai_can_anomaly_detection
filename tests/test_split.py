@@ -4,8 +4,9 @@ import numpy as np
 import pytest
 
 from assemble import split as split_stage
-from assemble.split import (WHEEL, apart_from_test, moving, seconds_above, split,
-                            split_rows)
+from assemble.grid import moving
+from assemble.split import apart_from_test, seconds_above, split, split_rows
+from preprocess.features.signal_state import SIGNALS
 
 
 def test_the_last_fold_tests_on_the_last_block():
@@ -75,7 +76,7 @@ def test_seconds_above_counts_only_readings_over_the_minimum(tmp_path):
 def _rows(speeds):
     """Rows carrying only a wheel speed, one per 100 ms, with their times."""
     raw = np.zeros((len(speeds), 17), np.float32)
-    raw[:, WHEEL] = speeds
+    raw[:, SIGNALS.index("wheel_speed")] = speeds
     return raw, np.arange(len(speeds), dtype=np.float64) * 0.1
 
 

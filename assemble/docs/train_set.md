@@ -6,8 +6,8 @@ per decoded value, such as `engine_speed` and `wheel_speed`. The test rows come 
 
 ```python
 raw, t, seg = grid_rows(train_logs)     # the train half, from split.md
-moving = raw[:, WHEEL] > MIN_SPEED
-scale = scale_for(raw[train_rows & moving])   # train_rows from split_rows, in split.md
+above = moving(raw, MIN_SPEED)              # from grid.md
+scale = scale_for(raw[train_rows & above])   # train_rows from split_rows, in split.md
 rows = scale.apply(raw[train_rows])
 ```
 

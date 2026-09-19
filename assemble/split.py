@@ -12,22 +12,15 @@ from typing import Iterable
 
 import numpy as np
 
-from assemble.grid import PERIOD
+from assemble.grid import PERIOD, moving
 from common.hub_dirs import download, reuse_or_make
 from common.settings import Settings
-from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import load_can_log
 from preprocess.frames.frame_decode import decode_frame
 
 CCVS1 = 65265
 CCVS1_PERIOD = 0.1      # seconds between wheel speed readings
-WHEEL = SIGNALS.index("wheel_speed")
-
-
-def moving(raw: np.ndarray, min_speed: float) -> np.ndarray:
-    """True where a row's wheel speed is above `min_speed`, read off physical values."""
-    return raw[:, WHEEL] > min_speed
 
 
 def seconds_above(logs: Iterable[str], min_speed: float) -> dict[str, float]:

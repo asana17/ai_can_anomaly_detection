@@ -8,8 +8,8 @@ import numpy as np
 
 from attack.inject import inject
 from assemble.grid import MAX_HOLD, PERIOD, starts_segment, to_arrays
-from assemble.split import WHEEL
 from preprocess.features.grid_sample import resample
+from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
 
 
@@ -38,6 +38,7 @@ def grid_rows_injected(logs, scale, rng: random.Random, source_logs=None) -> dic
     """
     rows, times, segments, labels, wheels, attacks = [], [], [], [], [], []
     segment = -1
+    wheel = SIGNALS.index("wheel_speed")
     for _, frames, hurt, span in inject_frames(logs, rng, source_logs):
         clean = dict(resample(frames, PERIOD, MAX_HOLD)) if span else {}
         first = len(rows)
@@ -49,7 +50,7 @@ def grid_rows_injected(logs, scale, rng: random.Random, source_logs=None) -> dic
             times.append(t)
             segments.append(segment)
             labels.append(t in clean and row != clean[t])
-            wheels.append(clean[t][WHEEL] if t in clean else row[WHEEL])
+            wheels.append(clean[t][wheel] if t in clean else row[wheel])
             previous = t
         covered = [i for i in range(first, len(rows)) if labels[i]]
         if span and covered:
