@@ -73,6 +73,8 @@ Where this differs from the BSP2 document:
   records. The document's `--recursive` clone takes the latest.
 - Our application is the folder `application` in the project, a link to the chosen
   folder of `board/application/`.
+- The folder `common` in the project links to `board/common/`, code the applications
+  share.
 
 After CubeMX generates again, run `prepare.py` again. To build another application,
 close the project in CubeIDE, run `prepare.py` with that folder, and open it again.

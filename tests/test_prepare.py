@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from board.prepare import DEFINE, MARKER, TOOLS, configure, link_app, start_kernel
+from board.prepare import DEFINE, MARKER, TOOLS, configure, link_folder, start_kernel
 
 MAIN_C = ("  }\r\n"
           "\r\n"
@@ -64,10 +64,11 @@ def test_both_tools_get_the_define_and_the_include_paths():
     root = ET.fromstring(configured.split("?>", 2)[2])
     for tool in TOOLS:
         assert DEFINE in _values(root, tool, "definedsymbols")
-        assert _values(root, tool, "includepaths")[-1] == (
-            '"${workspace_loc:/${ProjName}/mtk3_bsp2/mtkernel/kernel/knlinc}"')
+        assert _values(root, tool, "includepaths")[-2:] == [
+            '"${workspace_loc:/${ProjName}/mtk3_bsp2/mtkernel/kernel/knlinc}"',
+            '"${workspace_loc:/${ProjName}/common}"']
     assert _values(root, TOOLS[1], "definedsymbols") == ["DEBUG", DEFINE]
-    assert [e.get("name") for e in root.iter("entry")] == ["Core", "mtk3_bsp2", "application"]
+    assert [e.get("name") for e in root.iter("entry")] == ["Core", "mtk3_bsp2", "application", "common"]
 
 
 def test_configuring_twice_changes_nothing():
@@ -77,8 +78,8 @@ def test_configuring_twice_changes_nothing():
 
 def test_the_app_folder_is_linked_once():
     project = "<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n</projectDescription>\n"
-    once = link_app(project, "/repo/board/application")
-    assert link_app(once, "/repo/board/application") == once
+    once = link_folder(project, "application", "/repo/board/application")
+    assert link_folder(once, "application", "/repo/board/application") == once
     root = ET.fromstring(once.split("?>", 1)[1])
     assert [(l.findtext("name"), l.findtext("type"), l.findtext("location"))
             for l in root.iter("link")] == [("application", "2", "/repo/board/application")]
@@ -86,6 +87,16 @@ def test_the_app_folder_is_linked_once():
 
 def test_a_moved_repository_moves_the_link():
     project = "<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n</projectDescription>\n"
-    moved = link_app(link_app(project, "/old/board/application"), "/new/board/application")
+    moved = link_folder(link_folder(project, "application", "/old/board/application"),
+                        "application", "/new/board/application")
     root = ET.fromstring(moved.split("?>", 1)[1])
     assert [l.findtext("location") for l in root.iter("link")] == ["/new/board/application"]
+
+
+def test_a_second_folder_gets_its_own_link():
+    project = "<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n</projectDescription>\n"
+    both = link_folder(link_folder(project, "application", "/repo/board/application/rows"),
+                       "common", "/repo/board/common")
+    root = ET.fromstring(both.split("?>", 1)[1])
+    assert [(l.findtext("name"), l.findtext("location")) for l in root.iter("link")] == [
+        ("application", "/repo/board/application/rows"), ("common", "/repo/board/common")]

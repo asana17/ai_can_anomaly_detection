@@ -1,4 +1,5 @@
-"""Add mtk3_bsp2 and one of our applications to a CubeMX project, and start μT-Kernel.
+"""Add mtk3_bsp2, our shared code and one of our applications to a CubeMX project, and
+start μT-Kernel.
 
     python3 board/prepare.py project_dir app
 
@@ -23,15 +24,15 @@ BSP_URL = "https://github.com/tron-forum/mtk3_bsp2.git"
 BSP_BASE = "1ab52cc"
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
 APPS = os.path.join(HERE, "application")
+COMMON = os.path.join(HERE, "common")
 MARKER = "/* USER CODE BEGIN WHILE */"
 START = ("void knl_start_mtkernel(void);", "knl_start_mtkernel();")
 TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
          "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler")
 DEFINE = "_STM32CUBE_NUCLEO_H533_"
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
-            "mtk3_bsp2/mtkernel/kernel/knlinc")
-LINK = "application"
-SOURCES = ("mtk3_bsp2", LINK)
+            "mtk3_bsp2/mtkernel/kernel/knlinc", "common")
+SOURCES = ("mtk3_bsp2", "application", "common")
 
 
 def git(*args):
@@ -131,10 +132,10 @@ def configure(cproject):
     return _write(head, root)
 
 
-def link_app(project, app):
-    """`.project` with the folder `LINK` linked to `app`, our application.
+def link_folder(project, name, location):
+    """`.project` with the folder `name` linked to `location`.
 
-    A link already there is pointed at `app`, in case this repository moved or another
+    A link already there is pointed at `location`, in case this repository moved or another
     application is chosen.
     """
     head, root = _parse(project, "projectDescription")
@@ -142,14 +143,14 @@ def link_app(project, app):
     if links is None:
         links = ET.SubElement(root, "linkedResources")
     for link in links:
-        if link.findtext("name") == LINK:
-            link.find("location").text = app
+        if link.findtext("name") == name:
+            link.find("location").text = location
             break
     else:
         link = ET.SubElement(links, "link")
-        ET.SubElement(link, "name").text = LINK
+        ET.SubElement(link, "name").text = name
         ET.SubElement(link, "type").text = "2"      # a folder
-        ET.SubElement(link, "location").text = app
+        ET.SubElement(link, "location").text = location
     return _write(head, root)
 
 
@@ -177,7 +178,8 @@ def main(project_dir, app):
     for name, file, change in (("main.c", path, start_kernel),
                                (".cproject", os.path.join(project_dir, ".cproject"), configure),
                                (".project", os.path.join(project_dir, ".project"),
-                                lambda text: link_app(text, app_dir))):
+                                lambda text: link_folder(link_folder(text, "application", app_dir),
+                                                         "common", COMMON))):
         print(f"{name}: {'changed' if _rewrite(file, change) else 'already done'}")
 
 
