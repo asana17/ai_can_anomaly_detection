@@ -1,21 +1,17 @@
 """Run the whole comparison over a set of logs and print what each detector catches.
 
-    python3 -m evaluate.pc.run "data/part_*/*.csv" out runs_clone [logs]
+    python3 -m evaluate.pc.run out runs_clone
 """
 
 from __future__ import annotations
 
-import glob
-import os
 import sys
-import time
 from dataclasses import asdict
 
 import numpy as np
 import torch
 
-from assemble.split import split
-from common.dataset import arrays_for, attacks_for, seconds_for
+from common.load_dataset import arrays_from, attacks_from
 from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
 from evaluate.pc.record import begin, record
@@ -24,34 +20,19 @@ from models.autoencoder import residuals as reconstruction_errors
 from models.pca import residuals, subspace
 
 
-def main(pattern, out_dir, runs_clone, files=None):
+def main(out_dir, runs_clone):
     settings = Settings()
     run = begin(runs_clone)
     weights = {}
-    os.makedirs(out_dir, exist_ok=True)
-    logs = sorted(glob.glob(pattern))
-    if files:                          # a smoke test asks for fewer
-        logs = logs[::max(len(logs) // files, 1)][:files]
-    seconds = seconds_for(logs, out_dir, settings)
 
-    train_logs, test_logs = split(seconds, settings.TRAIN)
-    print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
-          f"{sum(seconds[p] for p in train_logs):.0f}s and "
-          f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",
-          flush=True)
-
-    clock = time.time()
-    data, kept = arrays_for(train_logs, out_dir, settings)
+    data = arrays_from(out_dir, settings)
     scale = data["scale"]
     weights["scale.mean"] = torch.from_numpy(scale.mean)
     weights["scale.std"] = torch.from_numpy(scale.std)
-    how = "reused" if kept else f"built in {time.time() - clock:.0f}s"
-    print(f"grid {how}, train {data['rows'].shape}", flush=True)
-
-    clock = time.time()
-    got, kept = attacks_for(train_logs, test_logs, scale, out_dir, settings)
-    how = "reused" if kept else f"in {time.time() - clock:.0f}s"
-    print(f"attack set {how}, {len(got['attacks'])} attacks", flush=True)
+    got = attacks_from(out_dir, settings)
+    logs = len(got["train_logs"]) + len(got["test_logs"])
+    print(f"{len(got['train_logs'])} train and {len(got['test_logs'])} test logs, "
+          f"train {data['rows'].shape}, {len(got['attacks'])} attacks", flush=True)
 
     tr, calibrate = training_rows(data, scale, settings)
     test = scored_set(got, scale, settings)
@@ -133,11 +114,10 @@ def main(pattern, out_dir, runs_clone, files=None):
     seeds = {name: values.pop(name) for name in ("SEED", "TORCH_SEED")}
     record(run, weights, {
         "seeds": seeds,
-        "hyperparameters": {**values, "logs": len(logs)},
+        "hyperparameters": {**values, "logs": logs},
         "metrics": {"hours": float(hours), "attacks_scored": int(scored.sum()),
                     "thresholds": thresholds, "detection": detections}})
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3],
-         int(sys.argv[4]) if len(sys.argv) > 4 else None)
+    main(sys.argv[1], sys.argv[2])

@@ -1,22 +1,19 @@
 """Write `n` attacked rows around one replay out as a C header, for the firmware to read.
 
-    python3 -m board.rows "data/part_*/*.csv" out n
+    python3 -m board.rows out n
 
-The rows are the scaled ones `evaluate.pc.run` scores, built from the logs the way it
-builds them. `out` only saves building them again. Each float is written as its float32
-bits in hex, so the board reads exactly those values.
+The rows are the scaled ones `evaluate.pc.run` scores, read from the same dataset. Each
+float is written as its float32 bits in hex, so the board reads exactly those values.
 """
 
 from __future__ import annotations
 
-import glob
 import os
 import sys
 
 import numpy as np
 
-from assemble.split import split
-from common.dataset import arrays_for, attacks_for, seconds_for
+from common.load_dataset import attacks_from
 from common.settings import Settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,14 +46,9 @@ def header(rows, source):
     return "\n".join(lines)
 
 
-def main(pattern, out_dir, n):
+def main(out_dir, n):
     settings = Settings()
-    os.makedirs(out_dir, exist_ok=True)
-    logs = sorted(glob.glob(pattern))
-    train_logs, test_logs = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
-    data, _ = arrays_for(train_logs, out_dir, settings)
-    # the same attacked rows as evaluate.pc.run
-    got, _ = attacks_for(train_logs, test_logs, data["scale"], out_dir, settings)
+    got = attacks_from(out_dir, settings)
     attacks, rows = got["attacks"], got["rows"]
     # the first replay that moved a row far enough to count as an anomaly
     i, attack = next((i, a) for i, a in enumerate(attacks)
@@ -71,4 +63,4 @@ def main(pattern, out_dir, n):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], int(sys.argv[3]))
+    main(sys.argv[1], int(sys.argv[2]))

@@ -15,15 +15,12 @@ are compared at the same `k`. The linear and nonlinear autoencoders differ only 
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
 ```
-python3 -m evaluate.pc.run "data/part_*/*.csv" out runs_clone
+python3 -m evaluate.pc.run out runs_clone
 ```
 
-Without a fourth argument the run takes every log the pattern matches. Giving one samples
-that many, spread evenly over the recording, which is a smoke test and not a
-measurement.
-
-It splits the logs, builds the arrays, injects the attacks, then asks the rules and
-each model for one flag per row. The runs of flags, the counting and the table are
+`out` is the dataset [assemble.dataset](../assemble/docs/dataset.md) built. The run
+reads the rows and the attacks from it, then asks the rules and each model for one flag
+per row. The runs of flags, the counting and the table are
 the same for all of them.
 
 Documented under [docs/](docs).

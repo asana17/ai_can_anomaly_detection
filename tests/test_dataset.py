@@ -1,6 +1,8 @@
 import numpy as np
+import pytest
 
-from common import dataset
+from assemble import dataset
+from common.load_dataset import arrays_from
 from common.settings import Settings
 
 
@@ -26,8 +28,16 @@ def test_grid_for_reads_the_logs_only_when_they_change(tmp_path, monkeypatch):
                 np.zeros(2, np.int32))
 
     monkeypatch.setattr(dataset, "grid_rows", fake)
-    assert dataset.grid_for(["a"], str(tmp_path))[1] is False
-    (raw, _, _), kept = dataset.grid_for(["a"], str(tmp_path))
-    assert kept and raw.shape == (2, 3)
+    assert dataset.grid_for(["a"], str(tmp_path)) is False
+    assert dataset.grid_for(["a"], str(tmp_path)) is True
     dataset.grid_for(["a", "b"], str(tmp_path))
     assert asked == [["a"], ["a", "b"]]
+
+
+def test_arrays_from_refuses_a_grid_built_otherwise(tmp_path, monkeypatch):
+    monkeypatch.setattr(dataset, "grid_rows", lambda logs: (
+        np.zeros((2, 3), np.float32), np.array([0.0, 0.1]), np.zeros(2, np.int32)))
+    dataset.grid_for(["a"], str(tmp_path))
+    monkeypatch.setattr("common.load_dataset.PERIOD", 0.2)
+    with pytest.raises(ValueError):
+        arrays_from(str(tmp_path), Settings())

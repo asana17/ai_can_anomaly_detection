@@ -3,7 +3,7 @@
 Measures what quantizing a model to int8 costs.
 
 ```
-python3 -m evaluate.quantize.compare "data/part_*/*.csv" out runs_clone exported...
+python3 -m evaluate.quantize.compare out runs_clone exported...
 ```
 
 `exported` is a directory under `quantize/` in the runs repository, such as
@@ -22,7 +22,8 @@ same two steps.
 The arithmetic that scores a row is the only difference between the model and the int8
 ONNX, so the gap between the two rows of the table is what the quantization costs.
 
-The rows come from `out`, the cache the run read.
+The calibration rows and the attacked test rows are read from `out`. It has to hold the
+dataset the run named in the export's `meta.json` was fitted on.
 
 Note: export generates a float ONNX and then converts it to an int8 ONNX. Since the
 float ONNX holds the same arithmetic as the torch model, it is not compared here.

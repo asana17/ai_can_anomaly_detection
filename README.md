@@ -32,7 +32,7 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [preprocess/](preprocess) turns raw CAN logs into rows, by reading the log,
   decomposing the ID, decoding signals, and putting them on a 100 ms grid.
 - [assemble/](assemble) splits the logs by time and builds the train, calibration,
-  and test sets.
+  and test sets into `out`, the dataset every run reads.
 - [attack/](attack) synthesizes anomalies for a labeled test set.
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
@@ -41,8 +41,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   each. [board/docs/setup.md](board/docs/setup.md) builds and flashes one from nothing.
   [board/docs/goal.md](board/docs/goal.md) is what the board is building towards, the
   TRON Programming Contest 2026 entry, and the order it is built in.
-- [common/](common) holds the settings of a run and the rows built from the logs, which
-  `evaluate`, `quantize` and `board` all read.
+- [common/](common) holds the settings of a run and reads the dataset, which
+  `evaluate`, `quantize` and `board` all use.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
   quantizing their models costs is in [quantize/results.md](quantize/results.md).

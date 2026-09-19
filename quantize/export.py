@@ -1,11 +1,10 @@
 """Write every nonlinear autoencoder of a run out as float and int8 ONNX, and keep them.
 
-    python3 -m quantize.export "data/part_*/*.csv" out runs_clone started
+    python3 -m quantize.export out runs_clone started
 """
 
 from __future__ import annotations
 
-import glob
 import json
 import os
 import platform
@@ -22,8 +21,7 @@ from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
-from assemble.split import split
-from common.dataset import arrays_for, seconds_for
+from common.load_dataset import arrays_from
 from common.settings import Settings
 from evaluate.counting import training_rows
 from evaluate.pc.record import git
@@ -96,7 +94,7 @@ def write(models, rows, dest, batch):
                             calibrate_method=CalibrationMethod.MinMax)
 
 
-def main(pattern, out_dir, runs_clone, started):
+def main(out_dir, runs_clone, started):
     settings = Settings()
     exported = time.localtime()
     stamp = time.strftime("%Y%m%d-%H%M%S", exported)
@@ -105,12 +103,9 @@ def main(pattern, out_dir, runs_clone, started):
     run = os.path.join("results", started)
     run_dir = os.path.join(runs_clone, run)
     wanted = fits_in(run_dir)               # every fit the run saved, none of them picked
-    # the weights are read before the rows, which take long
     states = [(k, h, load(run_dir, k, h)) for k, h in wanted]
 
-    logs = sorted(glob.glob(pattern))
-    train_logs, _ = split(seconds_for(logs, out_dir, settings), settings.TRAIN)
-    data, _ = arrays_for(train_logs, out_dir, settings)
+    data = arrays_from(out_dir, settings)
     # the same training and calibration rows as evaluate.pc.run
     tr, calibration = training_rows(data, data["scale"], settings)
 
@@ -145,4 +140,4 @@ def main(pattern, out_dir, runs_clone, started):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

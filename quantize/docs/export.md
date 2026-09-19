@@ -7,13 +7,12 @@ float and int8 ONNX for that, and keeps them in the runs repository.
 ## Running it
 
 ```
-python3 -u -m quantize.export "data/part_*/*.csv" out runs_clone started
+python3 -u -m quantize.export out runs_clone started
 ```
 
 | argument | what it is |
 |---|---|
-| `"data/part_*/*.csv"` | the logs the run read |
-| `out` | the cache `evaluate.pc.run` keeps |
+| `out` | the dataset the run read, built by [assemble.dataset](../../assemble/docs/dataset.md) |
 | `runs_clone` | a clone of the [runs repository](../../evaluate/docs/run_record.md), the same one `evaluate.pc.run` takes |
 | `started` | the run's `<start time>` under `results/`, such as `20260915-223031` |
 
