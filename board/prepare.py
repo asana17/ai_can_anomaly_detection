@@ -1,5 +1,5 @@
-"""Add mtk3_bsp2, our shared code and one of our applications to a CubeMX project, and
-start μT-Kernel.
+"""Add mtk3_bsp2, Unity, our shared code and one of our applications to a CubeMX
+project, and start μT-Kernel.
 
     python3 board/prepare.py project_dir app
 
@@ -22,6 +22,8 @@ import xml.etree.ElementTree as ET
 HERE = os.path.dirname(os.path.abspath(__file__))
 BSP_URL = "https://github.com/tron-forum/mtk3_bsp2.git"
 BSP_BASE = "1ab52cc"
+UNITY_URL = "https://github.com/ThrowTheSwitch/Unity.git"
+UNITY_BASE = "b6763fb"     # v2.7.0
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
 APPS = os.path.join(HERE, "application")
 COMMON = os.path.join(HERE, "common")
@@ -31,8 +33,8 @@ TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
          "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler")
 DEFINE = "_STM32CUBE_NUCLEO_H533_"
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
-            "mtk3_bsp2/mtkernel/kernel/knlinc", "common")
-SOURCES = ("mtk3_bsp2", "application", "common")
+            "mtk3_bsp2/mtkernel/kernel/knlinc", "common", "Unity/src")
+SOURCES = ("mtk3_bsp2", "Unity/src", "application", "common")
 
 
 def git(*args):
@@ -61,6 +63,20 @@ def add_bsp(project_dir):
         done = "already there"
     git("-C", bsp, "submodule", "update", "--init")
     return done
+
+
+def add_unity(project_dir):
+    """Clone Unity at `UNITY_BASE`, or check that a clone is at it."""
+    unity = os.path.join(project_dir, "Unity")
+    if not os.path.exists(unity):
+        git("clone", UNITY_URL, unity)
+        git("-C", unity, "checkout", UNITY_BASE)
+        return "cloned"
+    try:
+        git("-C", unity, "diff", "--quiet", UNITY_BASE)
+    except subprocess.CalledProcessError:
+        raise SystemExit(f"{unity} is not at {UNITY_BASE}")
+    return "already there"
 
 
 def start_kernel(main_c):
@@ -175,6 +191,7 @@ def main(project_dir, app):
         raise SystemExit(f"no {app_dir}, the applications are "
                          f"{', '.join(sorted(os.listdir(APPS)))}")
     print(f"mtk3_bsp2: {add_bsp(project_dir)}")
+    print(f"Unity: {add_unity(project_dir)}")
     for name, file, change in (("main.c", path, start_kernel),
                                (".cproject", os.path.join(project_dir, ".cproject"), configure),
                                (".project", os.path.join(project_dir, ".project"),

@@ -64,11 +64,12 @@ def test_both_tools_get_the_define_and_the_include_paths():
     root = ET.fromstring(configured.split("?>", 2)[2])
     for tool in TOOLS:
         assert DEFINE in _values(root, tool, "definedsymbols")
-        assert _values(root, tool, "includepaths")[-2:] == [
+        assert _values(root, tool, "includepaths")[-3:] == [
             '"${workspace_loc:/${ProjName}/mtk3_bsp2/mtkernel/kernel/knlinc}"',
-            '"${workspace_loc:/${ProjName}/common}"']
+            '"${workspace_loc:/${ProjName}/common}"',
+            '"${workspace_loc:/${ProjName}/Unity/src}"']
     assert _values(root, TOOLS[1], "definedsymbols") == ["DEBUG", DEFINE]
-    assert [e.get("name") for e in root.iter("entry")] == ["Core", "mtk3_bsp2", "application", "common"]
+    assert [e.get("name") for e in root.iter("entry")] == ["Core", "mtk3_bsp2", "Unity/src", "application", "common"]
 
 
 def test_configuring_twice_changes_nothing():

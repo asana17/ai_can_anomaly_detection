@@ -14,7 +14,7 @@ this repository. This repository holds only what we wrote:
 | `board/application/` | our applications, one folder each with its own `usermain` |
 | `board/application/alive/` | the one this page checks, the LED and the count |
 | `board/patches/` | a fix to mtk3_bsp2 `1ab52cc`, which does not build for this board without it |
-| `board/prepare.py` | adds mtk3_bsp2 and our application to a generated project |
+| `board/prepare.py` | adds mtk3_bsp2, Unity and our application to a generated project |
 
 ## What to install
 
@@ -75,6 +75,8 @@ Where this differs from the BSP2 document:
   folder of `board/application/`.
 - The folder `common` in the project links to `board/common/`, code the applications
   share.
+- [Unity](https://github.com/ThrowTheSwitch/Unity), the test framework the test
+  applications use, is cloned at v2.7.0 into the folder `Unity`. Its `src` is built.
 
 After CubeMX generates again, run `prepare.py` again. To build another application,
 close the project in CubeIDE, run `prepare.py` with that folder, and open it again.
