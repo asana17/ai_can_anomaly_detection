@@ -7,9 +7,11 @@ first and stays there, then uploaded in one commit, so a failed upload loses not
 
 from __future__ import annotations
 
+import json
 import os
+import time
 
-from huggingface_hub import HfApi, snapshot_download
+from huggingface_hub import HfApi, hf_hub_download, snapshot_download
 
 from common import hf_upload
 
@@ -19,6 +21,26 @@ def download(repo, path, local_dir, repo_type="model"):
     snapshot_download(repo, repo_type=repo_type, allow_patterns=[f"{path}/*"],
                       local_dir=local_dir)
     return os.path.join(local_dir, path)
+
+
+def find(repo, kind, inputs, local_dir, repo_type="model"):
+    """The directory under `kind/` whose `meta.json` holds `inputs`, or None.
+
+    It is returned as `{repo, revision, path}`, the revision being the one it was found
+    at.
+    """
+    inputs = json.loads(json.dumps(inputs))     # a tuple comes back from meta.json a list
+    revision = HfApi().repo_info(repo, repo_type=repo_type).sha
+    for name in sorted(HfApi().list_repo_files(repo, repo_type=repo_type,
+                                               revision=revision)):
+        parts = name.split("/")
+        if len(parts) != 3 or parts[0] != kind or parts[2] != "meta.json":
+            continue
+        meta = hf_hub_download(repo, name, repo_type=repo_type, revision=revision,
+                               local_dir=local_dir)
+        if json.load(open(meta))["inputs"] == inputs:
+            return {"repo": repo, "revision": revision, "path": f"{kind}/{parts[1]}"}
+    return None
 
 
 def claim(repo, path, local_dir, repo_type="model"):
@@ -38,6 +60,22 @@ def claim(repo, path, local_dir, repo_type="model"):
 
 
 def upload(repo, path, local_dir, message, repo_type="model"):
-    """Upload directory `path` of `local_dir` to `repo` in one commit."""
-    hf_upload.upload(repo, os.path.join(local_dir, path), message, repo_type=repo_type,
-                     path_in_repo=path)
+    """Upload directory `path` of `local_dir` to `repo` in one commit.
+
+    It is returned as `{repo, revision, path}`, the revision being that commit.
+    """
+    commit = hf_upload.upload(repo, os.path.join(local_dir, path), message,
+                              repo_type=repo_type, path_in_repo=path)
+    return {"repo": repo, "revision": commit.oid, "path": path}
+
+
+def write_meta(folder, meta, started, finished):
+    """Write `meta` to `folder/meta.json`, with `started` and `finished` added.
+
+    Both times are epoch seconds, written in local time.
+    """
+    stamp = "%Y-%m-%dT%H:%M:%S%z"
+    with open(os.path.join(folder, "meta.json"), "w") as f:
+        json.dump({**meta, "started": time.strftime(stamp, time.localtime(started)),
+                   "finished": time.strftime(stamp, time.localtime(finished))},
+                  f, indent=2)

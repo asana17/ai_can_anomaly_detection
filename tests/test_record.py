@@ -22,6 +22,7 @@ class Hub:
 
     def upload_folder(self, **kwargs):
         self.uploaded.append(kwargs)
+        return type("Commit", (), {"oid": "def"})
 
 
 def test_record_keeps_both_files_and_uploads_them(tmp_path, monkeypatch):
