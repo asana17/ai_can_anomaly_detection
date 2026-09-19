@@ -43,6 +43,8 @@ def main(pattern, out_dir, runs_clone, files=None):
     clock = time.time()
     data, kept = arrays_for(train_logs, out_dir, settings)
     scale = data["scale"]
+    weights["scale.mean"] = torch.from_numpy(scale.mean)
+    weights["scale.std"] = torch.from_numpy(scale.std)
     how = "reused" if kept else f"built in {time.time() - clock:.0f}s"
     print(f"grid {how}, train {data['rows'].shape}", flush=True)
 

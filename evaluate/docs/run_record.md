@@ -11,7 +11,8 @@ directory, so earlier runs stay as they were.
 
 In `weights.safetensors` a tensor's name says which model it belongs to. PCA's are
 `pca.k{k}.centre` and `pca.k{k}.basis`. An autoencoder's are its `state_dict` names
-under `linear_ae.k{k}.` or `nonlinear_ae.h{h}.k{k}.`.
+under `linear_ae.k{k}.` or `nonlinear_ae.h{h}.k{k}.`. `scale.mean` and `scale.std`
+are the z-score every model's rows are put on.
 
 | key in `meta.json` | holds |
 |---|---|
