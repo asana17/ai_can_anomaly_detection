@@ -4,7 +4,7 @@ import os
 import pytest
 import torch
 
-from common import runs
+from common import hf_upload, runs_repo
 from evaluate.pc import record
 
 
@@ -25,7 +25,8 @@ class Hub:
 
 
 def test_record_keeps_both_files_and_uploads_them(tmp_path, monkeypatch):
-    monkeypatch.setattr(runs, "HfApi", Hub)
+    monkeypatch.setattr(runs_repo, "HfApi", Hub)
+    monkeypatch.setattr(hf_upload, "HfApi", Hub)
     Hub.uploaded = []
     run = record.start_run("user/runs", str(tmp_path))
     record.end_run(run, {"pca.k2.centre": torch.zeros(17)}, {"seeds": {"SEED": 0}})
@@ -37,19 +38,22 @@ def test_record_keeps_both_files_and_uploads_them(tmp_path, monkeypatch):
     assert Hub.uploaded[0]["path_in_repo"] == f"results/{run['stamp']}"
 
 
-def test_a_failed_upload_leaves_the_files(tmp_path, monkeypatch):
+def test_a_failed_upload_leaves_the_files(tmp_path, monkeypatch, capsys):
     class Failing(Hub):
         def upload_folder(self, **kwargs):
             raise ConnectionError("offline")
 
-    monkeypatch.setattr(runs, "HfApi", Failing)
+    monkeypatch.setattr(runs_repo, "HfApi", Failing)
+    monkeypatch.setattr(hf_upload, "HfApi", Failing)
     run = record.start_run("user/runs", str(tmp_path))
     with pytest.raises(ConnectionError):
         record.end_run(run, {"pca.k2.centre": torch.zeros(17)}, {})
     assert (tmp_path / "results" / run["stamp"] / "weights.safetensors").exists()
+    assert "hf upload user/runs" in capsys.readouterr().out
 
 
 def test_claim_refuses_a_directory_the_repository_holds(tmp_path, monkeypatch):
-    monkeypatch.setattr(runs, "HfApi", Hub)
+    monkeypatch.setattr(runs_repo, "HfApi", Hub)
+    monkeypatch.setattr(hf_upload, "HfApi", Hub)
     with pytest.raises(FileExistsError):
-        runs.claim("user/runs", "results/20260101-000000", str(tmp_path))
+        runs_repo.claim("user/runs", "results/20260101-000000", str(tmp_path))

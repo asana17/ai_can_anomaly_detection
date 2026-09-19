@@ -20,7 +20,8 @@ token that can write to it.
 | `branch` | the branch of `repo` they go to, made if it is not there |
 
 When the upload is done it prints `revision <commit hash>`. That commit of `repo` holds
-exactly the files this call wrote.
+exactly the files this call wrote. If the upload fails, the files stay in `out`, and it
+prints the `hf upload` command that uploads them again.
 
 ## What it builds
 

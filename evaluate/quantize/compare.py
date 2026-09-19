@@ -12,7 +12,7 @@ import sys
 import numpy as np
 
 from common.load_dataset import arrays_from, attacks_from, fetch
-from common.runs import download
+from common.runs_repo import download
 from common.settings import Settings
 from evaluate.counting import detection, scored_set, training_rows
 from models.autoencoder import NonlinearAutoencoder, residuals

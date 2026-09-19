@@ -11,6 +11,8 @@ import os
 
 from huggingface_hub import HfApi, snapshot_download
 
+from common import hf_upload
+
 
 def download(repo, path, runs_dir):
     """Directory `path` of `repo`, downloaded into `runs_dir`."""
@@ -34,17 +36,5 @@ def claim(repo, path, runs_dir):
 
 
 def upload(repo, path, runs_dir, message):
-    """Upload directory `path` of `runs_dir` to `repo` in one commit.
-
-    When the upload fails, the files stay in `runs_dir`, and the command that uploads
-    them later is printed before the error is raised again.
-    """
-    folder = os.path.join(runs_dir, path)
-    try:
-        HfApi().upload_folder(repo_id=repo, folder_path=folder, path_in_repo=path,
-                              commit_message=message)
-    except Exception:
-        print(f"upload failed, {folder} is kept. To upload it later:\n"
-              f"hf upload {repo} {folder} {path} --commit-message '{message}'",
-              flush=True)
-        raise
+    """Upload directory `path` of `runs_dir` to `repo` in one commit."""
+    hf_upload.upload(repo, os.path.join(runs_dir, path), message, path_in_repo=path)

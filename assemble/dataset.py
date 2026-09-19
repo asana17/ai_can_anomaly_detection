@@ -21,6 +21,7 @@ from huggingface_hub import HfApi
 from assemble.attack_set import grid_rows_injected
 from assemble.split import moving, seconds_above, split, split_rows
 from assemble.train_set import grid_rows, scale_for
+from common.hf_upload import upload
 from common.load_dataset import ATTACKED, GRID, built_with, grid_with
 from common.settings import Settings
 
@@ -115,9 +116,8 @@ def main(pattern, out_dir, repo, branch):
 
     hub = HfApi()
     hub.create_branch(repo, repo_type="dataset", branch=branch, exist_ok=True)
-    commit = hub.upload_folder(repo_id=repo, repo_type="dataset", revision=branch,
-                               folder_path=out_dir, allow_patterns=["*.json", "*.npy"],
-                               commit_message=f"build from {len(logs)} logs")
+    commit = upload(repo, out_dir, f"build from {len(logs)} logs", repo_type="dataset",
+                    revision=branch, allow_patterns=["*.json", "*.npy"])
     print(f"revision {commit.oid}")
 
 
