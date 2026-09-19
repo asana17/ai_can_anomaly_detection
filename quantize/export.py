@@ -21,11 +21,11 @@ from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from safetensors.torch import load_file
 
-from common.load_dataset import arrays_from, fetch
+from common.git import git
 from common.hub_dirs import claim, download, upload
+from common.load_dataset import arrays_from, fetch
 from common.settings import Settings
 from evaluate.counting import training_rows
-from evaluate.pc.record import git
 from models.autoencoder import NonlinearAutoencoder
 
 

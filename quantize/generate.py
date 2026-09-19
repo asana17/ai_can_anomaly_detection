@@ -14,8 +14,8 @@ import sys
 import tempfile
 import time
 
+from common.git import git
 from common.hub_dirs import claim, download, upload
-from evaluate.pc.record import git
 
 TARGET = "stm32h5"
 KEPT = ("network.c", "network.h", "network_data.c", "network_data.h",

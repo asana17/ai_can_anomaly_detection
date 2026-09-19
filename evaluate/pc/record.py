@@ -10,20 +10,14 @@ from __future__ import annotations
 import json
 import os
 import platform
-import subprocess
 import time
 
 import numpy as np
 import torch
 from safetensors.torch import save_file
 
+from common.git import git
 from common.hub_dirs import claim, upload
-
-
-def git(*args):
-    """What a git command prints."""
-    return subprocess.run(["git", *args], capture_output=True, text=True,
-                          check=True).stdout
 
 
 def start_run(runs_repo, runs_dir):
