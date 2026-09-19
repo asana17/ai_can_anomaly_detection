@@ -17,7 +17,7 @@ class Hub:
     def whoami(self):
         return {"name": "test"}
 
-    def list_repo_files(self, repo):
+    def list_repo_files(self, repo, repo_type="model"):
         return self.files
 
     def upload_folder(self, **kwargs):
