@@ -73,8 +73,13 @@ def _laid_out(logs_rows, *, period: float):
 
 
 def read_grid(folder):
-    """A grid's rows and times, and the logs and row counts its `logs.json` holds."""
-    raw, times = (np.load(os.path.join(folder, f"grid_{n}.npy")) for n in ("raw", "t"))
+    """A grid's rows and times, and the logs and row counts its `logs.json` holds.
+
+    The two arrays are mapped rather than read, so taking a part of one costs that part
+    rather than the whole grid.
+    """
+    raw, times = (np.load(os.path.join(folder, f"grid_{n}.npy"), mmap_mode="r")
+                  for n in ("raw", "t"))
     with open(os.path.join(folder, "logs.json")) as f:
         kept = json.load(f)
     return raw, times, kept["logs"], kept["rows"]
