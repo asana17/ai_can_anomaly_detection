@@ -42,8 +42,9 @@ The rules read `raw`, since a rule is written in those units. A model reads the 
 the [scale](scale.md) instead. [evaluate](../../evaluate) reads `seg` to count rows
 that follow each other.
 
-`rows_of_logs(logs, counts, chosen)` reads `logs.json` back, returning True for each row
-that came from one of `chosen`.
+`read_grid(folder)` reads a `grids/<time>/` directory back, returning `raw`, `t`, and
+the logs and row counts `logs.json` holds. `rows_of_logs(logs, counts, chosen)` turns
+those into True for each row that came from one of `chosen`.
 
 ## The settings
 

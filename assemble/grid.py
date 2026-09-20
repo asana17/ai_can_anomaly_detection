@@ -72,6 +72,14 @@ def _laid_out(logs_rows, *, period: float):
     return to_arrays(rows, times, segments), counts
 
 
+def read_grid(folder):
+    """A grid's rows and times, and the logs and row counts its `logs.json` holds."""
+    raw, times = (np.load(os.path.join(folder, f"grid_{n}.npy")) for n in ("raw", "t"))
+    with open(os.path.join(folder, "logs.json")) as f:
+        kept = json.load(f)
+    return raw, times, kept["logs"], kept["rows"]
+
+
 def rows_of_logs(logs, counts, chosen):
     """True for each row of the grid that came from one of `chosen`, some of `logs`.
 

@@ -11,7 +11,7 @@ import os
 
 import numpy as np
 
-from assemble.grid import moving, rows_of_logs
+from assemble.grid import moving, read_grid, rows_of_logs
 from assemble.scale import scale_for
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
@@ -76,9 +76,8 @@ def write_train_set(folder, repo, revision, split_path, local_dir, settings):
     period = grid_meta["inputs"]["period"]
 
     cut = json.load(open(os.path.join(split_dir, "split.json")))
-    kept = json.load(open(os.path.join(grid_dir, "logs.json")))
-    raw, times = (np.load(os.path.join(grid_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
-    training = rows_of_logs(kept["logs"], kept["rows"], cut["train"])
+    raw, times, logs, counts = read_grid(grid_dir)
+    training = rows_of_logs(logs, counts, cut["train"])
 
     # the windows are cut on the training rows alone, so the test block never phases them
     train_part, calibration_part = split_rows(raw[training], times[training],

@@ -14,7 +14,7 @@ import random
 import numpy as np
 
 from attack.inject import inject
-from assemble.grid import starts_segment, to_arrays
+from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
@@ -106,9 +106,9 @@ def grid_rows_injected(injected, rows_before_attack, *, period: float,
     return {"attacks": attacks, **joined}
 
 
-def rows_before_each(grid_dir, logs, counts):
+def rows_before_each(grid_dir):
     """`log -> its rows by time`, read off a grid, built one log at a time."""
-    raw, times = (np.load(os.path.join(grid_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
+    raw, times, logs, counts = read_grid(grid_dir)
     ends = dict(zip(logs, np.cumsum(counts)))
     sizes = dict(zip(logs, counts))
 
@@ -136,11 +136,10 @@ def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, se
                                    grid["revision"], repo_type="dataset")
     period, max_hold = (grid_meta["inputs"][n] for n in ("period", "max_hold"))
     cut = json.load(open(os.path.join(split_dir, "split.json")))
-    kept = json.load(open(os.path.join(grid_dir, "logs.json")))
 
     under = {name: [os.path.join(data_dir, p) for p in cut[name]]
              for name in ("train", "test")}
-    before = rows_before_each(grid_dir, kept["logs"], kept["rows"])
+    before = rows_before_each(grid_dir)
     injected = inject_frames(under["test"], random.Random(settings.SEED),
                              donor_logs(under["train"], settings.DONORS))
     got = grid_rows_injected(
