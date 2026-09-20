@@ -44,7 +44,8 @@ def seconds_for(logs, out_dir, settings):
     kept = store["seconds"]
     missing = [p for p in logs if p not in kept]
     if missing:
-        kept.update(seconds_above(missing, settings.MIN_SPEED))
+        kept.update(seconds_above(missing, settings.MIN_SPEED, settings.PERIOD,
+                                  settings.MAX_HOLD))
         json.dump(store, open(path, "w"))
     return {p: kept[p] for p in logs}
 
@@ -56,13 +57,14 @@ def _kept(out_dir, name, shape, files):
             and all(os.path.exists(os.path.join(out_dir, f)) for f in files))
 
 
-def grid_for(train_logs, out_dir):
+def grid_for(train_logs, out_dir, settings):
     """Put the training logs on the grid in `out_dir`, unless they are there already."""
-    shape = {"logs": train_logs, **grid_with()}
+    shape = {"logs": train_logs, **grid_with(settings)}
     files = [f"grid_{n}.npy" for n in GRID]
     if _kept(out_dir, "grid.json", shape, files):
         return True
-    for name, array in zip(files, grid_rows(train_logs)):
+    for name, array in zip(files, grid_rows(train_logs, settings.PERIOD,
+                                            settings.MAX_HOLD)):
         np.save(os.path.join(out_dir, name), array)
     json.dump(shape, open(os.path.join(out_dir, "grid.json"), "w"))
     return False
@@ -72,7 +74,7 @@ def fit_scale(out_dir, settings):
     """Fit the scale on the train rows of the grid in `out_dir`, and write it there."""
     raw, times = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
     train_rows, _ = split_rows(raw, times, settings.CALIBRATION, settings.BLOCK,
-                               settings.GAP, settings.MIN_SPEED)
+                               settings.GAP, settings.MIN_SPEED, settings.PERIOD)
     # the rows PCA is fitted on
     scale = scale_for(raw[train_rows & moving(raw, settings.MIN_SPEED)])
     np.save(os.path.join(out_dir, "scale.npy"), np.stack([scale.mean, scale.std]))
@@ -87,6 +89,7 @@ def attacks_for(train_logs, test_logs, scale, out_dir, settings):
         return True
     donors = settings.DONORS
     got = grid_rows_injected(test_logs, scale, random.Random(settings.SEED),
+                             settings.PERIOD, settings.MAX_HOLD,
                              source_logs=train_logs[::max(len(train_logs) // donors, 1)]
                              [:donors])
     for name in ATTACKED:
@@ -108,7 +111,7 @@ def main(pattern, out_dir, repo, branch):
           flush=True)
 
     clock = time.time()
-    how = "reused" if grid_for(train_logs, out_dir) else "built"
+    how = "reused" if grid_for(train_logs, out_dir, settings) else "built"
     print(f"grid {how} in {time.time() - clock:.0f}s", flush=True)
 
     clock = time.time()

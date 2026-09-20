@@ -1,21 +1,21 @@
 # grid
 
 The frames of a log arrive at their own rates, so they are read into one row every
-`PERIOD` seconds, each column holding the last value that signal carried.
-`grid_rows(logs)` does that for whole logs, returning `raw`, `t` and `seg`.
-[attack_set](attack_set.md) reads the frames it attacked the same way. Both follow the
-settings here.
+`period` seconds, each column holding the last value that signal carried.
+`grid_rows(logs, period, max_hold)` does that for whole logs, returning `raw`, `t` and
+`seg`. [attack_set](attack_set.md) reads the frames it attacked the same way.
 
 ## The grid
 
-| name | value | what it is |
-|---|---|---|
-| `PERIOD` | 0.1 s | the time between two rows |
-| `MAX_HOLD` | 1 s | the longest gap between frames a row may be built across |
+| argument | what it decides |
+|---|---|
+| `period` | the time between two rows |
+| `max_hold` | the longest gap between frames a row may be built across |
 
-`PERIOD` is 100 ms because that is how often the slowest target PGNs, CCVS1 and
-LFE1, arrive. A shorter one only repeats their last value across rows. `MAX_HOLD` is
-ten of those arrivals. What `resample` does with the two is in
+Both come from `Settings`, which every stage records in its `meta.json`. `period` is
+100 ms because that is how often the slowest target PGNs, CCVS1 and LFE1, arrive. A
+shorter one only repeats their last value across rows. `max_hold` is ten of those
+arrivals. What `resample` does with the two is in
 [grid_sample](../../preprocess/docs/grid_sample.md).
 
 ## Types

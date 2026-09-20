@@ -12,7 +12,6 @@ import os
 import numpy as np
 from huggingface_hub import HfApi, snapshot_download
 
-from assemble.grid import MAX_HOLD, PERIOD
 from assemble.scale import Scale
 from assemble.train_set import split_rows
 from preprocess.features.signal_state import SIGNALS
@@ -28,9 +27,10 @@ def fetch(repo, revision, out_dir):
     return commit
 
 
-def grid_with():
+def grid_with(settings):
     """The settings the grid is built with, as `grid.json` keeps them."""
-    return {"signals": SIGNALS, "period": PERIOD, "max_hold": MAX_HOLD}
+    return {"signals": SIGNALS, "period": settings.PERIOD,
+            "max_hold": settings.MAX_HOLD}
 
 
 def built_with(settings):
@@ -38,7 +38,7 @@ def built_with(settings):
     return {"min_speed": settings.MIN_SPEED, "train": settings.TRAIN,
             "donors": settings.DONORS,
             "calibration": settings.CALIBRATION, "block": settings.BLOCK,
-            "gap": settings.GAP, "seed": settings.SEED, **grid_with()}
+            "gap": settings.GAP, "seed": settings.SEED, **grid_with(settings)}
 
 
 def _logs(out_dir, name, expected):
@@ -57,7 +57,7 @@ def arrays_from(out_dir, settings):
     raw, times, segments = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in GRID)
     train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
                                               settings.BLOCK, settings.GAP,
-                                              settings.MIN_SPEED)
+                                              settings.MIN_SPEED, settings.PERIOD)
     scale = Scale(*np.load(os.path.join(out_dir, "scale.npy")))
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],

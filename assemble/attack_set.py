@@ -7,7 +7,7 @@ import random
 import numpy as np
 
 from attack.inject import inject
-from assemble.grid import MAX_HOLD, PERIOD, starts_segment, to_arrays
+from assemble.grid import starts_segment, to_arrays
 from preprocess.features.grid_sample import resample
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
@@ -28,7 +28,8 @@ def inject_frames(logs, rng: random.Random, source_logs=None):
         yield path, frames, hurt, span
 
 
-def grid_rows_injected(logs, scale, rng: random.Random, source_logs=None) -> dict:
+def grid_rows_injected(logs, scale, rng: random.Random, period: float,
+                       max_hold: float, source_logs=None) -> dict:
     """Inject one attack into each log, and put the result on train's `scale`.
 
     Every file contributes its rows whether or not an attack landed, so the set holds
@@ -40,11 +41,11 @@ def grid_rows_injected(logs, scale, rng: random.Random, source_logs=None) -> dic
     segment = -1
     wheel = SIGNALS.index("wheel_speed")
     for _, frames, hurt, span in inject_frames(logs, rng, source_logs):
-        clean = dict(resample(frames, PERIOD, MAX_HOLD)) if span else {}
+        clean = dict(resample(frames, period, max_hold)) if span else {}
         first = len(rows)
         previous = None
-        for t, row in resample(hurt, PERIOD, MAX_HOLD):
-            if starts_segment(previous, t):
+        for t, row in resample(hurt, period, max_hold):
+            if starts_segment(previous, t, period):
                 segment += 1
             rows.append(row)
             times.append(t)

@@ -5,6 +5,8 @@ from assemble.scale import scale_for
 from assemble.train_set import apart_from_test, split_rows
 from preprocess.features.signal_state import SIGNALS
 
+PERIOD, MAX_HOLD = 0.1, 1.0
+
 
 def _ts(t):
     whole = int(t)
@@ -34,13 +36,13 @@ def _write_log(path, rpms, period=0.1, gap_after=None, gap=0.0):
 
 
 def test_grid_rows_returns_2d_signal_rows(tmp_path):
-    rows, times, segments = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)])
+    rows, times, segments = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)], PERIOD, MAX_HOLD)
     assert rows.ndim == 2 and rows.shape[1] == 17
     assert times.shape == segments.shape == (len(rows),)
 
 
 def test_grid_rows_keeps_the_time_of_each_row(tmp_path):
-    _, times, _ = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)])
+    _, times, _ = grid_rows([_write_log(tmp_path / "a.csv", [800] * 6)], PERIOD, MAX_HOLD)
     assert times.dtype == np.float64          # epoch seconds lose 0.1 s in float32
     assert np.allclose(np.diff(times), 0.1)
 
@@ -48,7 +50,7 @@ def test_grid_rows_keeps_the_time_of_each_row(tmp_path):
 def test_segments_break_between_files(tmp_path):
     files = [_write_log(tmp_path / "a.csv", [800] * 6),
              _write_log(tmp_path / "b.csv", [900] * 6)]
-    _, _, segments = grid_rows(files)
+    _, _, segments = grid_rows(files, PERIOD, MAX_HOLD)
     assert len(set(segments)) == 2
     assert segments[0] != segments[-1]
 
@@ -56,7 +58,7 @@ def test_segments_break_between_files(tmp_path):
 def test_segments_break_across_a_gap(tmp_path):
     # one file, but the log jumps 30 s after the 4th sample
     log = _write_log(tmp_path / "a.csv", [800] * 10, gap_after=4, gap=30.0)
-    _, times, segments = grid_rows([log])
+    _, times, segments = grid_rows([log], PERIOD, MAX_HOLD)
     assert len(set(segments)) == 2, "the gap must start a new segment"
     first, second = (times[segments == s] for s in sorted(set(segments)))
     assert second[0] - first[-1] > 1.0                  # the gap is not bridged
@@ -66,7 +68,7 @@ def test_segments_break_across_a_gap(tmp_path):
 
 def test_scale_for_standardizes_the_rows_it_was_given(tmp_path):
     log = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    rows, _, _ = grid_rows([log])
+    rows, _, _ = grid_rows([log], PERIOD, MAX_HOLD)
     scaled = scale_for(rows).apply(rows)
 
     engine_speed = scaled[:, 0]               # first signal in SIGNALS order
@@ -77,8 +79,8 @@ def test_scale_for_standardizes_the_rows_it_was_given(tmp_path):
 def test_the_scale_it_fits_puts_other_rows_on_the_same_scale(tmp_path):
     train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
     other = _write_log(tmp_path / "te.csv", [900] * 6)
-    scale = scale_for(grid_rows([train])[0])
-    rows, _, _ = grid_rows([other])
+    scale = scale_for(grid_rows([train], PERIOD, MAX_HOLD)[0])
+    rows, _, _ = grid_rows([other], PERIOD, MAX_HOLD)
 
     assert np.allclose(scale.undo(scale.apply(rows)), rows, atol=1e-3)
 
@@ -97,13 +99,13 @@ def test_moving_is_the_rows_over_the_speed_given():
 
 def test_split_rows_gives_calibration_the_share_of_the_seconds_asked_for():
     raw, t = _rows(np.full(100000, 50.0))
-    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0)
+    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0, PERIOD)
     assert abs(calibration_rows.mean() - 0.10) < 0.01
 
 
 def test_split_rows_cuts_calibration_into_windows_of_the_block_length():
     raw, t = _rows(np.full(10000, 50.0))
-    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0)
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0, PERIOD)
     edges = np.flatnonzero(np.diff(np.concatenate(
         [[0], calibration_rows.astype(np.int8), [0]])))
     assert set((edges[1::2] - edges[::2]).tolist()) == {200}   # 20 s at 100 ms
@@ -111,7 +113,7 @@ def test_split_rows_cuts_calibration_into_windows_of_the_block_length():
 
 def test_split_rows_spreads_the_windows_over_the_period():
     raw, t = _rows(np.full(100000, 50.0))
-    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0)
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0, PERIOD)
     at = np.flatnonzero(calibration_rows)
     assert at[0] < 1000 and at[-1] > 90000
 
@@ -120,7 +122,7 @@ def test_split_rows_never_calibrates_on_a_stopped_row():
     speeds = np.full(20000, 50.0)
     speeds[1::2] = 0.0                          # the truck stops every other row
     raw, t = _rows(speeds)
-    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0)
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0, PERIOD)
     assert calibration_rows.any() and not (calibration_rows & (speeds == 0.0)).any()
 
 
@@ -128,19 +130,19 @@ def test_split_rows_measures_the_block_in_seconds_above_min_speed():
     speeds = np.full(20000, 50.0)
     speeds[1::2] = 0.0
     raw, t = _rows(speeds)
-    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0)
+    _, calibration_rows = split_rows(raw, t, 0.10, 20.0, 0.0, 5.0, PERIOD)
     assert abs(calibration_rows.sum() / (speeds > 5.0).sum() - 0.10) < 0.01
 
 
 def test_split_rows_puts_no_row_in_both_parts():
     raw, t = _rows(np.full(10000, 50.0))
-    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 5.0, 5.0)
+    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 5.0, 5.0, PERIOD)
     assert not (train_rows & calibration_rows).any()
 
 
 def test_split_rows_leaves_the_gap_out_of_both_parts():
     raw, t = _rows(np.full(10000, 50.0))
-    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 5.0, 5.0)
+    train_rows, calibration_rows = split_rows(raw, t, 0.10, 20.0, 5.0, 5.0, PERIOD)
     assert (~train_rows & ~calibration_rows).any()
     nearest = np.abs(t[train_rows][:, None] - t[calibration_rows][None, :]).min()
     assert nearest > 5.0

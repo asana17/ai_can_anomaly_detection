@@ -9,6 +9,8 @@ from dataclasses import dataclass
 class Settings:
     """Every value a run is made with, kept together so a run can record all of them."""
 
+    PERIOD: float = 0.1         # seconds between two rows on the grid
+    MAX_HOLD: float = 1.0       # seconds, the longest gap between frames a row spans
     MIN_SPEED: float = 5.0      # km/h, the speed a row has to exceed to be scored
     TRAIN: float = 0.75         # share of the seconds above MIN_SPEED before the test cut
     N_SPLITS: int = 4           # blocks the seconds above MIN_SPEED are cut into, by time

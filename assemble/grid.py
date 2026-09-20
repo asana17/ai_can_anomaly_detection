@@ -12,18 +12,15 @@ from preprocess.features.grid_sample import resample
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
 
-PERIOD = 0.1        # seconds between rows
-MAX_HOLD = 1.0      # seconds, the longest gap a row is built across
-
 
 def moving(raw: np.ndarray, min_speed: float) -> np.ndarray:
     """True where a row's wheel speed is above `min_speed`, read off physical values."""
     return raw[:, SIGNALS.index("wheel_speed")] > min_speed
 
 
-def starts_segment(previous, t: float) -> bool:
+def starts_segment(previous, t: float, period: float) -> bool:
     """True where a row begins a segment, at the first row or after a gap."""
-    return previous is None or t - previous > PERIOD * 1.5
+    return previous is None or t - previous > period * 1.5
 
 
 def to_arrays(rows, times, segments) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -35,14 +32,14 @@ def to_arrays(rows, times, segments) -> tuple[np.ndarray, np.ndarray, np.ndarray
     )
 
 
-def grid_rows(logs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def grid_rows(logs, period: float, max_hold: float):
     """Read every log into rows, one per tick, with their times and segment ids."""
     rows, times, segments = [], [], []
     segment = -1
     for path in logs:
         previous = None
-        for t, row in resample(load_can_log(path), PERIOD, MAX_HOLD):
-            if starts_segment(previous, t):
+        for t, row in resample(load_can_log(path), period, max_hold):
+            if starts_segment(previous, t, period):
                 segment += 1                # a new log, or the grid restarted
             rows.append(row)
             times.append(t)

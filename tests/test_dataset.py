@@ -11,7 +11,7 @@ from common.settings import Settings
 def test_seconds_for_measures_only_the_logs_it_lacks(tmp_path, monkeypatch):
     asked = []
 
-    def fake(logs, min_speed):
+    def fake(logs, *rest):
         asked.append(list(logs))
         return {p: 1.0 for p in logs}
 
@@ -24,15 +24,15 @@ def test_seconds_for_measures_only_the_logs_it_lacks(tmp_path, monkeypatch):
 def test_grid_for_reads_the_logs_only_when_they_change(tmp_path, monkeypatch):
     asked = []
 
-    def fake(logs):
+    def fake(logs, *rest):
         asked.append(list(logs))
         return (np.zeros((2, 3), np.float32), np.array([0.0, 0.1]),
                 np.zeros(2, np.int32))
 
     monkeypatch.setattr(dataset, "grid_rows", fake)
-    assert dataset.grid_for(["a"], str(tmp_path)) is False
-    assert dataset.grid_for(["a"], str(tmp_path)) is True
-    dataset.grid_for(["a", "b"], str(tmp_path))
+    assert dataset.grid_for(["a"], str(tmp_path), Settings()) is False
+    assert dataset.grid_for(["a"], str(tmp_path), Settings()) is True
+    dataset.grid_for(["a", "b"], str(tmp_path), Settings())
     assert asked == [["a"], ["a", "b"]]
 
 
@@ -45,7 +45,7 @@ def built(tmp_path, settings):
 def test_seconds_for_measures_again_at_another_min_speed(tmp_path, monkeypatch):
     asked = []
 
-    def fake(logs, min_speed):
+    def fake(logs, min_speed, period, max_hold):
         asked.append(min_speed)
         return {p: min_speed for p in logs}
 
@@ -56,9 +56,9 @@ def test_seconds_for_measures_again_at_another_min_speed(tmp_path, monkeypatch):
 
 
 def test_arrays_from_refuses_a_dataset_built_otherwise(tmp_path, monkeypatch):
-    monkeypatch.setattr(dataset, "grid_rows", lambda logs: (
+    monkeypatch.setattr(dataset, "grid_rows", lambda logs, *rest: (
         np.zeros((2, 3), np.float32), np.array([0.0, 0.1]), np.zeros(2, np.int32)))
-    dataset.grid_for(["a"], str(tmp_path))
+    dataset.grid_for(["a"], str(tmp_path), Settings())
     built(tmp_path, Settings(MIN_SPEED=5.0))
     with pytest.raises(ValueError):
         arrays_from(str(tmp_path), Settings(MIN_SPEED=8.0))
@@ -66,11 +66,11 @@ def test_arrays_from_refuses_a_dataset_built_otherwise(tmp_path, monkeypatch):
 
 def test_arrays_from_puts_the_rows_on_the_saved_scale(tmp_path, monkeypatch):
     raw = np.array([[10.0, 1.0], [20.0, 3.0]], np.float32)
-    monkeypatch.setattr(dataset, "grid_rows", lambda logs: (
+    monkeypatch.setattr(dataset, "grid_rows", lambda logs, *rest: (
         raw, np.array([0.0, 0.1]), np.zeros(2, np.int32)))
     monkeypatch.setattr("common.load_dataset.split_rows", lambda *args: (
         np.array([True, True]), np.array([False, False])))
-    dataset.grid_for(["a"], str(tmp_path))
+    dataset.grid_for(["a"], str(tmp_path), Settings())
     built(tmp_path, Settings())
     np.save(tmp_path / "scale.npy", np.array([[10.0, 1.0], [2.0, 1.0]], np.float32))
     assert (arrays_from(str(tmp_path), Settings())["rows"] == [[0, 0], [5, 2]]).all()
