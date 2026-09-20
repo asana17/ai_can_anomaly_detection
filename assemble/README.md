@@ -11,6 +11,8 @@ Documented under [docs/](docs).
 - [split](docs/split.md) counts each log's seconds above the minimum speed on the grid,
   cuts the logs into train and test by time on them, and uploads the cut.
 - [train_set](docs/train_set.md) cuts the training rows into train and calibration.
+- [injected_frames](docs/injected_frames.md) writes the attacked test logs frame by
+  frame, as Parquet.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
   says which rows each one changed.
 - [dataset](docs/dataset.md) runs all of these over the logs and writes the result

@@ -4,4 +4,5 @@ safetensors==0.7.0
 huggingface_hub==1.8.0
 onnx==1.16.2
 onnxruntime==1.19.2
+pyarrow==21.0.0
 pytest==8.4.2
