@@ -5,6 +5,7 @@ import pytest
 
 from assemble import split as split_stage
 from assemble.split import split
+from preprocess.features.signal_state import SIGNALS
 
 
 def test_the_last_fold_tests_on_the_last_block():
@@ -59,21 +60,44 @@ def test_split_gives_test_nothing_when_no_log_holds_a_scoreable_second():
     assert (train, test) == (logs, [])
 
 
-SECONDS = {f"part_1/{i:03d}.csv": 1.0 for i in range(8)}
+LOGS = [f"part_1/{i:03d}.csv" for i in range(8)]
 
 
-def test_the_stage_writes_the_fold_s_logs(tmp_path, hub):
-    hub.files = {"seconds/20260101-000000/seconds.json": SECONDS}
-    made = split_stage.main("u/d", "abc", "seconds/20260101-000000", str(tmp_path))
+def _grid(hub, rows_per_log=10):
+    """A grid of 8 logs, every row moving, `rows_per_log` rows each 100 ms apart."""
+    raw = np.zeros((len(LOGS) * rows_per_log, len(SIGNALS)), np.float32)
+    raw[:, SIGNALS.index("wheel_speed")] = 50.0
+    hub.files = {"grids/20260101-000000/logs.json": {"logs": LOGS,
+                                                     "rows": [rows_per_log] * len(LOGS)},
+                 "grids/20260101-000000/grid_raw.npy": raw,
+                 "grids/20260101-000000/grid_t.npy": np.arange(len(raw)) * 0.1}
+    return raw
+
+
+def test_the_stage_writes_the_fold_s_logs_and_seconds(tmp_path, hub):
+    _grid(hub)
+    made = split_stage.main("u/d", "abc", "grids/20260101-000000", str(tmp_path))
     got = json.loads((tmp_path / made["path"] / "split.json").read_text())
-    assert got["test"] == sorted(SECONDS)[6:]         # FOLD 3 of 4, the last quarter
+    assert got["test"] == LOGS[6:]                    # FOLD 3 of 4, the last quarter
+    assert got["test_start"] == 6.0 and got["test_end"] == 7.9
+    seconds = json.loads((tmp_path / made["path"] / "seconds.json").read_text())
+    assert seconds == {log: 1.0 for log in LOGS}      # 10 moving rows, 100 ms apart
     meta = json.loads((tmp_path / made["path"] / "meta.json").read_text())
-    assert meta["seconds"] == {"repo": "u/d", "revision": "abc",
-                               "path": "seconds/20260101-000000"}
+    assert meta["grid"] == {"repo": "u/d", "revision": "abc",
+                            "path": "grids/20260101-000000"}
 
 
-def test_the_stage_names_a_split_of_the_same_seconds(tmp_path, hub):
-    inputs = {"seconds": "seconds/20260101-000000", "n_splits": 4, "fold": 3}
+def test_the_stage_counts_only_the_moving_rows(tmp_path, hub):
+    raw = _grid(hub)
+    raw[::2, SIGNALS.index("wheel_speed")] = 0.0      # the truck stops every other row
+    made = split_stage.main("u/d", "abc", "grids/20260101-000000", str(tmp_path))
+    seconds = json.loads((tmp_path / made["path"] / "seconds.json").read_text())
+    assert seconds == {log: 0.5 for log in LOGS}
+
+
+def test_the_stage_names_a_split_of_the_same_grid(tmp_path, hub):
+    inputs = {"grid": "grids/20260101-000000", "min_speed": 5.0, "n_splits": 4,
+              "fold": 3}
     hub.files = {"splits/20260101-000000/meta.json": {"inputs": inputs}}
-    found = split_stage.main("u/d", "abc", "seconds/20260101-000000", str(tmp_path))
+    found = split_stage.main("u/d", "abc", "grids/20260101-000000", str(tmp_path))
     assert found["path"] == "splits/20260101-000000" and hub.uploaded == []

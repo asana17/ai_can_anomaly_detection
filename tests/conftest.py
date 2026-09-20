@@ -2,6 +2,7 @@ import fnmatch
 import json
 import os
 
+import numpy as np
 import pytest
 
 from common import hf_upload, hub_dirs
@@ -11,8 +12,8 @@ from common import hf_upload, hub_dirs
 def hub(monkeypatch):
     """Stands in for a Hugging Face repository, logged in.
 
-    `hub.files` maps a path in the repository to the JSON it holds. Uploads are kept in
-    `hub.uploaded`.
+    `hub.files` maps a path in the repository to the JSON it holds, or to the array a
+    `.npy` path holds. Uploads are kept in `hub.uploaded`.
     """
     class Hub:
         files = {}
@@ -34,8 +35,11 @@ def hub(monkeypatch):
     def fetch(name, local_dir):
         path = os.path.join(local_dir, name)
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f:
-            json.dump(Hub.files[name], f)
+        if name.endswith(".npy"):
+            np.save(path, Hub.files[name])
+        else:
+            with open(path, "w") as f:
+                json.dump(Hub.files[name], f)
         return path
 
     def hf_hub_download(repo, name, repo_type, revision, local_dir):

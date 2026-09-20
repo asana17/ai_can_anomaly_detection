@@ -8,8 +8,8 @@ Documented under [docs/](docs).
   period, max hold, segment rule and dtypes that attack_set follows too.
 - [scale](docs/scale.md) fits the mean and std from the rows given, and puts rows on
   them.
-- [split](docs/split.md) cuts the logs into train and test by time, sized by the
-  seconds above the minimum speed in them, and uploads the cut.
+- [split](docs/split.md) counts each log's seconds above the minimum speed on the grid,
+  cuts the logs into train and test by time on them, and uploads the cut.
 - [train_set](docs/train_set.md) cuts the training rows into train and calibration.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
   says which rows each one changed.
