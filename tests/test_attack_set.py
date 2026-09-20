@@ -4,7 +4,7 @@ import numpy as np
 
 from assemble.attack_set import grid_rows_injected
 from assemble.scale import Scale
-from assemble.train_set import grid_rows
+from assemble.grid import grid_rows
 from preprocess.features import signal_state
 
 SIGNALS = 17

@@ -1,10 +1,16 @@
-"""What both row builders have to agree on, so neither can pick its own."""
+"""Read logs into one row per tick of a fixed time grid, holding the last value.
+
+The frames of a log arrive at their own rates. A row every `PERIOD` seconds, each
+column the last value that signal carried, is what a model and a rule read instead.
+"""
 
 from __future__ import annotations
 
 import numpy as np
 
+from preprocess.features.grid_sample import resample
 from preprocess.features.signal_state import SIGNALS
+from preprocess.frames.can_log_loader import load_can_log
 
 PERIOD = 0.1        # seconds between rows
 MAX_HOLD = 1.0      # seconds, the longest gap a row is built across
@@ -27,3 +33,19 @@ def to_arrays(rows, times, segments) -> tuple[np.ndarray, np.ndarray, np.ndarray
         np.asarray(times, dtype=np.float64),    # epoch seconds need the precision
         np.asarray(segments, dtype=np.int32),
     )
+
+
+def grid_rows(logs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Read every log into rows, one per tick, with their times and segment ids."""
+    rows, times, segments = [], [], []
+    segment = -1
+    for path in logs:
+        previous = None
+        for t, row in resample(load_can_log(path), PERIOD, MAX_HOLD):
+            if starts_segment(previous, t):
+                segment += 1                # a new log, or the grid restarted
+            rows.append(row)
+            times.append(t)
+            segments.append(segment)
+            previous = t
+    return to_arrays(rows, times, segments)

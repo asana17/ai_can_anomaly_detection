@@ -1,7 +1,8 @@
 import numpy as np
 
-from assemble.grid import moving
-from assemble.train_set import apart_from_test, grid_rows, scale_for, split_rows
+from assemble.grid import grid_rows, moving
+from assemble.scale import scale_for
+from assemble.train_set import apart_from_test, split_rows
 from preprocess.features.signal_state import SIGNALS
 
 

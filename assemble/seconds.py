@@ -12,8 +12,7 @@ import json
 import os
 from typing import Iterable
 
-from assemble.grid import PERIOD, moving
-from assemble.train_set import grid_rows
+from assemble.grid import PERIOD, grid_rows, moving
 from common.hub_dirs import reuse_or_make
 from common.settings import Settings
 from preprocess.features.signal_state import SIGNALS

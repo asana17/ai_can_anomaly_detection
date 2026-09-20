@@ -1,11 +1,10 @@
 # train_set
 
-Takes the training logs and returns one row every 100 ms, each with 17 columns, one
-per decoded value, such as `engine_speed` and `wheel_speed`. The test rows come from
-[attack_set](attack_set.md).
+Cuts the rows of the training logs into train and calibration rows, and fits the scale
+on the train ones. The test rows come from [attack_set](attack_set.md).
 
 ```python
-raw, t, seg = grid_rows(train_logs)         # the train half, from split.md
+raw, t, seg = grid_rows(train_logs)         # the train half, from grid.md
 above = moving(raw, MIN_SPEED)              # from grid.md
 train_rows, calibration_rows = split_rows(raw, t, share, block, gap, min_speed)
 scale = scale_for(raw[train_rows & above])

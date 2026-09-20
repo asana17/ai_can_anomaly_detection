@@ -1,7 +1,10 @@
 # grid
 
-[train_set](train_set.md) and [attack_set](attack_set.md) each build rows. They have
-to use the same settings. The settings are here.
+The frames of a log arrive at their own rates, so they are read into one row every
+`PERIOD` seconds, each column holding the last value that signal carried.
+`grid_rows(logs)` does that for whole logs, returning `raw`, `t` and `seg`.
+[attack_set](attack_set.md) reads the frames it attacked the same way. Both follow the
+settings here.
 
 ## The grid
 
