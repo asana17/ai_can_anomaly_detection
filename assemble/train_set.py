@@ -7,7 +7,7 @@ import numpy as np
 from assemble.grid import moving
 
 
-def split_rows(raw, times, share: float, block: float, gap: float, min_speed: float,
+def split_rows(raw, times, *, share: float, block: float, gap: float, min_speed: float,
                period: float):
     """Split the training rows into train and calibration, as two masks over them.
 
@@ -15,7 +15,7 @@ def split_rows(raw, times, share: float, block: float, gap: float, min_speed: fl
     `share` of the seconds above `min_speed`, in windows of `block` seconds. Train is
     the rest, less the rows within `gap` seconds of a window, which are in neither.
     """
-    above = moving(raw, min_speed)
+    above = moving(raw, min_speed=min_speed)
     seconds = (np.cumsum(above) - above) * period   # above min_speed, before this row
     calibration_rows = above & (seconds % (block / share) < block)
     apart = _apart(times, np.sort(times[calibration_rows]), gap)

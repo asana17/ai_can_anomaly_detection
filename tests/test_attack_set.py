@@ -43,14 +43,14 @@ def _scale():
 
 def test_it_returns_a_row_for_every_grid_tick(tmp_path):
     d = grid_rows_injected([_write_log(tmp_path / "a.csv")], _scale(),
-                           random.Random(0), PERIOD, MAX_HOLD)
+                           random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     assert d["rows"].shape[1] == SIGNALS
     assert len(d["t"]) == len(d["seg"]) == len(d["label"]) == len(d["rows"])
 
 
 def test_the_label_marks_the_rows_an_attack_changed(tmp_path):
     d = grid_rows_injected([_write_log(tmp_path / "a.csv")], _scale(),
-                           random.Random(0), PERIOD, MAX_HOLD)
+                           random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     assert d["attacks"], "the log should be long enough to attack"
     for a in d["attacks"]:
         assert d["label"][a["first"]] and d["label"][a["last"]]
@@ -61,22 +61,22 @@ def test_the_label_marks_the_rows_an_attack_changed(tmp_path):
 
 def test_only_the_rows_that_differ_from_the_clean_log_are_labelled(tmp_path):
     log = _write_log(tmp_path / "a.csv")
-    d = grid_rows_injected([log], _scale(), random.Random(0), PERIOD, MAX_HOLD)
+    d = grid_rows_injected([log], _scale(), random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     # mean 0 and std 1 leave rows as they are
-    clean, _, _ = grid_rows([log], PERIOD, MAX_HOLD)
+    clean, _, _ = grid_rows([log], period=PERIOD, max_hold=MAX_HOLD)
     assert len(clean) == len(d["rows"])
     assert np.array_equal((clean != d["rows"]).any(axis=1), d["label"])
 
 
 def test_it_says_how_far_each_attack_moved_a_row(tmp_path):
     d = grid_rows_injected([_write_log(tmp_path / "a.csv")], _scale(),
-                           random.Random(0), PERIOD, MAX_HOLD)
+                           random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     assert all(a["moved"] > 0 for a in d["attacks"])
 
 
 def test_rows_outside_every_attack_are_not_labelled(tmp_path):
     d = grid_rows_injected([_write_log(tmp_path / "a.csv")], _scale(),
-                           random.Random(0), PERIOD, MAX_HOLD)
+                           random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     covered = np.zeros(len(d["label"]), dtype=bool)
     for a in d["attacks"]:
         covered[a["first"]:a["last"] + 1] = True
@@ -85,7 +85,7 @@ def test_rows_outside_every_attack_are_not_labelled(tmp_path):
 
 def test_a_log_too_short_to_attack_still_contributes_rows(tmp_path):
     d = grid_rows_injected([_write_log(tmp_path / "a.csv", seconds=5)], _scale(),
-                           random.Random(0), PERIOD, MAX_HOLD)
+                           random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     assert len(d["rows"]) > 0
     assert d["attacks"] == []
     assert not d["label"].any()
@@ -93,21 +93,21 @@ def test_a_log_too_short_to_attack_still_contributes_rows(tmp_path):
 
 def test_one_seed_gives_one_set(tmp_path):
     log = _write_log(tmp_path / "a.csv")
-    a = grid_rows_injected([log], _scale(), random.Random(3), PERIOD, MAX_HOLD)
-    b = grid_rows_injected([log], _scale(), random.Random(3), PERIOD, MAX_HOLD)
+    a = grid_rows_injected([log], _scale(), random.Random(3), period=PERIOD, max_hold=MAX_HOLD)
+    b = grid_rows_injected([log], _scale(), random.Random(3), period=PERIOD, max_hold=MAX_HOLD)
     assert a["attacks"] == b["attacks"]
     assert np.array_equal(a["label"], b["label"])
 
 
 def test_wheel_holds_the_speed_before_the_attack(tmp_path):
     log = _write_log(tmp_path / "a.csv")
-    d = grid_rows_injected([log], _scale(), random.Random(0), PERIOD, MAX_HOLD)
-    clean, _, _ = grid_rows([log], PERIOD, MAX_HOLD)
+    d = grid_rows_injected([log], _scale(), random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
+    clean, _, _ = grid_rows([log], period=PERIOD, max_hold=MAX_HOLD)
     assert np.array_equal(d["wheel"], clean[:, signal_state.SIGNALS.index("wheel_speed")])
 
 
 def test_raw_holds_the_rows_before_scaling(tmp_path):
     scale = Scale(np.full(SIGNALS, 3.0, np.float32), np.full(SIGNALS, 7.0, np.float32))
     d = grid_rows_injected([_write_log(tmp_path / "a.csv")], scale,
-                           random.Random(0), PERIOD, MAX_HOLD)
+                           random.Random(0), period=PERIOD, max_hold=MAX_HOLD)
     assert np.allclose(d["rows"], scale.apply(d["raw"]))

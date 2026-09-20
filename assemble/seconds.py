@@ -18,7 +18,7 @@ from common.settings import Settings
 from preprocess.features.signal_state import SIGNALS
 
 
-def seconds_above(logs: Iterable[str], min_speed: float, period: float,
+def seconds_above(logs: Iterable[str], *, min_speed: float, period: float,
                   max_hold: float) -> dict[str, float]:
     """How many seconds each log spends above `min_speed`, one number per log.
 
@@ -27,9 +27,9 @@ def seconds_above(logs: Iterable[str], min_speed: float, period: float,
     """
     seconds = {}
     for path in logs:
-        raw, _, _ = grid_rows([path], period, max_hold)
+        raw, _, _ = grid_rows([path], period=period, max_hold=max_hold)
         # a log with no row comes back 1-d
-        above = moving(raw.reshape(-1, len(SIGNALS)), min_speed)
+        above = moving(raw.reshape(-1, len(SIGNALS)), min_speed=min_speed)
         seconds[path] = float(above.sum()) * period
     return seconds
 
@@ -45,7 +45,8 @@ def logs_digest(data_dir, logs):
 def write_seconds(folder, data_dir, logs, settings):
     """Write `seconds.json`, each log's seconds above `MIN_SPEED`, keyed by `logs`."""
     measured = seconds_above([os.path.join(data_dir, p) for p in logs],
-                             settings.MIN_SPEED, settings.PERIOD, settings.MAX_HOLD)
+                             min_speed=settings.MIN_SPEED, period=settings.PERIOD,
+                             max_hold=settings.MAX_HOLD)
     with open(os.path.join(folder, "seconds.json"), "w") as f:
         json.dump({p: measured[os.path.join(data_dir, p)] for p in logs}, f)
 

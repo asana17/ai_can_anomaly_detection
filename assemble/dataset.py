@@ -44,8 +44,8 @@ def seconds_for(logs, out_dir, settings):
     kept = store["seconds"]
     missing = [p for p in logs if p not in kept]
     if missing:
-        kept.update(seconds_above(missing, settings.MIN_SPEED, settings.PERIOD,
-                                  settings.MAX_HOLD))
+        kept.update(seconds_above(missing, min_speed=settings.MIN_SPEED,
+                                  period=settings.PERIOD, max_hold=settings.MAX_HOLD))
         json.dump(store, open(path, "w"))
     return {p: kept[p] for p in logs}
 
@@ -63,8 +63,8 @@ def grid_for(train_logs, out_dir, settings):
     files = [f"grid_{n}.npy" for n in GRID]
     if _kept(out_dir, "grid.json", shape, files):
         return True
-    for name, array in zip(files, grid_rows(train_logs, settings.PERIOD,
-                                            settings.MAX_HOLD)):
+    for name, array in zip(files, grid_rows(train_logs, period=settings.PERIOD,
+                                            max_hold=settings.MAX_HOLD)):
         np.save(os.path.join(out_dir, name), array)
     json.dump(shape, open(os.path.join(out_dir, "grid.json"), "w"))
     return False
@@ -73,10 +73,11 @@ def grid_for(train_logs, out_dir, settings):
 def fit_scale(out_dir, settings):
     """Fit the scale on the train rows of the grid in `out_dir`, and write it there."""
     raw, times = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
-    train_rows, _ = split_rows(raw, times, settings.CALIBRATION, settings.BLOCK,
-                               settings.GAP, settings.MIN_SPEED, settings.PERIOD)
+    train_rows, _ = split_rows(raw, times, share=settings.CALIBRATION,
+                               block=settings.BLOCK, gap=settings.GAP,
+                               min_speed=settings.MIN_SPEED, period=settings.PERIOD)
     # the rows PCA is fitted on
-    scale = scale_for(raw[train_rows & moving(raw, settings.MIN_SPEED)])
+    scale = scale_for(raw[train_rows & moving(raw, min_speed=settings.MIN_SPEED)])
     np.save(os.path.join(out_dir, "scale.npy"), np.stack([scale.mean, scale.std]))
     return scale
 
@@ -89,7 +90,7 @@ def attacks_for(train_logs, test_logs, scale, out_dir, settings):
         return True
     donors = settings.DONORS
     got = grid_rows_injected(test_logs, scale, random.Random(settings.SEED),
-                             settings.PERIOD, settings.MAX_HOLD,
+                             period=settings.PERIOD, max_hold=settings.MAX_HOLD,
                              source_logs=train_logs[::max(len(train_logs) // donors, 1)]
                              [:donors])
     for name in ATTACKED:

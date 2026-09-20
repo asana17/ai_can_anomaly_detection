@@ -55,9 +55,10 @@ def arrays_from(out_dir, settings):
     # the split and the scale follow the settings the attack set was built with
     _logs(out_dir, "built.json", built_with(settings))
     raw, times, segments = (np.load(os.path.join(out_dir, f"grid_{n}.npy")) for n in GRID)
-    train_rows, calibration_rows = split_rows(raw, times, settings.CALIBRATION,
-                                              settings.BLOCK, settings.GAP,
-                                              settings.MIN_SPEED, settings.PERIOD)
+    train_rows, calibration_rows = split_rows(raw, times, share=settings.CALIBRATION,
+                                              block=settings.BLOCK, gap=settings.GAP,
+                                              min_speed=settings.MIN_SPEED,
+                                              period=settings.PERIOD)
     scale = Scale(*np.load(os.path.join(out_dir, "scale.npy")))
     data = {"scale": scale,
             "rows": scale.apply(raw[train_rows]), "raw": raw[train_rows],

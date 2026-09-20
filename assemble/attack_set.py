@@ -28,7 +28,7 @@ def inject_frames(logs, rng: random.Random, source_logs=None):
         yield path, frames, hurt, span
 
 
-def grid_rows_injected(logs, scale, rng: random.Random, period: float,
+def grid_rows_injected(logs, scale, rng: random.Random, *, period: float,
                        max_hold: float, source_logs=None) -> dict:
     """Inject one attack into each log, and put the result on train's `scale`.
 
@@ -45,7 +45,7 @@ def grid_rows_injected(logs, scale, rng: random.Random, period: float,
         first = len(rows)
         previous = None
         for t, row in resample(hurt, period, max_hold):
-            if starts_segment(previous, t, period):
+            if starts_segment(previous, t, period=period):
                 segment += 1
             rows.append(row)
             times.append(t)

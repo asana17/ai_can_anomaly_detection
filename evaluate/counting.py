@@ -70,7 +70,7 @@ def period_of(times):
 def training_rows(data, scale, settings):
     """The moving training rows, and the calibration rows with no instant rule on them."""
     def above(rows):
-        return moving(scale.undo(rows), settings.MIN_SPEED)
+        return moving(scale.undo(rows), min_speed=settings.MIN_SPEED)
 
     clean = ~rule_hits(data["calibration_raw"], settings)
     return (data["rows"][above(data["rows"])],
@@ -79,7 +79,7 @@ def training_rows(data, scale, settings):
 
 def scored_set(got, scale, settings):
     """The attacked rows, what a detector reads in them, and what an alarm is counted in."""
-    mv = moving(scale.undo(got["rows"]), settings.MIN_SPEED)
+    mv = moving(scale.undo(got["rows"]), min_speed=settings.MIN_SPEED)
     truth = got["wheel"] > settings.MIN_SPEED   # what is scored, the speed before it
     quiet = truth & ~got["label"]
     moved = np.array([a["moved"] for a in got["attacks"]])
