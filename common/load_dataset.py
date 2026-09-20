@@ -14,7 +14,7 @@ from huggingface_hub import HfApi, snapshot_download
 
 from assemble.grid import MAX_HOLD, PERIOD
 from assemble.scale import Scale
-from assemble.split import split_rows
+from assemble.train_set import split_rows
 from preprocess.features.signal_state import SIGNALS
 
 GRID = ("raw", "t", "seg")

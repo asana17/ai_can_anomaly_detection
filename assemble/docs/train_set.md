@@ -5,9 +5,10 @@ per decoded value, such as `engine_speed` and `wheel_speed`. The test rows come 
 [attack_set](attack_set.md).
 
 ```python
-raw, t, seg = grid_rows(train_logs)     # the train half, from split.md
+raw, t, seg = grid_rows(train_logs)         # the train half, from split.md
 above = moving(raw, MIN_SPEED)              # from grid.md
-scale = scale_for(raw[train_rows & above])   # train_rows from split_rows, in split.md
+train_rows, calibration_rows = split_rows(raw, t, share, block, gap, min_speed)
+scale = scale_for(raw[train_rows & above])
 rows = scale.apply(raw[train_rows])
 ```
 
@@ -32,3 +33,24 @@ The mean and std are taken only over the rows [evaluate](../../evaluate) scores,
 because those are the rows PCA is fitted on. Stopped rows spread some signals far
 wider than moving ones do, such as `clutch_slip` and `input_shaft_speed`. With them in
 the std, those signals would count for less in the residual than the others.
+
+## The calibration set
+
+The rows that set the threshold must be ones the model never saw. A model with enough
+capacity fits its own training rows, so residuals on those come out smaller than on rows
+it has not seen, and a threshold read off them would sit too low.
+
+| argument | what it decides |
+|---|---|
+| `share` | how much of the seconds above `min_speed` calibrates |
+| `block` | how long one calibration window is |
+| `gap` | the seconds either side of a window that go to neither part |
+
+An event such as hard braking runs for seconds, long enough to cross the edge of a
+window and land on both sides of the split. That is what `gap` is for.
+
+## The gap around the test block
+
+An event can cross the edge of the test block as it crosses a calibration window.
+`apart_from_test(times, start, end, gap)` drops the train rows within `gap` of the test
+block, `start` and `end` being its first and last frame times.

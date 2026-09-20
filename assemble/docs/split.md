@@ -1,16 +1,14 @@
 # split
 
-`split` cuts the logs into train and test. `split_rows` cuts the training rows into
-train and calibration rows.
+`split` cuts the logs into train and test. The training rows are cut into train and
+calibration rows by [train_set](train_set.md).
 
 ## Example
 
 ```python
 seconds = seconds_above(logs, min_speed)      # from seconds.md
-train_logs, test_logs = split(seconds, n_splits, fold)   # block `fold` of `n_splits` is test
-
-raw, t, seg = grid_rows(train_logs)             # from train_set.md
-train_rows, calibration_rows = split_rows(raw, t, share, block, gap, min_speed)
+# the logs are cut into n_splits blocks by time, and block number fold becomes test
+train_logs, test_logs = split(seconds, n_splits, fold)
 ```
 
 ## Running it
@@ -47,23 +45,3 @@ So the cut is made on the seconds above `min_speed`. [seconds](seconds.md) count
 one log at a time, giving 0 for a log the truck sat still through and the log's whole
 length for one it drove right through.
 
-## The calibration set
-
-The rows that set the threshold must be ones the model never saw. A model with enough
-capacity fits its own training rows, so residuals on those come out smaller than on rows
-it has not seen, and a threshold read off them would sit too low.
-
-| argument | what it decides |
-|---|---|
-| `share` | how much of the seconds above `min_speed` calibrates |
-| `block` | how long one calibration window is |
-| `gap` | the seconds either side of a window that go to neither part |
-
-An event such as hard braking runs for seconds, long enough to cross the edge of a
-window and land on both sides of the split. That is what `gap` is for.
-
-## The gap around the test block
-
-An event can cross the edge of the test block as it crosses a calibration window.
-`apart_from_test(times, start, end, gap)` drops the train rows within `gap` of the test
-block, `start` and `end` being its first and last frame times.
