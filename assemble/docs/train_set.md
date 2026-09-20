@@ -1,62 +1,56 @@
 # train_set
 
-Cuts the rows of the training logs into train and calibration rows, and fits the scale
-on the train ones. The test rows come from [attack_set](attack_set.md).
+[split](split.md) cuts the logs into train and test. This cuts the train logs' rows
+again, into the rows a model is fitted on and the rows its threshold is read off, and
+fits the [scale](scale.md) on the first of the two. Some rows fall into neither. It
+writes only which rows those are, the rows stay in the [grid](grid.md). The test logs
+are [attack_set](attack_set.md)'s.
 
 ```python
-raw, t, seg = grid_rows(train_logs)         # the train half, from grid.md
-above = moving(raw, MIN_SPEED)              # from grid.md
-train_rows, calibration_rows = split_rows(raw, t, share, block, gap, min_speed)
-scale = scale_for(raw[train_rows & above])
+training = rows_of_logs(logs, counts, train_logs)   # logs and counts from grid.md
+train_rows, calibration_rows = split_rows(raw[training], t[training], share=share,
+                                          block=block, gap=gap, min_speed=min_speed,
+                                          period=period)
+scale = scale_for(raw[train_rows & moving(raw, min_speed=min_speed)])
 rows = scale.apply(raw[train_rows])
 ```
 
 ## Running it
 
 ```
-python3 -m assemble.train_set repo revision splits/<time> data_dir local_dir [--rebuild]
+python3 -m assemble.train_set repo revision splits/<time> local_dir [--rebuild]
 ```
 
 | argument | |
 |---|---|
 | `repo` | Hugging Face dataset repo holding `splits/<time>/` and uploaded to, needs `hf auth login` |
 | `revision` | commit of `repo` to read `splits/<time>/` at, as [split](split.md) printed it |
-| `splits/<time>` | the [split](split.md) directory whose train logs are read |
-| `data_dir` | local folder holding the CAN frame logs the split names |
+| `splits/<time>` | the [split](split.md) directory whose train logs are taken. The grid it names is read too |
 | `local_dir` | local folder `train_sets/<time>/` is written to, kept after the upload |
-| `--rebuild` | build even if `repo` already has `train_sets/<time>/` for the same split and settings |
+| `--rebuild` | build even if `repo` already has `train_sets/<time>/` for the same split, `CALIBRATION`, `BLOCK` and `GAP` |
+
+`MIN_SPEED` comes from the split's `meta.json` and `PERIOD` from the grid's, so the
+stages all use the one value.
 
 It writes these files into `local_dir/train_sets/<time>/` and uploads that directory to
 `repo` as `train_sets/<time>/`.
 
 | file | holds |
 |---|---|
-| `grid_{raw,t,seg}.npy` | the train logs read into rows, their times and segment ids |
-| `train_rows.npy`, `calibration_rows.npy` | one True per row in that part, False in both for a row in neither |
+| `train_rows.npy`, `calibration_rows.npy` | a True or False for every row of the grid, True where the row trains or calibrates. A row in neither is False in both, as is every test row |
 | `scale.npy` | the mean and std, fitted on the moving train rows |
-| `meta.json` | `inputs` (`splits/<time>`, `MIN_SPEED`, `CALIBRATION`, `BLOCK`, `GAP`), `split` (repo, revision, path), commit, uncommitted files, start, end |
+| `meta.json` | `inputs` (`splits/<time>`, `CALIBRATION`, `BLOCK`, `GAP`), `split` and `grid` (repo, revision, path), commit, uncommitted files, start, end |
 
-| name | what it holds |
-|---|---|
-| `raw` | the rows before scaling |
-| `t` | the time of each row, in epoch seconds |
-| `seg` | which unbroken run of rows it belongs to |
-| `scale` | the mean and std that turn `raw` into `rows`, see [scale](scale.md) |
-
-`raw` keeps every column in its own unit, for example `engine_speed` in rpm and
-`wheel_speed` in km/h. That is what the rules read, since a rule is written in those
-units. `rows` is what a model reads. A run of rows is unbroken while each one is
-100 ms after the one before, which [grid](grid.md) sets out.
-
-## Stopped rows are kept
-
-Many rows are stopped or idling. They stay in `rows`, since dropping them would break
-the segments [grid](grid.md) describes.
+## The scale is fitted on the moving train rows
 
 The mean and std are taken only over the rows [evaluate](../../evaluate) scores,
 because those are the rows PCA is fitted on. Stopped rows spread some signals far
 wider than moving ones do, such as `clutch_slip` and `input_shaft_speed`. With them in
 the std, those signals would count for less in the residual than the others.
+
+The grid keeps stopped rows. `HOLD` in [evaluate](../../evaluate) counts rows that are
+next to each other in a `seg`, and two rows are only next to each other when they are
+`period` apart. Dropping a stopped row would put two rows side by side that are not.
 
 ## The calibration set
 

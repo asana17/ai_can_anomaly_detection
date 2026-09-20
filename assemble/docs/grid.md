@@ -28,6 +28,23 @@ It writes these files into `local_dir/grids/<time>/` and uploads that directory 
 | `logs.json` | the logs in the order they were read, and how many rows each contributed |
 | `meta.json` | `inputs` (one SHA-256 over the logs' paths and sizes, their count, `PERIOD`, `MAX_HOLD`), commit, uncommitted files, start, end |
 
+## What the rows hold
+
+`grid_rows` returns three arrays of the same length, one entry per row.
+
+| name | shape | holds |
+|---|---|---|
+| `raw` | rows x 17 | each signal's last value at that tick, in the unit it is decoded to, `engine_speed` in rpm and `wheel_speed` in km/h |
+| `t` | rows | the tick's time, in epoch seconds |
+| `seg` | rows | a number shared by the rows that follow each other `period` apart. It goes up at a new log and after a gap longer than `max_hold` |
+
+The rules read `raw`, since a rule is written in those units. A model reads the rows on
+the [scale](scale.md) instead. [evaluate](../../evaluate) reads `seg` to count rows
+that follow each other.
+
+`rows_of_logs(logs, counts, chosen)` reads `logs.json` back, returning True for each row
+that came from one of `chosen`.
+
 ## The settings
 
 | argument | what it decides |

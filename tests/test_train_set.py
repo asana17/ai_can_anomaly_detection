@@ -164,37 +164,56 @@ def test_rows_within_the_gap_of_the_test_block_are_dropped():
     assert kept.tolist() == [True, True, False, False, False, True]
 
 
-def _split_stage(tmp_path, hub, monkeypatch, speeds):
-    """A train_set built from one train log of `speeds`, with the hub and logs faked."""
-    hub.files = {"splits/20260101-000000/split.json": {"train": ["a.csv"],
-                                                       "test": ["b.csv"]}}
+LOGS = ["part_1/a.csv", "part_1/b.csv"]
+
+
+def _grid_and_split(hub, speeds, test_start, test_end):
+    """A grid of two logs carrying `speeds`, split with the first log as train."""
     raw, t = _rows(speeds)
-    monkeypatch.setattr(train_set, "grid_rows",
-                        lambda logs, **rest: (raw, t, np.zeros(len(t), np.int32)))
-    monkeypatch.setattr(train_set, "span_of_logs", lambda logs: (500.0, 501.0))
-    return train_set.main("u/d", "abc", "splits/20260101-000000", "data", str(tmp_path))
+    half = len(t) // 2
+    hub.files = {
+        "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1, "max_hold": 1.0}},
+        "grids/20260101-000000/logs.json": {"logs": LOGS, "rows": [half, len(t) - half]},
+        "grids/20260101-000000/grid_raw.npy": raw,
+        "grids/20260101-000000/grid_t.npy": t,
+        "splits/20260101-000000/meta.json": {
+            "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
+            "grid": {"repo": "u/d", "revision": "abc", "path": "grids/20260101-000000"}},
+        "splits/20260101-000000/split.json": {
+            "train": LOGS[:1], "test": LOGS[1:],
+            "test_start": test_start, "test_end": test_end}}
+    return raw, t, half
 
 
-def test_the_stage_writes_the_grid_the_masks_and_the_scale(tmp_path, hub, monkeypatch):
-    made = _split_stage(tmp_path, hub, monkeypatch, np.full(10000, 50.0))
+def test_the_stage_writes_which_rows_train_and_calibrate_and_the_scale(tmp_path, hub):
+    raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 600.0, 999.9)
+    made = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
     folder = tmp_path / made["path"]
     train_rows = np.load(folder / "train_rows.npy")
     calibration_rows = np.load(folder / "calibration_rows.npy")
-    assert np.load(folder / "grid_raw.npy").shape == (10000, len(SIGNALS))
+    assert len(train_rows) == len(raw)
+    assert not train_rows[half:].any() and not calibration_rows[half:].any()
     assert train_rows.any() and calibration_rows.any()
     assert not (train_rows & calibration_rows).any()
     assert np.load(folder / "scale.npy").shape == (2, len(SIGNALS))
     meta = json.loads((folder / "meta.json").read_text())
     assert meta["split"]["path"] == "splits/20260101-000000"
+    assert meta["grid"]["path"] == "grids/20260101-000000"
 
 
-def test_the_stage_keeps_the_rows_near_the_test_block_out_of_both(tmp_path, hub,
-                                                                  monkeypatch):
-    speeds = np.full(10000, 50.0)
-    made = _split_stage(tmp_path, hub, monkeypatch, speeds)
+def test_the_stage_keeps_the_rows_near_the_test_block_out_of_both(tmp_path, hub):
+    raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 500.0, 999.9)
+    made = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
     folder = tmp_path / made["path"]
     kept = (np.load(folder / "train_rows.npy")
             | np.load(folder / "calibration_rows.npy"))
-    t = _rows(speeds)[1]
-    near = (t > 495.0) & (t < 506.0)            # the test block is 500 to 501, GAP is 5
-    assert near.sum() > 100 and not kept[near].any() and kept[t < 490.0].any()
+    near = (t > 495.0) & (t < 500.0)            # the test block starts at 500, GAP is 5
+    assert near.sum() > 10 and not kept[near].any() and kept[t < 490.0].any()
+
+
+def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
+    inputs = {"split": "splits/20260101-000000", "calibration": 0.10, "block": 20.0,
+              "gap": 5.0}
+    hub.files = {"train_sets/20260101-000000/meta.json": {"inputs": inputs}}
+    found = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
+    assert found["path"] == "train_sets/20260101-000000" and hub.uploaded == []

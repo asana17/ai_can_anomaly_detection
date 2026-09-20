@@ -1,6 +1,6 @@
 """Cut the training rows into train and calibration rows, and fit the scale on them.
 
-    python3 -m assemble.train_set repo revision splits/<time> data_dir local_dir [--rebuild]
+    python3 -m assemble.train_set repo revision splits/<time> local_dir [--rebuild]
 """
 
 from __future__ import annotations
@@ -11,16 +11,15 @@ import os
 
 import numpy as np
 
-from assemble.grid import grid_rows, moving
+from assemble.grid import moving, rows_of_logs
 from assemble.scale import scale_for
-from common.hub_dirs import download, reuse_or_make
+from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from preprocess.frames.can_log_loader import load_can_log
 
 
 def split_rows(raw, times, *, share: float, block: float, gap: float, min_speed: float,
                period: float):
-    """Split the training rows into train and calibration, as two masks over them.
+    """Split the training rows into train and calibration, as a True per row for each.
 
     The rows that set a threshold must be ones the model never saw. Calibration takes
     `share` of the seconds above `min_speed`, in windows of `block` seconds. Train is
@@ -55,57 +54,67 @@ def _apart(times, windows, gap: float):
     return np.minimum(np.abs(times - before), np.abs(times - after)) > gap
 
 
-def span_of_logs(logs):
-    """The first and last frame times of `logs`, read off the first and last of them."""
-    first = next(iter(load_can_log(logs[0]))).timestamp
-    last = max(f.timestamp for f in load_can_log(logs[-1]))
-    return first, last
+def widen_to_grid(training, among_training):
+    """A True per training row, widened to a True per row of the whole grid.
+
+    `training` is True for each row of the grid that is a training row, and
+    `among_training` holds one value per training row. Every other row comes back False.
+    """
+    widened = np.zeros(len(training), bool)
+    widened[training] = among_training
+    return widened
 
 
-def write_train_set(folder, repo, revision, split_path, data_dir, local_dir, settings):
-    """Write the grid, the two masks and the scale, and return the split for meta.json."""
-    got = download(repo, split_path, local_dir, repo_type="dataset", revision=revision)
-    logs = json.load(open(os.path.join(got, "split.json")))
-    under = {part: [os.path.join(data_dir, p) for p in logs[part]]
-             for part in ("train", "test")}
-    raw, times, segments = grid_rows(under["train"], period=settings.PERIOD,
-                                     max_hold=settings.MAX_HOLD)
-    train_rows, calibration_rows = split_rows(raw, times, share=settings.CALIBRATION,
+def write_train_set(folder, repo, revision, split_path, local_dir, settings):
+    """Write which rows train and calibrate, and the scale, and return the split."""
+    split_dir, split_meta = read_dir(repo, split_path, local_dir, revision,
+                                     repo_type="dataset")
+    grid = split_meta["grid"]
+    grid_dir, grid_meta = read_dir(grid["repo"], grid["path"], local_dir,
+                                   grid["revision"], repo_type="dataset")
+    min_speed = split_meta["inputs"]["min_speed"]
+    period = grid_meta["inputs"]["period"]
+
+    cut = json.load(open(os.path.join(split_dir, "split.json")))
+    kept = json.load(open(os.path.join(grid_dir, "logs.json")))
+    raw, times = (np.load(os.path.join(grid_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
+    training = rows_of_logs(kept["logs"], kept["rows"], cut["train"])
+
+    # the windows are cut on the training rows alone, so the test block never phases them
+    train_part, calibration_part = split_rows(raw[training], times[training],
+                                              share=settings.CALIBRATION,
                                               block=settings.BLOCK, gap=settings.GAP,
-                                              min_speed=settings.MIN_SPEED,
-                                              period=settings.PERIOD)
-    apart = apart_from_test(times, *span_of_logs(under["test"]), gap=settings.GAP)
-    train_rows, calibration_rows = train_rows & apart, calibration_rows & apart
-    scale = scale_for(raw[train_rows & moving(raw, min_speed=settings.MIN_SPEED)])
-    print(f"{len(raw)} rows from {len(logs['train'])} logs, "
+                                              min_speed=min_speed, period=period)
+    apart = apart_from_test(times[training], cut["test_start"], cut["test_end"],
+                            gap=settings.GAP)
+    train_rows = widen_to_grid(training, train_part & apart)
+    calibration_rows = widen_to_grid(training, calibration_part & apart)
+    scale = scale_for(raw[train_rows & moving(raw, min_speed=min_speed)])
+    print(f"{int(training.sum())} rows from {len(cut['train'])} logs, "
           f"{int(train_rows.sum())} train and {int(calibration_rows.sum())} "
           f"calibration", flush=True)
 
-    for name, array in zip(("raw", "t", "seg"), (raw, times, segments)):
-        np.save(os.path.join(folder, f"grid_{name}.npy"), array)
     np.save(os.path.join(folder, "train_rows.npy"), train_rows)
     np.save(os.path.join(folder, "calibration_rows.npy"), calibration_rows)
     np.save(os.path.join(folder, "scale.npy"), np.stack([scale.mean, scale.std]))
-    return {"split": {"repo": repo, "revision": revision, "path": split_path}}
+    return {"split": {"repo": repo, "revision": revision, "path": split_path},
+            "grid": grid}
 
 
-def main(repo, revision, split_path, data_dir, local_dir, rebuild=False):
+def main(repo, revision, split_path, local_dir, rebuild=False):
     settings = Settings()
-    inputs = {"split": split_path, "min_speed": settings.MIN_SPEED,
-              "calibration": settings.CALIBRATION, "block": settings.BLOCK,
-              "gap": settings.GAP}
+    inputs = {"split": split_path, "calibration": settings.CALIBRATION,
+              "block": settings.BLOCK, "gap": settings.GAP}
     return reuse_or_make(repo, "train_sets", inputs, local_dir,
                          lambda folder: write_train_set(folder, repo, revision,
-                                                        split_path, data_dir, local_dir,
-                                                        settings),
+                                                        split_path, local_dir, settings),
                          rebuild, repo_type="dataset")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    for name in ("repo", "revision", "split_path", "data_dir", "local_dir"):
+    for name in ("repo", "revision", "split_path", "local_dir"):
         parser.add_argument(name)
     parser.add_argument("--rebuild", action="store_true")
     args = parser.parse_args()
-    main(args.repo, args.revision, args.split_path, args.data_dir, args.local_dir,
-         args.rebuild)
+    main(args.repo, args.revision, args.split_path, args.local_dir, args.rebuild)

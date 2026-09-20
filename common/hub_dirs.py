@@ -24,6 +24,13 @@ def download(repo, path, local_dir, repo_type="model", revision=None):
     return os.path.join(local_dir, path)
 
 
+def read_dir(repo, path, local_dir, revision, repo_type="model"):
+    """Directory `path` of `repo` at `revision`, as its folder and its `meta.json`."""
+    folder = download(repo, path, local_dir, repo_type=repo_type, revision=revision)
+    with open(os.path.join(folder, "meta.json")) as f:
+        return folder, json.load(f)
+
+
 def find(repo, kind, inputs, local_dir, repo_type="model"):
     """The directory under `kind/` whose `meta.json` holds `inputs`, or None.
 

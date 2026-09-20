@@ -72,6 +72,21 @@ def _laid_out(logs_rows, *, period: float):
     return to_arrays(rows, times, segments), counts
 
 
+def rows_of_logs(logs, counts, chosen):
+    """True for each row of the grid that came from one of `chosen`, some of `logs`.
+
+    `logs` and `counts` are what a grid's `logs.json` holds, the logs in the order they
+    were read and how many rows each contributed.
+    """
+    ends = np.cumsum(counts)
+    chosen = set(chosen)
+    from_chosen = np.zeros(int(ends[-1]), bool)
+    for log, count, end in zip(logs, counts, ends):
+        if log in chosen:
+            from_chosen[end - count:end] = True
+    return from_chosen
+
+
 def logs_digest(data_dir, logs):
     """One SHA-256 over each log's path under `data_dir` and its size in bytes."""
     digest = hashlib.sha256()
