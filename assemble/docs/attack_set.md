@@ -21,27 +21,35 @@ really produces, and no detector should be asked to flag it.
 ## Building the rows
 
 ```python
-grid_rows_injected(logs, scale, rng, source_logs)
-# -> {rows, raw, t, seg, label, wheel, attacks}
+grid_rows_injected(inject_frames(logs, rng, source_logs), rows_before_attack,
+                   period=period, max_hold=max_hold)
+# -> {raw, t, seg, label, wheel, attacks}
 ```
 
-`scale` is the one [train_set](train_set.md) fitted on the training rows. See
-[scale](scale.md).
+It takes what `inject_frames` yields rather than drawing the attacks itself, so the
+frames can go somewhere else on the way. `rows_before_attack(log)` gives that log's
+rows by time as they were before the attack, which a [grid](grid.md) holds already. It
+raises on a log whose rows line up with none of them, which is what a grid built on
+another `period` looks like.
+
+`attacked_log` does one log and `grid_rows_injected` lays the logs end to end, moving
+each attack's rows and each log's segment ids along as it goes.
 
 | key | what it holds |
 |---|---|
-| `rows` | the rows on `scale` |
-| `raw` | the same rows before scaling |
+| `raw` | the rows, in the units they are decoded to |
 | `t` | the time of each row |
 | `seg` | the segment each row belongs to, numbered as [grid](grid.md) describes |
 | `label` | True where the row differs from the same row before the attack |
 | `wheel` | the wheel speed before the attack |
-| `attacks` | what was faked, the first and last row it reaches, and `moved` |
+| `attacks` | what was faked, its log, and the first and last row it reaches |
 
 `label` is never True across the whole attack window, only where a row changed.
-`moved` is the furthest the attack pushed any row in z units.
-[evaluate](../../evaluate) scores only attacks with `moved` of at least 1, so one
-that changed nothing is not counted as a miss.
+
+Putting the rows on the [scale](scale.md) is for whoever scores them, as is measuring
+how far an attack moved a row in those units. [evaluate](../../evaluate) scores only
+the attacks that moved one by at least `MOVED`, so an attack that changed nothing a
+model could see is not counted as a miss.
 
 [evaluate](../../evaluate) uses `wheel` to decide whether a row is scored. So an attack
 that fakes a stop still leaves the scored rows the same as with no attack.

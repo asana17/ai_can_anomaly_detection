@@ -28,45 +28,69 @@ def inject_frames(logs, rng: random.Random, source_logs=None):
         yield path, frames, hurt, span
 
 
-def grid_rows_injected(logs, scale, rng: random.Random, *, period: float,
-                       max_hold: float, source_logs=None) -> dict:
-    """Inject one attack into each log, and put the result on train's `scale`.
+def attacked_log(hurt, span, before, *, period: float, max_hold: float):
+    """One attacked log on the grid, and the attack in it, or None.
 
-    Every file contributes its rows whether or not an attack landed, so the set holds
-    normal traffic to measure false alarms against. `attacks` says where each one
-    sits, as the first and last row it covers, and how far it moved one.
-    `source_logs` go to `inject_frames`.
+    `before` is the log's rows by time before the attack, empty when none landed.
+
+    | key | holds |
+    | `raw`, `t`, `seg` | the rows, their times, segment ids counting from 0 |
+    | `label` | True where the attack changed the row |
+    | `wheel` | the wheel speed before the attack |
+
+    The attack is `span` with `first` and `last` added, in this log's rows.
     """
-    rows, times, segments, labels, wheels, attacks = [], [], [], [], [], []
-    segment = -1
-    wheel = SIGNALS.index("wheel_speed")
-    for _, frames, hurt, span in inject_frames(logs, rng, source_logs):
-        clean = dict(resample(frames, period, max_hold)) if span else {}
-        first = len(rows)
-        previous = None
-        for t, row in resample(hurt, period, max_hold):
-            if starts_segment(previous, t, period=period):
-                segment += 1
-            rows.append(row)
-            times.append(t)
-            segments.append(segment)
-            labels.append(t in clean and row != clean[t])
-            wheels.append(clean[t][wheel] if t in clean else row[wheel])
-            previous = t
-        covered = [i for i in range(first, len(rows)) if labels[i]]
-        if span and covered:
-            moved = max(np.linalg.norm((np.asarray(rows[i]) - clean[times[i]]) / scale.std)
-                        for i in covered)
-            attacks.append(dict(span, first=covered[0], last=covered[-1],
-                                moved=float(moved)))
+    ticks = list(resample(hurt, period, max_hold))
+    times = np.asarray([t for t, _ in ticks], np.float64)
+    rows = np.asarray([row for _, row in ticks], np.float32)
+    seg = np.cumsum(np.concatenate([[0], np.diff(times) > period * 1.5]))
 
-    rows, times, segments = to_arrays(rows, times, segments)
-    return {
-        "rows": scale.apply(rows),
-        "raw": rows,
-        "t": times,
-        "seg": segments,
-        "label": np.asarray(labels, dtype=bool),
-        "wheel": np.asarray(wheels, dtype=np.float32),
-        "attacks": attacks,
-    }
+    known = np.array([t in before for t in times], bool)
+    if span is not None and not known.any():
+        raise ValueError("no row lines up with the rows before the attack, which are "
+                         "on another grid")
+    # a grid holds float32, so the rows it did not hold are cast to match the ones it did
+    clean = np.asarray([before[t] if seen else row
+                        for t, seen, row in zip(times, known, rows)], np.float32)
+    label = known & (rows != clean).any(axis=1)
+
+    one = {"raw": rows, "t": times, "seg": seg.astype(np.int32), "label": label,
+           "wheel": clean[:, SIGNALS.index("wheel_speed")]}
+    covered = np.flatnonzero(label)
+    if span is None or not len(covered):
+        return one, None
+    return one, dict(span, first=int(covered[0]), last=int(covered[-1]))
+
+
+def _starts(sizes):
+    """Where each part begins once the parts are laid end to end."""
+    return np.concatenate([[0], np.cumsum(sizes)[:-1]]).astype(int)
+
+
+def grid_rows_injected(injected, rows_before_attack, *, period: float,
+                       max_hold: float):
+    """Every log of `injected` on the grid, laid end to end.
+
+    A log with no attack contributes its rows too. `rows_before_attack(log)` gives a
+    log's rows by time before the attack. Each attack gets its `log`, and its `first`
+    and `last` count over all the rows here.
+    """
+    parts, found = [], []
+    for path, _, hurt, span in injected:
+        before = rows_before_attack(path) if span is not None else {}
+        one, attack = attacked_log(hurt, span, before, period=period,
+                                   max_hold=max_hold)
+        if not len(one["t"]):
+            continue
+        parts.append(one)
+        found.append(None if attack is None else dict(attack, log=path))
+
+    rows_at = _starts([len(one["t"]) for one in parts])
+    segments_at = _starts([int(one["seg"][-1]) + 1 for one in parts])
+    joined = {name: np.concatenate([one[name] for one in parts])
+              for name in ("raw", "t", "label", "wheel")}
+    joined["seg"] = np.concatenate([one["seg"] + at
+                                    for one, at in zip(parts, segments_at)])
+    attacks = [dict(attack, first=attack["first"] + at, last=attack["last"] + at)
+               for attack, at in zip(found, rows_at) if attack is not None]
+    return {"attacks": attacks, **joined}

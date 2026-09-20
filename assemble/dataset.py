@@ -18,7 +18,7 @@ import time
 import numpy as np
 from huggingface_hub import HfApi
 
-from assemble.attack_set import grid_rows_injected
+from assemble.attack_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows, moving
 from assemble.scale import scale_for
 from assemble.split import split
@@ -100,10 +100,26 @@ def attacks_for(train_logs, test_logs, scale, out_dir, settings):
     if _kept(out_dir, "built.json", shape, files):
         return True
     donors = settings.DONORS
-    got = grid_rows_injected(test_logs, scale, random.Random(settings.SEED),
-                             period=settings.PERIOD, max_hold=settings.MAX_HOLD,
-                             source_logs=train_logs[::max(len(train_logs) // donors, 1)]
-                             [:donors])
+
+    def rows_before_attack(log):
+        """The log's rows by time. The stages read these off the grid instead."""
+        raw, times, _ = grid_rows([log], period=settings.PERIOD,
+                                  max_hold=settings.MAX_HOLD)
+        return dict(zip(times, raw))
+
+    injected = inject_frames(test_logs, random.Random(settings.SEED),
+                             train_logs[::max(len(train_logs) // donors, 1)][:donors])
+    got = grid_rows_injected(injected, rows_before_attack, period=settings.PERIOD,
+                             max_hold=settings.MAX_HOLD)
+    # what the stages leave to whoever scores the rows, kept here for the old `out`
+    got["rows"] = scale.apply(got["raw"])
+    for attack in got["attacks"]:
+        covered = [i for i in range(attack["first"], attack["last"] + 1)
+                   if got["label"][i]]
+        clean = rows_before_attack(attack["log"])
+        attack["moved"] = float(max(
+            np.linalg.norm((got["raw"][i] - clean[got["t"][i]]) / scale.std)
+            for i in covered))
     for name in ATTACKED:
         np.save(os.path.join(out_dir, f"attacked_{name}.npy"), got[name])
     json.dump(got["attacks"], open(os.path.join(out_dir, "attacked.json"), "w"))
