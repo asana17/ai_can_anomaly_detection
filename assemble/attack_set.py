@@ -1,13 +1,23 @@
-"""Build the test arrays with attacks in them, and say which rows they cover."""
+"""Build the test arrays with attacks in them, and say which rows they cover.
+
+    python3 -m assemble.attack_set repo revision splits/<time> data_dir local_dir [--rebuild]
+"""
 
 from __future__ import annotations
 
+import argparse
+import json
+import itertools
+import os
 import random
 
 import numpy as np
 
 from attack.inject import inject
 from assemble.grid import starts_segment, to_arrays
+from assemble.injected_frames import write_and_pass_frames
+from common.hub_dirs import read_dir, reuse_or_make
+from common.settings import Settings
 from preprocess.features.grid_sample import resample
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
@@ -64,7 +74,7 @@ def attacked_log(hurt, span, before, *, period: float, max_hold: float):
 
 def _starts(sizes):
     """Where each part begins once the parts are laid end to end."""
-    return np.concatenate([[0], np.cumsum(sizes)[:-1]]).astype(int)
+    return [0, *itertools.accumulate(sizes[:-1])]
 
 
 def grid_rows_injected(injected, rows_before_attack, *, period: float,
@@ -94,3 +104,76 @@ def grid_rows_injected(injected, rows_before_attack, *, period: float,
     attacks = [dict(attack, first=attack["first"] + at, last=attack["last"] + at)
                for attack, at in zip(found, rows_at) if attack is not None]
     return {"attacks": attacks, **joined}
+
+
+def rows_before_each(grid_dir, logs, counts):
+    """`log -> its rows by time`, read off a grid, built one log at a time."""
+    raw, times = (np.load(os.path.join(grid_dir, f"grid_{n}.npy")) for n in ("raw", "t"))
+    ends = dict(zip(logs, np.cumsum(counts)))
+    sizes = dict(zip(logs, counts))
+
+    def of(log):
+        end, count = ends[log], sizes[log]
+        return dict(zip(times[end - count:end], raw[end - count:end]))
+
+    return of
+
+
+def donor_logs(train_logs, count):
+    """The `count` training logs the replayed payloads are taken from, spread evenly."""
+    return train_logs[::max(len(train_logs) // count, 1)][:count]
+
+
+FRAMES = 10_000_000                         # frames per Parquet file
+
+
+def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, settings):
+    """Write the attacked frames and rows, and return the split and grid for meta.json."""
+    split_dir, split_meta = read_dir(repo, split_path, local_dir, revision,
+                                     repo_type="dataset")
+    grid = split_meta["grid"]
+    grid_dir, grid_meta = read_dir(grid["repo"], grid["path"], local_dir,
+                                   grid["revision"], repo_type="dataset")
+    period, max_hold = (grid_meta["inputs"][n] for n in ("period", "max_hold"))
+    cut = json.load(open(os.path.join(split_dir, "split.json")))
+    kept = json.load(open(os.path.join(grid_dir, "logs.json")))
+
+    under = {name: [os.path.join(data_dir, p) for p in cut[name]]
+             for name in ("train", "test")}
+    before = rows_before_each(grid_dir, kept["logs"], kept["rows"])
+    injected = inject_frames(under["test"], random.Random(settings.SEED),
+                             donor_logs(under["train"], settings.DONORS))
+    got = grid_rows_injected(
+        write_and_pass_frames(injected, os.path.join(folder, "frames"), FRAMES),
+        lambda log: before(os.path.relpath(log, data_dir)), period=period,
+        max_hold=max_hold)
+
+    print(f"{len(got['t'])} rows from {len(cut['test'])} test logs, "
+          f"{len(got['attacks'])} attacks", flush=True)
+    for name in ("raw", "t", "seg", "label", "wheel"):
+        np.save(os.path.join(folder, f"attacked_{name}.npy"), got[name])
+    with open(os.path.join(folder, "attacked.json"), "w") as f:
+        json.dump([dict(a, log=os.path.relpath(a["log"], data_dir))
+                   for a in got["attacks"]], f)
+    return {"split": {"repo": repo, "revision": revision, "path": split_path},
+            "grid": grid}
+
+
+def main(repo, revision, split_path, data_dir, local_dir, rebuild=False):
+    settings = Settings()
+    inputs = {"split": split_path, "seed": settings.SEED, "donors": settings.DONORS}
+    return reuse_or_make(repo, "attack_sets", inputs, local_dir,
+                         lambda folder: write_attack_set(folder, repo, revision,
+                                                         split_path, data_dir, local_dir,
+                                                         settings),
+                         rebuild, repo_type="dataset")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    for name in ("repo", "revision", "split_path", "data_dir", "local_dir"):
+        parser.add_argument(name)
+    parser.add_argument("--rebuild", action="store_true")
+    args = parser.parse_args()
+    main(args.repo, args.revision, args.split_path, args.data_dir, args.local_dir,
+         args.rebuild)

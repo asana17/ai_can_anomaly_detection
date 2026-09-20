@@ -3,6 +3,35 @@
 Injects one attack into each test log, then puts the frames on the grid and says which
 rows each attack changed.
 
+## Running it
+
+```
+python3 -m assemble.attack_set repo revision splits/<time> data_dir local_dir [--rebuild]
+```
+
+| argument | |
+|---|---|
+| `repo` | Hugging Face dataset repo holding `splits/<time>/` and uploaded to, needs `hf auth login` |
+| `revision` | commit of `repo` to read `splits/<time>/` at, as [split](split.md) printed it |
+| `splits/<time>` | the [split](split.md) directory whose test logs are attacked. The grid it names is read too |
+| `data_dir` | local folder holding the CAN frame logs the split names |
+| `local_dir` | local folder `attack_sets/<time>/` is written to, kept after the upload |
+| `--rebuild` | build even if `repo` already has `attack_sets/<time>/` for the same split, `SEED` and `DONORS` |
+
+`PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
+ticks as the grid's. The payloads are replayed from `DONORS` of the split's train logs,
+spread evenly over them.
+
+It writes these files into `local_dir/attack_sets/<time>/` and uploads that directory to
+`repo` as `attack_sets/<time>/`.
+
+| file | holds |
+|---|---|
+| `attacked_{raw,t,seg,label,wheel}.npy` | the test logs with the attacks in, on the grid |
+| `attacked.json` | each attack, its log, and the rows it reaches |
+| `frames/test-NNNNN.parquet` | the same logs frame by frame, as [injected_frames](injected_frames.md) writes them |
+| `meta.json` | `inputs` (`splits/<time>`, `SEED`, `DONORS`), `split` and `grid` (repo, revision, path), commit, uncommitted files, start, end |
+
 ## Injecting the frames
 
 ```python

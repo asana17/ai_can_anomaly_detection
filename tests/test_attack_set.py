@@ -1,8 +1,11 @@
+import json
+import os
 import random
 
 import numpy as np
 import pytest
 
+from assemble import attack_set
 from assemble.attack_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
 from preprocess.features import signal_state
@@ -114,3 +117,46 @@ def test_wheel_holds_the_speed_before_the_attack(tmp_path):
     d = _injected([log])
     clean, _, _ = grid_rows([log], period=PERIOD, max_hold=MAX_HOLD)
     assert np.array_equal(d["wheel"], clean[:, signal_state.SIGNALS.index("wheel_speed")])
+
+
+def _hub_files(tmp_path, hub, logs):
+    """A grid and a split over `logs`, with the last log as the test block."""
+    raw, times, _ = grid_rows(logs, period=PERIOD, max_hold=MAX_HOLD)
+    counts = [len(grid_rows([log], period=PERIOD, max_hold=MAX_HOLD)[0]) for log in logs]
+    names = [os.path.relpath(log, tmp_path) for log in logs]
+    hub.files = {
+        "grids/20260101-000000/meta.json": {"inputs": {"period": PERIOD,
+                                                       "max_hold": MAX_HOLD}},
+        "grids/20260101-000000/logs.json": {"logs": names, "rows": counts},
+        "grids/20260101-000000/grid_raw.npy": raw,
+        "grids/20260101-000000/grid_t.npy": times,
+        "splits/20260101-000000/meta.json": {
+            "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
+            "grid": {"repo": "u/d", "revision": "abc",
+                     "path": "grids/20260101-000000"}},
+        "splits/20260101-000000/split.json": {"train": names[:-1], "test": names[-1:],
+                                              "test_start": 0.0, "test_end": 0.0}}
+
+
+def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
+    logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
+    _hub_files(tmp_path, hub, logs)
+    made = attack_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path),
+                           str(tmp_path / "local"))
+    folder = tmp_path / "local" / made["path"]
+    label = np.load(folder / "attacked_label.npy")
+    assert np.load(folder / "attacked_raw.npy").shape == (len(label), SIGNALS)
+    attacks = json.loads((folder / "attacked.json").read_text())
+    assert [a["log"] for a in attacks] == ["b.csv"]
+    assert label[attacks[0]["first"]] and label[attacks[0]["last"]]
+    assert len(list((folder / "frames").glob("*.parquet"))) == 1
+    meta = json.loads((folder / "meta.json").read_text())
+    assert meta["grid"]["path"] == "grids/20260101-000000"
+
+
+def test_the_stage_names_an_attack_set_of_the_same_split(tmp_path, hub):
+    inputs = {"split": "splits/20260101-000000", "seed": 0, "donors": 24}
+    hub.files = {"attack_sets/20260101-000000/meta.json": {"inputs": inputs}}
+    found = attack_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path),
+                            str(tmp_path / "local"))
+    assert found["path"] == "attack_sets/20260101-000000" and hub.uploaded == []
