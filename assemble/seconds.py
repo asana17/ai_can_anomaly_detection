@@ -12,30 +12,24 @@ import json
 import os
 from typing import Iterable
 
+from assemble.grid import PERIOD, moving
+from assemble.train_set import grid_rows
 from common.hub_dirs import reuse_or_make
 from common.settings import Settings
-from preprocess.frames.can_id_decompose import decompose_can_id
-from preprocess.frames.can_log_loader import load_can_log
-from preprocess.frames.frame_decode import decode_frame
-
-CCVS1 = 65265
-CCVS1_PERIOD = 0.1      # seconds between wheel speed readings
+from preprocess.features.signal_state import SIGNALS
 
 
 def seconds_above(logs: Iterable[str], min_speed: float) -> dict[str, float]:
     """How many seconds each log spends above `min_speed`, one number per log.
 
-    Every log is read, which takes about as long as building the arrays from them.
+    They are the log's rows on the grid that are moving, so a split sized on them
+    counts the same rows train_set and attack_set score.
     """
     seconds = {}
     for path in logs:
-        readings = 0
-        for f in load_can_log(path):
-            if decompose_can_id(f.can_id).pgn == CCVS1:
-                speed = decode_frame(CCVS1, f.data).get("wheel_speed")
-                if speed is not None and speed > min_speed:
-                    readings += 1
-        seconds[path] = readings * CCVS1_PERIOD
+        raw, _, _ = grid_rows([path])
+        above = moving(raw.reshape(-1, len(SIGNALS)), min_speed)   # a log with no row is 1-d
+        seconds[path] = float(above.sum()) * PERIOD
     return seconds
 
 

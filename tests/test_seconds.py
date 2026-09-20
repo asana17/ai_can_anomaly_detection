@@ -1,7 +1,11 @@
 import json
 
+import numpy as np
+import pytest
+
 from assemble import seconds
 from common import hub_dirs
+from preprocess.features.signal_state import SIGNALS
 
 
 def _logs(tmp_path):
@@ -59,13 +63,18 @@ def test_the_digest_changes_with_a_log_s_size(tmp_path):
     assert seconds.logs_digest(data, ["part_1/a.csv", "part_1/b.csv"]) != before
 
 
-def test_seconds_above_counts_only_readings_over_the_minimum(tmp_path):
-    def ccvs1(kmh):
-        raw = round(kmh / 0.00390625)
-        return f"2020-11-23 08:00:00.000000;0x18FEF1E6;8;0;{raw & 0xFF};{(raw >> 8) & 0xFF};0;0;0;0;0"
+def test_seconds_above_counts_the_moving_rows_on_the_grid(monkeypatch):
+    def grid_rows(logs):
+        raw = np.zeros((4, len(SIGNALS)), np.float32)
+        raw[:, SIGNALS.index("wheel_speed")] = [0.0, 4.0, 6.0, 80.0]
+        return raw, np.arange(4) * 0.1, np.zeros(4, np.int32)
 
-    log = tmp_path / "a.csv"
-    log.write_text("\n".join(["timestamp;id;dlc;data"]
-                             + [ccvs1(kmh) for kmh in (0.0, 4.0, 6.0, 80.0)]
-                             + ["2020-11-23 08:00:00.000000;0x18F004E6;8;0;0;0;0;0;0;0;0"]) + "\n")
-    assert seconds.seconds_above([str(log)], 5.0) == {str(log): 0.2}   # two readings, 100 ms apart
+    monkeypatch.setattr(seconds, "grid_rows", grid_rows)
+    got = seconds.seconds_above(["a.csv"], 5.0)
+    assert got == {"a.csv": pytest.approx(0.2)}      # two moving rows, 100 ms apart
+
+
+def test_seconds_above_gives_a_log_with_no_row_0(monkeypatch):
+    monkeypatch.setattr(seconds, "grid_rows", lambda logs: (
+        np.zeros(0, np.float32), np.zeros(0), np.zeros(0, np.int32)))
+    assert seconds.seconds_above(["a.csv"], 5.0) == {"a.csv": 0.0}

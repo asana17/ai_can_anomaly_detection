@@ -1,6 +1,7 @@
 # seconds
 
-Each log's seconds above `MIN_SPEED`, which [split](split.md) cuts on.
+Each log's seconds above `MIN_SPEED`, which [split](split.md) cuts on. They are counted
+as the log's [moving](grid.md) rows on the grid, the rows train_set and attack_set score.
 
 ## Running it
 
