@@ -5,13 +5,15 @@ for sending the same attacks over a real CAN bus, which takes each message's ID,
 and time, and the rows on the grid do not hold those.
 
 ```python
-write_and_pass_frames(inject_frames(logs, rng, source_logs), dest, shard)
+write_and_pass_frames(inject_frames(logs, rng, source_logs), dest,
+                      frames_per_file=10_000_000)
 ```
 
 `write_and_pass_frames` writes the frames of each log [inject_frames](attack_set.md)
 yields, and yields the log as it came, so the frames and the rows come from the same
-draw of attacks. The files are `dest/test-NNNNN.parquet`, each holding about `shard`
-frames.
+draw of attacks. The files are `dest/test-NNNNN.parquet`, each holding about
+`frames_per_file` frames. That argument has a default, so a caller that does not care
+leaves it out.
 
 | column | holds |
 |---|---|

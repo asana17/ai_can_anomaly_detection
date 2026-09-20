@@ -156,9 +156,6 @@ def fetch_attack_set(repo, revision, attack_path, local_dir):
                         "split": split, "grid": grid}}
 
 
-FRAMES = 10_000_000                         # frames per Parquet file
-
-
 def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, settings):
     """Write the attacked frames and rows, and return the split and grid for meta.json."""
     split_dir, split_meta = read_dir(repo, split_path, local_dir, revision,
@@ -175,7 +172,7 @@ def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, se
     injected = inject_frames(under["test"], random.Random(settings.SEED),
                              donor_logs(under["train"], settings.DONORS))
     got = grid_rows_injected(
-        write_and_pass_frames(injected, os.path.join(folder, "frames"), FRAMES),
+        write_and_pass_frames(injected, os.path.join(folder, "frames")),
         lambda log: before(os.path.relpath(log, data_dir)), period=period,
         max_hold=max_hold)
 
