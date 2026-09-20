@@ -21,12 +21,23 @@ from huggingface_hub import HfApi
 from assemble.attack_set import grid_rows_injected
 from assemble.grid import grid_rows, moving
 from assemble.scale import scale_for
-from assemble.seconds import seconds_above
 from assemble.split import split
 from assemble.train_set import split_rows
 from common.hf_upload import upload
 from common.load_dataset import ATTACKED, GRID, built_with, grid_with
 from common.settings import Settings
+from preprocess.features.signal_state import SIGNALS
+
+
+def seconds_above(logs, *, min_speed: float, period: float, max_hold: float):
+    """How many seconds each log spends above `min_speed`, one number per log."""
+    seconds = {}
+    for path in logs:
+        raw, _, _ = grid_rows([path], period=period, max_hold=max_hold)
+        # a log with no row comes back 1-d
+        above = moving(raw.reshape(-1, len(SIGNALS)), min_speed=min_speed)
+        seconds[path] = float(above.sum()) * period
+    return seconds
 
 
 def seconds_for(logs, out_dir, settings):

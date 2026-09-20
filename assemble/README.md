@@ -4,12 +4,10 @@ Builds the train and test sets from the preprocess pipeline, split by time.
 
 Documented under [docs/](docs).
 
-- [grid](docs/grid.md) reads logs into one row per tick, and sets the period, max hold,
-  segment rule and dtypes that attack_set follows too.
+- [grid](docs/grid.md) reads logs into one row per tick and uploads them, and sets the
+  period, max hold, segment rule and dtypes that attack_set follows too.
 - [scale](docs/scale.md) fits the mean and std from the rows given, and puts rows on
   them.
-- [seconds](docs/seconds.md) measures each log's seconds above the minimum speed, and
-  uploads them.
 - [split](docs/split.md) cuts the logs into train and test by time, sized by the
   seconds above the minimum speed in them, and uploads the cut.
 - [train_set](docs/train_set.md) cuts the training rows into train and calibration.
