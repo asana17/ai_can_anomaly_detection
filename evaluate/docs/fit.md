@@ -1,8 +1,10 @@
 # fit
 
-Fits the models on the train rows of a [train set](../../assemble/docs/train_set.md).
-Every fitted model goes into one directory, `results/<time>/` of the runs repository.
-The thresholds are [calibrate](calibrate.md)'s.
+`fit` reads a [train set](../../assemble/docs/train_set.md) and takes its training
+rows. It fits every model listed in a JSON file. It then uploads the fitted models, as
+a directory of the runs repository.
+
+`fit` reads no attacked row. Thresholds are [calibrate](calibrate.md)'s.
 
 ## Running it
 
@@ -12,28 +14,55 @@ python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs
 
 | argument | |
 |---|---|
-| `repo`, `revision` | the Hugging Face dataset repository holding `train_sets/<time>/`, and the commit to read it at |
-| `train_sets/<time>` | the train set whose rows the models are fitted on. Its split and grid are read as well |
-| `local_dir` | where those directories are downloaded to |
-| `runs_repo`, `runs_dir` | the runs repository, and a local directory laid out like it |
-| `--models` | a JSON file naming the models to fit. Without it, `evaluate/models.json`, the list this repository's runs use |
-| `--rebuild` | fit again even when `runs_repo` holds a run with the same `inputs` |
+| `repo` | Hugging Face dataset repo holding `train_sets/<time>/` |
+| `revision` | commit of `repo` to read it at, as [train_set](../../assemble/docs/train_set.md) printed it |
+| `train_sets/<time>` | the train set whose rows the models are fitted on. The split and grid it names are read too |
+| `local_dir` | local folder the dataset directories are downloaded to |
+| `runs_repo` | Hugging Face model repo the run is uploaded to, needs `hf auth login` |
+| `runs_dir` | local folder `results/<time>/` is written to, kept after the upload |
+| `--models` | JSON file listing the models to fit. Without it, `evaluate/models.json`, the list this repository's runs use |
+| `--rebuild` | fit again even if `runs_repo` already holds a run with the same `inputs` |
 
-## The rows
+It writes these files into `runs_dir/results/<time>/` and uploads that directory to
+`runs_repo` as `results/<time>/`. The directory is claimed before the first model is
+fitted, so a login that does not work stops the command at the start rather than after
+hours of training.
 
-The models are fitted on the train set's train rows whose wheel speed is above
-`MIN_SPEED`. That is the speed a row has to exceed to be scored, and it comes from the
-[split](../../assemble/docs/split.md).
+| file | holds |
+|---|---|
+| `weights.safetensors` | every fitted model's weights, and `scale.mean` and `scale.std`, the values its rows were z-scored with |
+| `losses.json` | one entry per autoencoder, the model and its mean training loss for each epoch it ran. As many losses as its `epochs` means it stopped at that limit rather than converging |
+| `meta.json` | what was fitted, and on what |
 
-Each row is z-scored first, with the mean and std the train set saved in `scale.npy`.
-[scale](../../assemble/docs/scale.md) says why.
+| field in `meta.json` | holds |
+|---|---|
+| `inputs` | `train_sets/<time>`, and every model with the values it was fitted with. A later run with the same `inputs` reuses this directory |
+| `train_set`, `split`, `grid` | the dataset directories the rows came from, each a repo, a revision and a path |
+| `min_speed` | the speed a row had to exceed to be fitted on |
+| `rows` | how many rows the models were fitted on |
+| `versions` | Python, NumPy, torch and the platform |
+| `commit`, `uncommitted` | the commit of this repository the run started from, and any uncommitted files |
+| `started`, `finished` | when the run started and ended |
 
-The calibration rows and the test rows are not read here.
+A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
+`pca.k{k}.basis` for PCA, an autoencoder's own `state_dict` names under
+`linear_ae.k{k}.` or `nonlinear_ae.h{h}.k{k}.`.
 
-## The models
+## The rows it fits on
 
-The file lists what to fit. A value written as a list means one model for each value
-in it, so one line asks for a whole sweep.
+A train set marks three kinds of row: train, calibration, and neither. `fit` reads the
+train rows.
+
+Rows at or below `MIN_SPEED` are dropped, since only faster rows are ever scored.
+`MIN_SPEED` is the value the [split](../../assemble/docs/split.md) was cut with, and
+comes from its `meta.json`. What is left is z-scored on the train set's
+[scale](../../assemble/docs/scale.md).
+
+## The models it fits
+
+`fit` fits the models the `--models` file lists. That file is a JSON list, one entry
+per model, naming the model and the values it is fitted with. A value written as a
+list expands to one model per value, so a single entry asks for a sweep.
 
 ```json
 [{"model": "pca", "k": [2, 4]},
@@ -41,28 +70,9 @@ in it, so one line asks for a whole sweep.
   "batch": 1024, "rate": 0.001, "improvement": 0.0001, "patience": 10, "seed": 3}]
 ```
 
-## What it writes
+That asks for six models, PCA at `k` 2 and 4, and a nonlinear autoencoder at each of
+the four pairs of `k` and `hidden`. PCA is solved rather than trained, so it takes
+none of the values below `hidden`.
 
-`common/hub_dirs.reuse_or_make` makes `results/<time>/` before the first model is
-fitted, writes these files into it, and uploads it in one commit.
-
-| file | holds |
-|---|---|
-| `weights.safetensors` | the weights of every fitted model, and the mean and std their rows were put on |
-| `losses.json` | one entry per autoencoder, the model and its mean loss on the train rows each epoch. As many losses as `epochs` means training stopped at the cap rather than on its own |
-| `meta.json` | everything else the run has to record |
-
-A tensor carries the name of the model it belongs to: `pca.k{k}.centre` and
-`pca.k{k}.basis` for PCA, an autoencoder's own `state_dict` names under
-`linear_ae.k{k}.` or `nonlinear_ae.h{h}.k{k}.`. `scale.mean` and `scale.std` are the
-z-score.
-
-| key in `meta.json` | holds |
-|---|---|
-| `inputs` | the train set, and one line per model with the values it was fitted with |
-| `train_set`, `split`, `grid` | where the rows came from, each a repository, a commit and a path |
-| `min_speed` | the speed a row had to exceed to be fitted on |
-| `rows` | how many rows the models were fitted on |
-| `versions` | Python, NumPy, torch and the platform |
-| `commit`, `uncommitted` | the commit it ran from, and `git status --porcelain` there |
-| `started`, `finished` | when it started and ended |
+`inputs` records the models after the lists are spread out, one entry each, so the run
+says what every model was fitted with.
