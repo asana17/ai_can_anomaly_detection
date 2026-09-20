@@ -12,7 +12,7 @@ import os
 import numpy as np
 
 from assemble.grid import moving, read_grid, rows_of_logs
-from assemble.scale import scale_for
+from assemble.scale import Scale, scale_for
 from assemble.split import read_split
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
@@ -64,6 +64,14 @@ def widen_to_grid(training, among_training):
     widened = np.zeros(len(training), bool)
     widened[training] = among_training
     return widened
+
+
+def read_train_set(folder):
+    """A train set's train and calibration rows, and the scale fitted on the train ones."""
+    train_rows, calibration_rows = (np.load(os.path.join(folder, f"{name}_rows.npy"))
+                                    for name in ("train", "calibration"))
+    scale = Scale(*np.load(os.path.join(folder, "scale.npy")))
+    return train_rows, calibration_rows, scale
 
 
 def write_train_set(folder, repo, revision, split_path, local_dir, settings):

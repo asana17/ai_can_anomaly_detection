@@ -217,3 +217,14 @@ def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
     hub.files = {"train_sets/20260101-000000/meta.json": {"inputs": inputs}}
     found = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
     assert found["path"] == "train_sets/20260101-000000" and hub.uploaded == []
+
+
+def test_read_train_set_reads_the_rows_and_the_scale_back(tmp_path):
+    np.save(tmp_path / "train_rows.npy", np.array([True, False]))
+    np.save(tmp_path / "calibration_rows.npy", np.array([False, True]))
+    np.save(tmp_path / "scale.npy", np.array([[1.0, 2.0], [3.0, 4.0]]))
+    train_rows, calibration_rows, scale = train_set.read_train_set(str(tmp_path))
+
+    assert train_rows.tolist() == [True, False]
+    assert calibration_rows.tolist() == [False, True]
+    assert scale.mean.tolist() == [1.0, 2.0] and scale.std.tolist() == [3.0, 4.0]
