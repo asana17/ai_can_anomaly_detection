@@ -52,6 +52,6 @@ def test_restoring_a_model_the_checkpoint_lacks_raises():
         Pca(2).restore({}, 5)
 
 
-def test_only_an_autoencoder_reports_epochs():
+def test_only_an_autoencoder_reports_a_loss_for_each_epoch():
     assert Pca(2).fit(ROWS)[2] is None
-    assert LinearAe(2, ARGUMENTS).fit(ROWS)[2] == 2
+    assert len(LinearAe(2, ARGUMENTS).fit(ROWS)[2]) == 2

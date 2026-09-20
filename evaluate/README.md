@@ -26,9 +26,9 @@ the same for all of them.
 
 Documented under [docs/](docs).
 
+- [fit](docs/fit.md) says how the models of a run are fitted and kept.
 - [pc_run](docs/pc_run.md) says what is reused, what counts as an alarm, and how each
   parameter was set.
-- [run_record](docs/run_record.md) says what each run keeps.
 - [quantize_compare](docs/quantize_compare.md) says how the cost of quantizing a model
   to int8 is measured.
 

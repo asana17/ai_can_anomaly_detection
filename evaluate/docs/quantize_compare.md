@@ -10,7 +10,7 @@ python3 -m evaluate.quantize.compare repo revision out runs_repo runs_dir export
 |---|---|
 | `repo`, `revision` | the Hugging Face dataset the run was fitted on, as the run's `meta.json` names it under `dataset` |
 | `out` | where that dataset is fetched to |
-| `runs_repo`, `runs_dir` | the [runs repository](run_record.md) and its local copy |
+| `runs_repo`, `runs_dir` | the [runs repository](fit.md#what-it-writes) and its local copy |
 | `exported` | one or more `<export time>` under `quantize/`, such as `20260916-221145` |
 
 Each export's directory is downloaded into `runs_dir`. Its `meta.json` names the run and

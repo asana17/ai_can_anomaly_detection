@@ -1,0 +1,5 @@
+[
+  {"model": "pca", "k": [2, 4, 6, 8, 10, 12, 14, 16]},
+  {"model": "linear ae", "k": [2, 4, 6, 8, 10, 12, 14, 16], "epochs": 1000, "batch": 1024, "rate": 0.001, "improvement": 0.0001, "patience": 10, "seed": 3},
+  {"model": "nonlinear ae", "k": [2, 4, 6, 8, 10, 12, 14, 16], "hidden": [32, 64, 128], "epochs": 1000, "batch": 1024, "rate": 0.001, "improvement": 0.0001, "patience": 10, "seed": 3}
+]

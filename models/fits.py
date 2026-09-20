@@ -52,7 +52,7 @@ class Pca:
         return f"rules + pca k={self.k}"
 
     def fit(self, rows):
-        """Its tensors, how it scores rows, and the epochs it ran, which are none."""
+        """Its tensors, how it scores rows, and no losses, since it is solved."""
         space = pca.subspace(rows, self.k)
         # safetensors refuses the transposed view subspace returns
         return ({f"{self.prefix}centre": torch.from_numpy(space.centre),
@@ -70,7 +70,7 @@ class _Autoencoder:
     """What both autoencoders do the same way."""
 
     def fit(self, rows):
-        """Its tensors, how it scores rows, and the epochs it ran."""
+        """Its tensors, how it scores rows, and its mean loss on them each epoch."""
         torch.manual_seed(self.arguments.seed)
         net = self.network(rows.shape[1])
         losses = autoencoder.fit(rows, net, epochs=self.arguments.epochs,
@@ -79,7 +79,7 @@ class _Autoencoder:
                                  patience=self.arguments.patience)
         return ({f"{self.prefix}{key}": tensor
                  for key, tensor in net.state_dict().items()},
-                lambda scored: autoencoder.residuals(scored, net), len(losses))
+                lambda scored: autoencoder.residuals(scored, net), losses)
 
     def restore(self, weights, signals):
         """How it scores rows, built back out of a checkpoint's `weights`."""
