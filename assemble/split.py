@@ -11,7 +11,7 @@ import os
 
 import numpy as np
 
-from assemble.grid import moving
+from assemble.grid import moving, read_grid
 from common.hub_dirs import download, reuse_or_make
 from common.settings import Settings
 
@@ -61,16 +61,22 @@ def span_of(times, counts, logs, wanted):
     return float(times[ends[at[0]] - counts[at[0]]]), float(times[ends[at[-1]] - 1])
 
 
+def read_split(folder):
+    """The train and test logs of a `splits/<time>/` directory, and the test block's
+    first and last time."""
+    with open(os.path.join(folder, "split.json")) as f:
+        return json.load(f)
+
+
 def write_split(folder, repo, revision, grid_path, local_dir, settings):
     """Write `split.json` and `seconds.json` for `FOLD`, cut on the grid `grid_path` of
     `repo` at `revision`, and return the reference to it for `meta.json`."""
     got = download(repo, grid_path, local_dir, repo_type="dataset", revision=revision)
-    kept = json.load(open(os.path.join(got, "logs.json")))
-    raw, times = (np.load(os.path.join(got, f"grid_{n}.npy")) for n in ("raw", "t"))
-    seconds = seconds_of(raw, kept["rows"], kept["logs"],
-                         min_speed=settings.MIN_SPEED, period=settings.PERIOD)
+    raw, times, logs, counts = read_grid(got)
+    seconds = seconds_of(raw, counts, logs, min_speed=settings.MIN_SPEED,
+                         period=settings.PERIOD)
     train_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)
-    start, end = span_of(times, kept["rows"], kept["logs"], test_logs)
+    start, end = span_of(times, counts, logs, test_logs)
     print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
           f"{sum(seconds[p] for p in train_logs):.0f}s and "
           f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",

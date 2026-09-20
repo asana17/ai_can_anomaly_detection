@@ -16,6 +16,7 @@ import numpy as np
 from attack.inject import inject
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
+from assemble.split import read_split
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from preprocess.features.grid_sample import resample
@@ -135,7 +136,7 @@ def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, se
     grid_dir, grid_meta = read_dir(grid["repo"], grid["path"], local_dir,
                                    grid["revision"], repo_type="dataset")
     period, max_hold = (grid_meta["inputs"][n] for n in ("period", "max_hold"))
-    cut = json.load(open(os.path.join(split_dir, "split.json")))
+    cut = read_split(split_dir)
 
     under = {name: [os.path.join(data_dir, p) for p in cut[name]]
              for name in ("train", "test")}

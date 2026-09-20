@@ -13,6 +13,7 @@ import numpy as np
 
 from assemble.grid import moving, read_grid, rows_of_logs
 from assemble.scale import scale_for
+from assemble.split import read_split
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 
@@ -75,7 +76,7 @@ def write_train_set(folder, repo, revision, split_path, local_dir, settings):
     min_speed = split_meta["inputs"]["min_speed"]
     period = grid_meta["inputs"]["period"]
 
-    cut = json.load(open(os.path.join(split_dir, "split.json")))
+    cut = read_split(split_dir)
     raw, times, logs, counts = read_grid(grid_dir)
     training = rows_of_logs(logs, counts, cut["train"])
 
