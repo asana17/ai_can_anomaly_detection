@@ -1,0 +1,59 @@
+# calibrate
+
+Every model gives each row a score. A row counts as an anomaly when that score is over
+the model's threshold. `calibrate` sets those thresholds.
+
+It reads a run that [fit](fit.md) uploaded. It scores the calibration rows with each
+model of the run. It puts each model's threshold where `TARGET` of those rows sit
+above it. It then uploads one threshold per model, as a directory of the runs
+repository. No model is fitted here.
+
+## Running it
+
+```
+python3 -m evaluate.calibrate runs_repo revision results/<time> runs_dir local_dir [--rebuild]
+```
+
+| argument | |
+|---|---|
+| `runs_repo` | Hugging Face model repo holding the run and uploaded to, needs `hf auth login` |
+| `revision` | commit of `runs_repo` to read the run at, as [fit](fit.md) printed it |
+| `results/<time>` | the run whose models are given a threshold |
+| `runs_dir` | local folder the run is downloaded to and `thresholds/<time>/` is written to |
+| `local_dir` | local folder the dataset directories the run names are downloaded to |
+| `--rebuild` | read the thresholds again even if `runs_repo` already holds them for this run and `TARGET` |
+
+It writes these files into `runs_dir/thresholds/<time>/` and uploads that directory to
+`runs_repo` as `thresholds/<time>/`.
+
+| file | holds |
+|---|---|
+| `thresholds.json` | one entry per model, the model as the run records it and `threshold`, its score at `TARGET` |
+| `meta.json` | where the models and the rows came from |
+
+| field in `meta.json` | holds |
+|---|---|
+| `inputs` | `results/<time>` and `TARGET`. A later call with the same `inputs` reuses this directory |
+| `run` | the run the models came from, as a repo, a revision and a path |
+| `train_set`, `split`, `grid` | the dataset directories the rows came from, as the run records them |
+| `min_speed` | the speed a row had to exceed to set a threshold |
+| `rows` | how many rows each threshold was taken from |
+| `versions` | Python, NumPy, torch and the platform |
+| `commit`, `uncommitted` | the commit of this repository the call started from, and any uncommitted files |
+| `started`, `finished` | when it started and ended |
+
+## The rows it scores
+
+The calibration rows of the train set the run was fitted on. A model has never seen
+them, and [train_set](../../assemble/docs/train_set.md) says why they are held back.
+
+Rows at or below `MIN_SPEED` are dropped, as they are in [fit](fit.md). So are rows an
+instant rule already flags, since a model is only asked about the rows the rules let
+through. What is left is z-scored on the same [scale](../../assemble/docs/scale.md)
+the models were fitted on.
+
+## The threshold
+
+A model's threshold is the score that `TARGET` of those rows sit above. At `TARGET`
+0.001, one calibration row in a thousand is over it, and a detector that flags rows
+above it raises about that many false alarms on traffic like the calibration rows.
