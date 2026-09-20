@@ -23,6 +23,8 @@ from preprocess.features.grid_sample import resample
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
 
+ARRAYS = ("raw", "t", "seg", "label", "wheel")      # what attacked_log builds a row of
+
 
 def inject_frames(logs, rng: random.Random, source_logs=None):
     """Inject one attack into each log, and yield its frames before and after it.
@@ -125,6 +127,35 @@ def donor_logs(train_logs, count):
     return train_logs[::max(len(train_logs) // count, 1)][:count]
 
 
+def read_attack_set(folder):
+    """An attack set's rows, and the attacks that were injected into them."""
+    rows = {name: np.load(os.path.join(folder, f"attacked_{name}.npy"))
+            for name in ARRAYS}
+    with open(os.path.join(folder, "attacked.json")) as f:
+        return rows, json.load(f)
+
+
+def fetch_attack_set(repo, revision, attack_path, local_dir):
+    """The rows an attack set holds, its attacks, and the directories they came from.
+
+    The attack set is read at `revision` of `repo`, and the split and grid it names at
+    the commits it names them at. `before` gives a log's rows as they were before the
+    attack, which is what `moved` is measured against.
+    """
+    folder, meta = read_dir(repo, attack_path, local_dir, revision, repo_type="dataset")
+    split, grid = meta["split"], meta["grid"]
+    _, split_meta = read_dir(split["repo"], split["path"], local_dir, split["revision"],
+                             repo_type="dataset")
+    grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
+                           repo_type="dataset")
+    rows, attacks = read_attack_set(folder)
+    return {**rows, "attacks": attacks, "before": rows_before_each(grid_dir),
+            "min_speed": split_meta["inputs"]["min_speed"],
+            "dataset": {"attack_set": {"repo": repo, "revision": revision,
+                                       "path": attack_path},
+                        "split": split, "grid": grid}}
+
+
 FRAMES = 10_000_000                         # frames per Parquet file
 
 
@@ -150,7 +181,7 @@ def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, se
 
     print(f"{len(got['t'])} rows from {len(cut['test'])} test logs, "
           f"{len(got['attacks'])} attacks", flush=True)
-    for name in ("raw", "t", "seg", "label", "wheel"):
+    for name in ARRAYS:
         np.save(os.path.join(folder, f"attacked_{name}.npy"), got[name])
     with open(os.path.join(folder, "attacked.json"), "w") as f:
         json.dump([dict(a, log=os.path.relpath(a["log"], data_dir))
