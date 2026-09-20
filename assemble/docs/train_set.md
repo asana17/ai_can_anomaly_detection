@@ -11,6 +11,31 @@ scale = scale_for(raw[train_rows & above])
 rows = scale.apply(raw[train_rows])
 ```
 
+## Running it
+
+```
+python3 -m assemble.train_set repo revision splits/<time> data_dir local_dir [--rebuild]
+```
+
+| argument | |
+|---|---|
+| `repo` | Hugging Face dataset repo holding `splits/<time>/` and uploaded to, needs `hf auth login` |
+| `revision` | commit of `repo` to read `splits/<time>/` at, as [split](split.md) printed it |
+| `splits/<time>` | the [split](split.md) directory whose train logs are read |
+| `data_dir` | local folder holding the CAN frame logs the split names |
+| `local_dir` | local folder `train_sets/<time>/` is written to, kept after the upload |
+| `--rebuild` | build even if `repo` already has `train_sets/<time>/` for the same split and settings |
+
+It writes these files into `local_dir/train_sets/<time>/` and uploads that directory to
+`repo` as `train_sets/<time>/`.
+
+| file | holds |
+|---|---|
+| `grid_{raw,t,seg}.npy` | the train logs read into rows, their times and segment ids |
+| `train_rows.npy`, `calibration_rows.npy` | one True per row in that part, False in both for a row in neither |
+| `scale.npy` | the mean and std, fitted on the moving train rows |
+| `meta.json` | `inputs` (`splits/<time>`, `MIN_SPEED`, `CALIBRATION`, `BLOCK`, `GAP`), `split` (repo, revision, path), commit, uncommitted files, start, end |
+
 | name | what it holds |
 |---|---|
 | `raw` | the rows before scaling |

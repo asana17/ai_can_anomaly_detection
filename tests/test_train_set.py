@@ -1,5 +1,8 @@
+import json
+
 import numpy as np
 
+from assemble import train_set
 from assemble.grid import grid_rows, moving
 from assemble.scale import scale_for
 from assemble.train_set import apart_from_test, split_rows
@@ -159,3 +162,39 @@ def test_rows_within_the_gap_of_the_test_block_are_dropped():
     times = np.array([0.0, 4.0, 6.0, 20.0, 34.0, 36.0])
     kept = apart_from_test(times, start=10.0, end=30.0, gap=5.0)
     assert kept.tolist() == [True, True, False, False, False, True]
+
+
+def _split_stage(tmp_path, hub, monkeypatch, speeds):
+    """A train_set built from one train log of `speeds`, with the hub and logs faked."""
+    hub.files = {"splits/20260101-000000/split.json": {"train": ["a.csv"],
+                                                       "test": ["b.csv"]}}
+    raw, t = _rows(speeds)
+    monkeypatch.setattr(train_set, "grid_rows",
+                        lambda logs, **rest: (raw, t, np.zeros(len(t), np.int32)))
+    monkeypatch.setattr(train_set, "span_of_logs", lambda logs: (500.0, 501.0))
+    return train_set.main("u/d", "abc", "splits/20260101-000000", "data", str(tmp_path))
+
+
+def test_the_stage_writes_the_grid_the_masks_and_the_scale(tmp_path, hub, monkeypatch):
+    made = _split_stage(tmp_path, hub, monkeypatch, np.full(10000, 50.0))
+    folder = tmp_path / made["path"]
+    train_rows = np.load(folder / "train_rows.npy")
+    calibration_rows = np.load(folder / "calibration_rows.npy")
+    assert np.load(folder / "grid_raw.npy").shape == (10000, len(SIGNALS))
+    assert train_rows.any() and calibration_rows.any()
+    assert not (train_rows & calibration_rows).any()
+    assert np.load(folder / "scale.npy").shape == (2, len(SIGNALS))
+    meta = json.loads((folder / "meta.json").read_text())
+    assert meta["split"]["path"] == "splits/20260101-000000"
+
+
+def test_the_stage_keeps_the_rows_near_the_test_block_out_of_both(tmp_path, hub,
+                                                                  monkeypatch):
+    speeds = np.full(10000, 50.0)
+    made = _split_stage(tmp_path, hub, monkeypatch, speeds)
+    folder = tmp_path / made["path"]
+    kept = (np.load(folder / "train_rows.npy")
+            | np.load(folder / "calibration_rows.npy"))
+    t = _rows(speeds)[1]
+    near = (t > 495.0) & (t < 506.0)            # the test block is 500 to 501, GAP is 5
+    assert near.sum() > 100 and not kept[near].any() and kept[t < 490.0].any()
