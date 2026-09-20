@@ -228,3 +228,26 @@ def test_read_train_set_reads_the_rows_and_the_scale_back(tmp_path):
     assert train_rows.tolist() == [True, False]
     assert calibration_rows.tolist() == [False, True]
     assert scale.mean.tolist() == [1.0, 2.0] and scale.std.tolist() == [3.0, 4.0]
+
+
+def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
+    hub.files.update({
+        "train_sets/t/meta.json": {
+            "inputs": {},
+            "split": {"repo": "user/data", "revision": "abc", "path": "splits/s"},
+            "grid": {"repo": "user/data", "revision": "abc", "path": "grids/g"}},
+        "train_sets/t/train_rows.npy": np.array([True, False, False]),
+        "train_sets/t/calibration_rows.npy": np.array([False, True, False]),
+        "train_sets/t/scale.npy": np.array([[1.0], [2.0]]),
+        "splits/s/meta.json": {"inputs": {"min_speed": 5.0}},
+        "grids/g/meta.json": {"inputs": {"period": 0.1}},
+        "grids/g/grid_raw.npy": np.array([[10.0], [30.0], [50.0]], np.float32),
+        "grids/g/grid_t.npy": np.array([0.0, 0.1, 0.2]),
+        "grids/g/logs.json": {"logs": ["a.csv"], "rows": [3]},
+    })
+    got = train_set.fetch_train_set("user/data", "abc", "train_sets/t", str(tmp_path))
+
+    assert got["train"].tolist() == [[10.0]], "the third row is in neither part"
+    assert got["calibration"].tolist() == [[30.0]]
+    assert got["scale"].std.tolist() == [2.0]
+    assert got["min_speed"] == 5.0, "the split decides the speed, not Settings"

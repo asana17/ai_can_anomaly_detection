@@ -74,6 +74,27 @@ def read_train_set(folder):
     return train_rows, calibration_rows, scale
 
 
+def fetch_train_set(repo, revision, train_path, local_dir):
+    """The rows a train set names, its scale, and the directories they came from.
+
+    The train set is read at `revision` of `repo`, and the split and grid it names at
+    the commits it names them at.
+    """
+    folder, meta = read_dir(repo, train_path, local_dir, revision, repo_type="dataset")
+    split, grid = meta["split"], meta["grid"]
+    _, split_meta = read_dir(split["repo"], split["path"], local_dir, split["revision"],
+                             repo_type="dataset")
+    grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
+                           repo_type="dataset")
+    raw, _, _, _ = read_grid(grid_dir)
+    train_rows, calibration_rows, scale = read_train_set(folder)
+    return {"train": raw[train_rows], "calibration": raw[calibration_rows],
+            "scale": scale, "min_speed": split_meta["inputs"]["min_speed"],
+            "dataset": {"train_set": {"repo": repo, "revision": revision,
+                                      "path": train_path},
+                        "split": split, "grid": grid}}
+
+
 def write_train_set(folder, repo, revision, split_path, local_dir, settings):
     """Write which rows train and calibrate, and the scale, and return the split."""
     split_dir, split_meta = read_dir(repo, split_path, local_dir, revision,
