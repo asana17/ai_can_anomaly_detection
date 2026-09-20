@@ -68,14 +68,22 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Split the pipeline into a base (the split, grid and scale), attack sets built on a
-  base, training and scoring, each written once to its own directory on Hugging Face.
-  A new attack set can then be scored without training again. Each records the commit
-  it ran from.
-- Put today's dataset in that layout, with the attacked test frames as Parquet in its
-  attack set, so the frames go 1:1 with the rows a run scored. The CAN side needs them.
-- Check the whole path on a small dataset, then score one other split, the first 25%
-  of the time as test.
+- Split training and scoring off `evaluate/pc/run.py`, as the stages of `assemble` are
+  split: training reads a train set and writes weights and thresholds, scoring reads an
+  attack set and a training and writes the tables. Scoring puts the rows on the scale
+  and measures how far each attack moved one, which the attack set no longer holds.
+- Retire `assemble/dataset.py` and `common/load_dataset.py` once training and scoring
+  read the stage directories.
+- Build the dataset in the new layout, then check the whole path on a few logs, then
+  score one other split, the first 25% of the time as test.
+- Pick the rows of a part by time rather than by log. `train_set` still asks which logs
+  a row came from, though the split already records when the test block starts and ends.
+- Read the logs as one stream. `grid` restarts at every log, so segments break at each
+  boundary and a log's first rows wait for all 17 signals, although the logs are
+  recorded back to back. Measure what it costs before changing it.
+- Draw the attacks over the test block's time rather than one per log, once the runs
+  above are in. It changes every attack drawn, so the runs before it cannot be compared
+  with the runs after.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Next is the model in the build, step 3 there.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
