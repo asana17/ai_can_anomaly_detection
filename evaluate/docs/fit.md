@@ -2,7 +2,7 @@
 
 `fit` reads a [train set](../../assemble/docs/train_set.md) and takes its training
 rows. It fits every model listed in a JSON file. It then uploads the fitted models, as
-a directory of the runs repository.
+a directory of the runs repository, `models/<time>/`.
 
 `fit` reads no attacked row. Thresholds are [calibrate](calibrate.md)'s.
 
@@ -19,12 +19,12 @@ python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs
 | `train_sets/<time>` | the train set whose rows the models are fitted on. The split and grid it names are read too |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo the run is uploaded to, needs `hf auth login` |
-| `runs_dir` | local folder `results/<time>/` is written to, kept after the upload |
+| `runs_dir` | local folder `models/<time>/` is written to, kept after the upload |
 | `--models` | JSON file listing the models to fit. Without it, `evaluate/models.json`, the list this repository's runs use |
 | `--rebuild` | fit again even if `runs_repo` already holds a run with the same `inputs` |
 
-It writes these files into `runs_dir/results/<time>/` and uploads that directory to
-`runs_repo` as `results/<time>/`. The directory is claimed before the first model is
+It writes these files into `runs_dir/models/<time>/` and uploads that directory to
+`runs_repo` as `models/<time>/`. The directory is claimed before the first model is
 fitted, so a login that does not work stops the command at the start rather than after
 hours of training.
 

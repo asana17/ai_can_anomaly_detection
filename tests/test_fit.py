@@ -52,9 +52,9 @@ def test_a_run_keeps_the_weights_the_losses_and_what_it_was_fitted_on(tmp_path, 
 
 def test_a_run_of_the_same_inputs_is_not_fitted_again(tmp_path, hub, monkeypatch):
     train_set(monkeypatch)
-    hub.files = {"results/20260101-000000/meta.json": {
+    hub.files = {"models/20260101-000000/meta.json": {
         "inputs": {"train_set": "train_sets/t", "models": [{"model": "pca", "k": 2}]}}}
     found = fit.main("u/d", "abc", "train_sets/t", str(tmp_path), "u/runs",
                      str(tmp_path))
 
-    assert found["path"] == "results/20260101-000000" and hub.uploaded == []
+    assert found["path"] == "models/20260101-000000" and hub.uploaded == []

@@ -15,7 +15,7 @@ repository.
 
 ```
 python3 -m evaluate.fit REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
-python3 -m evaluate.calibrate RUNS_REPO REVISION RUN RUNS_DIR LOCAL_DIR
+python3 -m evaluate.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
 ```
 
 Scoring the attacked test rows is still `evaluate.pc.run`, which fits, thresholds and

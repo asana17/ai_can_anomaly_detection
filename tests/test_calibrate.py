@@ -60,28 +60,28 @@ def run_and_train_set(monkeypatch, raw):
                        "models": [{"model": "pca", "k": 2}]},
             "train_set": where, "split": dict(where, path="splits/s"),
             "grid": dict(where, path="grids/g"), "min_speed": 5.0}
-    monkeypatch.setattr(calibrate, "fetch_run", lambda *args: (weights, meta))
+    monkeypatch.setattr(calibrate, "fetch_models", lambda *args: (weights, meta))
     stand_in(monkeypatch, raw, np.zeros(len(raw), bool))
 
 
 def test_a_threshold_is_kept_for_every_model_of_the_run(tmp_path, hub, monkeypatch):
     raw = rows_at(np.arange(20) + 10.0)
     run_and_train_set(monkeypatch, raw)
-    made = calibrate.main("u/runs", "def", "results/t", str(tmp_path), str(tmp_path))
+    made = calibrate.main("u/runs", "def", "models/t", str(tmp_path), str(tmp_path))
 
     folder = tmp_path / made["path"]
     assert sorted(os.listdir(folder)) == ["meta.json", "thresholds.json"]
     kept = json.load(open(folder / "thresholds.json"))
     assert [k["model"] for k in kept] == ["pca"] and kept[0]["threshold"] > 0
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"run": "results/t", "target": Settings().TARGET}
-    assert meta["run"]["revision"] == "def" and meta["rows"] == len(raw)
+    assert meta["inputs"] == {"models": "models/t", "target": Settings().TARGET}
+    assert meta["models"]["revision"] == "def" and meta["rows"] == len(raw)
 
 
 def test_the_same_run_and_target_are_not_read_twice(tmp_path, hub, monkeypatch):
     run_and_train_set(monkeypatch, rows_at([10.0, 20.0]))
     hub.files = {"thresholds/20260101-000000/meta.json": {
-        "inputs": {"run": "results/t", "target": Settings().TARGET}}}
-    found = calibrate.main("u/runs", "def", "results/t", str(tmp_path), str(tmp_path))
+        "inputs": {"models": "models/t", "target": Settings().TARGET}}}
+    found = calibrate.main("u/runs", "def", "models/t", str(tmp_path), str(tmp_path))
 
     assert found["path"] == "thresholds/20260101-000000" and hub.uploaded == []

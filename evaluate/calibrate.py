@@ -1,8 +1,8 @@
-"""Give every model of a run the score above which a row counts as an anomaly.
+"""Give every fitted model the score above which a row counts as an anomaly.
 
-    python3 -m evaluate.calibrate runs_repo revision results/<time> runs_dir local_dir [--rebuild]
+    python3 -m evaluate.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild]
 
-The score comes from the calibration rows, which the run was not fitted on. A model
+The score comes from the calibration rows, which no model was fitted on. A model
 reconstructs the rows it was fitted on better than the rest, so a threshold taken from
 those would sit too low.
 """
@@ -23,7 +23,7 @@ from assemble.train_set import fetch_train_set
 from common.hub_dirs import reuse_or_make
 from common.settings import Settings
 from evaluate.counting import rule_hits
-from evaluate.fit import fetch_run
+from evaluate.fit import fetch_models
 from models.fits import as_dict, models_from
 
 
@@ -38,8 +38,8 @@ def quantile(scores, share: float):
 def thresholds_for(models, weights, rows, *, target):
     """Score `rows` with each of `models`, and return each model with its threshold.
 
-    `weights` is what the run's `weights.safetensors` holds, and each model takes its
-    own tensors out of it. A model's threshold is the score that `target` of `rows`
+    `weights` is what `weights.safetensors` holds, and each model takes its own tensors
+    out of it. A model's threshold is the score that `target` of `rows`
     are above.
     """
     kept = []
@@ -62,39 +62,39 @@ def calibration_rows(train_set, settings):
     return train_set["scale"].apply(raw[kept])
 
 
-def write_thresholds(folder, runs_repo, revision, run_path, runs_dir, local_dir,
+def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_dir,
                      settings):
-    """Write `thresholds.json` into `folder`, and return what to add to its `meta.json`."""
-    weights, run_meta = fetch_run(runs_repo, revision, run_path, runs_dir)
-    at = run_meta["train_set"]
+    """Write `thresholds.json` into `folder`, and return what its `meta.json` adds."""
+    weights, fitted = fetch_models(runs_repo, revision, models_path, runs_dir)
+    at = fitted["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
     rows = calibration_rows(train_set, settings)
-    thresholds = thresholds_for(models_from(run_meta["inputs"]["models"]), weights,
-                                rows, target=settings.TARGET)
+    thresholds = thresholds_for(models_from(fitted["inputs"]["models"]), weights, rows,
+                                target=settings.TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
         json.dump(thresholds, f, indent=2)
-    return {"run": {"repo": runs_repo, "revision": revision, "path": run_path},
-            **{name: run_meta[name] for name in ("train_set", "split", "grid")},
-            "min_speed": run_meta["min_speed"], "rows": len(rows),
+    return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},
+            **{name: fitted[name] for name in ("train_set", "split", "grid")},
+            "min_speed": fitted["min_speed"], "rows": len(rows),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "platform": platform.platform()}}
 
 
-def main(runs_repo, revision, run_path, runs_dir, local_dir, rebuild=False):
+def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False):
     settings = Settings()
-    inputs = {"run": run_path, "target": settings.TARGET}
+    inputs = {"models": models_path, "target": settings.TARGET}
     return reuse_or_make(runs_repo, "thresholds", inputs, runs_dir,
                          lambda folder: write_thresholds(folder, runs_repo, revision,
-                                                         run_path, runs_dir, local_dir,
-                                                         settings),
+                                                         models_path, runs_dir,
+                                                         local_dir, settings),
                          rebuild)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    for name in ("runs_repo", "revision", "run_path", "runs_dir", "local_dir"):
+    for name in ("runs_repo", "revision", "models_path", "runs_dir", "local_dir"):
         parser.add_argument(name)
     parser.add_argument("--rebuild", action="store_true")
     args = parser.parse_args()
-    main(args.runs_repo, args.revision, args.run_path, args.runs_dir, args.local_dir,
-         args.rebuild)
+    main(args.runs_repo, args.revision, args.models_path, args.runs_dir,
+         args.local_dir, args.rebuild)

@@ -3,8 +3,8 @@
     python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs_dir [--models models.json] [--rebuild]
 
 The models are the ones `models.json` beside this file lists, the list this
-repository's runs use, unless `--models` names another file. `evaluate.calibrate`
-reads their thresholds off the calibration rows.
+repository's own experiments use, unless `--models` names another file.
+`evaluate.calibrate` reads their thresholds off the calibration rows.
 """
 
 from __future__ import annotations
@@ -26,21 +26,21 @@ from models.fits import as_dict, models_from
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models.json")
 
 
-def fetch_run(runs_repo, revision, run_path, runs_dir):
-    """A run's weights and its `meta.json`, read at `revision` of `runs_repo`."""
-    folder, meta = read_dir(runs_repo, run_path, runs_dir, revision)
+def fetch_models(runs_repo, revision, models_path, runs_dir):
+    """The weights and `meta.json` of `models_path`, at `revision` of `runs_repo`."""
+    folder, meta = read_dir(runs_repo, models_path, runs_dir, revision)
     return load_file(os.path.join(folder, "weights.safetensors")), meta
 
 
 def models_in(path):
-    """The models a run fits, read from `path`."""
+    """The models to fit, read from `path`."""
     print(f"models from {path}", flush=True)
     with open(path) as f:
         return models_from(json.load(f))
 
 
-def write_run(folder, models, repo, revision, train_path, local_dir):
-    """Fit every model into `folder`, and return what the run keeps beside its inputs."""
+def write_models(folder, models, repo, revision, train_path, local_dir):
+    """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
     scale, min_speed = train_set["scale"], train_set["min_speed"]
     raw = train_set["train"]
@@ -70,9 +70,9 @@ def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models_path
          rebuild=False):
     models = models_in(models_path)
     inputs = {"train_set": train_path, "models": [as_dict(model) for model in models]}
-    return reuse_or_make(runs_repo, "results", inputs, runs_dir,
-                         lambda folder: write_run(folder, models, repo, revision,
-                                                  train_path, local_dir),
+    return reuse_or_make(runs_repo, "models", inputs, runs_dir,
+                         lambda folder: write_models(folder, models, repo, revision,
+                                                     train_path, local_dir),
                          rebuild)
 
 
