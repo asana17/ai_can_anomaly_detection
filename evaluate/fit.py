@@ -41,10 +41,11 @@ def models_in(path):
 
 def write_run(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what the run keeps beside its inputs."""
-    got = fetch_train_set(repo, revision, train_path, local_dir)
-    scale, min_speed = got["scale"], got["min_speed"]
+    train_set = fetch_train_set(repo, revision, train_path, local_dir)
+    scale, min_speed = train_set["scale"], train_set["min_speed"]
+    raw = train_set["train"]
     # the split decides which rows are scored, and only those are fitted on
-    rows = scale.apply(got["train"][moving(got["train"], min_speed=min_speed)])
+    rows = scale.apply(raw[moving(raw, min_speed=min_speed)])
     print(f"{len(rows)} rows to fit on", flush=True)
 
     weights = {"scale.mean": torch.from_numpy(scale.mean),
@@ -60,7 +61,7 @@ def write_run(folder, models, repo, revision, train_path, local_dir):
     save_file(weights, os.path.join(folder, "weights.safetensors"))
     with open(os.path.join(folder, "losses.json"), "w") as f:
         json.dump(trained, f)
-    return {**got["dataset"], "min_speed": min_speed, "rows": len(rows),
+    return {**train_set["dataset"], "min_speed": min_speed, "rows": len(rows),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "platform": platform.platform()}}
 
