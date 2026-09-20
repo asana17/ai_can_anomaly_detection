@@ -1,8 +1,8 @@
 """The models a run fits, each knowing how it is fitted, named and built back.
 
-Training fits a model here and keeps its tensors, scoring builds the same model back
-out of them. `as_dict` and `model_from` are how one model is written down and read
-back, `models_from` how a list of them is asked for.
+Training fits a model here and keeps its tensors. Anything that scores rows later
+takes the same model's tensors back out. `as_dict` and `model_from` are how one model is
+written down and read back, `models_from` how a list of them is asked for.
 """
 
 from __future__ import annotations
@@ -59,8 +59,12 @@ class Pca:
                  f"{self.prefix}basis": torch.from_numpy(space.basis).contiguous()},
                 lambda scored: pca.residuals(scored, space), None)
 
-    def restore(self, weights, signals):
-        """How it scores rows, built back out of a checkpoint's `weights`."""
+    def load(self, weights, signals):
+        """Take this model's `centre` and `basis` out of `weights`, and score with them.
+
+        `weights` is what a run's `weights.safetensors` holds, every model's tensors
+        together. What comes back scores rows.
+        """
         tensors = _under(self.prefix, weights, self.name)
         space = pca.Subspace(tensors["centre"].numpy(), tensors["basis"].numpy())
         return lambda scored: pca.residuals(scored, space)
@@ -81,8 +85,13 @@ class _Autoencoder:
                  for key, tensor in net.state_dict().items()},
                 lambda scored: autoencoder.residuals(scored, net), losses)
 
-    def restore(self, weights, signals):
-        """How it scores rows, built back out of a checkpoint's `weights`."""
+    def load(self, weights, signals):
+        """Take this model's tensors out of `weights` and put them in a network.
+
+        `weights` is what a run's `weights.safetensors` holds, every model's tensors
+        together. The network is built at this model's shape, and what comes back
+        scores rows.
+        """
         net = self.network(signals)
         net.load_state_dict(_under(self.prefix, weights, self.name))
         return lambda scored: autoencoder.residuals(scored, net)

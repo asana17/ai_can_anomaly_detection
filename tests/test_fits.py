@@ -42,14 +42,14 @@ def test_only_an_autoencoder_writes_down_how_it_was_fitted():
 
 @pytest.mark.parametrize("model", [Pca(2), LinearAe(2, ARGUMENTS),
                                    NonlinearAe(2, 8, ARGUMENTS)])
-def test_a_restored_model_scores_as_the_fitted_one_did(model):
+def test_a_loaded_model_scores_as_the_fitted_one_did(model):
     tensors, score, _ = model.fit(ROWS)
-    assert np.allclose(model.restore(tensors, ROWS.shape[1])(ROWS), score(ROWS))
+    assert np.allclose(model.load(tensors, ROWS.shape[1])(ROWS), score(ROWS))
 
 
-def test_restoring_a_model_the_checkpoint_lacks_raises():
+def test_loading_a_model_the_weights_lack_raises():
     with pytest.raises(ValueError):
-        Pca(2).restore({}, 5)
+        Pca(2).load({}, 5)
 
 
 def test_only_an_autoencoder_reports_a_loss_for_each_epoch():
