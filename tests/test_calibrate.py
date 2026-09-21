@@ -53,7 +53,8 @@ def test_a_row_a_rule_flags_sets_no_threshold(monkeypatch):
 
 def run_and_train_set(monkeypatch, raw):
     """A stand-in run holding one PCA, fitted on a train set whose rows are `raw`."""
-    weights = {"pca.k2.centre": torch.zeros(len(SIGNALS)),
+    weights = {"scale.mean": torch.zeros(len(SIGNALS)),
+               "pca.k2.centre": torch.zeros(len(SIGNALS)),
                "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}
     where = {"repo": "u/d", "revision": "abc", "path": "train_sets/t"}
     meta = {"inputs": {"train_set": "train_sets/t",

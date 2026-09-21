@@ -25,6 +25,7 @@ from common.settings import Settings
 from evaluate.counting import rule_hits
 from evaluate.fit import fetch_models
 from models.fits import as_dict, models_from
+from models.torch_files import torch_scorer
 
 
 def quantile(scores, share: float):
@@ -35,16 +36,15 @@ def quantile(scores, share: float):
     return float(np.percentile(scores, 100 * (1 - share)))
 
 
-def thresholds_for(models, weights, rows, *, target):
+def thresholds_for(models, scorer_of, rows, *, target):
     """Score `rows` with each of `models`, and return each model with its threshold.
 
-    `weights` is what `weights.safetensors` holds, and each model takes its own tensors
-    out of it. A model's threshold is the score that `target` of `rows`
-    are above.
+    `scorer_of` gives what scores rows with a model. A model's threshold is the score
+    that `target` of `rows` are above.
     """
     kept = []
     for model in models:
-        score = model.scorer(weights, rows.shape[1])
+        score = scorer_of(model)
         kept.append({**as_dict(model), "threshold": quantile(score(rows), target)})
     return kept
 
@@ -69,8 +69,8 @@ def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_d
     at = fitted["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
     rows = calibration_rows(train_set, settings)
-    thresholds = thresholds_for(models_from(fitted["inputs"]["models"]), weights, rows,
-                                target=settings.TARGET)
+    thresholds = thresholds_for(models_from(fitted["inputs"]["models"]),
+                                torch_scorer(weights), rows, target=settings.TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
         json.dump(thresholds, f, indent=2)
     return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},

@@ -28,6 +28,7 @@ from evaluate.counting import (alarms, moved_by, persistent,
 from evaluate.fit import fetch_models
 from models.fits import model_from
 from models.onnx_files import onnx_scorer
+from models.torch_files import torch_scorer
 
 
 def fetch_thresholds(directory, runs_dir):
@@ -54,15 +55,6 @@ def find_quantize(runs_repo, thresholds_meta, runs_dir):
         raise ValueError(f"no quantize directory is made from {exported['path']} at "
                          f"TARGET {target}")
     return quantized
-
-
-def torch_scorer(models, runs_dir):
-    """What scores rows with a model in torch, on the weights of the fit `models`."""
-    weights, _ = fetch_models(models["repo"], models["revision"], models["path"],
-                              runs_dir)
-    # the scale is fitted on every signal a row holds
-    signals = weights["scale.mean"].shape[0]
-    return lambda model: model.scorer(weights, signals)
 
 
 def fetch_scale(directory, local_dir):
@@ -153,7 +145,10 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
     directory and the precision of them.
     """
     if onnx_files is None:
-        scorer_of = torch_scorer(thresholds_meta["models"], runs_dir)
+        models = thresholds_meta["models"]
+        weights, _ = fetch_models(models["repo"], models["revision"], models["path"],
+                                  runs_dir)
+        scorer_of = torch_scorer(weights)
         runtime = {"torch": torch.__version__}
     else:
         # the ONNX files come with thresholds of their own
