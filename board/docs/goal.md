@@ -192,6 +192,9 @@ out too, until it is known whether FDCAN keeps receiving in it.
 ## Open
 
 - Whether `low_pow` is among the kernel parts the contest allows changing.
-- The difference that counts as a match against ONNX Runtime.
+- Whether the board's reconstruction error is close enough to ONNX Runtime's. It is
+  close enough when the difference moves few or no calibration rows across the
+  threshold. The count waits for the calibration rows' reconstruction errors from
+  `score`.
 - How the model files enter the build.
 - Whether `tm_printf` spins while UART sends.
