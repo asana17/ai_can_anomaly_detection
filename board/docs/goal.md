@@ -123,7 +123,9 @@ flowchart TB
 ```
 
 The preprocess task runs step 1 of the steps in the [README](../../README.md#todo), the
-anomaly task steps 2 to 4. How the scale and the thresholds enter the build is open.
+anomaly task steps 2 to 4. The scale and the threshold are written by hand into
+`board/lib/active_model/`, `model_config.h` and `threshold.h`. How they get there from
+the PC stages is open.
 
 ## What goes to C
 
