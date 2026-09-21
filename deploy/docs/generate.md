@@ -7,17 +7,17 @@ the runs repository, where it records the code the board ran.
 ## Running it
 
 ```
-python3 -u -m deploy.generate stedgeai runs_repo runs_dir exported
+python3 -u -m deploy.generate stedgeai runs_repo runs_dir onnx/<time>
 ```
 
 | argument | what it is |
 |---|---|
 | `stedgeai` | the ST Edge AI Core command line tool |
 | `runs_repo`, `runs_dir` | the [runs repository](../../evaluate/docs/run_record.md) the export went into, and its local copy |
-| `exported` | the export's `<export time>` under `quantize/`, such as `20260916-221145` |
+| `onnx/<time>` | the export to generate from |
 
 The export's directory is downloaded into `runs_dir`. Which models are generated is not
-an argument. Every model the export's `meta.json` lists is generated. The int8 files are not, since the board runs float.
+an argument. Every model the export's `meta.json` lists is generated.
 
 ## What it writes
 
@@ -38,13 +38,13 @@ directory and `meta.json` say which model it is.
 
 | key in `meta.json` | holds |
 |---|---|
-| `export` | the export the ONNX files came from, as `quantize/<export time>` |
-| `run` | the run the export's weights came from |
+| `export` | the export the ONNX files came from, as `onnx/<time>` |
+| `models` | the models directory the export's weights came from |
 | `target` | the `--target` passed to the generator |
-| `models` | the `k` and `h` of every model in the directory |
+| `exported` | every model in the directory, as the export lists it |
 | `commit` | the commit of this repository `generate` ran from |
 | `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |
 | `versions` | Python and ST Edge AI Core |
 | `generated` | when `generate` started |
 
-The threshold to compile in is not here. It is the run's own, in the run's `meta.json`.
+The threshold to compile in is not here. It is in the `thresholds.json` of [calibrate](../../evaluate/docs/calibrate.md).

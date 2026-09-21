@@ -1,6 +1,6 @@
 """Generate C code with ST Edge AI Core from every float ONNX file of an export, and keep it.
 
-    python3 -m deploy.generate stedgeai runs_repo runs_dir exported
+    python3 -m deploy.generate stedgeai runs_repo runs_dir onnx/<time>
 """
 
 from __future__ import annotations
@@ -16,6 +16,8 @@ import time
 
 from common.git import git
 from common.hub_dirs import claim, download, upload
+from deploy.export import file_of
+from models.fits import model_from
 
 TARGET = "stm32h5"
 KEPT = ("network.c", "network.h", "network_data.c", "network_data.h",
@@ -24,9 +26,9 @@ KEPT = ("network.c", "network.h", "network_data.c", "network_data.h",
 
 
 def models_in(export_dir):
-    """The `k` and `h` of every model the export lists."""
+    """Every model the export lists, in its order."""
     with open(os.path.join(export_dir, "meta.json")) as f:
-        return [(m["k"], m["h"]) for m in json.load(f)["models"]]
+        return [model_from(entry) for entry in json.load(f)["exported"]]
 
 
 def generate(stedgeai, onnx_path, dest):
@@ -43,29 +45,28 @@ def generate(stedgeai, onnx_path, dest):
             shutil.copy(os.path.join(output, name), dest)
 
 
-def main(stedgeai, runs_repo, runs_dir, exported):
+def main(stedgeai, runs_repo, runs_dir, export):
     generated = time.localtime()
     stamp = time.strftime("%Y%m%d-%H%M%S", generated)
     path = f"board/{stamp}"
     dest = claim(runs_repo, path, runs_dir)
     commit = git("rev-parse", "HEAD").strip()
     uncommitted = git("status", "--porcelain").splitlines()
-    export = f"quantize/{exported}"
     export_dir = download(runs_repo, export, runs_dir)
     with open(os.path.join(export_dir, "meta.json")) as f:
-        run = json.load(f)["run"]
+        exported = json.load(f)
     models = models_in(export_dir)
     version = subprocess.run([stedgeai, "--version"], capture_output=True, text=True,
                              check=True).stdout.splitlines()[0]
 
-    meta = {"export": export, "run": run, "target": TARGET,
-            "models": [{"k": k, "h": h} for k, h in models],
+    meta = {"export": export, "models": exported["models"], "target": TARGET,
+            "exported": exported["exported"],
             "commit": commit, "uncommitted": uncommitted,
             "versions": {"python": platform.python_version(), "stedgeai": version},
             "generated": time.strftime("%Y-%m-%dT%H:%M:%S%z", generated)}
     os.makedirs(dest)
-    for k, h in models:
-        name = f"nonlinear_ae_k{k}_h{h}"
+    for model in models:
+        name = file_of(model)
         generate(stedgeai, os.path.join(export_dir, f"{name}_float.onnx"),
                  os.path.join(dest, name))
     with open(os.path.join(dest, "meta.json"), "w") as f:
