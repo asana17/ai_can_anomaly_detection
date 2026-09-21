@@ -25,15 +25,15 @@ typedef struct {
 	UW no;
 	UW score_bits; /* float32 MSE bits; avoids UART float formatting. */
 	UW cycles;
-	INT hit;
+	INT flagged;
 	ModelStatus error;
 } Report;
 
 typedef struct {
 	float score;
 	UW cycles;
-	INT hit;
-} Detection;
+	INT flagged;
+} Scored;
 
 LOCAL ID row_mbf, report_mbf;
 LOCAL volatile INT source_dropped;
@@ -71,7 +71,7 @@ LOCAL void source_task(INT stacd, void *exinf)
 }
 
 /* Apply this application's preprocessing and reconstruction-error policy. */
-LOCAL ModelStatus evaluate_row(const float physical[MODEL_SIGNALS], Detection *detection)
+LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Scored *scored)
 {
 	float scaled[MODEL_SIGNALS];
 	float reconstructed[MODEL_SIGNALS];
@@ -80,7 +80,7 @@ LOCAL ModelStatus evaluate_row(const float physical[MODEL_SIGNALS], Detection *d
 	ModelStatus error;
 
 	scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
-	error = model_run(scaled, reconstructed, &detection->cycles);
+	error = model_run(scaled, reconstructed, &scored->cycles);
 	if(error != MODEL_OK) {
 		return error;
 	}
@@ -88,17 +88,17 @@ LOCAL ModelStatus evaluate_row(const float physical[MODEL_SIGNALS], Detection *d
 		const float difference = scaled[i] - reconstructed[i];
 		total += difference * difference;
 	}
-	detection->score = total / MODEL_SIGNALS;
-	detection->hit = detection->score > THRESHOLD_SCORE;
+	scored->score = total / MODEL_SIGNALS;
+	scored->flagged = scored->score > THRESHOLD_SCORE;
 	return MODEL_OK;
 }
 
-/* Detect anomalies in each physical row. */
+/* Score each physical row. */
 LOCAL void scoring_task(INT stacd, void *exinf)
 {
 	Row row;
 	Report report = {0};
-	Detection detection;
+	Scored scored;
 
 	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
 		if(row.no == RULE_ROWS) {
@@ -107,13 +107,13 @@ LOCAL void scoring_task(INT stacd, void *exinf)
 		report.no = row.no;
 		report.score_bits = 0;
 		report.cycles = 0;
-		report.hit = 0;
-		report.error = evaluate_row(row.physical, &detection);
+		report.flagged = 0;
+		report.error = score_row(row.physical, &scored);
 		if(report.error == MODEL_OK) {
-			memcpy(&report.score_bits, &detection.score,
-				sizeof(detection.score));
-			report.cycles = detection.cycles;
-			report.hit = detection.hit;
+			memcpy(&report.score_bits, &scored.score,
+				sizeof(scored.score));
+			report.cycles = scored.cycles;
+			report.flagged = scored.flagged;
 		}
 		tk_snd_mbf(report_mbf, &report, sizeof(report), TMO_FEVR);
 		if(report.error != MODEL_OK) {
@@ -139,14 +139,14 @@ LOCAL void report_task(INT stacd, void *exinf)
 			break;
 		}
 		processed++;
-		flagged_rows += report.hit;
+		flagged_rows += report.flagged;
 		errors += report.error != MODEL_OK;
 		if(report.cycles > maximum_cycles) {
 			maximum_cycles = report.cycles;
 		}
 		if(processed % PROGRESS_EVERY == 0 || report.error != MODEL_OK) {
-			tm_printf((UB*)"row %d score 0x%08x hit %d cycles %u error %d\n",
-				report.no, report.score_bits, report.hit, report.cycles,
+			tm_printf((UB*)"row %d score 0x%08x flagged %d cycles %u error %d\n",
+				report.no, report.score_bits, report.flagged, report.cycles,
 				report.error);
 		}
 	}
