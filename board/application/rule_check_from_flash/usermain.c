@@ -62,8 +62,8 @@ LOCAL INT reverse_speed_rule(const Row *row)
 	return gear < 0.0f && wheel > 10.0f;
 }
 
-/* Check each row and send the result to the report task. */
-LOCAL void detect_task(INT stacd, void *exinf)
+/* Run the rule on each row and send the result to the report task. */
+LOCAL void rules_task(INT stacd, void *exinf)
 {
 	Row row;
 	Report report = {0};
@@ -109,8 +109,8 @@ LOCAL T_CTSK source_ctsk = {
 	.itskpri = 6, .stksz = 1024, .task = source_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
-LOCAL T_CTSK detect_ctsk = {
-	.itskpri = 8, .stksz = 1024, .task = detect_task,
+LOCAL T_CTSK rules_ctsk = {
+	.itskpri = 8, .stksz = 1024, .task = rules_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CTSK report_ctsk = {
@@ -120,7 +120,7 @@ LOCAL T_CTSK report_ctsk = {
 
 EXPORT INT usermain(void)
 {
-	ID source, detect, report;
+	ID source, rules, report;
 
 	row_mbf = tk_cre_mbf(&row_cmbf);
 	report_mbf = tk_cre_mbf(&report_cmbf);
@@ -128,13 +128,13 @@ EXPORT INT usermain(void)
 		return -1;
 	}
 	source = tk_cre_tsk(&source_ctsk);
-	detect = tk_cre_tsk(&detect_ctsk);
+	rules = tk_cre_tsk(&rules_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
-	if(source < E_OK || detect < E_OK || report < E_OK) {
+	if(source < E_OK || rules < E_OK || report < E_OK) {
 		return -1;
 	}
 	tk_sta_tsk(report, 0);
-	tk_sta_tsk(detect, 0);
+	tk_sta_tsk(rules, 0);
 	tk_sta_tsk(source, 0);
 	tk_slp_tsk(TMO_FEVR);
 	return 0;
