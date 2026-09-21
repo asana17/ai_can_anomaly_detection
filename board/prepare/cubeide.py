@@ -9,7 +9,10 @@ MARKER = "/* USER CODE BEGIN WHILE */"
 START = ("void knl_start_mtkernel(void);", "knl_start_mtkernel();")
 COMPILE_TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
                  "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler")
+C_COMPILER = COMPILE_TOOLS[1]
 LINKER_TOOL = "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker"
+# float32 math rounds as numpy does, the product before the sum, which GCC's FMA does not
+C_FLAGS = ("-ffp-contract=off",)
 DEFINES = ("_STM32CUBE_NUCLEO_H533_", "UNITY_INCLUDE_CONFIG_H")
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
             "mtk3_bsp2/mtkernel/kernel/knlinc", "test_common", "Unity/src")
@@ -85,6 +88,10 @@ def configure(cproject, libraries=(), runtime=None):
                 _add_value(includes, _workspace_path(path))
             if runtime:
                 _add_value(includes, f'"{runtime.include_dir}"')
+            if tool.get("superClass") == C_COMPILER:
+                flags = _list_option(tool, "otherflags", "Other flags", "stringList")
+                for flag in C_FLAGS:
+                    _add_value(flags, flag)
         elif tool.get("superClass") == LINKER_TOOL:
             libraries_option = _list_option(tool, "libraries", "Libraries (-l)", "libs")
             directories = _list_option(tool, "directories", "Library search path (-L)",

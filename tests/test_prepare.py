@@ -4,8 +4,9 @@ import pytest
 
 from board.prepare.application import (LIB, MODEL, MODEL_FILES, TEST_COMMON,
                                        application_dir, application_for)
-from board.prepare.cubeide import (COMPILE_TOOLS, DEFINES, LINKER_TOOL, MARKER,
-                                   configure, link_folder, link_folders, start_kernel)
+from board.prepare.cubeide import (C_COMPILER, C_FLAGS, COMPILE_TOOLS, DEFINES, LINKER_TOOL,
+                                   MARKER, configure, link_folder, link_folders,
+                                   start_kernel)
 from board.prepare.dependencies import stedgeai_runtime
 
 MAIN_C = ("  }\r\n"
@@ -108,6 +109,11 @@ def test_both_tools_get_the_define_and_the_selected_library_paths():
     assert [e.get("name") for e in root.iter("entry")] == [
         "Core", "mtk3_bsp2", "Unity/src", "application", "test_common",
         "lib/mbf"]
+
+
+def test_the_c_compiler_gets_the_flags():
+    root = ET.fromstring(configure(CPROJECT).split("?>", 2)[2])
+    assert _values(root, C_COMPILER, "otherflags") == list(C_FLAGS)
 
 
 def test_configuring_twice_changes_nothing():
