@@ -44,7 +44,7 @@ def thresholds_for(models, weights, rows, *, target):
     """
     kept = []
     for model in models:
-        score = model.load(weights, rows.shape[1])
+        score = model.scorer(weights, rows.shape[1])
         kept.append({**as_dict(model), "threshold": quantile(score(rows), target)})
     return kept
 

@@ -101,7 +101,7 @@ def score_models(thresholds, weights, rows_to_score, attacks_to_check, settings)
     for entry in thresholds:
         model = model_from({name: value for name, value in entry.items()
                             if name != "threshold"})    # the rest describes the model
-        scores = model.load(weights, rows.shape[1])(rows)
+        scores = model.scorer(weights, rows.shape[1])(rows)
         flag = (scores > entry["threshold"]) & rows_to_score["mv"]
         kept.append({**entry,
                      **counted(flag, rows_to_score, attacks_to_check, settings)})

@@ -59,7 +59,7 @@ class Pca:
                  f"{self.prefix}basis": torch.from_numpy(space.basis).contiguous()},
                 lambda scored: pca.residuals(scored, space), None)
 
-    def load(self, weights, signals):
+    def scorer(self, weights, signals):
         """Take this model's `centre` and `basis` out of `weights`, and score with them.
 
         `weights` is what a run's `weights.safetensors` holds, every model's tensors
@@ -85,7 +85,7 @@ class _Autoencoder:
                  for key, tensor in net.state_dict().items()},
                 lambda scored: autoencoder.residuals(scored, net), losses)
 
-    def load(self, weights, signals):
+    def scorer(self, weights, signals):
         """Take this model's tensors out of `weights` and put them in a network.
 
         `weights` is what a run's `weights.safetensors` holds, every model's tensors

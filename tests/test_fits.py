@@ -44,12 +44,12 @@ def test_only_an_autoencoder_writes_down_how_it_was_fitted():
                                    NonlinearAe(2, 8, ARGUMENTS)])
 def test_a_loaded_model_scores_as_the_fitted_one_did(model):
     tensors, score, _ = model.fit(ROWS)
-    assert np.allclose(model.load(tensors, ROWS.shape[1])(ROWS), score(ROWS))
+    assert np.allclose(model.scorer(tensors, ROWS.shape[1])(ROWS), score(ROWS))
 
 
 def test_loading_a_model_the_weights_lack_raises():
     with pytest.raises(ValueError):
-        Pca(2).load({}, 5)
+        Pca(2).scorer({}, 5)
 
 
 def test_only_an_autoencoder_reports_a_loss_for_each_epoch():
