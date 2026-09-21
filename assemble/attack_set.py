@@ -198,5 +198,5 @@ def main(repo, revision, split_path, data_dir, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    main(*arguments(("repo", "revision", "split_path", "data_dir", "local_dir"),
+    main(**arguments(("repo", "revision", "split_path", "data_dir", "local_dir"),
                     rebuild=False))

@@ -70,16 +70,16 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
                          "torch": torch.__version__, "platform": platform.platform()}}
 
 
-def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models_path=MODELS,
+def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models=MODELS,
          rebuild=False):
-    models = models_in(models_path)
-    inputs = {"train_set": train_path, "models": [as_dict(model) for model in models]}
+    fitted = models_in(models)
+    inputs = {"train_set": train_path, "models": [as_dict(model) for model in fitted]}
     return reuse_or_make(runs_repo, "models", inputs, runs_dir,
-                         lambda folder: write_models(folder, models, repo, revision,
+                         lambda folder: write_models(folder, fitted, repo, revision,
                                                      train_path, local_dir),
                          rebuild)
 
 
 if __name__ == "__main__":
-    main(*arguments(("repo", "revision", "train_path", "local_dir", "runs_repo",
-                     "runs_dir"), models=MODELS, rebuild=False))
+    main(**arguments(("repo", "revision", "train_path", "local_dir", "runs_repo",
+                      "runs_dir"), models=MODELS, rebuild=False))

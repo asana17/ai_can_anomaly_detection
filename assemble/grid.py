@@ -133,4 +133,4 @@ def main(data_dir, pattern, local_dir, repo, rebuild=False):
 
 
 if __name__ == "__main__":
-    main(*arguments(("data_dir", "pattern", "local_dir", "repo"), rebuild=False))
+    main(**arguments(("data_dir", "pattern", "local_dir", "repo"), rebuild=False))

@@ -165,5 +165,5 @@ def main(repo, revision, attack_path, local_dir, runs_repo, runs_revision,
 
 
 if __name__ == "__main__":
-    main(*arguments(("repo", "revision", "attack_path", "local_dir", "runs_repo",
+    main(**arguments(("repo", "revision", "attack_path", "local_dir", "runs_repo",
                      "runs_revision", "thresholds_path", "runs_dir"), rebuild=False))

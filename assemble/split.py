@@ -100,4 +100,4 @@ def main(repo, revision, grid_path, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    main(*arguments(("repo", "revision", "grid_path", "local_dir"), rebuild=False))
+    main(**arguments(("repo", "revision", "grid_path", "local_dir"), rebuild=False))

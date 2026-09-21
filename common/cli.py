@@ -6,9 +6,10 @@ import argparse
 
 
 def arguments(names, **flags):
-    """The values of the positional `names`, then of each flag, for a stage's `main`.
+    """What the command line holds, keyed by name, for a stage's `main` to take.
 
     A flag given `False` becomes a switch, anything else an option with that default.
+    The names are the ones `main` takes, so a stage reads them as `main(**arguments(…))`.
     """
     parser = argparse.ArgumentParser()
     for name in names:
@@ -19,4 +20,4 @@ def arguments(names, **flags):
         else:
             parser.add_argument(f"--{name}", default=default)
     read = parser.parse_args()
-    return [getattr(read, name) for name in (*names, *flags)]
+    return {name: getattr(read, name) for name in (*names, *flags)}

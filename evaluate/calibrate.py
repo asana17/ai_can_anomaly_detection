@@ -91,5 +91,5 @@ def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    main(*arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
+    main(**arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
                     rebuild=False))
