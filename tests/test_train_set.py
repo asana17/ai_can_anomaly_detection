@@ -8,6 +8,8 @@ from assemble.scale import scale_for
 from assemble.train_set import apart_from_test, split_rows
 from preprocess.features.signal_state import SIGNALS
 
+REVISION = "ab" * 20
+
 PERIOD, MAX_HOLD = 0.1, 1.0
 
 
@@ -178,7 +180,8 @@ def _grid_and_split(hub, speeds, test_start, test_end):
         "grids/20260101-000000/grid_t.npy": t,
         "splits/20260101-000000/meta.json": {
             "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
-            "grid": {"repo": "u/d", "revision": "abc", "path": "grids/20260101-000000"}},
+            "grid": {"repo": "u/d", "revision": REVISION,
+                     "path": "grids/20260101-000000"}},
         "splits/20260101-000000/split.json": {
             "train": LOGS[:1], "test": LOGS[1:],
             "test_start": test_start, "test_end": test_end}}
@@ -187,7 +190,7 @@ def _grid_and_split(hub, speeds, test_start, test_end):
 
 def test_the_stage_writes_which_rows_train_and_calibrate_and_the_scale(tmp_path, hub):
     raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 600.0, 999.9)
-    made = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
+    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
     folder = tmp_path / made["path"]
     train_rows = np.load(folder / "train_rows.npy")
     calibration_rows = np.load(folder / "calibration_rows.npy")
@@ -203,7 +206,7 @@ def test_the_stage_writes_which_rows_train_and_calibrate_and_the_scale(tmp_path,
 
 def test_the_stage_keeps_the_rows_near_the_test_block_out_of_both(tmp_path, hub):
     raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 500.0, 999.9)
-    made = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
+    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
     folder = tmp_path / made["path"]
     kept = (np.load(folder / "train_rows.npy")
             | np.load(folder / "calibration_rows.npy"))
@@ -215,7 +218,7 @@ def test_the_stage_keeps_the_slow_rows_out_of_train(tmp_path, hub):
     speeds = np.full(10000, 50.0)
     speeds[1000:2000] = 3.0
     raw, t, half = _grid_and_split(hub, speeds, 600.0, 999.9)
-    made = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
+    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
     train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
     assert not train_rows[1000:2000].any() and train_rows[:1000].any()
 
@@ -224,7 +227,7 @@ def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
     inputs = {"split": "splits/20260101-000000", "calibration": 0.10, "block": 20.0,
               "gap": 5.0}
     hub.files = {"train_sets/20260101-000000/meta.json": {"inputs": inputs}}
-    found = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
+    found = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
     assert found["path"] == "train_sets/20260101-000000" and hub.uploaded == []
 
 
@@ -241,20 +244,25 @@ def test_read_train_set_reads_the_rows_and_the_scale_back(tmp_path):
 
 def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
     hub.files.update({
-        "train_sets/t/meta.json": {
+        "train_sets/20260101-000000/meta.json": {
             "inputs": {},
-            "split": {"repo": "user/data", "revision": "abc", "path": "splits/s"},
-            "grid": {"repo": "user/data", "revision": "abc", "path": "grids/g"}},
-        "train_sets/t/train_rows.npy": np.array([True, False, False]),
-        "train_sets/t/calibration_rows.npy": np.array([False, True, False]),
-        "train_sets/t/scale.npy": np.array([[1.0], [2.0]]),
-        "splits/s/meta.json": {"inputs": {"min_speed": 5.0}},
-        "grids/g/meta.json": {"inputs": {"period": 0.1}},
-        "grids/g/grid_raw.npy": np.array([[10.0], [30.0], [50.0]], np.float32),
-        "grids/g/grid_t.npy": np.array([0.0, 0.1, 0.2]),
-        "grids/g/logs.json": {"logs": ["a.csv"], "rows": [3]},
+            "split": {"repo": "user/data", "revision": REVISION,
+                      "path": "splits/20260101-000000"},
+            "grid": {"repo": "user/data", "revision": REVISION,
+                     "path": "grids/20260101-000000"}},
+        "train_sets/20260101-000000/train_rows.npy": np.array([True, False, False]),
+        "train_sets/20260101-000000/calibration_rows.npy":
+            np.array([False, True, False]),
+        "train_sets/20260101-000000/scale.npy": np.array([[1.0], [2.0]]),
+        "splits/20260101-000000/meta.json": {"inputs": {"min_speed": 5.0}},
+        "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1}},
+        "grids/20260101-000000/grid_raw.npy":
+            np.array([[10.0], [30.0], [50.0]], np.float32),
+        "grids/20260101-000000/grid_t.npy": np.array([0.0, 0.1, 0.2]),
+        "grids/20260101-000000/logs.json": {"logs": ["a.csv"], "rows": [3]},
     })
-    got = train_set.fetch_train_set("user/data", "abc", "train_sets/t", str(tmp_path))
+    got = train_set.fetch_train_set("user/data", REVISION, "train_sets/20260101-000000",
+                                    str(tmp_path))
 
     assert got["train"].tolist() == [[10.0]], "the third row is in neither part"
     assert got["calibration"].tolist() == [[30.0]]

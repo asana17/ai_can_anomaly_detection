@@ -9,6 +9,9 @@ from deploy import export
 from deploy.export import write_onnx_files
 from models.autoencoder import NonlinearAutoencoder
 
+REVISION = "ab" * 20
+COMMIT = "de" * 20
+
 NONLINEAR = {"model": "nonlinear ae", "k": 4, "hidden": 8, "epochs": 1, "batch": 128,
              "rate": 0.001, "improvement": 0.0, "patience": 1, "seed": 0}
 
@@ -53,18 +56,18 @@ def fitted(monkeypatch, model):
     weights.update({"scale.mean": torch.zeros(17), "scale.std": torch.ones(17),
                     "pca.k2.centre": torch.zeros(17),
                     "pca.k2.basis": torch.zeros(17, 2)})
-    where = {"repo": "u/d", "revision": "abc", "path": "train_sets/t"}
-    meta = {"inputs": {"train_set": "train_sets/t",
+    where = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}
+    meta = {"inputs": {"train_set": "train_sets/20260101-000000",
                        "models": [{"model": "pca", "k": 2}, NONLINEAR]},
-            "train_set": where, "split": dict(where, path="splits/s"),
-            "grid": dict(where, path="grids/g"), "min_speed": 5.0}
+            "train_set": where, "split": dict(where, path="splits/20260101-000000"),
+            "grid": dict(where, path="grids/20260101-000000"), "min_speed": 5.0}
     monkeypatch.setattr(export, "fetch_fitted_models", lambda *args: (weights, meta))
 
 
 def test_every_nonlinear_autoencoder_of_the_fit_is_written(tmp_path, hub, monkeypatch):
     model, rows = _model(), _rows()
     fitted(monkeypatch, model)
-    made = export.main("u/runs", "def", "models/t", str(tmp_path))
+    made = export.main("u/runs", COMMIT, "models/20260101-000000", str(tmp_path))
 
     folder = tmp_path / made["path"]
     assert made["path"].startswith("onnx/")
@@ -73,7 +76,8 @@ def test_every_nonlinear_autoencoder_of_the_fit_is_written(tmp_path, hub, monkey
     assert np.allclose(_outputs(str(folder / "nonlinear_ae_k4_h8_float.onnx"), rows),
                        expected, atol=1e-5)
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"models": "models/t"}
-    assert meta["models"] == {"repo": "u/runs", "revision": "def", "path": "models/t"}
+    assert meta["inputs"] == {"models": "models/20260101-000000"}
+    assert meta["models"] == {"repo": "u/runs", "revision": COMMIT,
+                              "path": "models/20260101-000000"}
     assert meta["exported"] == [NONLINEAR]
 

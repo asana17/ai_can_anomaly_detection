@@ -10,6 +10,8 @@ from assemble.attack_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
 from preprocess.features import signal_state
 
+REVISION = "ab" * 20
+
 SIGNALS = 17
 PERIOD, MAX_HOLD = 0.1, 1.0
 
@@ -132,7 +134,7 @@ def _hub_files(tmp_path, hub, logs):
         "grids/20260101-000000/grid_t.npy": times,
         "splits/20260101-000000/meta.json": {
             "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
-            "grid": {"repo": "u/d", "revision": "abc",
+            "grid": {"repo": "u/d", "revision": REVISION,
                      "path": "grids/20260101-000000"}},
         "splits/20260101-000000/split.json": {"train": names[:-1], "test": names[-1:],
                                               "test_start": 0.0, "test_end": 0.0}}
@@ -141,7 +143,7 @@ def _hub_files(tmp_path, hub, logs):
 def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
     logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
     _hub_files(tmp_path, hub, logs)
-    made = attack_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path),
+    made = attack_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path),
                            str(tmp_path / "local"))
     folder = tmp_path / "local" / made["path"]
     label = np.load(folder / "attacked_label.npy")
@@ -157,6 +159,6 @@ def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
 def test_the_stage_names_an_attack_set_of_the_same_split(tmp_path, hub):
     inputs = {"split": "splits/20260101-000000", "seed": 0, "donors": 24}
     hub.files = {"attack_sets/20260101-000000/meta.json": {"inputs": inputs}}
-    found = attack_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path),
+    found = attack_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path),
                             str(tmp_path / "local"))
     assert found["path"] == "attack_sets/20260101-000000" and hub.uploaded == []

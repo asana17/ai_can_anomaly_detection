@@ -7,6 +7,8 @@ import pytest
 from deploy import generate_model_for_board
 from deploy.generate_model_for_board import KEPT, TARGET, generate
 
+REVISION = "ab" * 20
+COMMIT = "de" * 20
 WRITTEN = (*KEPT, "extra.txt")
 
 
@@ -53,20 +55,21 @@ def test_generate_never_overwrites(tmp_path):
 
 
 def test_every_float_file_of_the_export_is_generated(tmp_path, hub):
-    models = {"repo": "u/runs", "revision": "abc", "path": "models/t"}
-    hub.files = {"onnx/t/meta.json": {"models": models,
-                                      "exported": [_entry(8, 64), _entry(2, 32)]}}
-    made = generate_model_for_board.main(_stedgeai(tmp_path), "u/runs", "def", "onnx/t",
-                                         str(tmp_path))
+    models = {"repo": "u/runs", "revision": REVISION, "path": "models/20260101-000000"}
+    hub.files = {"onnx/20260101-000000/meta.json": {
+        "models": models, "exported": [_entry(8, 64), _entry(2, 32)]}}
+    made = generate_model_for_board.main(_stedgeai(tmp_path), "u/runs", COMMIT,
+                                         "onnx/20260101-000000", str(tmp_path))
 
     folder = tmp_path / made["path"]
     assert made["path"].startswith("board/")
     assert sorted(os.listdir(folder)) == ["meta.json", "nonlinear_ae_k2_h32",
                                           "nonlinear_ae_k8_h64"]
     assert (folder / "nonlinear_ae_k8_h64" / "network.c").read_text() == str(
-        tmp_path / "onnx" / "t" / "nonlinear_ae_k8_h64_float.onnx")
+        tmp_path / "onnx" / "20260101-000000" / "nonlinear_ae_k8_h64_float.onnx")
     meta = json.load(open(folder / "meta.json"))
-    assert meta["onnx"] == {"repo": "u/runs", "revision": "def", "path": "onnx/t"}
-    assert meta["inputs"] == {"onnx": "onnx/t", "target": TARGET}
+    assert meta["onnx"] == {"repo": "u/runs", "revision": COMMIT,
+                            "path": "onnx/20260101-000000"}
+    assert meta["inputs"] == {"onnx": "onnx/20260101-000000", "target": TARGET}
     assert meta["models"] == models
     assert meta["exported"] == [_entry(8, 64), _entry(2, 32)]

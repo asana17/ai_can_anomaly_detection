@@ -7,6 +7,9 @@ from assemble import grid
 from common import hub_dirs
 from preprocess.features.signal_state import SIGNALS
 
+REVISION = "ab" * 20
+COMMIT = "de" * 20
+
 
 def _logs(tmp_path):
     data = tmp_path / "data" / "part_1"
@@ -27,7 +30,7 @@ def test_it_writes_the_rows_of_every_log_named_under_data_dir(tmp_path, monkeypa
     assert np.load(folder / "grid_raw.npy").shape == (4, len(SIGNALS))
     assert json.loads((folder / "logs.json").read_text()) == {
         "logs": ["part_1/a.csv", "part_1/b.csv"], "rows": [2, 2]}
-    assert made["revision"] == "def" and hub.uploaded[0]["repo_type"] == "dataset"
+    assert made["revision"] == COMMIT and hub.uploaded[0]["repo_type"] == "dataset"
 
 
 def test_each_log_starts_its_own_segment(tmp_path, monkeypatch, hub):
@@ -47,7 +50,7 @@ def test_it_names_the_directory_built_from_the_same_logs(tmp_path, monkeypatch, 
     hub.files = {"grids/20260101-000000/meta.json": {"inputs": inputs}}
     monkeypatch.setattr(grid, "write_grid", None)           # building would fail
     found = grid.main(data, "part_*/*.csv", str(tmp_path / "local"), "u/d")
-    assert found == {"repo": "u/d", "revision": "abc",
+    assert found == {"repo": "u/d", "revision": REVISION,
                      "path": "grids/20260101-000000"}
     assert hub.uploaded == []
 

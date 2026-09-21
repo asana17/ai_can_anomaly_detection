@@ -47,8 +47,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   TRON Programming Contest 2026 entry, and the order it is built in.
 - [common/](common) holds the settings of a run and reads the dataset, which
   `evaluate`, `deploy` and `board` all use. [common/schemas](common/schemas)
-  describes every JSON file a stage uploads. A stage checks its files against them
-  before the upload.
+  describes every JSON file a stage uploads. The tests check each file a stage
+  uploads against them.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
   quantizing their models costs is in [deploy/results.md](deploy/results.md).

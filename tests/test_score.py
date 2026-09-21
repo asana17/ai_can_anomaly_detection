@@ -14,6 +14,9 @@ from models.fits import FitArguments, NonlinearAe, as_dict
 from models.onnx_files import onnx_name
 from preprocess.features.signal_state import SIGNALS
 
+REVISION = "ab" * 20
+COMMIT = "de" * 20
+
 WHEEL = SIGNALS.index("wheel_speed")
 MODEL = NonlinearAe(k=4, hidden=8, arguments=FitArguments(
     epochs=2, batch=16, rate=1e-3, improvement=1e-4, patience=2, seed=0))
@@ -55,14 +58,15 @@ def test_an_attack_that_moved_no_row_is_counted_apart():
 
 def stand_in(monkeypatch, hub):
     """A threshold, the model it belongs to, and six attacked rows to score it on."""
-    where = {"repo": "u/runs", "revision": "abc", "path": "models/t"}
+    where = {"repo": "u/runs", "revision": REVISION, "path": "models/20260101-000000"}
     hub.files = {
-        "thresholds/t/meta.json": {
-            "inputs": {"models": "models/t", "target": 0.001, "onnx_files": None,
-                       "precision": None},
+        "thresholds/20260101-000000/meta.json": {
+            "inputs": {"models": "models/20260101-000000", "target": 0.001,
+                       "onnx_files": None, "precision": None},
             "models": where, "onnx_files": None,
-            "train_set": dict(where, repo="u/d", path="train_sets/t")},
-        "thresholds/t/thresholds.json": [{"model": "pca", "k": 2, "threshold": 0.5}]}
+            "train_set": dict(where, repo="u/d", path="train_sets/20260101-000000")},
+        "thresholds/20260101-000000/thresholds.json": [
+            {"model": "pca", "k": 2, "threshold": 0.5}]}
     monkeypatch.setattr(score, "fetch_fitted_models", lambda *args: (
         {"scale.mean": torch.zeros(len(SIGNALS)),
          "pca.k2.centre": torch.zeros(len(SIGNALS)),
@@ -81,16 +85,20 @@ def stand_in(monkeypatch, hub):
         "attacks": [{"log": "a.csv", "first": 1, "last": 2}],
         "before": lambda log: {t: np.zeros(len(SIGNALS), np.float32) for t in times},
         "min_speed": 5.0,
-        "dataset": {"attack_set": {"repo": "u/d", "revision": "abc",
-                                   "path": "attack_sets/t"}}})
+        "dataset": {"attack_set": {"repo": "u/d", "revision": REVISION,
+                                   "path": "attack_sets/20260101-000000"},
+                    "split": {"repo": "u/d", "revision": REVISION,
+                              "path": "splits/20260101-000000"},
+                    "grid": {"repo": "u/d", "revision": REVISION,
+                             "path": "grids/20260101-000000"}}})
     monkeypatch.setattr("evaluate.counting.rule_hits",
                         lambda raw, settings: np.zeros(len(raw), bool))
 
 
 def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
     stand_in(monkeypatch, hub)
-    made = score.main("u/d", "abc", "attack_sets/t", str(tmp_path), "u/runs", "def",
-                      "thresholds/t", str(tmp_path))
+    made = score.main("u/d", REVISION, "attack_sets/20260101-000000", str(tmp_path),
+                      "u/runs", COMMIT, "thresholds/20260101-000000", str(tmp_path))
 
     folder = tmp_path / made["path"]
     assert sorted(os.listdir(folder)) == ["attacks.json", "detection.json",
@@ -102,8 +110,8 @@ def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
     assert len(kept) == 1 and kept[0]["moved"] > 0, "every attack keeps what it moved"
 
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"attack_set": "attack_sets/t",
-                              "thresholds": "thresholds/t",
+    assert meta["inputs"] == {"attack_set": "attack_sets/20260101-000000",
+                              "thresholds": "thresholds/20260101-000000",
                               "moved": Settings().MOVED,
                               "hold": list(Settings().HOLD)}
     assert meta["attacks"] == 1 and meta["attacks_scorable"] == 1
@@ -121,16 +129,18 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
     rows = np.random.default_rng(0).normal(size=(64, len(SIGNALS))).astype(np.float32)
     write_onnx_files([(onnx_name(MODEL), net)], len(SIGNALS), str(tmp_path / "float"))
     write_int8_files([onnx_name(MODEL)], str(tmp_path / "float"), rows,
-                     str(tmp_path / "quantize" / "t"), batch=16)
-    onnx_files = {"repo": "u/runs", "revision": "abc", "path": "quantize/t",
-                  "precision": "int8"}
-    hub.files["thresholds/t/meta.json"].update(
-        inputs={"models": "models/t", "target": 0.001, "onnx_files": "quantize/t",
-                "precision": "int8"},
+                     str(tmp_path / "quantize" / "20260101-000000"), batch=16)
+    onnx_files = {"repo": "u/runs", "revision": REVISION,
+                  "path": "quantize/20260101-000000", "precision": "int8"}
+    hub.files["thresholds/20260101-000000/meta.json"].update(
+        inputs={"models": "models/20260101-000000", "target": 0.001,
+                "onnx_files": "quantize/20260101-000000", "precision": "int8"},
         onnx_files=onnx_files)
     hub.files.update({
-        "thresholds/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.25}],
-        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t"}}})
+        "thresholds/20260101-000000/thresholds.json": [
+            {**as_dict(MODEL), "threshold": 0.25}],
+        "quantize/20260101-000000/meta.json": {
+            "inputs": {"onnx": "onnx/20260101-000000"}}})
 
     def no_weights(*args):
         raise AssertionError("an int8 file needs no weights")
@@ -140,8 +150,8 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
 def test_thresholds_taken_with_onnx_files_score_with_them(tmp_path, hub,
                                                             monkeypatch):
     int8_stand_in(monkeypatch, tmp_path, hub)
-    made = score.main("u/d", "abc", "attack_sets/t", str(tmp_path), "u/runs", "def",
-                      "thresholds/t", str(tmp_path))
+    made = score.main("u/d", REVISION, "attack_sets/20260101-000000", str(tmp_path),
+                      "u/runs", COMMIT, "thresholds/20260101-000000", str(tmp_path))
 
     caught = json.load(open(tmp_path / made["path"] / "detection.json"))
     assert caught[1]["model"] == "nonlinear ae"

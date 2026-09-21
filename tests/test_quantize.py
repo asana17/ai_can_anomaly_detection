@@ -12,6 +12,9 @@ from models.autoencoder import NonlinearAutoencoder, residuals
 from models.onnx_files import onnx_residuals
 from preprocess.features.signal_state import SIGNALS
 
+REVISION = "ab" * 20
+COMMIT = "de" * 20
+
 ENTRY = {"model": "nonlinear ae", "k": 4, "hidden": 8, "epochs": 1, "batch": 128,
          "rate": 0.001, "improvement": 0.0, "patience": 1, "seed": 0}
 
@@ -59,10 +62,11 @@ def exported(monkeypatch, tmp_path):
     source = str(tmp_path / "source")
     write_onnx_files([("nonlinear_ae_k4_h8", NonlinearAutoencoder(
         signals=signals, latent_dim=4, hidden=8))], signals, source)
-    where = {"repo": "u/d", "revision": "abc", "path": "train_sets/t"}
-    meta = {"models": {"repo": "u/runs", "revision": "abc", "path": "models/t"},
-            "train_set": where, "split": dict(where, path="splits/s"),
-            "grid": dict(where, path="grids/g"), "exported": [ENTRY]}
+    where = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}
+    meta = {"models": {"repo": "u/runs", "revision": REVISION,
+                       "path": "models/20260101-000000"},
+            "train_set": where, "split": dict(where, path="splits/20260101-000000"),
+            "grid": dict(where, path="grids/20260101-000000"), "exported": [ENTRY]}
     monkeypatch.setattr(quantize, "read_dir", lambda *args: (source, meta))
     raw = np.random.default_rng(0).normal(size=(256, signals)).astype(np.float32)
     raw[:, SIGNALS.index("wheel_speed")] = 10.0
@@ -73,12 +77,14 @@ def exported(monkeypatch, tmp_path):
 
 def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch):
     exported(monkeypatch, tmp_path)
-    made = quantize.main("u/runs", "def", "onnx/t", str(tmp_path), str(tmp_path))
+    made = quantize.main("u/runs", COMMIT, "onnx/20260101-000000", str(tmp_path),
+                         str(tmp_path))
 
     folder = tmp_path / made["path"]
     assert made["path"].startswith("quantize/")
     assert sorted(os.listdir(folder)) == ["meta.json", "nonlinear_ae_k4_h8_int8.onnx"]
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"onnx": "onnx/t"}
-    assert meta["onnx"] == {"repo": "u/runs", "revision": "def", "path": "onnx/t"}
-    assert meta["models"]["path"] == "models/t"
+    assert meta["inputs"] == {"onnx": "onnx/20260101-000000"}
+    assert meta["onnx"] == {"repo": "u/runs", "revision": COMMIT,
+                            "path": "onnx/20260101-000000"}
+    assert meta["models"]["path"] == "models/20260101-000000"
