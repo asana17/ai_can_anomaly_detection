@@ -5,7 +5,7 @@ import torch
 from safetensors.torch import save_file
 
 from evaluate.quantize.compare import models_in, sources_for
-from quantize.export import onnx_residuals, threshold_for, write
+from quantize.export import onnx_residuals, threshold_for, write_onnx_files
 from evaluate.counting import detection
 from common.settings import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals
@@ -26,7 +26,7 @@ def _export(tmp_path, model, rows, meta=None):
     save_file({f"nonlinear_ae.h8.k4.{n}": t for n, t in model.state_dict().items()},
               str(run / "weights.safetensors"))
     dest = tmp_path / "quantize" / "20260101-010000"
-    write([("nonlinear_ae_k4_h8", model)], rows, str(dest), batch=128)
+    write_onnx_files([("nonlinear_ae_k4_h8", model)], rows, str(dest), batch=128)
     (dest / "meta.json").write_text(json.dumps(
         meta or {"run": "results/20260101-000000", "models": [{"k": 4, "h": 8}]}))
     return "20260101-010000"
@@ -103,6 +103,6 @@ def test_alarms_outside_an_attack_are_counted_by_the_hour():
 
 def test_onnx_residuals_reads_the_rows_it_is_given(tmp_path):
     model, rows = _model(), _rows()
-    write([("ae", model)], rows, str(tmp_path / "out"), batch=128)
+    write_onnx_files([("ae", model)], rows, str(tmp_path / "out"), batch=128)
     got = onnx_residuals(str(tmp_path / "out" / "ae_float.onnx"), rows[:8])
     assert np.allclose(got, residuals(rows[:8], model), atol=1e-6)

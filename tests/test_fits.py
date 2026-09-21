@@ -55,3 +55,13 @@ def test_loading_a_model_the_weights_lack_raises():
 def test_only_an_autoencoder_reports_a_loss_for_each_epoch():
     assert Pca(2).fit(ROWS)[2] is None
     assert len(LinearAe(2, ARGUMENTS).fit(ROWS)[2]) == 2
+
+
+def test_a_network_comes_back_with_the_tensors_the_run_saved():
+    model = NonlinearAe(2, 8, ARGUMENTS)
+    tensors, _, _ = model.fit(ROWS)
+
+    net = model.network_with_weights(tensors, ROWS.shape[1])
+    assert all(np.allclose(net.state_dict()[name].numpy(),
+                           tensors[f"{model.prefix}{name}"].numpy())
+               for name in net.state_dict())

@@ -39,13 +39,17 @@ def models_in(path):
         return models_from(json.load(f))
 
 
+def rows_to_fit(train_set):
+    """The rows a model is fitted on, scaled, with the rows at or below the speed out."""
+    raw, scale = train_set["train"], train_set["scale"]
+    return scale.apply(raw[moving(raw, min_speed=train_set["min_speed"])])
+
+
 def write_models(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
     scale, min_speed = train_set["scale"], train_set["min_speed"]
-    raw = train_set["train"]
-    # the split decides which rows are scored, and only those are fitted on
-    rows = scale.apply(raw[moving(raw, min_speed=min_speed)])
+    rows = rows_to_fit(train_set)
     print(f"{len(rows)} rows to fit on", flush=True)
 
     weights = {"scale.mean": torch.from_numpy(scale.mean),

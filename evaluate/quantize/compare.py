@@ -10,13 +10,14 @@ import os
 import sys
 
 import numpy as np
+from safetensors.torch import load_file
 
 from common.load_dataset import arrays_from, attacks_from, fetch
 from common.hub_dirs import download
 from common.settings import Settings
 from evaluate.counting import detection, prepare_scoring_input, training_rows
 from models.autoencoder import NonlinearAutoencoder, residuals
-from quantize.export import load, onnx_residuals, threshold_for
+from quantize.export import onnx_residuals, threshold_for
 
 
 def rows_for(out_dir, settings):
@@ -35,10 +36,21 @@ def models_in(export_dir):
     return meta, [(m["k"], m["h"]) for m in listed]
 
 
+def _state_of(run_dir, k, h):
+    """The `state_dict` of the run's nonlinear autoencoder at `k` and `h`."""
+    prefix = f"nonlinear_ae.h{h}.k{k}."
+    weights = load_file(os.path.join(run_dir, "weights.safetensors"))
+    state = {name[len(prefix):]: tensor for name, tensor in weights.items()
+             if name.startswith(prefix)}
+    if not state:
+        raise ValueError(f"{run_dir} holds no nonlinear autoencoder at k={k} h={h}")
+    return state
+
+
 def sources_for(run_dir, export_dir, k, h, signals):
     """The run's model and the int8 ONNX an export quantized from that model."""
     model = NonlinearAutoencoder(signals=signals, latent_dim=k, hidden=h)
-    model.load_state_dict(load(run_dir, k, h))
+    model.load_state_dict(_state_of(run_dir, k, h))
     int8 = os.path.join(export_dir, f"nonlinear_ae_k{k}_h{h}_int8.onnx")
     return {"torch": lambda rows: residuals(rows, model),
             "int8": lambda rows: onnx_residuals(int8, rows)}

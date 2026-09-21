@@ -76,7 +76,7 @@ class _Autoencoder:
     def fit(self, rows):
         """Its tensors, how it scores rows, and its mean loss on them each epoch."""
         torch.manual_seed(self.arguments.seed)
-        net = self.network(rows.shape[1])
+        net = self._network(rows.shape[1])
         losses = autoencoder.fit(rows, net, epochs=self.arguments.epochs,
                                  batch=self.arguments.batch, rate=self.arguments.rate,
                                  threshold=self.arguments.improvement,
@@ -85,15 +85,15 @@ class _Autoencoder:
                  for key, tensor in net.state_dict().items()},
                 lambda scored: autoencoder.residuals(scored, net), losses)
 
-    def scorer(self, weights, signals):
-        """Take this model's tensors out of `weights` and put them in a network.
-
-        `weights` is what a run's `weights.safetensors` holds, every model's tensors
-        together. The network is built at this model's shape, and what comes back
-        scores rows.
-        """
-        net = self.network(signals)
+    def network_with_weights(self, weights, signals):
+        """This model as a network, holding the tensors `weights` kept for it."""
+        net = self._network(signals)
         net.load_state_dict(_under(self.prefix, weights, self.name))
+        return net
+
+    def scorer(self, weights, signals):
+        """Take this model's tensors out of `weights` and score rows with them."""
+        net = self.network_with_weights(weights, signals)
         return lambda scored: autoencoder.residuals(scored, net)
 
 
@@ -113,7 +113,7 @@ class LinearAe(_Autoencoder):
     def name(self):
         return f"rules + linear ae k={self.k}"
 
-    def network(self, signals):
+    def _network(self, signals):
         return autoencoder.LinearAutoencoder(signals=signals, latent_dim=self.k)
 
 
@@ -134,7 +134,7 @@ class NonlinearAe(_Autoencoder):
     def name(self):
         return f"rules + nonlinear ae h={self.hidden} k={self.k}"
 
-    def network(self, signals):
+    def _network(self, signals):
         return autoencoder.NonlinearAutoencoder(signals=signals, latent_dim=self.k,
                                                 hidden=self.hidden)
 

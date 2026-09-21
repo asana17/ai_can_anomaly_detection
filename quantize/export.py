@@ -1,16 +1,15 @@
-"""Write every nonlinear autoencoder of a run out as float and int8 ONNX, and keep them.
+"""Write every nonlinear autoencoder of a fit out as float and int8 ONNX, and keep them.
 
-    python3 -m quantize.export repo revision out runs_repo runs_dir started
+    python3 -m quantize.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import platform
-import sys
 import tempfile
-import time
 
 import numpy as np
 import onnx
@@ -19,14 +18,13 @@ import torch
 from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
                                       QuantFormat, QuantType, quantize_static)
 from onnxruntime.quantization.shape_inference import quant_pre_process
-from safetensors.torch import load_file
 
-from common.git import git
-from common.hub_dirs import claim, download, upload
-from common.load_dataset import arrays_from, fetch
+from assemble.train_set import fetch_train_set
+from common.hub_dirs import reuse_or_make
 from common.settings import Settings
-from evaluate.counting import training_rows
-from models.autoencoder import NonlinearAutoencoder
+from evaluate.calibrate import calibration_rows
+from evaluate.fit import fetch_models, rows_to_fit
+from models.fits import NonlinearAe, as_dict, models_from
 
 
 class Rows(CalibrationDataReader):
@@ -39,25 +37,6 @@ class Rows(CalibrationDataReader):
     def get_next(self):
         batch = next(self.batches, None)
         return None if batch is None else {self.name: batch.astype(np.float32)}
-
-
-def load(run_dir, k, h):
-    """The `state_dict` of the run's nonlinear autoencoder at `k` and `h`."""
-    prefix = f"nonlinear_ae.h{h}.k{k}."
-    weights = load_file(os.path.join(run_dir, "weights.safetensors"))
-    state = {name[len(prefix):]: tensor for name, tensor in weights.items()
-             if name.startswith(prefix)}
-    if not state:
-        raise ValueError(f"{run_dir} holds no nonlinear autoencoder at k={k} h={h}")
-    return state
-
-
-def fits_in(run_dir):
-    """The `k` and `h` of every nonlinear autoencoder the run saved."""
-    weights = load_file(os.path.join(run_dir, "weights.safetensors"))
-    got = {tuple(int(part[1:]) for part in name.split(".")[1:3])
-           for name in weights if name.startswith("nonlinear_ae.")}
-    return sorted((k, h) for h, k in got)
 
 
 def onnx_residuals(path, rows, batch=8192):
@@ -76,9 +55,9 @@ def threshold_for(scores, target):
     return float(np.percentile(scores, 100 * (1 - target)))
 
 
-def write(models, rows, dest, batch):
-    """Write each model into a new `dest` as float ONNX, and as int8 quantized on `rows`."""
-    os.makedirs(dest)                       # raises rather than overwrite an export
+def write_onnx_files(models, rows, dest, batch):
+    """Write each model into `dest` as float ONNX, and as int8 quantized on `rows`."""
+    os.makedirs(dest, exist_ok=True)
     for name, model in models:
         float_path = os.path.join(dest, f"{name}_float.onnx")
         model.eval()
@@ -95,48 +74,66 @@ def write(models, rows, dest, batch):
                             calibrate_method=CalibrationMethod.MinMax)
 
 
-def main(repo, revision, out_dir, runs_repo, runs_dir, started):
-    settings = Settings()
-    exported = time.localtime()
-    stamp = time.strftime("%Y%m%d-%H%M%S", exported)
-    path = f"quantize/{stamp}"
-    dest = claim(runs_repo, path, runs_dir)
-    commit = git("rev-parse", "HEAD").strip()
-    uncommitted = git("status", "--porcelain").splitlines()
-    run = f"results/{started}"
-    run_dir = download(runs_repo, run, runs_dir)
-    wanted = fits_in(run_dir)               # every fit the run saved, none of them picked
-    states = [(k, h, load(run_dir, k, h)) for k, h in wanted]
+def file_of(model):
+    """What the ONNX files of `model` are named."""
+    return f"nonlinear_ae_k{model.k}_h{model.hidden}"
 
-    dataset = {"repo": repo, "revision": fetch(repo, revision, out_dir)}
-    data = arrays_from(out_dir, settings)
-    # the same training and calibration rows as evaluate.pc.run
-    tr, calibration = training_rows(data, data["scale"], settings)
 
-    models = []
-    for k, h, state in states:
-        model = NonlinearAutoencoder(signals=tr.shape[1], latent_dim=k, hidden=h)
-        model.load_state_dict(state)
-        models.append((f"nonlinear_ae_k{k}_h{h}", model))
-    write(models, tr, dest, settings.BATCH)
+def int8_thresholds(models, calibration, folder, target):
+    """Calibrate each int8 model again on the calibration rows."""
+    kept = []
+    for model in models:
+        scores = onnx_residuals(os.path.join(folder, f"{file_of(model)}_int8.onnx"),
+                                calibration)
+        kept.append({**as_dict(model),
+                     "int8_threshold": threshold_for(scores, target)})
+    return kept
 
-    # the board reads the int8 file, so it needs a threshold of that file's own scores
-    cuts = {name: threshold_for(onnx_residuals(os.path.join(dest, f"{name}_int8.onnx"),
-                                               calibration), settings.TARGET)
-            for name, _ in models}
-    meta = {"run": run, "dataset": dataset,
-            "models": [{"k": k, "h": h,
-                        "int8_threshold": cuts[f"nonlinear_ae_k{k}_h{h}"]}
-                       for k, h in wanted],
-            "commit": commit, "uncommitted": uncommitted,
+
+def write_export(folder, runs_repo, revision, models_path, runs_dir, local_dir,
+                 settings):
+    """Write each nonlinear autoencoder of a fit as ONNX, and return what to record.
+
+    The float file is the model as it was fitted. The int8 file is quantized on the
+    rows the model was fitted on.
+    """
+    weights, models_meta = fetch_models(runs_repo, revision, models_path, runs_dir)
+    at = models_meta["train_set"]
+    train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
+    rows = rows_to_fit(train_set)
+    calibration = calibration_rows(train_set, settings)
+
+    # the board runs a nonlinear autoencoder, so the other models are left out
+    wanted = [model for model in models_from(models_meta["inputs"]["models"])
+              if isinstance(model, NonlinearAe)]
+    write_onnx_files([(file_of(model),
+                       model.network_with_weights(weights, rows.shape[1]))
+                      for model in wanted], rows, folder, settings.BATCH)
+    thresholds = int8_thresholds(wanted, calibration, folder, settings.TARGET)
+    return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},
+            **{name: models_meta[name] for name in ("train_set", "split", "grid")},
+            "thresholds": thresholds,
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "onnx": onnx.__version__,
-                         "onnxruntime": onnxruntime.__version__},
-            "exported": time.strftime("%Y-%m-%dT%H:%M:%S%z", exported)}
-    with open(os.path.join(dest, "meta.json"), "w") as f:
-        json.dump(meta, f, indent=2)
-    upload(runs_repo, path, runs_dir, f"add {path} from {run}, {len(wanted)} models")
+                         "onnxruntime": onnxruntime.__version__}}
+
+
+def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False):
+    settings = Settings()
+    inputs = {"models": models_path, "target": settings.TARGET,
+              "batch": settings.BATCH}
+    return reuse_or_make(runs_repo, "quantize", inputs, runs_dir,
+                         lambda folder: write_export(folder, runs_repo, revision,
+                                                     models_path, runs_dir, local_dir,
+                                                     settings),
+                         rebuild)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+    parser = argparse.ArgumentParser()
+    for name in ("runs_repo", "revision", "models_path", "runs_dir", "local_dir"):
+        parser.add_argument(name)
+    parser.add_argument("--rebuild", action="store_true")
+    args = parser.parse_args()
+    main(args.runs_repo, args.revision, args.models_path, args.runs_dir,
+         args.local_dir, args.rebuild)

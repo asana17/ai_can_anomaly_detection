@@ -1,59 +1,54 @@
 # export
 
 The board runs C code that ST Edge AI Core generates from an ONNX file. `export` takes
-every nonlinear autoencoder a run of `evaluate.pc.run` fitted, writes each one out as
-float and int8 ONNX for that, and keeps them in the runs repository.
+every nonlinear autoencoder [fit](../../evaluate/docs/fit.md) wrote, writes each one
+out as float and int8 ONNX for that, and keeps them in the runs repository.
 
 ## Running it
 
 ```
-python3 -u -m quantize.export repo revision out runs_repo runs_dir started
+python3 -u -m quantize.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
 ```
 
 | argument | what it is |
 |---|---|
-| `repo`, `revision` | the Hugging Face dataset the run read, as its `meta.json` names it under `dataset` |
-| `out` | where that dataset is fetched to |
-| `runs_repo`, `runs_dir` | the [runs repository](../../evaluate/docs/run_record.md) and its local copy, the same ones `evaluate.pc.run` takes |
-| `started` | the run's `<start time>` under `results/`, such as `20260916-001002` |
+| `runs_repo` | Hugging Face model repo holding the models and uploaded to, needs `hf auth login` |
+| `revision` | commit of `runs_repo` to read the models at, as [fit](../../evaluate/docs/fit.md) printed it |
+| `models/<time>` | the fitted models to export |
+| `runs_dir` | local folder the models are downloaded to and `quantize/<time>/` is written to |
+| `local_dir` | local folder the train set the models name is downloaded to |
+| `--rebuild` | export again even if `runs_repo` already holds a directory with the same `inputs` |
 
-The run's directory is downloaded into `runs_dir`. Which autoencoders are written is not
-an argument. The run's `weights.safetensors` says which `k` and `h` it fitted, and all of
-them are written.
+Limitation: only the nonlinear autoencoders are exported. Every one in the models
+directory is written.
 
 ## What it writes
 
-Each export writes `quantize/<export time>/` into `runs_dir` and uploads it to
-`runs_repo` in one commit, the way a [run](../../evaluate/docs/run_record.md) does. It
-never writes into the run's.
+It writes these files into `runs_dir/quantize/<time>/` and uploads that directory to
+`runs_repo` as `quantize/<time>/`.
 
 | file | holds |
 |---|---|
-| `nonlinear_ae_k{k}_h{h}_float.onnx` | one autoencoder in float32 |
-| `nonlinear_ae_k{k}_h{h}_int8.onnx` | the same one in int8 QDQ form, the input ST Edge AI Core takes |
-| `meta.json` | what the ONNX files alone cannot say |
-
-The two ONNX files are written for every `k` and `h`, so one directory holds the whole
-run and one call is one commit.
-
-The ONNX files hold only the model's forward pass. The mean squared error is taken
-outside it, from the input row and the reconstruction. The quantizer's preprocessed
-model is only a step on the way, so it is not kept.
+| `nonlinear_ae_k{k}_h{h}_float.onnx` | one file per model, in float32 |
+| `nonlinear_ae_k{k}_h{h}_int8.onnx` | one file per model, in int8 QDQ form, the input ST Edge AI Core takes |
+| `meta.json` | where the models came from, and the threshold each int8 file reaches |
 
 | key in `meta.json` | holds |
 |---|---|
-| `run` | the run the weights came from, as `results/<start time>` |
-| `dataset` | the Hugging Face dataset the calibration rows came from, its `repo` and the full commit of its `revision` |
-| `models` | the `k` and `h` of every autoencoder in the directory, each with the `int8_threshold` its int8 file scores the run's calibration rows at, at `TARGET` |
-| `commit` | the commit of this repository the export ran from |
-| `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |
+| `inputs` | the models directory, `TARGET` and `BATCH`. A later call with the same `inputs` reuses this directory |
+| `models` | the directory the weights came from, as a repo, a revision and a path |
+| `train_set`, `split`, `grid` | the dataset directories the rows came from, as the models record them |
+| `thresholds` | one entry per autoencoder, the model as the models directory writes it down, and the `int8_threshold` its int8 file reaches on the calibration rows at `TARGET` |
 | `versions` | Python, NumPy, torch, ONNX and ONNX Runtime |
-| `exported` | when the export started |
+| `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
+| `started`, `finished` | when it started and ended |
 
-## Where the model comes from
+## Where the int8 thresholds come from
 
-The weights are read from the run's `weights.safetensors`. Nothing is fitted here, so
-the ONNX files hold exactly the models the run reported on.
+An int8 model does not score a row quite as the float model does, so it cannot keep
+the float model's threshold. Each int8 file scores the calibration rows of the train
+set, and its threshold is the score `TARGET` of them are above, as
+[calibrate](../../evaluate/docs/calibrate.md) does for the float models.
 
 ## Where the quantization ranges come from
 
@@ -61,11 +56,7 @@ The quantization follows what [ST Edge AI Core recommends](https://stedgeai-dc.s
 It uses the QDQ format with per-channel int8 weights and int8 activations, and takes
 the activation ranges by MinMax.
 
-The ranges come from the same training rows the run fitted on, built from the logs.
-`out` only saves building those rows again, so `export` also works without it. The rows
-match the run's only when the code builds them the way it did at the run's `commit`.
-The int8 file therefore cannot be rebuilt from the weights alone, which is why it is
-kept.
+The rows those ranges are measured on are the train rows the models were fitted on.
 
 ## Versions
 
