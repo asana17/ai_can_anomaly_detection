@@ -115,6 +115,25 @@ J1939's own terms, frame, PGN and SPN, are described in
   | scoring pipeline | `preprocess`, `rules`, the model | `score` | in C |
   | `detect` | threshold, OR the rule flags, `HOLD` | `pc.detect` | in C |
 
+  What differs from today's code. Rows 11 to 13 are not looked into yet, and rows 1 to
+  10 only as far as the functions read on 2026-09-22.
+
+  | # | what | today | after |
+  |---|---|---|---|
+  | 1 | `moving` | `assemble/grid.py` | `preprocess` |
+  | 2 | `Scale` | `assemble/scale.py` holds `Scale` and `scale_for` | `Scale.apply` in `preprocess`, `scale_for` with `fit` |
+  | 3 | train rows | moving, rule hits kept | moving, no rule hit |
+  | 4 | calibration rows | not selected, `calibrate` selects moving and no rule hit | moving only in `train_set`, rules applied in `score` |
+  | 5 | fitting the scale | `train_set` writes `scale.npy` | `fit`, kept with the models |
+  | 6 | reading the scale | `calibrate`, `score`, `quantize` read the train set | read from the models |
+  | 7 | step 4 | `counting.persistent`, the threshold and OR inside `score` | a new `detect` package |
+  | 8 | scoring stage | `pc.score` scores and counts | `score` writes `scores/`, `pc.detect` writes `detections/` |
+  | 9 | `calibrate` | selects rows, scores, takes the quantile | reads scores, takes the quantile |
+  | 10 | counting | `counting.py`, beside `persistent` | counting only, in `evaluate` |
+  | 11 | JSON Schemas | `detection` and others for today's dirs | match `scores/`, `detections/`, `thresholds/`, `models/` |
+  | 12 | tests | e.g. `test_train_set.py` checks `scale.npy`, `test_score.py` patches `fetch_scale`, `test_run.py` tests `persistent` | follow rows 1 to 11 |
+  | 13 | stage docs | `evaluate/docs/*`, `assemble/docs/train_set.md` and others | follow rows 1 to 11, place `pc_run.md` |
+
   - In `train_set` keep only moving rows no rule hit as train rows, as the model only
     sees those, and only moving rows as calibration rows. Then rebuild it. The scale
     and `quantize` then read the rows the model fits on.
