@@ -22,26 +22,18 @@ def _outputs(path, rows):
 
 def test_the_float_file_reconstructs_like_the_model(tmp_path):
     model, rows = _model(), _rows()
-    write_onnx_files([("ae", model)], rows, str(tmp_path / "out"), batch=128)
+    write_onnx_files([("ae", model)], 17, str(tmp_path / "out"))
     expected = model(torch.from_numpy(rows)).detach().numpy()
     assert np.allclose(_outputs(str(tmp_path / "out" / "ae_float.onnx"), rows), expected,
                        atol=1e-5)
 
 
-def test_the_int8_file_runs_on_the_same_rows(tmp_path):
-    rows = _rows()
-    write_onnx_files([("ae", _model())], rows, str(tmp_path / "out"), batch=128)
-    assert _outputs(str(tmp_path / "out" / "ae_int8.onnx"), rows).shape == rows.shape
-
-
-def test_only_the_float_and_int8_files_are_kept(tmp_path):
-    write_onnx_files([("ae", _model())], _rows(), str(tmp_path / "out"), batch=128)
-    assert sorted(p.name for p in (tmp_path / "out").iterdir()) == [
-        "ae_float.onnx", "ae_int8.onnx"]
+def test_only_the_float_file_is_kept(tmp_path):
+    write_onnx_files([("ae", _model())], 17, str(tmp_path / "out"))
+    assert sorted(p.name for p in (tmp_path / "out").iterdir()) == ["ae_float.onnx"]
 
 
 def test_every_model_asked_for_is_written(tmp_path):
-    rows = _rows()
-    write_onnx_files([("one", _model()), ("two", _model())], rows, str(tmp_path / "out"), batch=128)
+    write_onnx_files([("one", _model()), ("two", _model())], 17, str(tmp_path / "out"))
     assert sorted(p.name for p in (tmp_path / "out").iterdir()) == [
-        "one_float.onnx", "one_int8.onnx", "two_float.onnx", "two_int8.onnx"]
+        "one_float.onnx", "two_float.onnx"]

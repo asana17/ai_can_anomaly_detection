@@ -5,7 +5,8 @@ import torch
 from safetensors.torch import save_file
 
 from evaluate.quantize.compare import models_in, sources_for
-from deploy.export import onnx_residuals, threshold_for, write_onnx_files
+from deploy.export import write_onnx_files
+from deploy.quantize import write_int8_files
 from evaluate.counting import detection
 from common.settings import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals
@@ -26,7 +27,8 @@ def _export(tmp_path, model, rows, meta=None):
     save_file({f"nonlinear_ae.h8.k4.{n}": t for n, t in model.state_dict().items()},
               str(run / "weights.safetensors"))
     dest = tmp_path / "quantize" / "20260101-010000"
-    write_onnx_files([("nonlinear_ae_k4_h8", model)], rows, str(dest), batch=128)
+    write_onnx_files([("nonlinear_ae_k4_h8", model)], 17, str(dest))
+    write_int8_files(["nonlinear_ae_k4_h8"], str(dest), rows, str(dest), batch=128)
     (dest / "meta.json").write_text(json.dumps(
         meta or {"run": "results/20260101-000000", "models": [{"k": 4, "h": 8}]}))
     return "20260101-010000"
@@ -76,11 +78,6 @@ def test_an_export_naming_one_pair_on_its_own_is_still_read(tmp_path):
     assert models_in(str(tmp_path / "quantize" / exported))[1] == [(4, 8)]
 
 
-def test_the_threshold_cuts_off_the_target_share():
-    scores = np.arange(1000, dtype=np.float32)
-    assert (scores > threshold_for(scores, 0.01)).sum() == 10
-
-
 def test_an_attack_is_found_when_a_row_of_it_is_flagged():
     flag = np.zeros(100, dtype=bool)
     flag[1] = True
@@ -99,10 +96,3 @@ def test_alarms_outside_an_attack_are_counted_by_the_hour():
     flag[50:60] = True
     got = detection(flag, *_test_set(flag, hours=2.0), Settings())
     assert [c["alarms_per_hour"] for c in got] == [0.5, 0.5]
-
-
-def test_onnx_residuals_reads_the_rows_it_is_given(tmp_path):
-    model, rows = _model(), _rows()
-    write_onnx_files([("ae", model)], rows, str(tmp_path / "out"), batch=128)
-    got = onnx_residuals(str(tmp_path / "out" / "ae_float.onnx"), rows[:8])
-    assert np.allclose(got, residuals(rows[:8], model), atol=1e-6)
