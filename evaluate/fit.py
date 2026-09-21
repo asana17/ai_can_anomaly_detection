@@ -17,7 +17,6 @@ import numpy as np
 import torch
 from safetensors.torch import load_file, save_file
 
-from assemble.grid import moving
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from assemble.train_set import fetch_train_set
@@ -39,17 +38,11 @@ def models_in(path):
         return models_from(json.load(f))
 
 
-def rows_to_fit(train_set):
-    """The rows a model is fitted on, scaled, with the rows at or below the speed out."""
-    raw, scale = train_set["train"], train_set["scale"]
-    return scale.apply(raw[moving(raw, min_speed=train_set["min_speed"])])
-
-
 def write_models(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
     scale, min_speed = train_set["scale"], train_set["min_speed"]
-    rows = rows_to_fit(train_set)
+    rows = scale.apply(train_set["train"])
     print(f"{len(rows)} rows to fit on", flush=True)
 
     weights = {"scale.mean": torch.from_numpy(scale.mean),

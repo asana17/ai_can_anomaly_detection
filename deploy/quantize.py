@@ -20,7 +20,6 @@ from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.fit import rows_to_fit
 from models.fits import model_from
 from models.onnx_files import onnx_name
 
@@ -60,9 +59,10 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     source, exported = read_dir(runs_repo, onnx_path, runs_dir, revision)
     at = exported["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
+    rows = train_set["scale"].apply(train_set["train"])
 
     write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
-                     source, rows_to_fit(train_set), folder, settings.BATCH)
+                     source, rows, folder, settings.BATCH)
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},
             **{name: exported[name] for name in ("models", "train_set", "split", "grid")},
             "versions": {"python": platform.python_version(), "numpy": np.__version__,

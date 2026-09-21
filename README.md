@@ -68,10 +68,8 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Leave the rows at or below `min_speed` out of the train rows the train set stage
-  saves. Quantize then reads its rows straight from the train set.
-- Move `fetch_models` into `models/fits.py`. After these two `deploy` imports nothing
-  from `evaluate`.
+- Move `fetch_models` into `models/fits.py`. After this `deploy` imports nothing from
+  `evaluate`.
 - Move `rule_hits` and `instant` from `evaluate/counting.py` into `rules/`.
 - Delete `board/rows.py`. No application reads the `rows.h` it writes. Move `bits` and
   `window` into `board/rule_rows.py` first.
@@ -79,7 +77,8 @@ J1939's own terms, frame, PGN and SPN, are described in
   fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Describe `thresholds.json` with a JSON Schema, checked when calibrate writes it.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
-  score one other split, the first 25% of the time as test.
+  score one other split, the first 25% of the time as test. Build the train sets with
+  `--rebuild`. The ones on the Hub still hold the slow rows under the same inputs.
 - Pick the rows of a part by time rather than by log. `train_set` still asks which logs
   a row came from, though the split already records when the test block starts and ends.
 - Read the logs as one stream. `grid` restarts at every log, so segments break at each

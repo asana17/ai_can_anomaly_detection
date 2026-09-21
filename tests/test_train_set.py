@@ -211,6 +211,15 @@ def test_the_stage_keeps_the_rows_near_the_test_block_out_of_both(tmp_path, hub)
     assert near.sum() > 10 and not kept[near].any() and kept[t < 490.0].any()
 
 
+def test_the_stage_keeps_the_slow_rows_out_of_train(tmp_path, hub):
+    speeds = np.full(10000, 50.0)
+    speeds[1000:2000] = 3.0
+    raw, t, half = _grid_and_split(hub, speeds, 600.0, 999.9)
+    made = train_set.main("u/d", "abc", "splits/20260101-000000", str(tmp_path))
+    train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
+    assert not train_rows[1000:2000].any() and train_rows[:1000].any()
+
+
 def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
     inputs = {"split": "splits/20260101-000000", "calibration": 0.10, "block": 20.0,
               "gap": 5.0}

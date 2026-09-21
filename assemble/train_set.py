@@ -1,5 +1,7 @@
 """Cut the training rows into train and calibration rows, and fit the scale on them.
 
+The rows at or below the split's speed go to neither.
+
     python3 -m assemble.train_set repo revision splits/<time> local_dir [--rebuild]
 """
 
@@ -116,9 +118,10 @@ def write_train_set(folder, repo, revision, split_path, local_dir, settings):
                                               min_speed=min_speed, period=period)
     apart = apart_from_test(times[training], cut["test_start"], cut["test_end"],
                             gap=settings.GAP)
-    train_rows = widen_to_grid(training, train_part & apart)
+    train_rows = (widen_to_grid(training, train_part & apart)
+                  & moving(raw, min_speed=min_speed))
     calibration_rows = widen_to_grid(training, calibration_part & apart)
-    scale = scale_for(raw[train_rows & moving(raw, min_speed=min_speed)])
+    scale = scale_for(raw[train_rows])
     print(f"{int(training.sum())} rows from {len(cut['train'])} logs, "
           f"{int(train_rows.sum())} train and {int(calibration_rows.sum())} "
           f"calibration", flush=True)
