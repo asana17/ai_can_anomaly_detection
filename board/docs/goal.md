@@ -125,6 +125,30 @@ flowchart TB
 The preprocess task runs step 1 of the steps in the [README](../../README.md#todo), the
 anomaly task steps 2 to 4. How the scale and the thresholds enter the build is open.
 
+## What goes to C
+
+The board runs the Python below as C in `board/lib/`, a folder per part. The Python
+stays outside `board` and is what the C is checked against on the PC.
+
+| part | Python | C | task |
+|---|---|---|---|
+| CAN ID to PGN | `preprocess/frames/can_id_decompose.py` | not yet | interrupt |
+| SPN decode | `preprocess/frames/spn_decode.py`, `spn_spec.py`, `frame_decode.py` | not yet | preprocess |
+| hold last value, row per tick | `preprocess/features/signal_state.py`, `grid_sample.py` | not yet | interrupt, preprocess |
+| rows above `MIN_SPEED` | `preprocess/features/moving.py` | not yet | preprocess |
+| scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | preprocess |
+| autoencoder | ONNX from `deploy` | `model/`, `active_model/` | anomaly |
+| rules | the nine in `rules/instant/` | `rules/`, one header each | anomaly |
+| threshold, rules OR, `HOLD` | `detect/alarm.py` | not yet | anomaly |
+
+Not ported:
+
+- `can_log_loader` and `profile`, which read log files.
+- `rules/rate/change_limit`. Its limits are per frame arrival, and the PC does not
+  apply it to rows either.
+- `fit`, `score` and `calibrate`. Their outputs, the scale and the thresholds, enter
+  the build.
+
 ## Reports
 
 | report | from | says |
