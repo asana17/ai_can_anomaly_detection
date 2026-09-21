@@ -68,11 +68,15 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Rebuild the int8 comparison as a stage. It reads `scores/<time>`, finds the `onnx/`
-  and `quantize/` directories made from the same models, and scores the int8 files only.
+- Make `common/hub_dirs.find` return the newest directory with the given `inputs`, so a
+  `--rebuild` replaces the old one for the stages after it.
+- Check whether quantize's `batch` changes the int8 files. If not, drop it from
+  quantize's `inputs` and from `evaluate.pc.score`'s lookup.
+- Rename `deploy/generate.py` to `generate_model_for_board`, with its doc and test.
 - Move `board/rows.py` onto the attack set and a train set's scale.
-- Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`.
-- Move what `deploy` imports from `evaluate` into `common/`.
+- Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`, and
+  fold `common/hf_upload.py` into `common/hub_dirs.py`.
+- Move what `deploy` imports from `evaluate` to where it belongs by what it is.
 - Describe `thresholds.json` with a JSON Schema. Calibrate and quantize write it through
   one function that checks it.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
@@ -95,6 +99,7 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Settle whether the rules are a floor the models build on.
 - Then widen to a stretch of time, VAR against a windowed autoencoder, if the instant
   models show it is worth doing.
+- A script that compares scores.
 - Rerun the linear autoencoder checks in the runs repo's `checks/` from a committed
   script, on the current dataset.
 
