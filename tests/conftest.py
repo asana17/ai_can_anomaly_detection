@@ -1,6 +1,8 @@
+import ctypes
 import fnmatch
 import json
 import os
+import subprocess
 
 import numpy as np
 import pytest
@@ -10,6 +12,7 @@ from common.schema_validate import check
 
 REVISION = "ab" * 20
 COMMIT = "de" * 20
+BOARD_RULES = os.path.join(os.path.dirname(__file__), "..", "board", "lib", "rules")
 
 
 def check_json_files(folder, path_in_repo):
@@ -75,3 +78,31 @@ def hub(monkeypatch):
     monkeypatch.setattr(hub_dirs, "hf_hub_download", hf_hub_download)
     monkeypatch.setattr(hub_dirs, "snapshot_download", snapshot_download)
     return Hub
+
+
+C_TYPES = {"float": ctypes.c_float, "const float *": ctypes.POINTER(ctypes.c_float)}
+
+
+@pytest.fixture(scope="session")
+def board_rule(tmp_path_factory):
+    """Build a rule of board/lib/rules for this machine and give its `<name>_hits`.
+
+    The rule is a static inline function in `<name>.h`, so a wrapper `hits` exports it.
+    `parameters` are its C parameter types, each a key of C_TYPES.
+    """
+    def build(name, parameters):
+        folder = tmp_path_factory.mktemp(name)
+        names = [f"a{i}" for i in range(len(parameters))]
+        declared = ", ".join(f"{kind} {a}" for kind, a in zip(parameters, names))
+        (folder / "hits.c").write_text(
+            f'#include "{name}.h"\n'
+            f"bool hits({declared})\n"
+            f"{{\n\treturn {name}_hits({', '.join(names)});\n}}\n")
+        library = folder / f"{name}.so"
+        subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", "-I", BOARD_RULES,
+                        "-o", library, folder / "hits.c"], check=True)
+        function = ctypes.CDLL(str(library)).hits
+        function.argtypes = [C_TYPES[kind] for kind in parameters]
+        function.restype = ctypes.c_bool
+        return function
+    return build

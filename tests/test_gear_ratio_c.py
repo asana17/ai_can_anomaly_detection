@@ -1,33 +1,23 @@
-import ctypes
-import os
-import subprocess
-
 import numpy as np
 import pytest
 
 from preprocess.features.signal_state import SIGNALS
 from rules.instant.gear_ratio import RATIOS, hits
 
-SOURCE = os.path.join(os.path.dirname(__file__), "..", "board", "lib", "rules",
-                      "gear_ratio.c")
 GATE = 5.0
 ROWS = 100_000
 
 
 @pytest.fixture(scope="module")
-def gear_ratio_hits(tmp_path_factory):
-    """The C `gear_ratio_hits`, built for this machine."""
-    library = tmp_path_factory.mktemp("gear_ratio") / "gear_ratio.so"
-    subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", "-o", library,
-                    SOURCE], check=True)
-    function = ctypes.CDLL(str(library)).gear_ratio_hits
-    function.argtypes = [ctypes.c_float] * 6
-    function.restype = ctypes.c_bool
-    return function
+def gear_ratio_hits(board_rule):
+    return board_rule("gear_ratio", ["float"] * 6)
 
 
 def _rows(rng):
-    """Rows around each gate and gear boundary, as float32 like the board's."""
+    """Rows around each gate and gear boundary, as float32 like the board's.
+
+    NaN fills 1% of cells.
+    """
     gear = rng.choice([*RATIOS, 1, 3], ROWS).astype(np.float32)
     table = np.array([RATIOS.get(int(g), 100.0) for g in gear], dtype=np.float32)
     wheel = rng.uniform(0.0, 100.0, ROWS).astype(np.float32)
@@ -40,6 +30,7 @@ def _rows(rng):
     raw = np.zeros((ROWS, len(SIGNALS)), dtype=np.float32)
     for name, column in columns.items():
         raw[:, SIGNALS.index(name)] = column
+    raw[rng.random(raw.shape) < 0.01] = np.nan
     return raw
 
 
