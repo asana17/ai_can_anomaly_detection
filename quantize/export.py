@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import platform
@@ -20,6 +19,7 @@ from onnxruntime.quantization import (CalibrationDataReader, CalibrationMethod,
 from onnxruntime.quantization.shape_inference import quant_pre_process
 
 from assemble.train_set import fetch_train_set
+from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from common.settings import Settings
 from evaluate.calibrate import calibration_rows
@@ -130,10 +130,5 @@ def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for name in ("runs_repo", "revision", "models_path", "runs_dir", "local_dir"):
-        parser.add_argument(name)
-    parser.add_argument("--rebuild", action="store_true")
-    args = parser.parse_args()
-    main(args.runs_repo, args.revision, args.models_path, args.runs_dir,
-         args.local_dir, args.rebuild)
+    main(*arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
+                    rebuild=False))

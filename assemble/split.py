@@ -5,13 +5,13 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 
 import numpy as np
 
 from assemble.grid import moving, read_grid
+from common.cli import arguments
 from common.hub_dirs import download, reuse_or_make
 from common.settings import Settings
 
@@ -100,9 +100,4 @@ def main(repo, revision, grid_path, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for name in ("repo", "revision", "grid_path", "local_dir"):
-        parser.add_argument(name)
-    parser.add_argument("--rebuild", action="store_true")
-    args = parser.parse_args()
-    main(args.repo, args.revision, args.grid_path, args.local_dir, args.rebuild)
+    main(*arguments(("repo", "revision", "grid_path", "local_dir"), rebuild=False))

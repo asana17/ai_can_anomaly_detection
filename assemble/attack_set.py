@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import itertools
 import os
@@ -17,6 +16,7 @@ from attack.inject import inject
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from assemble.split import read_split
+from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from preprocess.features.grid_sample import resample
@@ -198,10 +198,5 @@ def main(repo, revision, split_path, data_dir, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for name in ("repo", "revision", "split_path", "data_dir", "local_dir"):
-        parser.add_argument(name)
-    parser.add_argument("--rebuild", action="store_true")
-    args = parser.parse_args()
-    main(args.repo, args.revision, args.split_path, args.data_dir, args.local_dir,
-         args.rebuild)
+    main(*arguments(("repo", "revision", "split_path", "data_dir", "local_dir"),
+                    rebuild=False))

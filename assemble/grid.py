@@ -8,7 +8,6 @@ column the last value that signal carried, is what a model and a rule read inste
 
 from __future__ import annotations
 
-import argparse
 import glob
 import hashlib
 import json
@@ -16,6 +15,7 @@ import os
 
 import numpy as np
 
+from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from common.settings import Settings
 from preprocess.features.grid_sample import resample
@@ -133,9 +133,4 @@ def main(data_dir, pattern, local_dir, repo, rebuild=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for name in ("data_dir", "pattern", "local_dir", "repo"):
-        parser.add_argument(name)
-    parser.add_argument("--rebuild", action="store_true")
-    args = parser.parse_args()
-    main(args.data_dir, args.pattern, args.local_dir, args.repo, args.rebuild)
+    main(*arguments(("data_dir", "pattern", "local_dir", "repo"), rebuild=False))

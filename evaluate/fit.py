@@ -9,7 +9,6 @@ repository's own experiments use, unless `--models` names another file.
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import platform
@@ -19,6 +18,7 @@ import torch
 from safetensors.torch import load_file, save_file
 
 from assemble.grid import moving
+from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from assemble.train_set import fetch_train_set
 from models.fits import as_dict, models_from
@@ -81,11 +81,5 @@ def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models_path
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for name in ("repo", "revision", "train_path", "local_dir", "runs_repo", "runs_dir"):
-        parser.add_argument(name)
-    parser.add_argument("--models", default=MODELS)
-    parser.add_argument("--rebuild", action="store_true")
-    args = parser.parse_args()
-    main(args.repo, args.revision, args.train_path, args.local_dir, args.runs_repo,
-         args.runs_dir, args.models, args.rebuild)
+    main(*arguments(("repo", "revision", "train_path", "local_dir", "runs_repo",
+                     "runs_dir"), models=MODELS, rebuild=False))

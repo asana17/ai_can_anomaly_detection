@@ -7,7 +7,6 @@ The models and their thresholds come from a directory `evaluate.calibrate` wrote
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import platform
@@ -18,6 +17,7 @@ import torch
 
 from assemble.attack_set import fetch_attack_set
 from assemble.train_set import read_train_set
+from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from evaluate.counting import (alarms, moved_by, persistent,
@@ -165,11 +165,5 @@ def main(repo, revision, attack_path, local_dir, runs_repo, runs_revision,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    for name in ("repo", "revision", "attack_path", "local_dir", "runs_repo",
-                 "runs_revision", "thresholds_path", "runs_dir"):
-        parser.add_argument(name)
-    parser.add_argument("--rebuild", action="store_true")
-    args = parser.parse_args()
-    main(args.repo, args.revision, args.attack_path, args.local_dir, args.runs_repo,
-         args.runs_revision, args.thresholds_path, args.runs_dir, args.rebuild)
+    main(*arguments(("repo", "revision", "attack_path", "local_dir", "runs_repo",
+                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False))
