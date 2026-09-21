@@ -138,7 +138,7 @@ stays outside `board` and is what the C is checked against on the PC.
 | rows above `MIN_SPEED` | `preprocess/features/moving.py` | `moving/` | preprocess |
 | scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | preprocess |
 | autoencoder | ONNX from `deploy` | `model/`, `active_model/` | anomaly |
-| rules | the nine in `rules/instant/` | `rules/`, one header each | anomaly |
+| rules | the nine in `rules/instant/`, `rules/hits.py` | `rules/`, one header each and their OR | anomaly |
 | threshold, rules OR, `HOLD` | `detect/alarm.py` | `detector/` | anomaly |
 
 Not ported:
