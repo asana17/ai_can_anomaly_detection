@@ -25,7 +25,7 @@ from models.fits import as_dict, models_from
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models.json")
 
 
-def fetch_models(runs_repo, revision, models_path, runs_dir):
+def fetch_fitted_models(runs_repo, revision, models_path, runs_dir):
     """The weights and `meta.json` of `models_path`, at `revision` of `runs_repo`."""
     folder, meta = read_dir(runs_repo, models_path, runs_dir, revision)
     return load_file(os.path.join(folder, "weights.safetensors")), meta

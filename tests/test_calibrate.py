@@ -66,7 +66,7 @@ def run_and_train_set(monkeypatch, raw, models=({"model": "pca", "k": 2},)):
                        "models": list(models)},
             "train_set": where, "split": dict(where, path="splits/s"),
             "grid": dict(where, path="grids/g"), "min_speed": 5.0}
-    monkeypatch.setattr(calibrate, "fetch_models", lambda *args: (weights, meta))
+    monkeypatch.setattr(calibrate, "fetch_fitted_models", lambda *args: (weights, meta))
     stand_in(monkeypatch, raw, np.zeros(len(raw), bool))
 
 

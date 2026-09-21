@@ -58,7 +58,7 @@ def fitted(monkeypatch, model):
                        "models": [{"model": "pca", "k": 2}, NONLINEAR]},
             "train_set": where, "split": dict(where, path="splits/s"),
             "grid": dict(where, path="grids/g"), "min_speed": 5.0}
-    monkeypatch.setattr(export, "fetch_models", lambda *args: (weights, meta))
+    monkeypatch.setattr(export, "fetch_fitted_models", lambda *args: (weights, meta))
 
 
 def test_every_nonlinear_autoencoder_of_the_fit_is_written(tmp_path, hub, monkeypatch):

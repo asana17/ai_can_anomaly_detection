@@ -25,7 +25,7 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from evaluate.counting import rule_hits
-from evaluate.fit import fetch_models
+from evaluate.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import torch_scorer
@@ -72,7 +72,7 @@ def write_thresholds(folder, runs_repo, revision, models_path, onnx_directory,
     Each model scores in torch, or with its ONNX file when `onnx_directory` names the
     directory and the precision of them, the directory downloaded into `onnx_folder`.
     """
-    weights, fitted = fetch_models(runs_repo, revision, models_path, runs_dir)
+    weights, fitted = fetch_fitted_models(runs_repo, revision, models_path, runs_dir)
     at = fitted["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
     rows = calibration_rows(train_set, settings)

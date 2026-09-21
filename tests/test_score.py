@@ -63,7 +63,7 @@ def stand_in(monkeypatch, hub):
             "models": where, "onnx_files": None,
             "train_set": dict(where, repo="u/d", path="train_sets/t")},
         "thresholds/t/thresholds.json": [{"model": "pca", "k": 2, "threshold": 0.5}]}
-    monkeypatch.setattr(score, "fetch_models", lambda *args: (
+    monkeypatch.setattr(score, "fetch_fitted_models", lambda *args: (
         {"scale.mean": torch.zeros(len(SIGNALS)),
          "pca.k2.centre": torch.zeros(len(SIGNALS)),
          "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}, {}))
@@ -134,7 +134,7 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
 
     def no_weights(*args):
         raise AssertionError("an int8 file needs no weights")
-    monkeypatch.setattr(score, "fetch_models", no_weights)
+    monkeypatch.setattr(score, "fetch_fitted_models", no_weights)
 
 
 def test_thresholds_taken_with_onnx_files_score_with_them(tmp_path, hub,

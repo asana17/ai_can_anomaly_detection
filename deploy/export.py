@@ -14,7 +14,7 @@ import torch
 
 from common.cli import arguments
 from common.hub_dirs import reuse_or_make
-from evaluate.fit import fetch_models
+from evaluate.fit import fetch_fitted_models
 from models.fits import NonlinearAe, as_dict, models_from
 from models.onnx_files import onnx_name
 
@@ -32,7 +32,8 @@ def write_onnx_files(models, signals, dest):
 
 def write_export(folder, runs_repo, revision, models_path, runs_dir):
     """Write each nonlinear autoencoder of a fit as float ONNX, and return what to record."""
-    weights, models_meta = fetch_models(runs_repo, revision, models_path, runs_dir)
+    weights, models_meta = fetch_fitted_models(runs_repo, revision, models_path,
+                                               runs_dir)
     # the scale is fitted on every signal a row holds
     signals = weights["scale.mean"].shape[0]
 

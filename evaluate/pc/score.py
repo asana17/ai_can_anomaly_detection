@@ -25,7 +25,7 @@ from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from evaluate.counting import (alarms, moved_by, persistent,
                                prepare_scoring_input, touched)
-from evaluate.fit import fetch_models
+from evaluate.fit import fetch_fitted_models
 from models.fits import model_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import torch_scorer
@@ -129,8 +129,8 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
     onnx_files = thresholds_meta["onnx_files"]
     if onnx_files is None:
         models = thresholds_meta["models"]
-        weights, _ = fetch_models(models["repo"], models["revision"], models["path"],
-                                  runs_dir)
+        weights, _ = fetch_fitted_models(models["repo"], models["revision"],
+                                         models["path"], runs_dir)
         scorer_of = torch_scorer(weights)
         runtime = {"torch": torch.__version__}
     else:
