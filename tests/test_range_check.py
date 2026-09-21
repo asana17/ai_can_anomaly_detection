@@ -31,6 +31,14 @@ def test_the_limits_themselves_are_allowed():
     assert not _hit({"brake_pedal": high})
 
 
+def test_the_lowest_decodable_value_passes_as_float32():
+    # raw 0 decodes to the offset, which float32 rounds below the float64 minimum
+    for name in ("steering_angle", "yaw_rate", "lateral_accel"):
+        raw = np.zeros((1, len(SIGNALS)), dtype=np.float32)
+        raw[0, SIGNALS.index(name)] = LIMITS[name][0]
+        assert not hits(raw)[0]
+
+
 def test_a_nan_is_flagged():
     assert _hit({"wheel_speed": float("nan")})
 
