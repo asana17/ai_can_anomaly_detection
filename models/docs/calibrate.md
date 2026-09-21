@@ -3,15 +3,15 @@
 Every model gives each row a score. A row counts as an anomaly when that score is over
 the model's threshold. `calibrate` sets those thresholds.
 
-It runs [score](score.md) on the calibration set the models' train set names, or
-reuses the scores the runs repository already holds for it. It puts each model's
+It runs [score](../../scoring/docs/score.md) on the calibration set the models'
+train set names, or reuses the scores the runs repository already holds for it. It puts each model's
 threshold where `TARGET` of those scores sit above it. It then uploads one threshold
 per model, as a directory of the runs repository. No model is fitted here.
 
 ## Running it
 
 ```
-python3 -m evaluate.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
 ```
 
 | argument | |

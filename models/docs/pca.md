@@ -49,11 +49,11 @@ fit the attacks too.
 ## Its threshold
 
 The threshold is set so that `TARGET`, 0.1%, of the calibration rows have a residual
-above it. PCA is not fitted on those rows. See [evaluate](../../evaluate).
+above it. PCA is not fitted on those rows. See [calibrate](calibrate.md).
 
 ## What it scores on this data
 
-See [evaluate/pc/results.md](../../evaluate/pc/results.md).
+See [evaluate/results.md](../../evaluate/results.md).
 
 ## A warning you can ignore
 

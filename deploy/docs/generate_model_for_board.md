@@ -41,4 +41,4 @@ directory and `meta.json` say which model it is.
 | `LICENSE.txt` | SLA0104, the licence the generator writes for the code |
 | `meta.json` | where the export came from, as [meta.board.schema.json](../../common/schemas/meta.board.schema.json) describes |
 
-The threshold to compile in is not here. It is in the `thresholds.json` of [calibrate](../../evaluate/docs/calibrate.md).
+The threshold to compile in is not here. It is in the `thresholds.json` of [calibrate](../../models/docs/calibrate.md).

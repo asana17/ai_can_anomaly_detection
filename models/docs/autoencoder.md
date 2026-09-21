@@ -23,7 +23,7 @@ nonlinear_scores = residuals(test_rows, nonlinear)
 Each row of `train_rows` and `test_rows` is one moment on the bus, one column per
 signal. The score averages the squared error over the columns, so a column with a
 larger spread outweighs the rest unless every column is on the same scale.
-[evaluate](../../evaluate) z-scores the rows before they get here, and passes every
+[scoring](../../scoring) z-scores the rows before they get here, and passes every
 value. The module sets none of its own.
 
 | argument | what it decides |
@@ -65,4 +65,4 @@ training rows.
 | `LinearAutoencoder` | one linear layer to `latent_dim` and one back | rows on a flat surface through the training rows |
 | `NonlinearAutoencoder` | a hidden layer of `hidden` units with ReLU on each side of `latent_dim` | rows on a surface of flat pieces joined at bends |
 
-[evaluate](../../evaluate) sets the score above which a row is flagged.
+[calibrate](calibrate.md) sets the score above which a row is flagged.

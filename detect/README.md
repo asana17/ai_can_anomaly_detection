@@ -1,7 +1,7 @@
 # detect
 
-Step 4 of the steps in the [README](../README.md#todo). It turns the model's scores and
-the rule hits into alarms.
+Turns the model's scores and the rule hits into alarms. [scoring](../scoring) writes
+both.
 
 Documented under [docs/](docs).
 

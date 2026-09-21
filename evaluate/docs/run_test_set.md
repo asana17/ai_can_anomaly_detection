@@ -1,11 +1,12 @@
 # run test set
 
-`pc.run_test_set` counts the attacks each detector catches on the attacked test rows.
+`run_test_set` counts the attacks each detector catches on the attacked test rows.
 A detector is the instant rules, or the rules together with one model. The rate rules
-are left out, since neither model reads a window either. The models and
-their thresholds come from a directory [calibrate](calibrate.md) wrote, so nothing is
-fitted or thresholded here. It scores the test set with those models by running
-[score](score.md), or reuses the scores the runs repository holds for them already.
+are left out, since neither model reads a window either. The models and their
+thresholds come from a directory [calibrate](../../models/docs/calibrate.md) wrote,
+so nothing is fitted or thresholded here. It scores the test set with those models by
+running [score](../../scoring/docs/score.md), or reuses the scores the runs repository
+holds for them already.
 
 A [test set](../../assemble/docs/test_set.md) holds two things: the attacked test
 logs as rows on the grid, and the same logs as CAN frames. The rows are scored. The
@@ -16,7 +17,7 @@ It writes one directory of the runs repository, `test_runs/<time>/`.
 ## Running it
 
 ```
-python3 -m evaluate.pc.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 ```
 
 | argument | |
@@ -26,7 +27,7 @@ python3 -m evaluate.pc.run_test_set repo revision test_sets/<time> local_dir run
 | `test_sets/<time>` | the test set the detectors are run over. The log split and grid it names are read too |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo holding the thresholds and uploaded to, needs `hf auth login` |
-| `revision` | commit of `runs_repo` to read the thresholds at, as [calibrate](calibrate.md) printed it |
+| `revision` | commit of `runs_repo` to read the thresholds at, as [calibrate](../../models/docs/calibrate.md) printed it |
 | `thresholds/<time>` | the thresholds the models run at. The models they name are read too, and scored with |
 | `runs_dir` | local folder `scores/<time>/` and `test_runs/<time>/` are written to, kept after the upload |
 | `--rebuild` | count again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |

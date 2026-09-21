@@ -1,7 +1,7 @@
 # export
 
 The board runs C code that ST Edge AI Core generates from an ONNX file. `export` takes
-every nonlinear autoencoder [fit](../../evaluate/docs/fit.md) wrote, writes each one
+every nonlinear autoencoder [fit](../../models/docs/fit.md) wrote, writes each one
 out as float ONNX for that, and keeps them in the runs repository.
 
 ## Running it
@@ -13,7 +13,7 @@ python3 -u -m deploy.export runs_repo revision models/<time> runs_dir [--rebuild
 | argument | what it is |
 |---|---|
 | `runs_repo` | Hugging Face model repo holding the models and uploaded to, needs `hf auth login` |
-| `revision` | commit of `runs_repo` to read the models at, as [fit](../../evaluate/docs/fit.md) printed it |
+| `revision` | commit of `runs_repo` to read the models at, as [fit](../../models/docs/fit.md) printed it |
 | `models/<time>` | the fitted models to export |
 | `runs_dir` | local folder the models are downloaded to and `onnx/<time>/` is written to |
 | `--rebuild` | export again even if `runs_repo` already holds a directory with the same `inputs` |

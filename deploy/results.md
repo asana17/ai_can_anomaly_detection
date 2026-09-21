@@ -37,7 +37,7 @@ records in `meta.json`.
 
 Attacks found at 10 rows held, out of 862. `held TARGET` is whether that fit's threshold
 held `TARGET` on the clean test rows of `results/20260916-001002`, from
-[evaluate/pc/results.md](../evaluate/pc/results.md).
+[evaluate/results.md](../evaluate/results.md).
 
 The rules find 373 of the 862 on their own, so what a fit adds is its `model` column
 less 373, and what survives quantizing is its `int8` column less 373.

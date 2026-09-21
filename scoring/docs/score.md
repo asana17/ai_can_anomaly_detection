@@ -1,9 +1,9 @@
 # score
 
 `score` gives each row of a set every fitted model's score, and marks the rows a rule
-hits. [calibrate](calibrate.md) runs it on the calibration set and takes the
-thresholds from the scores. [run test set](run_test_set.md) runs it on a test set and
-counts what the detectors catch. A new threshold or `HOLD` then needs no rescoring.
+hits. [calibrate](../../models/docs/calibrate.md) runs it on the calibration set and
+takes the thresholds from the scores. [run test set](../../evaluate/docs/run_test_set.md)
+runs it on a test set and counts what the detectors catch. A new threshold or `HOLD` then needs no rescoring.
 
 A row keeps its place in the set, scored or not, since `HOLD` counts rows in a row. A
 model scores only the moving rows, z-scored on the same
@@ -15,7 +15,7 @@ It writes one directory of the runs repository, `scores/<time>/`.
 ## Running it
 
 ```
-python3 -m evaluate.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
 ```
 
 | argument | |
@@ -25,7 +25,7 @@ python3 -m evaluate.score repo revision <set> local_dir runs_repo revision model
 | `<set>` | the set whose rows are scored, `calibration_sets/<time>` or `test_sets/<time>`. The log split and grid it names are read too |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo holding the models and uploaded to, needs `hf auth login` |
-| `revision` | commit of `runs_repo` to read the models at, as [fit](fit.md) printed it |
+| `revision` | commit of `runs_repo` to read the models at, as [fit](../../models/docs/fit.md) printed it |
 | `models/<time>` | the fitted models that score the rows |
 | `runs_dir` | local folder the models are downloaded to and `scores/<time>/` is written to |
 | `--rebuild` | score again even if `runs_repo` already holds a directory with the same `inputs` |

@@ -9,7 +9,7 @@ a directory of the runs repository, `models/<time>/`.
 ## Running it
 
 ```
-python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs_dir [--models models.json] [--rebuild]
+python3 -m models.fit repo revision train_sets/<time> local_dir runs_repo runs_dir [--models models.json] [--rebuild]
 ```
 
 | argument | |
@@ -20,7 +20,7 @@ python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo the run is uploaded to, needs `hf auth login` |
 | `runs_dir` | local folder `models/<time>/` is written to, kept after the upload |
-| `--models` | JSON file listing the models to fit. Without it, `evaluate/models.json`, the list this repository's runs use |
+| `--models` | JSON file listing the models to fit. Without it, `models/models.json`, the list this repository's runs use |
 | `--rebuild` | fit again even if `runs_repo` already holds a run with the same `inputs` |
 
 It writes these files into `runs_dir/models/<time>/` and uploads that directory to
@@ -92,7 +92,7 @@ looking at the test set.
 | `rate` | 1e-3 | Adam's default in PyTorch |
 | `improvement` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |
 | `patience` | 10 | the default `patience` of the same |
-| `seed` | set per run | the torch rng an autoencoder is built and trained with. It is changed between runs to show how far it moves the numbers, as [results](../pc/results.md) reports. |
+| `seed` | set per run | the torch rng an autoencoder is built and trained with. It is changed between runs to show how far it moves the numbers, as [results](../../evaluate/results.md) reports. |
 | `hidden` | 32, 64, 128 | a stated choice. All of them are at least `signals`, so `latent_dim` stays the narrowest layer at every `k`. Each is reported. |
 
 `batch` was compared at every `k`. Up to `k` 14 the two sizes came within 0.3% of each
