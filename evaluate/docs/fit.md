@@ -46,7 +46,7 @@ train rows.
 Rows at or below `MIN_SPEED` are dropped, since only faster rows are ever scored.
 `MIN_SPEED` is the value the [split](../../assemble/docs/split.md) was cut with, and
 comes from its `meta.json`. What is left is z-scored on the train set's
-[scale](../../assemble/docs/scale.md).
+[scale](../../preprocess/docs/scale.md).
 
 ## The models it fits
 

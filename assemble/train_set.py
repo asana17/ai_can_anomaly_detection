@@ -13,12 +13,13 @@ import os
 import numpy as np
 
 from assemble.grid import read_grid, rows_of_logs
-from assemble.scale import Scale, scale_for
+from assemble.scale import scale_for
 from assemble.split import read_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from preprocess.features.moving import moving
+from preprocess.features.scale import Scale
 
 
 def split_rows(raw, times, *, share: float, block: float, gap: float, min_speed: float,

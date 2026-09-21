@@ -4,12 +4,12 @@ import os
 import numpy as np
 import torch
 
-from assemble.scale import Scale
 from deploy import quantize
 from deploy.export import write_onnx_files
 from deploy.quantize import write_int8_files
 from models.autoencoder import NonlinearAutoencoder, residuals
 from models.onnx_files import onnx_residuals
+from preprocess.features.scale import Scale
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20

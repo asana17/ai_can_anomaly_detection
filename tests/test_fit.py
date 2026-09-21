@@ -3,10 +3,10 @@ import os
 
 import numpy as np
 
-from assemble.scale import Scale
 from evaluate import fit
 from evaluate.fit import MODELS, models_in
 from models.fits import Pca, as_dict
+from preprocess.features.scale import Scale
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20

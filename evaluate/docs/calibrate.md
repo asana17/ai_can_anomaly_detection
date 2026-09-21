@@ -49,7 +49,7 @@ they are held back.
 
 Rows at or below `MIN_SPEED` are dropped, as they are in [fit](fit.md). So are rows an
 instant rule already flags, since a model is only asked about the rows the rules let
-through. What is left is z-scored on the same [scale](../../assemble/docs/scale.md)
+through. What is left is z-scored on the same [scale](../../preprocess/docs/scale.md)
 the models were fitted on.
 
 ## The threshold

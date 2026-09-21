@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 import torch
 
-from assemble.scale import Scale
 from deploy.export import write_onnx_files
 from deploy.quantize import write_int8_files
 from evaluate import calibrate
@@ -13,6 +12,7 @@ from common.settings import Settings
 from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
 from models.onnx_files import onnx_name, onnx_residuals
+from preprocess.features.scale import Scale
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20

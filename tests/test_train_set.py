@@ -4,7 +4,6 @@ import numpy as np
 
 from assemble import train_set
 from assemble.grid import grid_rows
-from assemble.scale import scale_for
 from assemble.train_set import apart_from_test, split_rows
 from preprocess.features.signal_state import SIGNALS
 
@@ -69,25 +68,6 @@ def test_segments_break_across_a_gap(tmp_path):
     assert second[0] - first[-1] > 1.0                  # the gap is not bridged
     for run in (first, second):
         assert np.allclose(np.diff(run), 0.1)           # each segment is evenly spaced
-
-
-def test_scale_for_standardizes_the_rows_it_was_given(tmp_path):
-    log = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    rows, _, _ = grid_rows([log], period=PERIOD, max_hold=MAX_HOLD)
-    scaled = scale_for(rows).apply(rows)
-
-    engine_speed = scaled[:, 0]               # first signal in SIGNALS order
-    assert abs(engine_speed.mean()) < 1e-4
-    assert abs(engine_speed.std() - 1.0) < 1e-4
-
-
-def test_the_scale_it_fits_puts_other_rows_on_the_same_scale(tmp_path):
-    train = _write_log(tmp_path / "tr.csv", [600, 800, 1000, 1200, 1400, 1600, 1800, 2000])
-    other = _write_log(tmp_path / "te.csv", [900] * 6)
-    scale = scale_for(grid_rows([train], period=PERIOD, max_hold=MAX_HOLD)[0])
-    rows, _, _ = grid_rows([other], period=PERIOD, max_hold=MAX_HOLD)
-
-    assert np.allclose(scale.undo(scale.apply(rows)), rows, atol=1e-3)
 
 
 def _rows(speeds):

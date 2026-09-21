@@ -39,6 +39,7 @@ Each module is documented under [docs/](docs).
   they can be read together as one row.
 - [grid_sample](docs/grid_sample.md) samples the signal state on a fixed time grid
   into a regular series of rows, holding a value only across a short gap.
+- [scale](docs/scale.md) puts rows on a mean and std per signal, and takes them off.
 - [moving](docs/moving.md) marks the rows whose wheel speed is above a given speed.
 
 ## Tests
