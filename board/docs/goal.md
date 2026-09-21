@@ -134,7 +134,7 @@ stays outside `board` and is what the C is checked against on the PC.
 |---|---|---|---|
 | CAN ID to PGN | `preprocess/frames/can_id_decompose.py` | `can_id/` | interrupt |
 | SPN decode | `preprocess/frames/spn_decode.py`, `spn_spec.py`, `frame_decode.py` | `spn_decode/` | preprocess |
-| hold last value, row per tick | `preprocess/features/signal_state.py`, `grid_sample.py` | not yet | interrupt, preprocess |
+| hold last payload | `preprocess/features/signal_state.py` | `signal_state/` | interrupt, preprocess |
 | rows above `MIN_SPEED` | `preprocess/features/moving.py` | `moving/` | preprocess |
 | scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | preprocess |
 | autoencoder | ONNX from `deploy` | `model/`, `active_model/` | anomaly |
@@ -148,6 +148,8 @@ Not ported:
   apply it to rows either.
 - `fit`, `score` and `calibrate`. Their outputs, the scale and the thresholds, enter
   the build.
+- `grid_sample`, which ticks off the log's own timestamps. On the board the cyclic
+  handler gives the tick and the preprocess task clears the slots after a gap.
 
 ## Reports
 
