@@ -1,7 +1,8 @@
 # run test set
 
 `pc.run_test_set` counts the attacks each detector catches on the attacked test rows.
-A detector is the instant rules, or the rules together with one model. The models and
+A detector is the instant rules, or the rules together with one model. The rate rules
+are left out, since neither model reads a window either. The models and
 their thresholds come from a directory [calibrate](calibrate.md) wrote, so nothing is
 fitted or thresholded here. It scores the test set with those models by running
 [score](score.md), or reuses the scores the runs repository holds for them already.
@@ -69,6 +70,24 @@ the train set. A replay can copy values close to the ones it overwrote, and then
 `moved` is near zero.
 
 `attacks.json` keeps `moved` for every attack.
+
+## Which attacks a detector could catch
+
+Some attacks no detector could be asked to find, so each run reports two numbers, one
+over every attack injected and one over the attacks worth catching. An attack is worth
+catching when it reaches a row above `MIN_SPEED` and its `moved` is at least `MOVED`.
+
+`MOVED` 1.0 drops the replays whose copied values nearly match the ones they
+overwrote. A detector reads the rows, and those rows barely changed.
+
+Whether an attack reaches a row above `MIN_SPEED` is read off the row's speed before
+the attack. An attack that fakes a stop is still worth catching. The detectors read the
+attacked speed, so one that skips the row misses the attack.
+
+False alarms are the alarms raised on rows with no attack, over the hours those rows
+cover.
+
+[settings](../../common/docs/settings.md) says how `MIN_SPEED` and the rest were set.
 
 ## What each entry of `detection.json` holds
 

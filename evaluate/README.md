@@ -28,8 +28,6 @@ Documented under [docs/](docs).
   as an anomaly.
 - [run_test_set](docs/run_test_set.md) counts what each detector catches on the
   attacked test rows.
-- [pc_run](docs/pc_run.md) says what counts as an alarm, and how each parameter was
-  set.
 
 ## Tests
 

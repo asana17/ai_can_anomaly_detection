@@ -79,3 +79,22 @@ none of the values below `hidden`.
 
 `inputs` records the models after the lists are spread out, one entry each, so the run
 says what every model was fitted with.
+
+## The autoencoder values
+
+How each value an autoencoder is fitted with was set. None of them was chosen by
+looking at the test set.
+
+| name | value | how it was set |
+|---|---|---|
+| `epochs` | 1000 | a cap. The report shows how many epochs each fit ran, and fewer than 1000 means it stopped on its own. Raised from 500, where 8 of the 24 nonlinear fits were cut off, on whether fits stop on their own and never on detection. |
+| `batch` | 1024 | from 1024 and 4096, on how close the linear autoencoder's training loss came to PCA's and how long it took. No attack was used. The nonlinear autoencoder uses the same value. |
+| `rate` | 1e-3 | Adam's default in PyTorch |
+| `improvement` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |
+| `patience` | 10 | the default `patience` of the same |
+| `seed` | set per run | the torch rng an autoencoder is built and trained with. It is changed between runs to show how far it moves the numbers, as [results](../pc/results.md) reports. |
+| `hidden` | 32, 64, 128 | a stated choice. All of them are at least `signals`, so `latent_dim` stays the narrowest layer at every `k`. Each is reported. |
+
+`batch` was compared at every `k`. Up to `k` 14 the two sizes came within 0.3% of each
+other and within 0.8% of PCA, and 1024 took less time at every `k`. At `k` 16 1024
+came within 13% and 4096 within 98%.

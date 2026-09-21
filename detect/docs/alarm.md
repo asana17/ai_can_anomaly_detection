@@ -7,5 +7,6 @@ A row is flagged when `rule_hit` is True on it or its score is above `threshold`
 the model did not score has a NaN score, so only a rule flags it.
 
 An alarm is raised on the row that completes `hold` flagged rows in a row. A run does
-not carry across a change of `segment`. `persistent(flag, segment, need)` counts the
+not carry across a change of `segment`, since the rows either side of one can be
+hours apart. `persistent(flag, segment, need)` counts the
 run.

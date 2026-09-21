@@ -48,8 +48,9 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   [board/docs/goal.md](board/docs/goal.md) is what the board is building towards, the
   TRON Programming Contest 2026 entry, and the order it is built in.
 - [common/](common) holds the settings of a run and reads and writes the Hub
-  directories every stage uses. [common/schemas](common/schemas)
-  describes every JSON file a stage uploads. The tests check each file a stage
+  directories every stage uses. [common/docs/settings.md](common/docs/settings.md)
+  says how each parameter was set. [common/schemas](common/schemas)
+  describes every JSON file a stage uploads, and the tests check each file a stage
   uploads against them.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
