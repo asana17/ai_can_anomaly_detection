@@ -3,39 +3,14 @@ import os
 
 import numpy as np
 import pytest
-import torch
 
-from deploy.export import write_onnx_files
-from deploy.quantize import write_int8_files
-from evaluate import calibrate
 from common.settings import Settings
-from models.autoencoder import NonlinearAutoencoder
-from models.fits import FitArguments, NonlinearAe, as_dict
-from models.onnx_files import onnx_name, onnx_residuals
-from preprocess.features.scale import Scale
-from preprocess.features.signal_state import SIGNALS
+from evaluate import calibrate
 
 REVISION = "ab" * 20
 COMMIT = "de" * 20
 
-WHEEL = SIGNALS.index("wheel_speed")
-
-
-SCALE = Scale(np.zeros(len(SIGNALS), np.float32), np.ones(len(SIGNALS), np.float32))
-
-
-def rows_at(speeds):
-    """One row per speed, every other signal 0."""
-    raw = np.zeros((len(speeds), len(SIGNALS)), np.float32)
-    raw[:, WHEEL] = speeds
-    return raw
-
-
-def stand_in(monkeypatch, raw, flagged):
-    """A calibration set holding `raw`, with `flagged` ruled out."""
-    monkeypatch.setattr(calibrate, "fetch_calibration_set", lambda *args: {
-        "calibration": raw, "min_speed": 5.0, "dataset": {}})
-    monkeypatch.setattr(calibrate, "rule_hits", lambda raw, settings: flagged)
+WHERE = {"repo": "u/d", "revision": REVISION}
 
 
 def test_the_quantile_leaves_that_share_of_the_scores_above_it():
@@ -43,44 +18,39 @@ def test_the_quantile_leaves_that_share_of_the_scores_above_it():
     assert (scores > calibrate.quantile(scores, 0.1)).mean() == pytest.approx(0.1, 0.01)
 
 
-def test_a_row_at_or_below_the_speed_sets_no_threshold(monkeypatch):
-    raw = rows_at([1.0, 5.0, 9.0])
-    stand_in(monkeypatch, raw, np.zeros(len(raw), bool))
-    rows = calibrate.calibration_rows(calibrate.fetch_calibration_set(), SCALE,
-                                      Settings())
+def test_a_row_with_no_score_or_hit_by_a_rule_sets_no_threshold():
+    scores = np.array([[np.nan], [1.0], [2.0]], np.float32)
+    rule_hit = np.array([False, False, True])
 
-    assert rows[:, WHEEL].tolist() == [9.0]
+    assert calibrate.calibration_rows(scores, rule_hit).tolist() == [False, True, False]
 
 
-def test_a_row_a_rule_flags_sets_no_threshold(monkeypatch):
-    raw = rows_at([9.0, 20.0])
-    stand_in(monkeypatch, raw, np.array([True, False]))
-    rows = calibrate.calibration_rows(calibrate.fetch_calibration_set(), SCALE,
-                                      Settings())
-
-    assert rows[:, WHEEL].tolist() == [20.0]
+SCORES = {"set": "calibration_sets/20260101-000000", "models": "models/20260101-000000",
+          "onnx_files": None, "precision": None}
 
 
-def run_and_train_set(monkeypatch, raw, models=({"model": "pca", "k": 2},)):
-    """A stand-in run holding `models`, fitted on a train set whose rows are `raw`."""
-    weights = {"scale.mean": torch.zeros(len(SIGNALS)),
-               "scale.std": torch.ones(len(SIGNALS)),
-               "pca.k2.centre": torch.zeros(len(SIGNALS)),
-               "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}
-    where = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}
-    meta = {"inputs": {"train_set": "train_sets/20260101-000000",
-                       "models": list(models)},
-            "train_set": where,
-            "calibration_set": dict(where, path="calibration_sets/20260101-000000"),
-            "log_split": dict(where, path="log_splits/20260101-000000"),
-            "grid": dict(where, path="grids/20260101-000000"), "min_speed": 5.0}
-    monkeypatch.setattr(calibrate, "fetch_fitted_models", lambda *args: (weights, meta))
-    stand_in(monkeypatch, raw, np.zeros(len(raw), bool))
+def run_and_scores(hub, scores):
+    """A fit on the calibration set `calibration_sets/20260101-000000`, and the scores
+    of that set it already has."""
+    models = {"repo": "u/runs", "revision": REVISION, "path": "models/20260101-000000"}
+    calibration_set = dict(WHERE, path="calibration_sets/20260101-000000")
+    hub.files = {
+        "models/20260101-000000/meta.json": {"calibration_set": calibration_set},
+        "scores/20260101-000000/meta.json": {
+            "inputs": SCORES, "models": models, "onnx_files": None,
+            "calibration_set": calibration_set,
+            "log_split": dict(WHERE, path="log_splits/20260101-000000"),
+            "grid": dict(WHERE, path="grids/20260101-000000"), "min_speed": 5.0,
+            "scored": int((~np.isnan(scores[:, 0])).sum())},
+        "scores/20260101-000000/models.json": [{"model": "pca", "k": 2}],
+        "scores/20260101-000000/scores.npy": scores,
+        "scores/20260101-000000/rule_hits.npy": np.zeros(len(scores), bool)}
 
 
-def test_a_threshold_is_kept_for_every_model_of_the_run(tmp_path, hub, monkeypatch):
-    raw = rows_at(np.arange(20) + 10.0)
-    run_and_train_set(monkeypatch, raw)
+def test_a_threshold_is_kept_for_every_model_scored(tmp_path, hub):
+    scores = np.arange(21, dtype=np.float32)[:, None]
+    scores[0] = np.nan
+    run_and_scores(hub, scores)
     made = calibrate.main("u/runs", COMMIT, "models/20260101-000000", str(tmp_path),
                           str(tmp_path))
 
@@ -92,50 +62,19 @@ def test_a_threshold_is_kept_for_every_model_of_the_run(tmp_path, hub, monkeypat
     assert meta["inputs"] == {"models": "models/20260101-000000",
                               "target": Settings().TARGET, "onnx_files": None,
                               "precision": None}
-    assert meta["models"]["revision"] == COMMIT and meta["rows"] == len(raw)
+    assert meta["scores"]["path"] == "scores/20260101-000000", "the scores are reused"
+    assert meta["rows"] == 20
 
 
-def int8_run(monkeypatch, tmp_path, hub, raw):
-    """A stand-in run holding one nonlinear autoencoder, with its int8 file."""
-    model = NonlinearAe(k=4, hidden=8, arguments=FitArguments(
-        epochs=2, batch=16, rate=1e-3, improvement=1e-4, patience=2, seed=0))
-    run_and_train_set(monkeypatch, raw, models=(as_dict(model),))
-    torch.manual_seed(0)
-    net = NonlinearAutoencoder(signals=len(SIGNALS), latent_dim=4, hidden=8)
-    write_onnx_files([(onnx_name(model), net)], len(SIGNALS), str(tmp_path / "float"))
-    write_int8_files([onnx_name(model)], str(tmp_path / "float"), raw,
-                     str(tmp_path / "quantize" / "20260101-000000"), batch=16)
-    hub.files = {"quantize/20260101-000000/meta.json": {
-        "inputs": {"onnx": "onnx/20260101-000000"},
-        "models": {"path": "models/20260101-000000"}}}
-    return tmp_path / "quantize" / "20260101-000000" / f"{onnx_name(model)}_int8.onnx"
+def test_the_calibration_set_is_scored_as_the_thresholds_are_asked_for(tmp_path, hub,
+                                                                     monkeypatch):
+    run_and_scores(hub, np.ones((3, 1), np.float32))
+    asked = []
+    monkeypatch.setattr(calibrate.score, "main", lambda *args, **options: (
+        asked.append((args[2], options)) or
+        {"repo": "u/runs", "revision": REVISION, "path": "scores/20260101-000000"}))
+    calibrate.main("u/runs", COMMIT, "models/20260101-000000", str(tmp_path),
+                   str(tmp_path), onnx_files="quantize/20260101-000000", precision="int8")
 
-
-def test_onnx_thresholds_come_from_the_onnx_files(tmp_path, hub, monkeypatch):
-    raw = np.random.default_rng(0).normal(size=(64, len(SIGNALS))).astype(np.float32)
-    raw[:, WHEEL] = 10.0
-    int8_file = int8_run(monkeypatch, tmp_path, hub, raw)
-    made = calibrate.main("u/runs", COMMIT, "models/20260101-000000", str(tmp_path),
-                          str(tmp_path), onnx_files="quantize/20260101-000000",
-                          precision="int8")
-
-    kept = json.load(open(tmp_path / made["path"] / "thresholds.json"))
-    scores = onnx_residuals(str(int8_file), raw)
-    assert kept[0]["threshold"] == calibrate.quantile(scores, Settings().TARGET)
-    meta = json.load(open(tmp_path / made["path"] / "meta.json"))
-    assert meta["inputs"]["onnx_files"] == "quantize/20260101-000000"
-    assert meta["inputs"]["precision"] == "int8"
-    assert meta["onnx_files"]["precision"] == "int8"
-
-
-def test_onnx_files_need_to_be_made_from_the_fit(tmp_path, hub,
-                                                            monkeypatch):
-    raw = rows_at(np.arange(20) + 10.0)
-    run_and_train_set(monkeypatch, raw)
-    hub.files = {"quantize/20260101-000000/meta.json": {
-        "inputs": {"onnx": "onnx/20260102-000000"},
-        "models": {"path": "models/20260102-000000"}}}
-    with pytest.raises(ValueError):
-        calibrate.main("u/runs", COMMIT, "models/20260101-000000", str(tmp_path),
-                       str(tmp_path), onnx_files="quantize/20260101-000000",
-                       precision="int8")
+    assert asked == [("calibration_sets/20260101-000000",
+                      {"onnx_files": "quantize/20260101-000000", "precision": "int8"})]

@@ -43,48 +43,49 @@
       ],
       "additionalProperties": false
     },
+    "scores": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The scores of the calibration set the thresholds were taken from."
+    },
     "models": {
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The directory the models came from."
     },
     "onnx_files": {
-      "$ref": "meta.schema.json#/$defs/onnx_files"
+      "$ref": "meta.schema.json#/$defs/onnx_files",
+      "description": "The ONNX files the models scored as, as the scores record them. Null when the models scored in torch."
     },
     "calibration_set": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The calibration set the rows came from, as the fit records it."
-    },
-    "train_set": {
-      "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The train set the models were fitted on, as the fit records it."
+      "description": "The calibration set the rows came from, as the scores record it."
     },
     "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The log split, as the fit records it."
+      "description": "The log split, as the scores record it."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The grid, as the fit records it."
+      "description": "The grid, as the scores record it."
     },
     "min_speed": {
       "$ref": "meta.schema.json#/$defs/min_speed",
       "description": "The speed a row had to exceed to set a threshold."
     },
     "rows": {
-      "description": "How many rows each threshold was taken from.",
+      "description": "How many scored rows each threshold was taken from.",
       "type": "integer",
       "minimum": 0
     },
     "versions": {
       "$ref": "meta.schema.json#/$defs/versions",
-      "description": "Python, NumPy, the platform, and torch or ONNX Runtime, whichever scored."
+      "description": "Python, NumPy and the platform."
     }
   },
   "required": [
+    "scores",
     "models",
     "onnx_files",
     "calibration_set",
-    "train_set",
     "log_split",
     "grid",
     "min_speed",

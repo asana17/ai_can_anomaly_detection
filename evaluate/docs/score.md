@@ -1,8 +1,9 @@
 # score
 
 `score` gives each row of a set every fitted model's score, and marks the rows a rule
-hits. [run test set](run_test_set.md) runs it on a test set and counts what the
-detectors catch, so a new threshold or `HOLD` needs no rescoring.
+hits. [calibrate](calibrate.md) runs it on the calibration set and takes the
+thresholds from the scores. [run test set](run_test_set.md) runs it on a test set and
+counts what the detectors catch. A new threshold or `HOLD` then needs no rescoring.
 
 A row keeps its place in the set, scored or not, since `HOLD` counts rows in a row. A
 model scores only the moving rows, z-scored on the same
