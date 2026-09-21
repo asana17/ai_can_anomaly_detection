@@ -34,8 +34,8 @@ Neither model reads a window, so both are compared with `rules/instant` only.
 | `TRAIN` | 0.75 | the share of the seconds above 5 km/h before the test cut |
 | `TARGET` | 0.001 | the share of the calibration rows the threshold cuts off |
 | `CALIBRATION` | 0.10 | the share of the training seconds above 5 km/h that become the calibration set |
-| `BLOCK` | 20 s | the seconds above 5 km/h in one calibration window |
-| `GAP` | 5 s | the time either side of a calibration window where training rows are dropped |
+| `BLOCK` | 20 s | the seconds above 5 km/h in one calibration block |
+| `GAP` | 5 s | the time either side of a calibration block or the test span where rows are dropped |
 
 None of these was chosen by looking at the test set.
 

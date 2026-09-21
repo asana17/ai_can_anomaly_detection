@@ -1,11 +1,11 @@
 import json
+import os
 
 import numpy as np
 import pytest
 
 from assemble import train_set
 from assemble.grid import grid_rows
-from assemble.train_set import apart_from_test, split_rows
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -78,70 +78,6 @@ def _rows(speeds):
     return raw, np.arange(len(speeds), dtype=np.float64) * 0.1
 
 
-def test_split_rows_gives_calibration_the_share_of_the_seconds_asked_for():
-    raw, t = _rows(np.full(100000, 50.0))
-    train_rows, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=0.0,
-                                     min_speed=5.0, period=PERIOD)
-    assert abs(calibration_rows.mean() - 0.10) < 0.01
-
-
-def test_split_rows_cuts_calibration_into_windows_of_the_block_length():
-    raw, t = _rows(np.full(10000, 50.0))
-    _, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=0.0,
-                                     min_speed=5.0, period=PERIOD)
-    edges = np.flatnonzero(np.diff(np.concatenate(
-        [[0], calibration_rows.astype(np.int8), [0]])))
-    assert set((edges[1::2] - edges[::2]).tolist()) == {200}   # 20 s at 100 ms
-
-
-def test_split_rows_spreads_the_windows_over_the_period():
-    raw, t = _rows(np.full(100000, 50.0))
-    _, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=0.0,
-                                     min_speed=5.0, period=PERIOD)
-    at = np.flatnonzero(calibration_rows)
-    assert at[0] < 1000 and at[-1] > 90000
-
-
-def test_split_rows_never_calibrates_on_a_stopped_row():
-    speeds = np.full(20000, 50.0)
-    speeds[1::2] = 0.0                          # the truck stops every other row
-    raw, t = _rows(speeds)
-    _, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=0.0,
-                                     min_speed=5.0, period=PERIOD)
-    assert calibration_rows.any() and not (calibration_rows & (speeds == 0.0)).any()
-
-
-def test_split_rows_measures_the_block_in_seconds_above_min_speed():
-    speeds = np.full(20000, 50.0)
-    speeds[1::2] = 0.0
-    raw, t = _rows(speeds)
-    _, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=0.0,
-                                     min_speed=5.0, period=PERIOD)
-    assert abs(calibration_rows.sum() / (speeds > 5.0).sum() - 0.10) < 0.01
-
-
-def test_split_rows_puts_no_row_in_both_parts():
-    raw, t = _rows(np.full(10000, 50.0))
-    train_rows, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=5.0,
-                                     min_speed=5.0, period=PERIOD)
-    assert not (train_rows & calibration_rows).any()
-
-
-def test_split_rows_leaves_the_gap_out_of_both_parts():
-    raw, t = _rows(np.full(10000, 50.0))
-    train_rows, calibration_rows = split_rows(raw, t, share=0.10, block=20.0, gap=5.0,
-                                     min_speed=5.0, period=PERIOD)
-    assert (~train_rows & ~calibration_rows).any()
-    nearest = np.abs(t[train_rows][:, None] - t[calibration_rows][None, :]).min()
-    assert nearest > 5.0
-
-
-def test_rows_within_the_gap_of_the_test_block_are_dropped():
-    times = np.array([0.0, 4.0, 6.0, 20.0, 34.0, 36.0])
-    kept = apart_from_test(times, start=10.0, end=30.0, gap=5.0)
-    assert kept.tolist() == [True, True, False, False, False, True]
-
-
 LOGS = ["part_1/a.csv", "part_1/b.csv"]
 ENGINE = SIGNALS.index("engine_speed")
 
@@ -152,67 +88,85 @@ def _rules_hit_the_rows_with_an_engine_speed(monkeypatch):
     monkeypatch.setattr(train_set, "rule_hits", lambda raw, settings: raw[:, ENGINE] > 0)
 
 
-def _grid_and_split(hub, speeds, test_start, test_end, hit=slice(0)):
-    """A grid of two logs carrying `speeds`, split with the first log as train.
+def _grid_and_calibration_set(hub, speeds, test_start, hit=slice(0),
+                              blocks=((100.0, 119.9),)):
+    """A grid of two logs carrying `speeds`, the first non-test, and a calibration set.
 
-    The rows in `hit` are the ones a rule hits.
+    The rows in `hit` are the ones a rule hits, and `blocks` the calibration blocks.
     """
     raw, t = _rows(speeds)
     raw[hit, ENGINE] = 1000.0
     half = len(t) // 2
+    where = {"repo": "u/d", "revision": REVISION}
     hub.files = {
         "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1, "max_hold": 1.0}},
         "grids/20260101-000000/logs.json": {"logs": LOGS, "rows": [half, len(t) - half]},
         "grids/20260101-000000/grid_raw.npy": raw,
         "grids/20260101-000000/grid_t.npy": t,
-        "splits/20260101-000000/meta.json": {
+        "log_splits/20260101-000000/meta.json": {
             "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
-            "grid": {"repo": "u/d", "revision": REVISION,
-                     "path": "grids/20260101-000000"}},
-        "splits/20260101-000000/split.json": {
-            "train": LOGS[:1], "test": LOGS[1:],
-            "test_start": test_start, "test_end": test_end}}
+            "grid": dict(where, path="grids/20260101-000000")},
+        "log_splits/20260101-000000/log_split.json": {
+            "non_test": LOGS[:1], "test": LOGS[1:],
+            "test_start": test_start, "test_end": 999.9},
+        "calibration_sets/20260101-000000/meta.json": {
+            "inputs": {},
+            "log_split": dict(where, path="log_splits/20260101-000000"),
+            "grid": dict(where, path="grids/20260101-000000")},
+        "calibration_sets/20260101-000000/blocks.json": [list(b) for b in blocks]}
     return raw, t, half
 
 
-def test_the_stage_writes_which_rows_train_and_calibrate(tmp_path, hub):
-    raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 600.0, 999.9)
-    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
+def _train_set(tmp_path):
+    return train_set.main("u/d", REVISION, "calibration_sets/20260101-000000",
+                          str(tmp_path))
+
+
+def test_the_stage_writes_which_rows_train(tmp_path, hub):
+    raw, t, half = _grid_and_calibration_set(hub, np.full(10000, 50.0), 600.0)
+    made = _train_set(tmp_path)
     folder = tmp_path / made["path"]
+    assert sorted(os.listdir(folder)) == ["meta.json", "train_rows.npy"]
     train_rows = np.load(folder / "train_rows.npy")
-    calibration_rows = np.load(folder / "calibration_rows.npy")
     assert len(train_rows) == len(raw)
-    assert not train_rows[half:].any() and not calibration_rows[half:].any()
-    assert train_rows.any() and calibration_rows.any()
-    assert not (train_rows & calibration_rows).any()
+    assert not train_rows[half:].any() and train_rows.any()
     meta = json.loads((folder / "meta.json").read_text())
-    assert meta["split"]["path"] == "splits/20260101-000000"
+    assert meta["calibration_set"]["path"] == "calibration_sets/20260101-000000"
+    assert meta["log_split"]["path"] == "log_splits/20260101-000000"
     assert meta["grid"]["path"] == "grids/20260101-000000"
 
 
-def test_the_stage_keeps_the_rows_near_the_test_block_out_of_both(tmp_path, hub):
-    raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 500.0, 999.9)
-    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
-    folder = tmp_path / made["path"]
-    kept = (np.load(folder / "train_rows.npy")
-            | np.load(folder / "calibration_rows.npy"))
-    near = (t > 495.0) & (t < 500.0)            # the test block starts at 500, GAP is 5
-    assert near.sum() > 10 and not kept[near].any() and kept[t < 490.0].any()
+def test_the_stage_keeps_the_rows_near_a_calibration_block_out(tmp_path, hub):
+    raw, t, half = _grid_and_calibration_set(hub, np.full(10000, 50.0), 600.0)
+    made = _train_set(tmp_path)
+    train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
+    near = (t > 94.95) & (t < 125.0)            # the block is 100 to 119.9, GAP is 5
+    assert not train_rows[near].any()
+    assert train_rows[(t < 94.9) | ((t > 125.0) & (t < 500.0))].all()
+
+
+def test_the_stage_keeps_the_rows_near_the_test_block_out(tmp_path, hub):
+    raw, t, half = _grid_and_calibration_set(hub, np.full(10000, 50.0), 500.0)
+    made = _train_set(tmp_path)
+    train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
+    near = (t > 495.0) & (t < 500.0)            # the test span starts at 500, GAP is 5
+    assert near.sum() > 10 and not train_rows[near].any()
+    assert train_rows[t < 490.0].any()
 
 
 def test_the_stage_keeps_the_slow_rows_out_of_train(tmp_path, hub):
     speeds = np.full(10000, 50.0)
     speeds[1000:2000] = 3.0
-    raw, t, half = _grid_and_split(hub, speeds, 600.0, 999.9)
-    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
+    raw, t, half = _grid_and_calibration_set(hub, speeds, 600.0, blocks=())
+    made = _train_set(tmp_path)
     train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
     assert not train_rows[1000:2000].any() and train_rows[:1000].any()
 
 
 def test_the_stage_keeps_the_rows_a_rule_hits_out_of_train(tmp_path, hub):
-    raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 600.0, 999.9,
-                                   hit=slice(1000, 2000))
-    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
+    raw, t, half = _grid_and_calibration_set(hub, np.full(10000, 50.0), 600.0,
+                                             hit=slice(1000, 2000), blocks=())
+    made = _train_set(tmp_path)
     folder = tmp_path / made["path"]
     train_rows = np.load(folder / "train_rows.npy")
     assert not train_rows[1000:2000].any() and train_rows[:1000].any()
@@ -221,35 +175,31 @@ def test_the_stage_keeps_the_rows_a_rule_hits_out_of_train(tmp_path, hub):
     assert rule_hits["rows"] - rule_hits["hit"] == train_rows.sum()
 
 
-def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
-    inputs = {"split": "splits/20260101-000000", "calibration": 0.10, "block": 20.0,
-              "gap": 5.0}
+def test_the_stage_names_a_train_set_of_the_same_calibration_set(tmp_path, hub):
+    inputs = {"calibration_set": "calibration_sets/20260101-000000", "gap": 5.0}
     hub.files = {"train_sets/20260101-000000/meta.json": {"inputs": inputs}}
-    found = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
+    found = _train_set(tmp_path)
     assert found["path"] == "train_sets/20260101-000000" and hub.uploaded == []
 
 
 def test_read_train_set_reads_the_rows_back(tmp_path):
     np.save(tmp_path / "train_rows.npy", np.array([True, False]))
-    np.save(tmp_path / "calibration_rows.npy", np.array([False, True]))
-    train_rows, calibration_rows = train_set.read_train_set(str(tmp_path))
 
-    assert train_rows.tolist() == [True, False]
-    assert calibration_rows.tolist() == [False, True]
+    assert train_set.read_train_set(str(tmp_path)).tolist() == [True, False]
 
 
 def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
     hub.files.update({
         "train_sets/20260101-000000/meta.json": {
             "inputs": {},
-            "split": {"repo": "user/data", "revision": REVISION,
-                      "path": "splits/20260101-000000"},
+            "calibration_set": {"repo": "user/data", "revision": REVISION,
+                                "path": "calibration_sets/20260101-000000"},
+            "log_split": {"repo": "user/data", "revision": REVISION,
+                          "path": "log_splits/20260101-000000"},
             "grid": {"repo": "user/data", "revision": REVISION,
                      "path": "grids/20260101-000000"}},
         "train_sets/20260101-000000/train_rows.npy": np.array([True, False, False]),
-        "train_sets/20260101-000000/calibration_rows.npy":
-            np.array([False, True, False]),
-        "splits/20260101-000000/meta.json": {"inputs": {"min_speed": 5.0}},
+        "log_splits/20260101-000000/meta.json": {"inputs": {"min_speed": 5.0}},
         "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1}},
         "grids/20260101-000000/grid_raw.npy":
             np.array([[10.0], [30.0], [50.0]], np.float32),
@@ -259,6 +209,7 @@ def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
     got = train_set.fetch_train_set("user/data", REVISION, "train_sets/20260101-000000",
                                     str(tmp_path))
 
-    assert got["train"].tolist() == [[10.0]], "the third row is in neither part"
-    assert got["calibration"].tolist() == [[30.0]]
-    assert got["min_speed"] == 5.0, "the split decides the speed, not Settings"
+    assert got["train"].tolist() == [[10.0]]
+    assert got["min_speed"] == 5.0, "the log split decides the speed, not Settings"
+    calibration = got["dataset"]["calibration_set"]
+    assert calibration["path"] == "calibration_sets/20260101-000000"

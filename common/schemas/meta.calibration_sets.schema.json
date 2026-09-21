@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "attack_sets/<time>/meta.json",
-  "description": "Where an attack set came from.",
+  "title": "calibration_sets/<time>/meta.json",
+  "description": "Where a calibration set came from.",
   "allOf": [
     {
       "$ref": "meta.schema.json"
@@ -16,26 +16,34 @@
           "type": "string",
           "pattern": "^log_splits/[0-9]{8}-[0-9]{6}$"
         },
-        "seed": {
-          "description": "The seed the attacks are drawn with.",
-          "type": "integer"
+        "calibration": {
+          "description": "Share of the training seconds above `min_speed` held out to set thresholds.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
         },
-        "donors": {
-          "description": "Training logs the replayed payloads are taken from.",
-          "type": "integer",
-          "minimum": 1
+        "block": {
+          "description": "Seconds above `min_speed` in one calibration block.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "gap": {
+          "description": "Seconds of rows dropped around the test span.",
+          "type": "number",
+          "minimum": 0
         }
       },
       "required": [
         "log_split",
-        "seed",
-        "donors"
+        "calibration",
+        "block",
+        "gap"
       ],
       "additionalProperties": false
     },
     "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The log split whose test logs were attacked."
+      "description": "The log split whose non-test logs it was cut from."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",

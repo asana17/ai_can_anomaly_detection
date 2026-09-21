@@ -22,7 +22,7 @@ python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_rep
 |---|---|
 | `repo` | Hugging Face dataset repo holding `attack_sets/<time>/` |
 | `revision` | commit of `repo` to read it at, as [attack_set](../../assemble/docs/attack_set.md) printed it |
-| `attack_sets/<time>` | the attack set whose rows the detectors read. The split and grid it names are read too |
+| `attack_sets/<time>` | the attack set whose rows the detectors read. The log split and grid it names are read too |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo holding the thresholds and uploaded to, needs `hf auth login` |
 | `revision` | commit of `runs_repo` to read the thresholds at, as [calibrate](calibrate.md) printed it |

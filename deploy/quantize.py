@@ -69,7 +69,8 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
                      source, rows, folder, settings.BATCH)
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},
-            **{name: exported[name] for name in ("models", "train_set", "split", "grid")},
+            **{name: exported[name]
+               for name in ("models", "train_set", "log_split", "grid")},
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "onnx": onnx.__version__,
                          "onnxruntime": onnxruntime.__version__}}

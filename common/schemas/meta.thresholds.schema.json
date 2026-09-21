@@ -50,13 +50,17 @@
     "onnx_files": {
       "$ref": "meta.schema.json#/$defs/onnx_files"
     },
+    "calibration_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The calibration set the rows came from, as the fit records it."
+    },
     "train_set": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The train set the rows came from, as the fit records it."
+      "description": "The train set the models were fitted on, as the fit records it."
     },
-    "split": {
+    "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The split, as the fit records it."
+      "description": "The log split, as the fit records it."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -79,8 +83,9 @@
   "required": [
     "models",
     "onnx_files",
+    "calibration_set",
     "train_set",
-    "split",
+    "log_split",
     "grid",
     "min_speed",
     "rows",

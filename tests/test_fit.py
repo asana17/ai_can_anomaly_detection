@@ -29,8 +29,10 @@ def train_set(monkeypatch, rows=8):
         "train": raw, "calibration": raw, "min_speed": 5.0,
         "dataset": {"train_set": {"repo": "u/d", "revision": REVISION,
                                   "path": "train_sets/20260101-000000"},
-                    "split": {"repo": "u/d", "revision": REVISION,
-                              "path": "splits/20260101-000000"},
+                    "calibration_set": {"repo": "u/d", "revision": REVISION,
+                                        "path": "calibration_sets/20260101-000000"},
+                    "log_split": {"repo": "u/d", "revision": REVISION,
+                                  "path": "log_splits/20260101-000000"},
                     "grid": {"repo": "u/d", "revision": REVISION,
                              "path": "grids/20260101-000000"}}})
     monkeypatch.setattr(fit, "models_in", lambda path: [Pca(2)])

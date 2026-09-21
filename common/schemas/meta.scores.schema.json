@@ -60,9 +60,9 @@
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The attack set the rows came from."
     },
-    "split": {
+    "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The split the attack set was drawn on."
+      "description": "The log split the attack set was drawn on."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -102,7 +102,7 @@
     "onnx_files",
     "models",
     "attack_set",
-    "split",
+    "log_split",
     "grid",
     "min_speed",
     "rows",

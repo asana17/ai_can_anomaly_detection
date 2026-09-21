@@ -6,20 +6,20 @@ rows each attack changed.
 ## Running it
 
 ```
-python3 -m assemble.attack_set repo revision splits/<time> data_dir local_dir [--rebuild]
+python3 -m assemble.attack_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
 ```
 
 | argument | |
 |---|---|
-| `repo` | Hugging Face dataset repo holding `splits/<time>/` and uploaded to, needs `hf auth login` |
-| `revision` | commit of `repo` to read `splits/<time>/` at, as [split](split.md) printed it |
-| `splits/<time>` | the [split](split.md) directory whose test logs are attacked. The grid it names is read too |
-| `data_dir` | local folder holding the CAN frame logs the split names |
+| `repo` | Hugging Face dataset repo holding `log_splits/<time>/` and uploaded to, needs `hf auth login` |
+| `revision` | commit of `repo` to read `log_splits/<time>/` at, as [split_test_logs](split_test_logs.md) printed it |
+| `log_splits/<time>` | the [log split](split_test_logs.md) whose test logs are attacked. The grid it names is read too |
+| `data_dir` | local folder holding the CAN frame logs the log split names |
 | `local_dir` | local folder `attack_sets/<time>/` is written to, kept after the upload |
-| `--rebuild` | build even if `repo` already has `attack_sets/<time>/` for the same split, `SEED` and `DONORS` |
+| `--rebuild` | build even if `repo` already has `attack_sets/<time>/` for the same log split, `SEED` and `DONORS` |
 
 `PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
-ticks as the grid's. The payloads are replayed from `DONORS` of the split's train logs,
+ticks as the grid's. The payloads are replayed from `DONORS` of the non-test logs,
 spread evenly over them.
 
 It writes these files into `local_dir/attack_sets/<time>/` and uploads that directory to

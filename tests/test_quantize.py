@@ -64,7 +64,8 @@ def exported(monkeypatch, tmp_path):
     where = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}
     meta = {"models": {"repo": "u/runs", "revision": REVISION,
                        "path": "models/20260101-000000"},
-            "train_set": where, "split": dict(where, path="splits/20260101-000000"),
+            "train_set": where,
+            "log_split": dict(where, path="log_splits/20260101-000000"),
             "grid": dict(where, path="grids/20260101-000000"), "exported": [ENTRY]}
     monkeypatch.setattr(quantize, "read_dir", lambda *args: (source, meta))
     monkeypatch.setattr(quantize, "fetch_fitted_models", lambda *args: (

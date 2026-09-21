@@ -2,10 +2,10 @@
 
     python3 -m evaluate.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
 
-The score comes from the calibration rows, which no model was fitted on. A model
-reconstructs the rows it was fitted on better than the rest, so a threshold taken from
-those would sit too low. With `--onnx_files` each model is its ONNX file of `precision`
-in that directory, made from the same fit.
+The score comes from the calibration set the models' train set names, which no model
+was fitted on. A model reconstructs the rows it was fitted on better than the rest, so
+a threshold taken from those would sit too low. With `--onnx_files` each model is its
+ONNX file of `precision` in that directory, made from the same fit.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import numpy as np
 import onnxruntime
 import torch
 
-from assemble.train_set import fetch_train_set
+from assemble.calibration_set import fetch_calibration_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
@@ -52,13 +52,13 @@ def thresholds_for(models, scorer_of, rows, *, target):
     return kept
 
 
-def calibration_rows(train_set, scale, settings):
-    """The rows of `train_set` a threshold is taken from, z-scored on `scale`.
+def calibration_rows(calibration_set, scale, settings):
+    """The rows of `calibration_set` a threshold is taken from, z-scored on `scale`.
 
-    Two kinds of calibration row are left out: rows at or below the train set's
+    Two kinds of calibration row are left out: rows at or below the calibration set's
     `min_speed`, and rows that a rule in `rules/instant` flags.
     """
-    raw, min_speed = train_set["calibration"], train_set["min_speed"]
+    raw, min_speed = calibration_set["calibration"], calibration_set["min_speed"]
     # a row a rule already flags says nothing about where to put a model's threshold
     kept = moving(raw, min_speed=min_speed) & ~rule_hits(raw, replace(
         settings, MIN_SPEED=min_speed))
@@ -73,9 +73,10 @@ def write_thresholds(folder, runs_repo, revision, models_path, onnx_directory,
     directory and the precision of them, the directory downloaded into `onnx_folder`.
     """
     weights, fitted = fetch_fitted_models(runs_repo, revision, models_path, runs_dir)
-    at = fitted["train_set"]
-    train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
-    rows = calibration_rows(train_set, scale_of(weights), settings)
+    at = fitted["calibration_set"]
+    calibration_set = fetch_calibration_set(at["repo"], at["revision"], at["path"],
+                                            local_dir)
+    rows = calibration_rows(calibration_set, scale_of(weights), settings)
     if onnx_directory is None:
         scorer_of = torch_scorer(weights)
         runtime = {"torch": torch.__version__}
@@ -88,7 +89,8 @@ def write_thresholds(folder, runs_repo, revision, models_path, onnx_directory,
         json.dump(thresholds, f, indent=2)
     return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},
             "onnx_files": onnx_directory,
-            **{name: fitted[name] for name in ("train_set", "split", "grid")},
+            **{name: fitted[name]
+               for name in ("train_set", "calibration_set", "log_split", "grid")},
             "min_speed": fitted["min_speed"], "rows": len(rows),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          **runtime, "platform": platform.platform()}}

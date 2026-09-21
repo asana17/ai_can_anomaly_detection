@@ -43,9 +43,9 @@ It writes these files into `runs_dir/thresholds/<time>/` and uploads that direct
 
 ## The rows it scores
 
-calibrate scores the calibration rows of the train set the models were fitted on. A
-model has never seen them, and [train_set](../../assemble/docs/train_set.md) says why
-they are held back.
+calibrate scores the rows of the [calibration set](../../assemble/docs/calibration_set.md)
+the models' train set names. A model has never seen them, and the calibration set says
+why they are held back.
 
 Rows at or below `MIN_SPEED` are dropped, as they are in [fit](fit.md). So are rows an
 instant rule already flags, since a model is only asked about the rows the rules let

@@ -34,9 +34,9 @@
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The train set, as the export records it."
     },
-    "split": {
+    "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The split, as the export records it."
+      "description": "The log split, as the export records it."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -51,7 +51,7 @@
     "onnx",
     "models",
     "train_set",
-    "split",
+    "log_split",
     "grid",
     "versions"
   ],

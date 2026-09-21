@@ -86,8 +86,8 @@ def stand_in(monkeypatch, hub):
         "min_speed": 5.0,
         "dataset": {"attack_set": {"repo": "u/d", "revision": REVISION,
                                    "path": "attack_sets/20260101-000000"},
-                    "split": {"repo": "u/d", "revision": REVISION,
-                              "path": "splits/20260101-000000"},
+                    "log_split": {"repo": "u/d", "revision": REVISION,
+                                  "path": "log_splits/20260101-000000"},
                     "grid": {"repo": "u/d", "revision": REVISION,
                              "path": "grids/20260101-000000"}}})
     monkeypatch.setattr("evaluate.counting.rule_hits",

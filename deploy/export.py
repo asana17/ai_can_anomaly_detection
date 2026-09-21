@@ -43,7 +43,7 @@ def write_export(folder, runs_repo, revision, models_path, runs_dir):
     write_onnx_files([(onnx_name(model), model.network_with_weights(weights, signals))
                       for model in wanted], signals, folder)
     return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},
-            **{name: models_meta[name] for name in ("train_set", "split", "grid")},
+            **{name: models_meta[name] for name in ("train_set", "log_split", "grid")},
             "exported": [as_dict(model) for model in wanted],
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "onnx": onnx.__version__}}

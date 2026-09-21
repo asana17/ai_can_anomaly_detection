@@ -16,9 +16,9 @@ class Settings:
     N_SPLITS: int = 4           # blocks the seconds above MIN_SPEED are cut into, by time
     FOLD: int = 3               # the block that is the test set, 0 the first
     CALIBRATION: float = 0.10   # share of the training seconds above MIN_SPEED held out
-    BLOCK: float = 20.0         # seconds above MIN_SPEED in one calibration window
-    GAP: float = 5.0            # seconds of training rows dropped around a calibration row
-    DONORS: int = 24            # training logs the replayed payloads are taken from
+    BLOCK: float = 20.0         # seconds above MIN_SPEED in one calibration block
+    GAP: float = 5.0            # seconds left out around each block and the test span
+    DONORS: int = 24            # non-test logs the replayed payloads are taken from
     SEED: int = 0               # the rng the attacks are drawn with
     COMPONENTS: tuple = (2, 4, 6, 8, 10, 12, 14, 16)
     TARGET: float = 0.001       # share of normal rows the threshold cuts off

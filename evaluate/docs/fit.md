@@ -16,7 +16,7 @@ python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs
 |---|---|
 | `repo` | Hugging Face dataset repo holding `train_sets/<time>/` |
 | `revision` | commit of `repo` to read it at, as [train_set](../../assemble/docs/train_set.md) printed it |
-| `train_sets/<time>` | the train set whose rows the models are fitted on. The split and grid it names are read too |
+| `train_sets/<time>` | the train set whose rows the models are fitted on. The log split and grid it names are read too |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo the run is uploaded to, needs `hf auth login` |
 | `runs_dir` | local folder `models/<time>/` is written to, kept after the upload |
@@ -40,12 +40,12 @@ A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
 
 ## The rows it fits on
 
-A train set marks three kinds of row: train, calibration, and neither. `fit` reads the
-train rows and drops none of them. The [train set](../../assemble/docs/train_set.md)
-already chose them, the rows above `MIN_SPEED` that no rule hits.
+`fit` reads the train rows and drops none of them. The
+[train set](../../assemble/docs/train_set.md) already chose them, the rows above
+`MIN_SPEED` that no rule hits.
 
-`MIN_SPEED` is the value the [split](../../assemble/docs/split.md) was cut with. It
-comes from the split's `meta.json`, and `fit` records it in its own.
+`MIN_SPEED` is the value the [log split](../../assemble/docs/split_test_logs.md) was cut
+with. It comes from the log split's `meta.json`, and `fit` records it in its own.
 
 ## The scale
 

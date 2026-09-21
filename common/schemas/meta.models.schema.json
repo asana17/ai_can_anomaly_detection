@@ -36,9 +36,13 @@
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The train set the rows came from."
     },
-    "split": {
+    "calibration_set": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The split the train set was taken from."
+      "description": "The calibration set the train set names."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split the train set was taken from."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -60,7 +64,8 @@
   },
   "required": [
     "train_set",
-    "split",
+    "calibration_set",
+    "log_split",
     "grid",
     "min_speed",
     "rows",

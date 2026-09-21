@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "splits/<time>/meta.json",
-  "description": "Where a split came from.",
+  "title": "log_splits/<time>/meta.json",
+  "description": "Where a log split came from.",
   "allOf": [
     {
       "$ref": "meta.schema.json"

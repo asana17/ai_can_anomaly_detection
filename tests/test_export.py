@@ -59,7 +59,8 @@ def fitted(monkeypatch, model):
     where = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}
     meta = {"inputs": {"train_set": "train_sets/20260101-000000",
                        "models": [{"model": "pca", "k": 2}, NONLINEAR]},
-            "train_set": where, "split": dict(where, path="splits/20260101-000000"),
+            "train_set": where,
+            "log_split": dict(where, path="log_splits/20260101-000000"),
             "grid": dict(where, path="grids/20260101-000000"), "min_speed": 5.0}
     monkeypatch.setattr(export, "fetch_fitted_models", lambda *args: (weights, meta))
 

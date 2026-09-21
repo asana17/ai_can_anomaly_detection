@@ -11,39 +11,30 @@
     "inputs": {
       "type": "object",
       "properties": {
-        "split": {
-          "description": "The `splits/<time>` directory.",
+        "calibration_set": {
+          "description": "The `calibration_sets/<time>` directory.",
           "type": "string",
-          "pattern": "^splits/[0-9]{8}-[0-9]{6}$"
-        },
-        "calibration": {
-          "description": "Share of the training seconds above `min_speed` held out to set thresholds.",
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "exclusiveMaximum": 1
-        },
-        "block": {
-          "description": "Seconds above `min_speed` in one calibration window.",
-          "type": "number",
-          "exclusiveMinimum": 0
+          "pattern": "^calibration_sets/[0-9]{8}-[0-9]{6}$"
         },
         "gap": {
-          "description": "Seconds of training rows dropped around a calibration row.",
+          "description": "Seconds of rows dropped around the test span and every calibration block.",
           "type": "number",
           "minimum": 0
         }
       },
       "required": [
-        "split",
-        "calibration",
-        "block",
+        "calibration_set",
         "gap"
       ],
       "additionalProperties": false
     },
-    "split": {
+    "calibration_set": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The split it was taken from."
+      "description": "The calibration set whose blocks the train rows keep away from."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split, as the calibration set records it."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -70,7 +61,8 @@
     }
   },
   "required": [
-    "split",
+    "calibration_set",
+    "log_split",
     "grid",
     "rule_hits"
   ],

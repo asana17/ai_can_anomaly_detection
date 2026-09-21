@@ -1,6 +1,6 @@
-"""Split the logs into train and test by time, without shuffling.
+"""Split the logs into test and non-test by time, without shuffling.
 
-    python3 -m assemble.split repo revision grids/<time> local_dir [--rebuild]
+    python3 -m assemble.split_test_logs repo revision grids/<time> local_dir [--rebuild]
 """
 
 from __future__ import annotations
@@ -18,18 +18,18 @@ from preprocess.features.moving import moving
 
 
 def split(seconds: dict[str, float], n_splits: int, fold: int):
-    """Cut the logs by time into `n_splits` blocks, block `fold` being the test set.
+    """Cut the logs by time into `n_splits` parts, part `fold` being the test logs.
 
-    `seconds` is what seconds_of returns, so the blocks are equal shares of the seconds
-    above the minimum speed rather than of the log count. Train is every other block,
+    `seconds` is what seconds_of returns, so the parts are equal shares of the seconds
+    above the minimum speed rather than of the log count. Non-test is every other part,
     before and after the test one.
     """
     if not 0 <= fold < n_splits:
-        raise ValueError(f"fold {fold} is not one of the {n_splits} blocks")
+        raise ValueError(f"fold {fold} is not one of the {n_splits} parts")
     ordered = sorted(seconds, key=os.path.basename)     # filename is a timestamp
     sizes = [seconds[p] for p in ordered]
     start = _cut(sizes, sum(sizes) * (fold / n_splits))
-    end = len(ordered)                          # the last block runs to the last log
+    end = len(ordered)                          # the last part runs to the last log
     if fold < n_splits - 1:
         end = _cut(sizes, sum(sizes) * ((fold + 1) / n_splits))
     return ordered[:start] + ordered[end:], ordered[start:end]
@@ -56,34 +56,34 @@ def seconds_of(raw, counts, logs, *, min_speed: float, period: float):
 
 
 def span_of(times, counts, logs, wanted):
-    """The first and last time of the block `wanted` covers, read off the grid's rows."""
+    """The first and last time of the span `wanted` covers, read off the grid's rows."""
     ends = np.cumsum(counts)
     at = [i for i, log in enumerate(logs) if log in set(wanted)]
     return float(times[ends[at[0]] - counts[at[0]]]), float(times[ends[at[-1]] - 1])
 
 
-def read_split(folder):
-    """The train and test logs of a `splits/<time>/` directory, and the test block's
-    first and last time."""
-    with open(os.path.join(folder, "split.json")) as f:
+def read_log_split(folder):
+    """The test and non-test logs of a `log_splits/<time>/` directory, and the test
+    span's first and last time."""
+    with open(os.path.join(folder, "log_split.json")) as f:
         return json.load(f)
 
 
-def write_split(folder, repo, revision, grid_path, local_dir, settings):
-    """Write `split.json` and `seconds.json` for `FOLD`, cut on the grid `grid_path` of
-    `repo` at `revision`, and return the reference to it for `meta.json`."""
+def write_log_split(folder, repo, revision, grid_path, local_dir, settings):
+    """Write `log_split.json` and `seconds.json` for `FOLD`, cut on the grid `grid_path`
+    of `repo` at `revision`, and return the reference to it for `meta.json`."""
     got = download(repo, grid_path, local_dir, repo_type="dataset", revision=revision)
     raw, times, logs, counts = read_grid(got)
     seconds = seconds_of(raw, counts, logs, min_speed=settings.MIN_SPEED,
                          period=settings.PERIOD)
-    train_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)
+    non_test_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)
     start, end = span_of(times, counts, logs, test_logs)
-    print(f"{len(train_logs)} train and {len(test_logs)} test logs, "
-          f"{sum(seconds[p] for p in train_logs):.0f}s and "
+    print(f"{len(non_test_logs)} non-test and {len(test_logs)} test logs, "
+          f"{sum(seconds[p] for p in non_test_logs):.0f}s and "
           f"{sum(seconds[p] for p in test_logs):.0f}s above the minimum speed",
           flush=True)
-    with open(os.path.join(folder, "split.json"), "w") as f:
-        json.dump({"train": train_logs, "test": test_logs,
+    with open(os.path.join(folder, "log_split.json"), "w") as f:
+        json.dump({"non_test": non_test_logs, "test": test_logs,
                    "test_start": start, "test_end": end}, f)
     with open(os.path.join(folder, "seconds.json"), "w") as f:
         json.dump(seconds, f)
@@ -94,9 +94,9 @@ def main(repo, revision, grid_path, local_dir, rebuild=False):
     settings = Settings()
     inputs = {"grid": grid_path, "min_speed": settings.MIN_SPEED,
               "n_splits": settings.N_SPLITS, "fold": settings.FOLD}
-    return reuse_or_make(repo, "splits", inputs, local_dir,
-                         lambda folder: write_split(folder, repo, revision, grid_path,
-                                                    local_dir, settings),
+    return reuse_or_make(repo, "log_splits", inputs, local_dir,
+                         lambda folder: write_log_split(folder, repo, revision,
+                                                        grid_path, local_dir, settings),
                          rebuild, repo_type="dataset")
 
 

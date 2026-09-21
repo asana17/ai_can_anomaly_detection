@@ -1,6 +1,6 @@
 """Build the test arrays with attacks in them, and say which rows they cover.
 
-    python3 -m assemble.attack_set repo revision splits/<time> data_dir local_dir [--rebuild]
+    python3 -m assemble.attack_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import numpy as np
 from attack.inject import inject
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
-from assemble.split import read_split
+from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
@@ -122,9 +122,9 @@ def rows_before_each(grid_dir):
     return of
 
 
-def donor_logs(train_logs, count):
-    """The `count` training logs the replayed payloads are taken from, spread evenly."""
-    return train_logs[::max(len(train_logs) // count, 1)][:count]
+def donor_logs(non_test_logs, count):
+    """The `count` non-test logs the replayed payloads are taken from, spread evenly."""
+    return non_test_logs[::max(len(non_test_logs) // count, 1)][:count]
 
 
 def read_attack_set(folder):
@@ -138,39 +138,41 @@ def read_attack_set(folder):
 def fetch_attack_set(repo, revision, attack_path, local_dir):
     """The rows an attack set holds, its attacks, and the directories they came from.
 
-    The attack set is read at `revision` of `repo`, and the split and grid it names at
-    the commits it names them at. `before` gives a log's rows as they were before the
+    The attack set is read at `revision` of `repo`, and the log split and grid it names
+    at the commits it names them at. `before` gives a log's rows as they were before the
     attack, which is what `moved` is measured against.
     """
     folder, meta = read_dir(repo, attack_path, local_dir, revision, repo_type="dataset")
-    split, grid = meta["split"], meta["grid"]
-    _, split_meta = read_dir(split["repo"], split["path"], local_dir, split["revision"],
-                             repo_type="dataset")
+    log_split, grid = meta["log_split"], meta["grid"]
+    _, log_split_meta = read_dir(log_split["repo"], log_split["path"], local_dir,
+                                 log_split["revision"], repo_type="dataset")
     grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
                            repo_type="dataset")
     rows, attacks = read_attack_set(folder)
     return {**rows, "attacks": attacks, "before": rows_before_each(grid_dir),
-            "min_speed": split_meta["inputs"]["min_speed"],
+            "min_speed": log_split_meta["inputs"]["min_speed"],
             "dataset": {"attack_set": {"repo": repo, "revision": revision,
                                        "path": attack_path},
-                        "split": split, "grid": grid}}
+                        "log_split": log_split, "grid": grid}}
 
 
-def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, settings):
-    """Write the attacked frames and rows, and return the split and grid for meta.json."""
-    split_dir, split_meta = read_dir(repo, split_path, local_dir, revision,
-                                     repo_type="dataset")
-    grid = split_meta["grid"]
+def write_attack_set(folder, repo, revision, log_split_path, data_dir, local_dir,
+                     settings):
+    """Write the attacked frames and rows, and return the log split and grid for
+    meta.json."""
+    log_split_dir, log_split_meta = read_dir(repo, log_split_path, local_dir, revision,
+                                             repo_type="dataset")
+    grid = log_split_meta["grid"]
     grid_dir, grid_meta = read_dir(grid["repo"], grid["path"], local_dir,
                                    grid["revision"], repo_type="dataset")
     period, max_hold = (grid_meta["inputs"][n] for n in ("period", "max_hold"))
-    cut = read_split(split_dir)
+    cut = read_log_split(log_split_dir)
 
     under = {name: [os.path.join(data_dir, p) for p in cut[name]]
-             for name in ("train", "test")}
+             for name in ("non_test", "test")}
     before = rows_before_each(grid_dir)
     injected = inject_frames(under["test"], random.Random(settings.SEED),
-                             donor_logs(under["train"], settings.DONORS))
+                             donor_logs(under["non_test"], settings.DONORS))
     got = grid_rows_injected(
         write_and_pass_frames(injected, os.path.join(folder, "frames")),
         lambda log: before(os.path.relpath(log, data_dir)), period=period,
@@ -183,20 +185,21 @@ def write_attack_set(folder, repo, revision, split_path, data_dir, local_dir, se
     with open(os.path.join(folder, "attacked.json"), "w") as f:
         json.dump([dict(a, log=os.path.relpath(a["log"], data_dir))
                    for a in got["attacks"]], f)
-    return {"split": {"repo": repo, "revision": revision, "path": split_path},
+    return {"log_split": {"repo": repo, "revision": revision, "path": log_split_path},
             "grid": grid}
 
 
-def main(repo, revision, split_path, data_dir, local_dir, rebuild=False):
+def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False):
     settings = Settings()
-    inputs = {"split": split_path, "seed": settings.SEED, "donors": settings.DONORS}
+    inputs = {"log_split": log_split_path, "seed": settings.SEED,
+              "donors": settings.DONORS}
     return reuse_or_make(repo, "attack_sets", inputs, local_dir,
                          lambda folder: write_attack_set(folder, repo, revision,
-                                                         split_path, data_dir, local_dir,
-                                                         settings),
+                                                         log_split_path, data_dir,
+                                                         local_dir, settings),
                          rebuild, repo_type="dataset")
 
 
 if __name__ == "__main__":
-    main(**arguments(("repo", "revision", "split_path", "data_dir", "local_dir"),
+    main(**arguments(("repo", "revision", "log_split_path", "data_dir", "local_dir"),
                     rebuild=False))

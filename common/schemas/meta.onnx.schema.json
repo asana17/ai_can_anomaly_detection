@@ -30,9 +30,9 @@
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The train set, as the models record it."
     },
-    "split": {
+    "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The split, as the models record it."
+      "description": "The log split, as the models record it."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -54,7 +54,7 @@
   "required": [
     "models",
     "train_set",
-    "split",
+    "log_split",
     "grid",
     "exported",
     "versions"
