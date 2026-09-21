@@ -5,6 +5,7 @@
 #include "model.h"
 #include "scale.h"
 #include "model_config.h"
+#include "threshold.h"
 #include "../rule_check_from_flash/raw_rows.h"
 
 #if RULE_SIGNALS != MODEL_SIGNALS
@@ -88,7 +89,7 @@ LOCAL ModelStatus evaluate_row(const float physical[MODEL_SIGNALS], Detection *d
 		total += difference * difference;
 	}
 	detection->score = total / MODEL_SIGNALS;
-	detection->hit = detection->score > ACTIVE_MODEL_THRESHOLD;
+	detection->hit = detection->score > THRESHOLD_SCORE;
 	return MODEL_OK;
 }
 

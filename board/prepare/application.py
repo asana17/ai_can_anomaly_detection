@@ -13,6 +13,7 @@ MODEL = "active_model"
 MODEL_FILES = (
     "active_model.c", "active_model.h", "active_model_data.c",
     "active_model_data.h", "active_model_details.h", "model_config.h",
+    "threshold.h",
 )
 
 

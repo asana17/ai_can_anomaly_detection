@@ -3,7 +3,6 @@
 
 /* nonlinear_ae_k8_h64_float from board/20260916-232708. */
 #define ACTIVE_MODEL_ID "nonlinear-ae-k8-h64-float"
-#define ACTIVE_MODEL_THRESHOLD 0x1.556fc40000000p-5f
 
 static const float active_model_mean[MODEL_SIGNALS] = {
 		0x1.0037300000000p+10f, 0x1.1d63200000000p+4f,

@@ -11,8 +11,8 @@ for STM32H5 with the st-ai API. The source came from the runs repository at
 `board/20260916-232708/nonlinear_ae_k8_h64/`. Its generated `network` symbols and file
 names are renamed to the stable application name `active_model`.
 
-`model_config.h` keeps the matching scale from `out/scale.npy` and the float-model
-threshold from `results/20260916-001002` (`0.041679270565509796`).
+`model_config.h` keeps the matching scale from `out/scale.npy`. `threshold.h` keeps the
+float-model threshold from `results/20260916-001002` (`0.041679270565509796`).
 
 ## Fixed model input contract
 
@@ -25,12 +25,13 @@ pipeline (or a temporary manual step) must place these files in `board/lib/activ
 - `active_model_data.h`
 - `active_model_details.h`
 - `model_config.h`
+- `threshold.h`
 
 The generated C must use the st-ai API, expose `stai_active_model_*`, take and return
 one float32 tensor of 17 values, and target the runtime supplied at build time.
-`model_config.h` must define `ACTIVE_MODEL_ID`, `ACTIVE_MODEL_THRESHOLD`,
-`active_model_mean` and `active_model_std` for the same model. `LICENSE.txt` is
-retained with the fixed model but is not a compiler input.
+`model_config.h` must define `ACTIVE_MODEL_ID`, `active_model_mean` and
+`active_model_std` for the same model, and `threshold.h` its `THRESHOLD_SCORE`.
+`LICENSE.txt` is retained with the fixed model but is not a compiler input.
 
 Changing models later means atomically replacing this set while keeping the file and
 symbol contract. Fetching, conversion and renaming remain outside `board.prepare`.
