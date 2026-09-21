@@ -68,12 +68,13 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Split training and scoring off `evaluate/pc/run.py`, as the stages of `assemble` are
-  split: training reads a train set and writes weights and thresholds, scoring reads an
-  attack set and a training and writes the tables. Scoring puts the rows on the scale
-  and measures how far each attack moved one, which the attack set no longer holds.
-- Retire `assemble/dataset.py` and `common/load_dataset.py` once training and scoring
-  read the stage directories.
+- Rebuild the int8 comparison as a stage. It reads `scores/<time>`, finds the `onnx/`
+  and `quantize/` directories made from the same models, and scores the int8 files only.
+- Move `board/rows.py` onto the attack set and a train set's scale.
+- Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`.
+- Move what `deploy` imports from `evaluate` into `common/`.
+- Describe `thresholds.json` with a JSON Schema. Calibrate and quantize write it through
+  one function that checks it.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
   score one other split, the first 25% of the time as test.
 - Pick the rows of a part by time rather than by log. `train_set` still asks which logs
