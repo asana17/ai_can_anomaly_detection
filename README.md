@@ -77,8 +77,8 @@ J1939's own terms, frame, PGN and SPN, are described in
   1. `preprocess` marks the moving rows. `moving` moves there from `assemble.grid`.
   2. `rules` flags the moving rows it hits.
   3. The model scores the moving rows no rule hit.
-  4. A new `detect` compares the scores with the threshold, adds the rule flags, and
-     holds them over `HOLD`. `persistent` moves there from `evaluate/counting.py`.
+  4. `detect` compares the scores with the threshold, adds the rule flags, and holds
+     them over `HOLD`.
 
   `score` runs the scoring pipeline over a set of rows and keeps each row's scores and
   rule flags. It scores the calibration rows for `calibrate`, which takes the
@@ -118,18 +118,17 @@ J1939's own terms, frame, PGN and SPN, are described in
 
   What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
   train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
-  scale in the models, all done 2026-09-22. Rows 11 to 13 are to be fixed along with
-  the rest.
+  scale in the models, and `detect` holds step 4, all done 2026-09-22. Rows 11 to 13
+  are to be fixed along with the rest.
 
   | # | what | today | after |
   |---|---|---|---|
   | 4 | calibration rows | moving only in `train_set`, `calibrate` drops rule hits | rules applied in `score` |
-  | 7 | step 4 | `counting.persistent`, the threshold and OR inside `score` | a new `detect` package |
   | 8 | scoring stage | `pc.score` scores and counts | `score` writes `scores/`, `pc.detect` writes `detections/` |
   | 9 | `calibrate` | selects rows, scores, takes the quantile | reads scores, takes the quantile |
-  | 10 | counting | `counting.py`, beside `persistent` | counting only |
+  | 10 | counting | `counting.py`, beside what a detector reads | counting only |
   | 11 | JSON Schemas | `detection` and others for today's dirs | match `scores/`, `detections/`, `thresholds/`, `models/` |
-  | 12 | tests | e.g. `test_train_set.py` checks `scale.npy`, `test_score.py` patches `fetch_scale`, `test_run.py` tests `persistent` | follow rows 1 to 11 |
+  | 12 | tests | e.g. `test_train_set.py` checks `scale.npy`, `test_score.py` patches `fetch_scale` | follow rows 1 to 11 |
   | 13 | stage docs | `evaluate/docs/*`, `assemble/docs/train_set.md` and others | follow rows 1 to 11, place `pc_run.md` |
 
   - Rebuild `train_set` with `--rebuild`. Its inputs did not change, so without it the
