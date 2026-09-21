@@ -1,7 +1,7 @@
 """The rows a detector reads, and how the flags it raises are counted.
 
-`evaluate.pc.run` and `evaluate.quantize.compare` both score rows this way, so a number
-from one is a number from the other.
+`evaluate.pc.run` and `evaluate.pc.score` both score rows this way, so a number from
+one is a number from the other.
 """
 
 from __future__ import annotations

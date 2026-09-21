@@ -13,5 +13,5 @@ Documented under [docs/](docs).
   file of an export.
 
 What the int8 files cost in detection is measured by
-[evaluate.quantize.compare](../evaluate/docs/quantize_compare.md), and what it came to
+[pc score](../evaluate/docs/pc_score.md#what-int8-costs), and what it came to
 is in [results](results.md).
