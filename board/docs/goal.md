@@ -133,7 +133,7 @@ stays outside `board` and is what the C is checked against on the PC.
 | part | Python | C | task |
 |---|---|---|---|
 | CAN ID to PGN | `preprocess/frames/can_id_decompose.py` | `can_id/` | interrupt |
-| SPN decode | `preprocess/frames/spn_decode.py`, `spn_spec.py`, `frame_decode.py` | not yet | preprocess |
+| SPN decode | `preprocess/frames/spn_decode.py`, `spn_spec.py`, `frame_decode.py` | `spn_decode/` | preprocess |
 | hold last value, row per tick | `preprocess/features/signal_state.py`, `grid_sample.py` | not yet | interrupt, preprocess |
 | rows above `MIN_SPEED` | `preprocess/features/moving.py` | not yet | preprocess |
 | scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | preprocess |
