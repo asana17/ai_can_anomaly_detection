@@ -7,7 +7,7 @@
 
 LOCAL T_CMBF cmbf = {
 	.mbfatr		= TA_TFIFO,
-	.bufsz		= DEPTH * MBF_SPACE(sizeof(UW)),
+	.bufsz		= DEPTH * MBF_MESSAGE_STORAGE_SIZE(sizeof(UW)),
 	.maxmsz		= sizeof(UW),
 };
 LOCAL ID	mbfid;

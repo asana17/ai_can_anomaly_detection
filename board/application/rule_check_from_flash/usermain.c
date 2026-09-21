@@ -23,12 +23,12 @@ LOCAL volatile INT source_dropped;
 
 LOCAL T_CMBF row_cmbf = {
 	.mbfatr = TA_TFIFO,
-	.bufsz = ROW_DEPTH * MBF_SPACE(sizeof(Row)),
+	.bufsz = ROW_DEPTH * MBF_MESSAGE_STORAGE_SIZE(sizeof(Row)),
 	.maxmsz = sizeof(Row),
 };
 LOCAL T_CMBF report_cmbf = {
 	.mbfatr = TA_TFIFO,
-	.bufsz = REPORT_DEPTH * MBF_SPACE(sizeof(Report)),
+	.bufsz = REPORT_DEPTH * MBF_MESSAGE_STORAGE_SIZE(sizeof(Report)),
 	.maxmsz = sizeof(Report),
 };
 

@@ -9,9 +9,10 @@
  * The T-Kernel message buffer stores an INT-sized length immediately before each
  * message payload. Use this macro when calculating T_CMBF::bufsz.
  *
- * @param msgsize Maximum payload size in bytes.
+ * @param payload_size Maximum payload size in bytes.
  */
-#define MBF_SPACE(msgsize)	(sizeof(INT) + (msgsize))
+#define MBF_MESSAGE_STORAGE_SIZE(payload_size) \
+	(sizeof(INT) + (payload_size))
 
 /**
  * @brief Send without waiting, discarding oldest messages while the buffer is full.
