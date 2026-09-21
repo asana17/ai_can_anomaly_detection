@@ -35,8 +35,9 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [can_data/](can_data) describes the logs and what profiling them found.
 - [preprocess/](preprocess) turns raw CAN logs into rows, by reading the log,
   decomposing the ID, decoding signals, and putting them on a 100 ms grid.
-- [assemble/](assemble) builds the grid, splits the logs by time, and marks the train,
-  calibration and attacked test rows, each stage a directory on the Hugging Face Hub.
+- [assemble/](assemble) builds the grid, splits the test logs apart by time, and marks
+  the calibration, train and attacked test rows, each stage a directory on the Hugging
+  Face Hub.
 - [attack/](attack) synthesizes anomalies for a labeled test set.
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
@@ -74,7 +75,7 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Rework `evaluate` before running `fit` and the stages after it. A row goes through
   four steps, the same on the PC and the board. The first three are the scoring
   pipeline.
-  1. `preprocess` marks the moving rows. `moving` moves there from `assemble.grid`.
+  1. `preprocess` marks the moving rows.
   2. `rules` flags the moving rows it hits.
   3. The model scores the moving rows no rule hit.
   4. `detect` compares the scores with the threshold, adds the rule flags, and holds
@@ -82,7 +83,7 @@ J1939's own terms, frame, PGN and SPN, are described in
 
   `score` runs the scoring pipeline over a set of rows and keeps each row's scores and
   rule flags. It scores the calibration rows for `calibrate`, which takes the
-  threshold from them, and the attacked rows for `pc.detect`, so a new threshold or
+  threshold from them, and the test set's rows for `pc.detect`, so a new threshold or
   `HOLD` needs no rescoring. About 33 MB and 430 MB for 40 models, reckoned from the
   grid's row counts. Rows are selected by mask and never cut out, since `HOLD` counts
   rows in a row. No function joins the steps.
@@ -91,16 +92,17 @@ J1939's own terms, frame, PGN and SPN, are described in
 
   ```mermaid
   flowchart TB
-      grid --> split --> train_set & attack_set
+      grid --> split["split_test_logs"] --> calibration_set & test_set
+      calibration_set -- blocks --> train_set
       train_set --> train[(train set)]
-      train_set --> calibration[(calibration set)]
-      attack_set --> attack[(attack set)]
+      calibration_set --> calibration[(calibration set)]
+      test_set --> test[(test set)]
       train --> fit
       fit -- scale, models --> score
       calibration --> score
-      attack --> score
+      test --> score
       score -- calibration set scores --> calibrate
-      score -- attack set scores, rule flags --> detect["pc.detect"]
+      score -- test set scores, rule flags --> detect["pc.detect"]
       calibrate -- thresholds --> detect
       detect -- alarms --> counting["counting<br/>caught, alarms per hour"]
       fit -- models --> export["deploy.export"] -- float ONNX --> quantize["deploy.quantize"]
@@ -118,21 +120,22 @@ J1939's own terms, frame, PGN and SPN, are described in
 
   What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
   train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
-  scale in the models, and `detect` holds step 4, all done 2026-09-22. Rows 11 to 13
-  are to be fixed along with the rest.
+  scale in the models, `detect` holds step 4, and `split_test_logs`, `calibration_set`,
+  `train_set` and `test_set` build the sets, all done 2026-09-22. Rows 11 to 13 are to
+  be fixed along with the rest.
 
   | # | what | today | after |
   |---|---|---|---|
-  | 4 | calibration rows | moving only in `train_set`, `calibrate` drops rule hits | rules applied in `score` |
+  | 4 | calibration rows | moving only in `calibration_set`, `calibrate` drops rule hits | rules applied in `score` |
   | 8 | scoring stage | `pc.score` scores and counts | `score` writes `scores/`, `pc.detect` writes `detections/` |
   | 9 | `calibrate` | selects rows, scores, takes the quantile | reads scores, takes the quantile |
   | 10 | counting | `counting.py`, beside what a detector reads | counting only |
   | 11 | JSON Schemas | `detection` and others for today's dirs | match `scores/`, `detections/`, `thresholds/`, `models/` |
   | 12 | tests | e.g. `test_train_set.py` checks `scale.npy`, `test_score.py` patches `fetch_scale` | follow rows 1 to 11 |
-  | 13 | stage docs | `evaluate/docs/*`, `assemble/docs/train_set.md` and others | follow rows 1 to 11, place `pc_run.md` |
+  | 13 | stage docs | `evaluate/docs/*` | follow rows 1 to 11, place `pc_run.md` |
 
-  - Rebuild `train_set` with `--rebuild`. Its inputs did not change, so without it the
-    old train set comes back. The stages after it follow its new path.
+  - Build the log split and the three sets again. Their inputs changed, so no
+    `--rebuild` is needed. The stages after them follow the new paths.
   - Keep the counting of what was caught apart from `persistent`, for the board to use
     too.
   - Split `evaluate.pc.score` into `score`, writing `scores/`, and `pc.detect`,
@@ -145,12 +148,12 @@ J1939's own terms, frame, PGN and SPN, are described in
   - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
     `fit`, `calibrate`, `score`, `pc.detect` and counting go, and break it up.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
-- Draw the attacks over the test block's time rather than one per log. One per log puts
+- Draw the attacks over the test span's time rather than one per log. One per log puts
   most attacks where the truck stands, and four times as many per moving hour in the
   logs that move least. Measure first whether that shifts a model's numbers, from
   `caught` in a score. The rules catch the same share in every band of a log's moving
   seconds.
-- Record in `attacked.json` which donor log each attack copied from. `source` is a time
+- Record in `injected.json` which donor log each attack copied from. `source` is a time
   in that log, and nothing says which log it is. Add `donor` to its schema then.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
   score one other split, the first 25% of the time as test. `fit` and the stages after
