@@ -13,6 +13,7 @@ this repository. This repository holds only what we wrote:
 |---|---|
 | `board/application/` | our applications, one folder each with its own `usermain` |
 | `board/application/alive/` | the one this page checks, the LED and the count |
+| `board/lib/` | source components selected for each application |
 | `board/patches/` | a fix to mtk3_bsp2 `1ab52cc`, which does not build for this board without it |
 | `board/prepare.py` | adds mtk3_bsp2, Unity and our application to a generated project |
 
@@ -73,8 +74,8 @@ Where this differs from the BSP2 document:
   records. The document's `--recursive` clone takes the latest.
 - Our application is the folder `application` in the project, a link to the chosen
   folder of `board/application/`.
-- The folder `common` in the project links to `board/common/`, code the applications
-  share.
+- The folder `lib` in the project links to `board/lib/`. Only the component folders
+  selected for the application are built.
 - The folder `test_common` links to `board/test_common/`, what the test applications
   share.
 - [Unity](https://github.com/ThrowTheSwitch/Unity), the test framework the test

@@ -1,4 +1,4 @@
-"""Add mtk3_bsp2, Unity, our shared code, our test helpers and one of our applications
+"""Add mtk3_bsp2, Unity, selected libraries, test helpers and one application
 to a CubeMX project, and start μT-Kernel.
 
     python3 board/prepare.py project_dir app
@@ -26,8 +26,13 @@ UNITY_URL = "https://github.com/ThrowTheSwitch/Unity.git"
 UNITY_BASE = "b6763fb"     # v2.7.0
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
 APPS = os.path.join(HERE, "application")
-COMMON = os.path.join(HERE, "common")
+LIB = os.path.join(HERE, "lib")
 TEST_COMMON = os.path.join(HERE, "test_common")
+APP_LIBS = {
+    "alive": (),
+    "mbf_test": ("mbf",),
+    "rule_check_from_flash": ("mbf",),
+}
 MARKER = "/* USER CODE BEGIN WHILE */"
 START = ("void knl_start_mtkernel(void);", "knl_start_mtkernel();")
 TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
@@ -35,9 +40,8 @@ TOOLS = ("com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler",
 DEFINES = ("_STM32CUBE_NUCLEO_H533_",
            "UNITY_INCLUDE_CONFIG_H")    # Unity reads test_common/unity_config.h
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
-            "mtk3_bsp2/mtkernel/kernel/knlinc", "common", "test_common",
-            "Unity/src")
-SOURCES = ("mtk3_bsp2", "Unity/src", "application", "common", "test_common")
+            "mtk3_bsp2/mtkernel/kernel/knlinc", "test_common", "Unity/src")
+SOURCES = ("mtk3_bsp2", "Unity/src", "application", "test_common")
 
 
 def git(*args):
@@ -128,12 +132,14 @@ def _add_value(option, value):
         ET.SubElement(option, "listOptionValue", {"builtIn": "false", "value": value})
 
 
-def configure(cproject):
-    """`.cproject` with the defines, include paths and source folders mtk3_bsp2 needs.
+def configure(cproject, libraries=()):
+    """`.cproject` with the selected libraries and the paths mtk3_bsp2 needs.
 
     Every build configuration gets them, the same as Properties, Paths and Symbols.
     """
     head, root = _parse(cproject, "cproject")
+    library_paths = tuple(f"lib/{library}" for library in libraries)
+    include_paths = INCLUDES + library_paths
     for tool in root.iter("tool"):
         if tool.get("superClass") not in TOOLS:
             continue
@@ -141,11 +147,19 @@ def configure(cproject):
         for define in DEFINES:
             _add_value(defines, define)
         includes = _list_option(tool, "includepaths", "Include paths (-I)", "includePath")
-        for path in INCLUDES:
+        for value in list(includes):
+            path = value.get("value", "")
+            if "/${ProjName}/common}" in path or "/${ProjName}/lib/" in path:
+                includes.remove(value)
+        for path in include_paths:
             _add_value(includes, f'"${{workspace_loc:/${{ProjName}}/{path}}}"')
     for entries in root.iter("sourceEntries"):
+        for entry in list(entries):
+            name = entry.get("name", "")
+            if name == "common" or name.startswith("lib/"):
+                entries.remove(entry)
         names = [entry.get("name") for entry in entries]
-        for name in SOURCES:
+        for name in SOURCES + library_paths:
             if name not in names:
                 ET.SubElement(entries, "entry", {"flags": "VALUE_WORKSPACE_PATH",
                                                  "kind": "sourcePath", "name": name})
@@ -175,8 +189,15 @@ def link_folder(project, name, location):
 
 
 def link_folders(project, app_dir):
-    """`.project` with `application`, `common` and `test_common` linked."""
-    for name, location in (("application", app_dir), ("common", COMMON),
+    """`.project` with `application`, `lib` and `test_common` linked."""
+    head, root = _parse(project, "projectDescription")
+    links = root.find("linkedResources")
+    if links is not None:
+        for link in list(links):
+            if link.findtext("name") == "common":
+                links.remove(link)
+    project = _write(head, root)
+    for name, location in (("application", app_dir), ("lib", LIB),
                            ("test_common", TEST_COMMON)):
         project = link_folder(project, name, location)
     return project
@@ -202,10 +223,14 @@ def main(project_dir, app):
     if not os.path.isdir(app_dir):
         raise SystemExit(f"no {app_dir}, the applications are "
                          f"{', '.join(sorted(os.listdir(APPS)))}")
+    if app not in APP_LIBS:
+        raise SystemExit(f"no library selection for application {app}")
+    libraries = APP_LIBS[app]
     print(f"mtk3_bsp2: {add_bsp(project_dir)}")
     print(f"Unity: {add_unity(project_dir)}")
     for name, file, change in (("main.c", path, start_kernel),
-                               (".cproject", os.path.join(project_dir, ".cproject"), configure),
+                               (".cproject", os.path.join(project_dir, ".cproject"),
+                                lambda text: configure(text, libraries)),
                                (".project", os.path.join(project_dir, ".project"),
                                 lambda text: link_folders(text, app_dir))):
         print(f"{name}: {'changed' if _rewrite(file, change) else 'already done'}")

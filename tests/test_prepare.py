@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from board.prepare import (COMMON, DEFINES, MARKER, TEST_COMMON, TOOLS, configure, link_folder,
+from board.prepare import (DEFINES, LIB, MARKER, TEST_COMMON, TOOLS, configure, link_folder,
                            link_folders, start_kernel)
 
 MAIN_C = ("  }\r\n"
@@ -58,26 +58,37 @@ def _values(root, tool, kind):
     return [v.get("value") for v in option.findall("listOptionValue")]
 
 
-def test_both_tools_get_the_define_and_the_include_paths():
-    configured = configure(CPROJECT)
+def test_both_tools_get_the_define_and_the_selected_library_paths():
+    configured = configure(CPROJECT, ("mbf",))
     assert configured.startswith('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
                                  "<?fileVersion 4.0.0?><cproject>")
     root = ET.fromstring(configured.split("?>", 2)[2])
     for tool in TOOLS:
         assert set(DEFINES) <= set(_values(root, tool, "definedsymbols"))
-        assert _values(root, tool, "includepaths")[-4:] == [
-            '"${workspace_loc:/${ProjName}/mtk3_bsp2/mtkernel/kernel/knlinc}"',
-            '"${workspace_loc:/${ProjName}/common}"',
+        assert _values(root, tool, "includepaths")[-3:] == [
             '"${workspace_loc:/${ProjName}/test_common}"',
-            '"${workspace_loc:/${ProjName}/Unity/src}"']
+            '"${workspace_loc:/${ProjName}/Unity/src}"',
+            '"${workspace_loc:/${ProjName}/lib/mbf}"']
     assert _values(root, TOOLS[1], "definedsymbols") == ["DEBUG", *DEFINES]
     assert [e.get("name") for e in root.iter("entry")] == [
-        "Core", "mtk3_bsp2", "Unity/src", "application", "common", "test_common"]
+        "Core", "mtk3_bsp2", "Unity/src", "application", "test_common",
+        "lib/mbf"]
 
 
 def test_configuring_twice_changes_nothing():
-    once = configure(CPROJECT)
-    assert configure(once) == once
+    once = configure(CPROJECT, ("mbf",))
+    assert configure(once, ("mbf",)) == once
+
+
+def test_switching_application_replaces_the_selected_libraries():
+    with_mbf = configure(CPROJECT, ("mbf",))
+    without_libraries = configure(with_mbf)
+    root = ET.fromstring(without_libraries.split("?>", 2)[2])
+    assert [e.get("name") for e in root.iter("entry")] == [
+        "Core", "mtk3_bsp2", "Unity/src", "application", "test_common"]
+    for tool in TOOLS:
+        paths = _values(root, tool, "includepaths")
+        assert not any("lib/" in path for path in paths)
 
 
 def test_the_app_folder_is_linked_once():
@@ -106,11 +117,14 @@ def test_a_second_folder_gets_its_own_link():
         ("application", "/repo/board/application/rows"), ("common", "/repo/board/common")]
 
 
-def test_the_app_and_both_shared_folders_are_linked():
-    project = "<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n</projectDescription>\n"
+def test_the_app_library_and_test_folders_are_linked():
+    project = ("<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n"
+               "\t<linkedResources><link><name>common</name><type>2</type>"
+               "<location>/old/common</location></link></linkedResources>\n"
+               "</projectDescription>\n")
     once = link_folders(project, "/repo/board/application/rows")
     assert link_folders(once, "/repo/board/application/rows") == once
     root = ET.fromstring(once.split("?>", 1)[1])
     assert [(l.findtext("name"), l.findtext("location")) for l in root.iter("link")] == [
-        ("application", "/repo/board/application/rows"), ("common", COMMON),
+        ("application", "/repo/board/application/rows"), ("lib", LIB),
         ("test_common", TEST_COMMON)]
