@@ -1,9 +1,10 @@
 """Add mtk3_bsp2, Unity, selected libraries, test helpers and one application
 to a CubeMX project, and start μT-Kernel.
 
-    python3 board/prepare.py project_dir app
+    python3 board/prepare.py project_dir application_dir
 
-`app` is a folder of `board/application/`. Running it again with another `app` switches
+`application_dir` may be any application directory. For compatibility, a bare name is
+looked up below `board/application/`. Running it again with another application switches
 the project to that one.
 
 Run it before the project is imported into CubeIDE, which rewrites `.cproject` and
@@ -215,14 +216,23 @@ def _rewrite(path, change):
     return True
 
 
-def main(project_dir, app):
+def application_dir(application):
+    """Resolve an application path, retaining support for the old bare-name form."""
+    given = os.path.abspath(os.path.expanduser(application))
+    if os.path.isdir(given):
+        return given
+    legacy = os.path.join(APPS, application)
+    if os.path.isdir(legacy):
+        return legacy
+    raise SystemExit(f"no application directory {given}")
+
+
+def main(project_dir, application):
     path = os.path.join(project_dir, "Core", "Src", "main.c")
     if not os.path.exists(path):
         raise SystemExit(f"no {path}, is {project_dir} the directory with the .ioc?")
-    app_dir = os.path.join(APPS, app)
-    if not os.path.isdir(app_dir):
-        raise SystemExit(f"no {app_dir}, the applications are "
-                         f"{', '.join(sorted(os.listdir(APPS)))}")
+    app_dir = application_dir(application)
+    app = os.path.basename(os.path.normpath(app_dir))
     if app not in APP_LIBS:
         raise SystemExit(f"no library selection for application {app}")
     libraries = APP_LIBS[app]

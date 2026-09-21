@@ -5,3 +5,4 @@ out/
 st_ai_ws/
 .DS_Store
 board/application/rows/rows.h
+board/flash.json

@@ -2,8 +2,8 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from board.prepare import (DEFINES, LIB, MARKER, TEST_COMMON, TOOLS, configure, link_folder,
-                           link_folders, start_kernel)
+from board.prepare import (DEFINES, LIB, MARKER, TEST_COMMON, TOOLS, application_dir,
+                           configure, link_folder, link_folders, start_kernel)
 
 MAIN_C = ("  }\r\n"
           "\r\n"
@@ -29,6 +29,12 @@ def test_lf_files_get_lf():
 def test_a_second_run_changes_nothing():
     once = start_kernel(MAIN_C)
     assert start_kernel(once) == once
+
+
+def test_application_can_be_an_arbitrary_directory(tmp_path):
+    app = tmp_path / "test_application" / "mbf_test"
+    app.mkdir(parents=True)
+    assert application_dir(str(app)) == str(app)
 
 
 def test_no_marker_is_an_error():
