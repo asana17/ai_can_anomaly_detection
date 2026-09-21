@@ -40,6 +40,7 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [attack/](attack) synthesizes anomalies for a labeled test set.
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
+- [detect/](detect) turns the models' scores and the rule hits into alarms.
 - [deploy/](deploy) writes the models out as ONNX for the NUCLEO-H533RE.
 - [board/](board) holds our μT-Kernel applications for the NUCLEO-H533RE, one folder
   each. [board/docs/setup.md](board/docs/setup.md) builds and flashes one from nothing.

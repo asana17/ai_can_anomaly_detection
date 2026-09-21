@@ -54,7 +54,8 @@ over the threshold.
 An alarm is raised once `HOLD` rows in a row are flagged, inside one segment. At
 `HOLD` 10 that is a second of them, and the alarm is raised on the tenth row.
 
-An attack is caught when one of its rows raises an alarm.
+`alarmed_rows` in [alarm](../../detect/docs/alarm.md) raises the alarms. An attack is
+caught when one of its rows raises an alarm.
 
 ## How much an attack changed the data
 

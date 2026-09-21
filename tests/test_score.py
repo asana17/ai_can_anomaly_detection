@@ -7,6 +7,7 @@ import torch
 from common.settings import Settings
 from deploy.export import write_onnx_files
 from deploy.quantize import write_int8_files
+from detect.alarm import alarmed_rows
 from evaluate.pc import score
 from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
@@ -33,7 +34,8 @@ def a_test(scorable=np.array([True])):
 
 def caught(flag, rows_to_score, attacks_to_check, need=1):
     """What `flag` catches, as `score_models` counts it."""
-    alarmed = score.alarming_rows(flag, rows_to_score, need)
+    alarmed = alarmed_rows(flag.astype(float), 0.5, rows_to_score["rules"],
+                           rows_to_score["seg"], need)
     return {**score.attacks_caught(alarmed, attacks_to_check),
             "alarms_per_hour": score.false_alarm_rate(alarmed, rows_to_score)}
 

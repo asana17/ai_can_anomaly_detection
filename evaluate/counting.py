@@ -13,17 +13,6 @@ def touched(flags, attacks):
     return np.array([flags[a["first"]:a["last"] + 1].any() for a in attacks], dtype=bool)
 
 
-def persistent(flag, segment, need):
-    """True where `need` rows in a row are flagged, without crossing a segment."""
-    if need <= 1:
-        return flag
-    out, run = np.zeros(len(flag), bool), 0
-    for i in range(len(flag)):
-        run = run + 1 if flag[i] and i and segment[i] == segment[i - 1] else int(flag[i])
-        out[i] = run >= need
-    return out
-
-
 def alarms(flag):
     """How many separate stretches of flagged rows there are."""
     return int((flag & ~np.concatenate([[False], flag[:-1]])).sum())

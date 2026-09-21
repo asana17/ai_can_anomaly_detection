@@ -22,8 +22,8 @@ from assemble.attack_set import fetch_attack_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.counting import (alarms, moved_by, persistent,
-                               prepare_scoring_input, touched)
+from detect.alarm import alarmed_rows
+from evaluate.counting import alarms, moved_by, prepare_scoring_input, touched
 from evaluate.fit import fetch_fitted_models
 from models.fits import model_from
 from models.onnx_files import onnx_scorer
@@ -42,11 +42,6 @@ def false_positive_rate(flag, rows_to_score):
     """How often the model flags a row that has no attack on it."""
     clean = rows_to_score["quiet"] & ~rows_to_score["rules"]
     return float((flag & clean).sum() / clean.sum())
-
-
-def alarming_rows(flag, rows_to_score, need):
-    """Raise an alarm where the flag has continued for `need` rows."""
-    return persistent(rows_to_score["rules"] | flag, rows_to_score["seg"], need)
 
 
 def attacks_caught(alarmed, attacks_to_check):
@@ -72,11 +67,13 @@ def preprocess_attack_set(directory, local_dir, scale):
     return attacked
 
 
-def counted(flag, rows_to_score, attacks_to_check, settings):
+def counted(scores, threshold, rows_to_score, attacks_to_check, settings):
     """Everything one detector is judged on, at each `HOLD`."""
-    kept = {"false_positive_rate": false_positive_rate(flag, rows_to_score)}
+    kept = {"false_positive_rate": false_positive_rate(scores > threshold,
+                                                       rows_to_score)}
     for need in settings.HOLD:
-        alarmed = alarming_rows(flag, rows_to_score, need)
+        alarmed = alarmed_rows(scores, threshold, rows_to_score["rules"],
+                               rows_to_score["seg"], need)
         kept[str(need)] = {**attacks_caught(alarmed, attacks_to_check),
                            "alarms_per_hour": false_alarm_rate(alarmed, rows_to_score)}
     return kept
@@ -84,10 +81,10 @@ def counted(flag, rows_to_score, attacks_to_check, settings):
 
 def score_rules(rows_to_score, attacks_to_check, settings):
     """Score the rules on their own, the detector every model is compared against."""
-    # the rules are added to every flag, so a flag of nothing leaves the rules alone
-    nothing = np.zeros_like(rows_to_score["rules"])
+    # the rules have no threshold, and no row has a score
+    unscored = np.full(len(rows_to_score["rules"]), np.nan)
     return {"detector": "rules",
-            **counted(nothing, rows_to_score, attacks_to_check, settings)}
+            **counted(unscored, np.nan, rows_to_score, attacks_to_check, settings)}
 
 
 def score_models(thresholds, scorer_of, rows_to_score, attacks_to_check, settings):
@@ -97,10 +94,9 @@ def score_models(thresholds, scorer_of, rows_to_score, attacks_to_check, setting
     for entry in thresholds:
         model = model_from({name: value for name, value in entry.items()
                             if name != "threshold"})    # the rest describes the model
-        scores = scorer_of(model)(rows)
-        flag = (scores > entry["threshold"]) & rows_to_score["mv"]
-        kept.append({**entry,
-                     **counted(flag, rows_to_score, attacks_to_check, settings)})
+        scores = np.where(rows_to_score["mv"], scorer_of(model)(rows), np.nan)
+        kept.append({**entry, **counted(scores, entry["threshold"], rows_to_score,
+                                        attacks_to_check, settings)})
         print(f"{model.name} scored", flush=True)
     return kept
 
