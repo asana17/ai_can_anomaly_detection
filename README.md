@@ -68,8 +68,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Make `common/hub_dirs.find` return the newest directory with the given `inputs`, so a
-  `--rebuild` replaces the old one for the stages after it.
 - Check whether quantize's `batch` changes the int8 files. If not, drop it from
   quantize's `inputs` and from `evaluate.pc.score`'s lookup.
 - Rename `deploy/generate.py` to `generate_model_for_board`, with its doc and test.
