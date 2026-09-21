@@ -1,7 +1,7 @@
 # evaluate
 
-Turns the rows [assemble](../assemble) built into detectors, and measures what they
-catch.
+Measures what each detector catches on the attacked test rows [assemble](../assemble)
+built.
 
 A detector is the instant rules, or the rules together with one model. The models are
 there to catch what the rules miss, so each one is compared with the rules alone. The
@@ -10,24 +10,38 @@ components, and each autoencoder gets the same `k` as its `latent_dim`, so every
 is compared at the same `k`. The linear and nonlinear autoencoders differ only in the
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
-Building a detector and measuring it is one command per stage, each writing one
-directory of the runs repository.
-
 ```
-python3 -m evaluate.fit REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
-python3 -m evaluate.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
-python3 -m evaluate.pc.run_test_set REPO REVISION TEST_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR
+python3 -m evaluate.run_test_set REPO REVISION TEST_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR
+```
+
+The stages it comes after, each writing one directory of the Hub.
+
+```mermaid
+flowchart TB
+    grid["assemble.grid"] --> split["assemble.split_test_logs"] --> calibration_set["assemble.calibration_set"] & test_set["assemble.test_set"]
+    calibration_set -- blocks --> train_set["assemble.train_set"]
+    train_set --> train[(train set)]
+    calibration_set --> calibration[(calibration set)]
+    test_set --> test[(test set)]
+    train --> fit["models.fit"]
+    fit -- scale, models --> score["scoring.score"]
+    calibration --> score
+    test --> score
+    score -- calibration set scores --> calibrate["models.calibrate"]
+    score -- test set scores, rule flags --> run["evaluate.run_test_set<br/>detect, then<br/>caught, alarms per hour"]
+    calibrate -- thresholds --> run
+    fit -- models --> export["deploy.export"] -- float ONNX --> quantize["deploy.quantize"]
+    train -- representative rows for int8 --> quantize
+    fit -- scale for the representative rows --> quantize
+    quantize -. int8 ONNX .-> score
 ```
 
 Documented under [docs/](docs).
 
-- [fit](docs/fit.md) trains the models on the train rows and uploads them.
-- [score](docs/score.md) scores each row of a set with every model, and marks the rows
-  a rule hits. calibrate and run_test_set run it.
-- [calibrate](docs/calibrate.md) gives each model the score above which a row counts
-  as an anomaly.
 - [run_test_set](docs/run_test_set.md) counts what each detector catches on the
   attacked test rows.
+
+What the runs found is in [results](results.md).
 
 ## Tests
 

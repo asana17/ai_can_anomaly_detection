@@ -40,7 +40,10 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   Face Hub.
 - [attack/](attack) synthesizes anomalies for a labeled test set.
 - [rules/](rules) holds the deterministic checks.
-- [models/](models) holds the learned half, fit on normal rows only.
+- [models/](models) holds the learned half, fits it on normal rows only, and gives
+  each model the threshold a row counts as an anomaly above.
+- [scoring/](scoring) scores a set of rows with every model and marks the rows a rule
+  hits.
 - [detect/](detect) turns the models' scores and the rule hits into alarms.
 - [deploy/](deploy) writes the models out as ONNX for the NUCLEO-H533RE.
 - [board/](board) holds our μT-Kernel applications for the NUCLEO-H533RE, one folder
@@ -52,8 +55,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   says how each parameter was set. [common/schemas](common/schemas)
   describes every JSON file a stage uploads, and the tests check each file a stage
   uploads against them.
-- [evaluate/](evaluate) runs the comparison and prints what each detector catches.
-  What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
+- [evaluate/](evaluate) measures what each detector catches on the attacked test rows.
+  What the runs found is in [evaluate/results.md](evaluate/results.md), and what
   quantizing their models costs is in [deploy/results.md](deploy/results.md).
 - `data/` holds the raw logs and is not tracked in git.
 
@@ -82,59 +85,37 @@ J1939's own terms, frame, PGN and SPN, are described in
   4. `detect` compares the scores with the threshold, adds the rule flags, and holds
      them over `HOLD`.
 
-  `score` runs the scoring pipeline over a set of rows and keeps each row's scores and
-  rule flags. `calibrate` runs it over the calibration rows and takes the threshold
-  from them, and `pc.run_test_set` runs it over the test set's rows and counts what
-  each detector caught, so a new threshold or `HOLD` needs no rescoring. About 33 MB and 430 MB for 40 models, reckoned from the
-  grid's row counts. Rows are selected by mask and never cut out, since `HOLD` counts
-  rows in a row. No function joins the steps.
+  `scoring.score` runs the scoring pipeline over a set of rows and keeps each row's
+  scores and rule flags. `models.calibrate` runs it over the calibration rows and takes
+  the threshold from them, and `evaluate.run_test_set` runs it over the test set's rows
+  and counts what each detector caught, so a new threshold or `HOLD` needs no
+  rescoring. About 33 MB and 430 MB for 40 models, reckoned from the grid's row counts.
+  Rows are selected by mask and never cut out, since `HOLD` counts rows in a row. No
+  function joins the steps.
 
-  The stages after it.
-
-  ```mermaid
-  flowchart TB
-      grid --> split["split_test_logs"] --> calibration_set & test_set
-      calibration_set -- blocks --> train_set
-      train_set --> train[(train set)]
-      calibration_set --> calibration[(calibration set)]
-      test_set --> test[(test set)]
-      train --> fit
-      fit -- scale, models --> score
-      calibration --> score
-      test --> score
-      score -- calibration set scores --> calibrate
-      score -- test set scores, rule flags --> run["pc.run_test_set<br/>detect, then<br/>caught, alarms per hour"]
-      calibrate -- thresholds --> run
-      fit -- models --> export["deploy.export"] -- float ONNX --> quantize["deploy.quantize"]
-      train -- representative rows for int8 --> quantize
-      fit -- scale for the representative rows --> quantize
-      quantize -. int8 ONNX .-> score
-  ```
+  The stages after it are drawn in [evaluate/README.md](evaluate/README.md).
 
   The same two parts run on the PC and on the board.
 
   | part | steps | on the PC | on the board |
   |---|---|---|---|
-  | scoring pipeline | `preprocess`, `rules`, the model | `score` | in C |
-  | `detect` | threshold, OR the rule flags, `HOLD` | `detect`, run by `pc.run_test_set` | in C |
+  | scoring pipeline | `preprocess`, `rules`, the model | `scoring.score` | in C |
+  | `detect` | threshold, OR the rule flags, `HOLD` | `detect`, run by `evaluate.run_test_set` | in C |
 
   What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
   train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
   scale in the models, `detect` holds step 4, and `split_test_logs`, `calibration_set`,
   `train_set` and `test_set` build the sets, and `score`, `calibrate` and
-  `pc.run_test_set` are split as drawn, with their schemas and tests, and the stage
-  docs follow them, all done 2026-09-22.
+  `run_test_set` are split as drawn, with their schemas and tests, and the stage docs
+  follow them, and the `evaluate` box is broken up, `fit` and `calibrate` into
+  `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
+  `evaluate`, all done 2026-09-22.
 
   - Build the grid again with `--rebuild`. A signal is decoded in float32 now, as the
     board computes it, and a value J1939 reserves leaves NaN in its row rather than the
     value before it, so the rows themselves changed. Then the log split and the three
     sets, whose inputs change with the grid, so those need no `--rebuild`. The stages
     after them follow the new paths.
-  - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
-    A diagram of the old layout is in `git stash`, stale.
-  - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
-    `fit`, `calibrate`, `score`, `pc.run_test_set` and `count_alarms` go, and break it
-    up.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Draw the attacks over the test span's time rather than one per log. One per log puts
   most attacks where the truck stands, and four times as many per moving hour in the
