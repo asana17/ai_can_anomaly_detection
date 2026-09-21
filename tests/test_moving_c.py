@@ -1,6 +1,4 @@
 import ctypes
-import os
-import subprocess
 
 import numpy as np
 import pytest
@@ -9,22 +7,16 @@ from common.settings import Settings
 from preprocess.features.moving import moving
 from preprocess.features.signal_state import SIGNALS
 
-BOARD_MOVING = os.path.join(os.path.dirname(__file__), "..", "board", "lib", "moving")
 ROWS = 100_000
 
 
 @pytest.fixture(scope="module")
-def c_moving(tmp_path_factory):
+def c_moving(board_lib):
     """Build board/lib/moving for this machine and give its `moving`."""
-    folder = tmp_path_factory.mktemp("moving")
-    (folder / "is_moving.c").write_text(
-        '#include "moving.h"\n'
-        "bool is_moving(const float *row, float min_speed)\n"
-        "{\n\treturn moving(row, min_speed);\n}\n")
-    library = folder / "moving.so"
-    subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", "-I", BOARD_MOVING,
-                    "-o", library, folder / "is_moving.c"], check=True)
-    function = ctypes.CDLL(str(library)).is_moving
+    function = board_lib("moving",
+                         '#include "moving.h"\n'
+                         "bool is_moving(const float *row, float min_speed)\n"
+                         "{\n\treturn moving(row, min_speed);\n}\n", "is_moving")
     function.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_float]
     function.restype = ctypes.c_bool
     return function

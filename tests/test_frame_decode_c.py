@@ -1,6 +1,4 @@
 import ctypes
-import os
-import subprocess
 
 import numpy as np
 import pytest
@@ -9,8 +7,6 @@ from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.frame_decode import decode_frame
 from preprocess.frames.spn_spec import SPEC
 
-BOARD_SPN_DECODE = os.path.join(os.path.dirname(__file__), "..", "board", "lib",
-                                "spn_decode")
 FRAMES = 100_000
 
 
@@ -19,21 +15,16 @@ class FrameDecodeValue(ctypes.Structure):
 
 
 @pytest.fixture(scope="module")
-def c_decode_frame(tmp_path_factory):
+def c_decode_frame(board_lib):
     """Build board/lib/spn_decode for this machine and give decode_frame's C port.
 
     It returns a {name: value} dict as the Python does.
     """
-    folder = tmp_path_factory.mktemp("spn_decode")
-    (folder / "decode.c").write_text(
-        '#include "frame_decode.h"\n'
-        "size_t decode(uint32_t pgn, const uint8_t *data, size_t size,"
-        " FrameDecodeValue *out)\n"
-        "{\n\treturn frame_decode(pgn, data, size, out);\n}\n")
-    library = folder / "spn_decode.so"
-    subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", "-ffp-contract=off",
-                    "-I", BOARD_SPN_DECODE, "-o", library, folder / "decode.c"], check=True)
-    function = ctypes.CDLL(str(library)).decode
+    function = board_lib("spn_decode",
+                         '#include "frame_decode.h"\n'
+                         "size_t decode(uint32_t pgn, const uint8_t *data, size_t size,"
+                         " FrameDecodeValue *out)\n"
+                         "{\n\treturn frame_decode(pgn, data, size, out);\n}\n", "decode")
     function.restype = ctypes.c_size_t
     out = (FrameDecodeValue * len(SIGNALS))()
 

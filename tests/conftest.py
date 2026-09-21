@@ -7,12 +7,13 @@ import subprocess
 import numpy as np
 import pytest
 
+from board.prepare.cubeide import C_FLAGS
 from common import hf_upload, hub_dirs
 from common.schema_validate import check
 
 REVISION = "ab" * 20
 COMMIT = "de" * 20
-BOARD_RULES = os.path.join(os.path.dirname(__file__), "..", "board", "lib", "rules")
+BOARD_LIB = os.path.join(os.path.dirname(__file__), "..", "board", "lib")
 
 
 def check_json_files(folder, path_in_repo):
@@ -84,24 +85,37 @@ C_TYPES = {"float": ctypes.c_float, "const float *": ctypes.POINTER(ctypes.c_flo
 
 
 @pytest.fixture(scope="session")
-def board_rule(tmp_path_factory):
+def board_lib(tmp_path_factory):
+    """Build C against a part of board/lib for this machine and give one of its functions.
+
+    The parts are static inline functions in headers, so `source` wraps the one a test
+    needs in a function `name` the library exports. It builds with the board's C_FLAGS.
+    """
+    def build(part, source, name):
+        folder = tmp_path_factory.mktemp(part)
+        (folder / f"{name}.c").write_text(source)
+        library = folder / f"{name}.so"
+        subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", *C_FLAGS,
+                        "-I", os.path.join(BOARD_LIB, part), "-o", library,
+                        folder / f"{name}.c"], check=True)
+        return getattr(ctypes.CDLL(str(library)), name)
+    return build
+
+
+@pytest.fixture(scope="session")
+def board_rule(board_lib):
     """Build a rule of board/lib/rules for this machine and give its `<name>_hits`.
 
     The rule is a static inline function in `<name>.h`, so a wrapper `hits` exports it.
     `parameters` are its C parameter types, each a key of C_TYPES.
     """
     def build(name, parameters):
-        folder = tmp_path_factory.mktemp(name)
         names = [f"a{i}" for i in range(len(parameters))]
         declared = ", ".join(f"{kind} {a}" for kind, a in zip(parameters, names))
-        (folder / "hits.c").write_text(
-            f'#include "{name}.h"\n'
-            f"bool hits({declared})\n"
-            f"{{\n\treturn {name}_hits({', '.join(names)});\n}}\n")
-        library = folder / f"{name}.so"
-        subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", "-I", BOARD_RULES,
-                        "-o", library, folder / "hits.c"], check=True)
-        function = ctypes.CDLL(str(library)).hits
+        function = board_lib("rules",
+                             f'#include "{name}.h"\n'
+                             f"bool hits({declared})\n"
+                             f"{{\n\treturn {name}_hits({', '.join(names)});\n}}\n", "hits")
         function.argtypes = [C_TYPES[kind] for kind in parameters]
         function.restype = ctypes.c_bool
         return function
