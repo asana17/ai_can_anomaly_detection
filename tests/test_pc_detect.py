@@ -8,7 +8,7 @@ from common.settings import Settings
 from deploy.export import write_onnx_files
 from deploy.quantize import write_int8_files
 from detect.alarm import alarmed_rows
-from evaluate.pc import score
+from evaluate.pc import detect
 from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
 from models.onnx_files import onnx_name
@@ -36,8 +36,8 @@ def caught(flag, rows_to_score, attacks_to_check, need=1):
     """What `flag` catches, as `score_models` counts it."""
     alarmed = alarmed_rows(flag.astype(float), 0.5, rows_to_score["rules"],
                            rows_to_score["seg"], need)
-    return {**score.attacks_caught(alarmed, attacks_to_check),
-            "alarms_per_hour": score.false_alarm_rate(alarmed, rows_to_score)}
+    return {**detect.attacks_caught(alarmed, attacks_to_check),
+            "alarms_per_hour": detect.false_alarm_rate(alarmed, rows_to_score)}
 
 
 def test_what_a_flag_catches_and_what_it_costs():
@@ -47,7 +47,7 @@ def test_what_a_flag_catches_and_what_it_costs():
     assert got["found"] == 1, "the attack has a flagged row"
     assert got["caught"] == [0], "and it is the first attack"
     assert got["alarms_per_hour"] == 0.5, "one alarm outside an attack, 2 hours"
-    assert score.false_positive_rate(flag, a_test()[0]) == 0.25
+    assert detect.false_positive_rate(flag, a_test()[0]) == 0.25
 
 
 def test_an_attack_that_moved_no_row_is_counted_apart():
@@ -68,7 +68,7 @@ def stand_in(monkeypatch, hub):
             "train_set": dict(where, repo="u/d", path="train_sets/20260101-000000")},
         "thresholds/20260101-000000/thresholds.json": [
             {"model": "pca", "k": 2, "threshold": 0.5}]}
-    monkeypatch.setattr(score, "fetch_fitted_models", lambda *args: (
+    monkeypatch.setattr(detect, "fetch_fitted_models", lambda *args: (
         {"scale.mean": torch.zeros(len(SIGNALS)), "scale.std": torch.ones(len(SIGNALS)),
          "pca.k2.centre": torch.zeros(len(SIGNALS)),
          "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}, {}))
@@ -77,7 +77,7 @@ def stand_in(monkeypatch, hub):
     raw[:, WHEEL] = 10.0
     raw[1:3, 0] = 40.0                      # the rows the attack changed
     times = np.arange(6) * 0.1
-    monkeypatch.setattr(score, "fetch_test_set", lambda *args: {
+    monkeypatch.setattr(detect, "fetch_test_set", lambda *args: {
         "raw": raw, "t": times, "seg": np.zeros(6, np.int32),
         "label": np.array([False, True, True, False, False, False]),
         "wheel": np.full(6, 10.0, np.float32),
@@ -96,7 +96,7 @@ def stand_in(monkeypatch, hub):
 
 def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
     stand_in(monkeypatch, hub)
-    made = score.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
+    made = detect.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
                       "u/runs", COMMIT, "thresholds/20260101-000000", str(tmp_path))
 
     folder = tmp_path / made["path"]
@@ -145,7 +145,7 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
 def test_thresholds_taken_with_onnx_files_score_with_them(tmp_path, hub,
                                                             monkeypatch):
     int8_stand_in(monkeypatch, tmp_path, hub)
-    made = score.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
+    made = detect.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
                       "u/runs", COMMIT, "thresholds/20260101-000000", str(tmp_path))
 
     caught = json.load(open(tmp_path / made["path"] / "detection.json"))

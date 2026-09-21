@@ -1,6 +1,6 @@
 """Count what each detector catches on the attacked test rows.
 
-    python3 -m evaluate.pc.score repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+    python3 -m evaluate.pc.detect repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 
 The models and their thresholds come from a directory `evaluate.calibrate` wrote. When
 it took the thresholds with ONNX files, each model is its ONNX file of the same
@@ -162,7 +162,7 @@ def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
     _, thresholds, thresholds_meta = fetch_thresholds(thresholds_directory, runs_dir)
     inputs = {"test_set": test_path, "thresholds": thresholds_path,
               "moved": settings.MOVED, "hold": settings.HOLD}
-    return reuse_or_make(runs_repo, "scores", inputs, runs_dir,
+    return reuse_or_make(runs_repo, "detections", inputs, runs_dir,
                          lambda folder: write_scores(folder, test_set_directory,
                                                      thresholds_directory, thresholds,
                                                      thresholds_meta, local_dir,
