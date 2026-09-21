@@ -45,6 +45,7 @@ The truck is parked for long runs of consecutive logs, so a part chosen by log c
 alone can hold no scoreable row at all.
 
 So the cut is made on the seconds above `min_speed`. `seconds_of` counts each log's
-moving rows on the [grid](grid.md), giving 0 for a log the truck sat still through and
-the log's whole length for one it drove right through.
+[moving](../../preprocess/docs/moving.md) rows on the [grid](grid.md), giving 0 for a
+log the truck sat still through and the log's whole length for one it drove right
+through.
 

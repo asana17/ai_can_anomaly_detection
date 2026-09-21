@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from assemble.grid import moving
+from preprocess.features.moving import moving
 from rules.hits import rule_hits
 
 

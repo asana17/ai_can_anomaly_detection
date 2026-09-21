@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 from assemble import train_set
-from assemble.grid import grid_rows, moving
+from assemble.grid import grid_rows
 from assemble.scale import scale_for
 from assemble.train_set import apart_from_test, split_rows
 from preprocess.features.signal_state import SIGNALS
@@ -95,11 +95,6 @@ def _rows(speeds):
     raw = np.zeros((len(speeds), 17), np.float32)
     raw[:, SIGNALS.index("wheel_speed")] = speeds
     return raw, np.arange(len(speeds), dtype=np.float64) * 0.1
-
-
-def test_moving_is_the_rows_over_the_speed_given():
-    raw, _ = _rows([0.0, 4.9, 5.0, 5.1, 80.0])
-    assert moving(raw, min_speed=5.0).tolist() == [False, False, False, True, True]
 
 
 def test_split_rows_gives_calibration_the_share_of_the_seconds_asked_for():

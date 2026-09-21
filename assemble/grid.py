@@ -19,13 +19,7 @@ from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from common.settings import Settings
 from preprocess.features.grid_sample import resample
-from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
-
-
-def moving(raw: np.ndarray, *, min_speed: float) -> np.ndarray:
-    """True where a row's wheel speed is above `min_speed`, read off physical values."""
-    return raw[:, SIGNALS.index("wheel_speed")] > min_speed
 
 
 def starts_segment(previous, t: float, *, period: float) -> bool:

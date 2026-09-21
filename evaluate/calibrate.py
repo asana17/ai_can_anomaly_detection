@@ -19,7 +19,6 @@ import numpy as np
 import onnxruntime
 import torch
 
-from assemble.grid import moving
 from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
@@ -28,6 +27,7 @@ from evaluate.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import torch_scorer
+from preprocess.features.moving import moving
 from rules.hits import rule_hits
 
 

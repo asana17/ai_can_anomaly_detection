@@ -10,10 +10,11 @@ import os
 
 import numpy as np
 
-from assemble.grid import moving, read_grid
+from assemble.grid import read_grid
 from common.cli import arguments
 from common.hub_dirs import download, reuse_or_make
 from common.settings import Settings
+from preprocess.features.moving import moving
 
 
 def split(seconds: dict[str, float], n_splits: int, fold: int):
