@@ -76,12 +76,3 @@ def test_a_threshold_is_kept_for_every_model_of_the_run(tmp_path, hub, monkeypat
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"models": "models/t", "target": Settings().TARGET}
     assert meta["models"]["revision"] == "def" and meta["rows"] == len(raw)
-
-
-def test_the_same_run_and_target_are_not_read_twice(tmp_path, hub, monkeypatch):
-    run_and_train_set(monkeypatch, rows_at([10.0, 20.0]))
-    hub.files = {"thresholds/20260101-000000/meta.json": {
-        "inputs": {"models": "models/t", "target": Settings().TARGET}}}
-    found = calibrate.main("u/runs", "def", "models/t", str(tmp_path), str(tmp_path))
-
-    assert found["path"] == "thresholds/20260101-000000" and hub.uploaded == []

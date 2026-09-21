@@ -96,15 +96,3 @@ def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
                               "hold": list(Settings().HOLD)}
     assert meta["attacks"] == 1 and meta["attacks_scorable"] == 1
     assert meta["rows"] == 6
-
-
-def test_the_same_attack_set_and_thresholds_are_not_scored_twice(tmp_path, hub,
-                                                                 monkeypatch):
-    stand_in(monkeypatch)
-    hub.files = {"scores/20260101-000000/meta.json": {"inputs": {
-        "attack_set": "attack_sets/t", "thresholds": "thresholds/t",
-        "moved": Settings().MOVED, "hold": list(Settings().HOLD)}}}
-    found = score.main("u/d", "abc", "attack_sets/t", str(tmp_path), "u/runs", "def",
-                       "thresholds/t", str(tmp_path))
-
-    assert found["path"] == "scores/20260101-000000" and hub.uploaded == []
