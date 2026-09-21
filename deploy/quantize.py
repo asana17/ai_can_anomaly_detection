@@ -94,7 +94,7 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
 
 def main(runs_repo, revision, onnx_path, runs_dir, local_dir, rebuild=False):
     settings = Settings()
-    inputs = {"onnx": onnx_path, "target": settings.TARGET, "batch": settings.BATCH}
+    inputs = {"onnx": onnx_path, "target": settings.TARGET}
     return reuse_or_make(runs_repo, "quantize", inputs, runs_dir,
                          lambda folder: write_quantized(folder, runs_repo, revision,
                                                         onnx_path, runs_dir, local_dir,

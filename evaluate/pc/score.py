@@ -39,7 +39,7 @@ def fetch_thresholds(directory, runs_dir):
         return folder, json.load(f), meta
 
 
-def find_quantize(runs_repo, thresholds_meta, runs_dir, settings):
+def find_quantize(runs_repo, thresholds_meta, runs_dir):
     """The `quantize/` directory made from the fit the thresholds were taken for.
 
     It is the one quantized at the `TARGET` of the thresholds.
@@ -49,8 +49,8 @@ def find_quantize(runs_repo, thresholds_meta, runs_dir, settings):
     if exported is None:
         raise ValueError(f"no onnx directory is made from {models_path}")
     target = thresholds_meta["inputs"]["target"]
-    quantized = find(runs_repo, "quantize", {"onnx": exported["path"], "target": target,
-                                             "batch": settings.BATCH}, runs_dir)
+    quantized = find(runs_repo, "quantize", {"onnx": exported["path"], "target": target},
+                     runs_dir)
     if quantized is None:
         raise ValueError(f"no quantize directory is made from {exported['path']} at "
                          f"TARGET {target}")
@@ -205,7 +205,7 @@ def main(repo, revision, attack_path, local_dir, runs_repo, runs_revision,
     onnx_files, onnx_path = None, None
     if int8:
         # the int8 files are in the directory quantize made from the fit
-        onnx_files = {**find_quantize(runs_repo, thresholds_meta, runs_dir, settings),
+        onnx_files = {**find_quantize(runs_repo, thresholds_meta, runs_dir),
                       "precision": "int8"}
         onnx_path = onnx_files["path"]
     inputs = {"attack_set": attack_path, "thresholds": thresholds_path,

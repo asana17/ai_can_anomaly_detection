@@ -124,8 +124,7 @@ def int8_stand_in(monkeypatch, tmp_path, hub, quantized_at=0.001):
     hub.files.update({
         "thresholds/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.5}],
         "onnx/t/meta.json": {"inputs": {"models": "models/t"}},
-        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t", "target": quantized_at,
-                                            "batch": Settings().BATCH}},
+        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t", "target": quantized_at}},
         "quantize/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.25}]})
 
     def no_weights(*args):

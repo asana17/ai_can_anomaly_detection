@@ -99,7 +99,6 @@ def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch)
     assert len(kept) == 1 and kept[0].keys() == {*ENTRY, "threshold"}
     assert kept[0]["threshold"] > 0
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"onnx": "onnx/t", "target": Settings().TARGET,
-                              "batch": Settings().BATCH}
+    assert meta["inputs"] == {"onnx": "onnx/t", "target": Settings().TARGET}
     assert meta["onnx"] == {"repo": "u/runs", "revision": "def", "path": "onnx/t"}
     assert meta["models"]["path"] == "models/t"
