@@ -16,12 +16,15 @@ directory of the runs repository.
 ```
 python3 -m evaluate.fit REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
 python3 -m evaluate.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
+python3 -m evaluate.score REPO REVISION TEST_SET LOCAL_DIR RUNS_REPO REVISION MODELS RUNS_DIR
 python3 -m evaluate.pc.detect REPO REVISION ATTACK_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR
 ```
 
 Documented under [docs/](docs).
 
 - [fit](docs/fit.md) trains the models on the train rows and uploads them.
+- [score](docs/score.md) scores each row of a set with every model, and marks the rows
+  a rule hits.
 - [calibrate](docs/calibrate.md) gives each model the score above which a row counts
   as an anomaly.
 - [pc_detect](docs/pc_detect.md) counts what each detector catches on the attacked test

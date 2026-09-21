@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "models.json",
+  "description": "The models of the columns of `scores.npy`, in their order, each as the fit records it.",
+  "type": "array",
+  "items": {
+    "$ref": "model.schema.json",
+    "unevaluatedProperties": false
+  }
+}
