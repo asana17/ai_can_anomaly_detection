@@ -3,7 +3,7 @@
 Flags the truck reporting reverse while moving faster than it can back up.
 
 ```python
-violations(values, max_speed=10.0)   # -> both names, or empty
+hits(raw, max_speed=10.0)   # -> True per row the rule fires on
 ```
 
 [gear_ratio](gear_ratio.md) only holds for forward gears, since its table has no

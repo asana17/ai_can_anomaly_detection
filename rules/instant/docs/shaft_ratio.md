@@ -3,7 +3,7 @@
 Flags the transmission output shaft turning at the wrong rate for the wheel speed.
 
 ```python
-violations(values, min_speed, bounds=(13.0, 17.5))   # -> both names, or empty
+hits(raw, min_speed, bounds=(13.0, 17.5))   # -> True per row the rule fires on
 ```
 
 The final drive and the tyre size are fixed, so the shaft turns a set number of

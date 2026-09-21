@@ -3,7 +3,7 @@
 Flags the steering angle and the yaw rate turning opposite ways.
 
 ```python
-violations(values, min_speed, min_yaw=0.02)   # -> both names, or empty
+hits(raw, min_speed, min_yaw=0.02)   # -> True per row the rule fires on
 ```
 
 Steering left turns the truck left. How much yaw a given angle produces changes with

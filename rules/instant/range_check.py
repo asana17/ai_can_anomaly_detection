@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
+import numpy as np
+
+from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.spn_spec import SPEC
 
 LIMITS = {d.name: (d.minimum, d.maximum) for defs in SPEC.values() for d in defs}
 
 
-def violations(values: dict) -> list:
-    """The names in `values` that sit outside their range, in the order given."""
-    out = []
-    for name, value in values.items():
-        limits = LIMITS.get(name)
-        if limits and not limits[0] <= value <= limits[1]:
-            out.append(name)
-    return out
+def hits(raw: np.ndarray) -> np.ndarray:
+    """True where any signal of a row sits outside its range, or is NaN."""
+    low = np.array([LIMITS[name][0] for name in SIGNALS])
+    high = np.array([LIMITS[name][1] for name in SIGNALS])
+    return ~((raw >= low) & (raw <= high)).all(axis=1)

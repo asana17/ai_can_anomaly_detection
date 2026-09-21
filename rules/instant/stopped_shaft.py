@@ -6,16 +6,16 @@ while the truck is stopped. This covers that.
 
 from __future__ import annotations
 
+import numpy as np
+
+from preprocess.features.signal_state import SIGNALS
+
 # The shaft reads up to 31 rpm with the wheels at zero, over 278,819 evaluations.
 # See rules/measurements.md.
 MAX_SHAFT = 50.0
 
-NAMES = ["wheel_speed", "output_shaft_speed"]
-
-
-def violations(values: dict, max_shaft: float = MAX_SHAFT) -> list:
-    """The two names, if the wheels read stopped and the shaft does not."""
-    wheel, shaft = values.get("wheel_speed"), values.get("output_shaft_speed")
-    if wheel is None or shaft is None or wheel != 0:
-        return []
-    return NAMES if shaft > max_shaft else []
+def hits(raw: np.ndarray, max_shaft: float = MAX_SHAFT) -> np.ndarray:
+    """True where the wheels read stopped and the shaft does not."""
+    wheel = raw[:, SIGNALS.index("wheel_speed")]
+    shaft = raw[:, SIGNALS.index("output_shaft_speed")]
+    return (wheel == 0) & (shaft > max_shaft)

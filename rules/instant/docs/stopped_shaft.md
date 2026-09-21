@@ -3,7 +3,7 @@
 Flags the transmission output shaft turning while the wheels report stopped.
 
 ```python
-violations(values, max_shaft=50.0)   # -> both names, or empty
+hits(raw, max_shaft=50.0)   # -> True per row the rule fires on
 ```
 
 The output shaft and the wheels turn together, so one cannot move while the other

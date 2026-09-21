@@ -3,7 +3,7 @@
 Flags the accelerator and the brake being pressed at once.
 
 ```python
-violations(values, pressed=1.0)   # -> both names, or empty
+hits(raw, pressed=1.0)   # -> True per row the rule fires on
 ```
 
 Never seen together in 486,544 evaluations, measured in

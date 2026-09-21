@@ -3,7 +3,7 @@
 Flags the two vehicle speeds disagreeing.
 
 ```python
-violations(values, limit=2.0)   # -> both speed names, or empty
+hits(raw, limit=2.0)   # -> True per row the rule fires on
 ```
 
 CCVS1 and TCO1 each report the vehicle's speed and they come from different senders,

@@ -3,8 +3,8 @@
 Flags the engine and wheel speeds not matching the gear the transmission reports.
 
 ```python
-violations(values, min_speed, ratios=RATIOS)   # -> the three names, or empty
-nearest_gear(ratio)                            # -> the gear that ratio belongs to
+hits(raw, min_speed, ratios=RATIOS)   # -> True per row the rule fires on
+nearest_gear(ratio)                   # -> the gear each ratio belongs to
 ```
 
 Each gear turns the engine a set number of times per km/h, and the gears are 1.28

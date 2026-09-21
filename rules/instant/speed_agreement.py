@@ -7,14 +7,17 @@ though both readings stay inside their own range.
 
 from __future__ import annotations
 
+import numpy as np
+
+from preprocess.features.signal_state import SIGNALS
+
 # Normally the two sit within 0.9 km/h of each other at p99, and more than 2 km/h
 # apart on 0.006% of rows. See rules/measurements.md.
 MAX_DISAGREEMENT = 2.0
 
 
-def violations(values: dict, limit: float = MAX_DISAGREEMENT) -> list:
-    """The pair of speed names, if both are present and disagree by more than `limit`."""
-    wheel, tacho = values.get("wheel_speed"), values.get("tachograph_speed")
-    if wheel is None or tacho is None or abs(wheel - tacho) <= limit:
-        return []
-    return ["wheel_speed", "tachograph_speed"]
+def hits(raw: np.ndarray, limit: float = MAX_DISAGREEMENT) -> np.ndarray:
+    """True where the two speeds disagree by more than `limit`."""
+    wheel = raw[:, SIGNALS.index("wheel_speed")]
+    tacho = raw[:, SIGNALS.index("tachograph_speed")]
+    return np.abs(wheel - tacho) > limit

@@ -3,8 +3,8 @@
 Flags the engine reading stopped while something it drives is still running.
 
 ```python
-violations(values)   # -> engine_speed and whatever is moving, or empty
-MUST_BE_ZERO         # -> the names that must read zero with it
+hits(raw)      # -> True per row the rule fires on
+MUST_BE_ZERO   # -> the names that must read zero with it
 ```
 
 A stopped engine burns no fuel, makes no torque, and turns no input shaft. All six

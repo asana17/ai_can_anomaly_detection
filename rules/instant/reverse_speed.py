@@ -6,15 +6,15 @@ negative, since the ratio rules only hold for forward gears.
 
 from __future__ import annotations
 
+import numpy as np
+
+from preprocess.features.signal_state import SIGNALS
+
 # Reverse never exceeded 3.5 km/h over 87,245 evaluations. See rules/measurements.md.
 MAX_SPEED = 10.0
 
-NAMES = ["current_gear", "wheel_speed"]
-
-
-def violations(values: dict, max_speed: float = MAX_SPEED) -> list:
-    """The two names, if reverse is engaged above a speed reverse cannot reach."""
-    gear, wheel = values.get("current_gear"), values.get("wheel_speed")
-    if gear is None or wheel is None or gear >= 0:
-        return []
-    return NAMES if wheel > max_speed else []
+def hits(raw: np.ndarray, max_speed: float = MAX_SPEED) -> np.ndarray:
+    """True where reverse is engaged above a speed reverse cannot reach."""
+    gear = raw[:, SIGNALS.index("current_gear")]
+    wheel = raw[:, SIGNALS.index("wheel_speed")]
+    return (gear < 0) & (wheel > max_speed)
