@@ -27,7 +27,7 @@ APPLICATIONS = {
     "mbf_test": Application(("mbf",)),
     "rule_check_from_flash": Application(("mbf",)),
     "model_check_from_flash": Application(("mbf", "scale", "model", MODEL), True),
-    "model_reconstruction_error_from_flash": Application(("scale", "model", MODEL), True),
+    "ae_reconstruction_from_flash": Application(("scale", "model", MODEL), True),
 }
 
 
