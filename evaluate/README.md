@@ -19,9 +19,6 @@ python3 -m evaluate.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
 python3 -m evaluate.pc.score REPO REVISION ATTACK_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR
 ```
 
-`evaluate.pc.run` still does all three in one command, reading the dataset in the old
-flat layout. It goes once the stages have been run end to end.
-
 Documented under [docs/](docs).
 
 - [fit](docs/fit.md) trains the models on the train rows and uploads them.
@@ -29,8 +26,8 @@ Documented under [docs/](docs).
   as an anomaly.
 - [pc_score](docs/pc_score.md) counts what each detector catches on the attacked test
   rows.
-- [pc_run](docs/pc_run.md) says what is reused, what counts as an alarm, and how each
-  parameter was set.
+- [pc_run](docs/pc_run.md) says what counts as an alarm, and how each parameter was
+  set.
 
 ## Tests
 

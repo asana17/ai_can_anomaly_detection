@@ -1,7 +1,6 @@
 import numpy as np
 
-from evaluate.counting import (alarms, found, moved_by, period_of, persistent,
-                               touched)
+from evaluate.counting import alarms, moved_by, period_of, persistent, touched
 
 ONE = np.zeros(8, dtype=np.int32)          # one segment, so nothing breaks a run
 
@@ -38,13 +37,6 @@ def test_alarms_counts_stretches_not_rows():
 def test_period_comes_from_the_commonest_step():
     times = np.array([0.0, 0.1, 0.2, 0.3, 30.0, 30.1])   # one recording gap
     assert abs(period_of(times) - 0.1) < 1e-9
-
-
-def test_found_counts_an_attack_once_however_many_rows_it_flags():
-    flags = np.array([False, True, True, False, False, False])
-    attacks = [{"first": 1, "last": 2}, {"first": 3, "last": 5}]
-    assert found(flags, attacks, np.array([True, True])) == 1
-    assert found(flags, attacks, np.array([False, True])) == 0
 
 
 def test_touched_says_which_attacks_have_a_flagged_row():

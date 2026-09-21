@@ -22,8 +22,8 @@ python3 -m pip install -r requirements.txt
 ```
 
 A run reads its dataset from Hugging Face, which needs no login. Building one and
-uploading it with [assemble.dataset](assemble/docs/dataset.md) needs `hf auth login`
-with a token that can write.
+uploading it with [assemble](assemble) needs `hf auth login` with a token that can
+write.
 
 Converting a model for the board also needs [ST Edge AI Core](https://www.st.com/en/development-tools/stedgeai-core.html)
 4.0.1 with its STM32 MCU component. It does not install through pip.
@@ -73,8 +73,7 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Rethink how `fit`, `calibrate` and `score` sit in `evaluate` before running them.
   Moving `fit` and `calibrate` into a `train` package is one way. After it `deploy`
   imports nothing from `evaluate`.
-- Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`, and
-  fold `common/hf_upload.py` into `common/hub_dirs.py`.
+- Fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Draw the attacks over the test block's time rather than one per log. One per log puts
   most attacks where the truck stands, and four times as many per moving hour in the
   logs that move least. Measure first whether that shifts a model's numbers, from

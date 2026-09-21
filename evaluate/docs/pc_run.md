@@ -1,21 +1,5 @@
 # pc run
 
-## What is reused
-
-`seconds_above`, `grid_rows` and `attack_set` each read every log, so their results
-are written to `out` and reused on the next run over the same logs.
-
-`out/grid.json` holds the training logs the grid was built from. The calibration
-settings are not in it, so a run with another `CALIBRATION`, `BLOCK` or `GAP` reads
-the saved grid.
-
-`out/built.json` holds the logs and the settings the attack set was built from. It
-includes `CALIBRATION`, `BLOCK` and `GAP`, because the attack set is z-scored with the
-mean and std of the training rows they leave.
-
-Editing the code changes neither file, so delete `out` after changing what these three
-do.
-
 ## What counts as an alarm
 
 A flag has to persist over several rows in a row to count as an alarm. `HOLD` lists

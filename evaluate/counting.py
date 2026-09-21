@@ -1,8 +1,4 @@
-"""The rows a detector reads, and how the flags it raises are counted.
-
-`evaluate.pc.run` and `evaluate.pc.score` both score rows this way, so a number from
-one is a number from the other.
-"""
+"""The rows a detector reads, and how the flags it raises are counted."""
 
 from __future__ import annotations
 
@@ -10,12 +6,6 @@ import numpy as np
 
 from assemble.grid import moving
 from rules.hits import rule_hits
-
-
-def found(flags, attacks, pick):
-    """How many of the picked attacks have a flagged row."""
-    return sum(flags[a["first"]:a["last"] + 1].any()
-               for a, keep in zip(attacks, pick) if keep)
 
 
 def touched(flags, attacks):
@@ -43,16 +33,6 @@ def period_of(times):
     """The grid period, taken from the commonest step between rows."""
     steps = np.diff(times)
     return float(np.median(steps[steps > 0]))
-
-
-def training_rows(data, scale, settings):
-    """The moving training rows, and the calibration rows with no instant rule on them."""
-    def above(rows):
-        return moving(scale.undo(rows), min_speed=settings.MIN_SPEED)
-
-    clean = ~rule_hits(data["calibration_raw"], settings)
-    return (data["rows"][above(data["rows"])],
-            data["calibration_rows"][above(data["calibration_rows"]) & clean])
 
 
 def moved_by(attack, attacked, std):
@@ -95,15 +75,3 @@ def prepare_scoring_input(got, scale, settings):
                                      & (moved >= settings.MOVED))}
     return rows_to_score, attacks_to_check
 
-
-def detection(flag, rows_to_score, attacks_to_check, settings):
-    """How many attacks a flag finds at each `HOLD`, and how many alarms it raises."""
-    out = []
-    for need in settings.HOLD:
-        on = persistent(rows_to_score["rules"] | flag, rows_to_score["seg"], need)
-        out.append({"hold": need,
-                    "found": found(on, attacks_to_check["injected"],
-                                   attacks_to_check["scorable"]),
-                    "alarms_per_hour": (alarms(on & rows_to_score["quiet"])
-                                        / rows_to_score["hours"])})
-    return out

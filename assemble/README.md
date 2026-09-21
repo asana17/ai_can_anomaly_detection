@@ -15,8 +15,6 @@ Documented under [docs/](docs).
   frame, as Parquet.
 - [attack_set](docs/attack_set.md) builds the test arrays with attacks in them, and
   says which rows each one changed.
-- [dataset](docs/dataset.md) runs all of these over the logs and writes the result
-  into `out`.
 
 ## Tests
 
