@@ -3,26 +3,13 @@
 #include <tm/tmonitor.h>
 #include "model.h"
 #include "scale.h"
+#include "scoring_error.h"
 #include "model_config.h"
 #include "../rule_check_from_flash/raw_rows.h"
 
 #if RULE_SIGNALS != MODEL_SIGNALS
 #error "Flash rows and the selected model use different signal counts"
 #endif
-
-/* Mean squared error between the scaled row and its reconstruction. */
-LOCAL float reconstruction_error(const float scaled[MODEL_SIGNALS],
-	const float reconstructed[MODEL_SIGNALS])
-{
-	float total = 0.0f;
-	UW i;
-
-	for(i = 0; i < MODEL_SIGNALS; i++) {
-		const float difference = scaled[i] - reconstructed[i];
-		total += difference * difference;
-	}
-	return total / MODEL_SIGNALS;
-}
 
 /* Print every Flash row's reconstruction and reconstruction error as float32 bits, and
  * its inference cycles. */
@@ -56,7 +43,7 @@ EXPORT INT usermain(void)
 			tm_printf((UB*)" 0x%08x", bits);
 		}
 		tm_printf((UB*)"\n");
-		error = reconstruction_error(scaled, reconstructed);
+		error = scoring_error(scaled, reconstructed, MODEL_SIGNALS);
 		memcpy(&bits, &error, sizeof(bits));
 		tm_printf((UB*)"row %d reconstruction_error 0x%08x cycles %u\n",
 			FIRST_ROW + i, bits, cycles);

@@ -4,6 +4,7 @@
 #include "mbf.h"
 #include "model.h"
 #include "scale.h"
+#include "scoring_error.h"
 #include "model_config.h"
 #include "threshold.h"
 #include "../rule_check_from_flash/raw_rows.h"
@@ -70,13 +71,11 @@ LOCAL void source_task(INT stacd, void *exinf)
 	tk_slp_tsk(TMO_FEVR);
 }
 
-/* Apply this application's preprocessing and reconstruction-error policy. */
+/* Score a row with the autoencoder alone and compare the score with the threshold. */
 LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Scored *scored)
 {
 	float scaled[MODEL_SIGNALS];
 	float reconstructed[MODEL_SIGNALS];
-	float total = 0.0f;
-	UW i;
 	ModelStatus error;
 
 	scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
@@ -84,11 +83,7 @@ LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Scored *scored)
 	if(error != MODEL_OK) {
 		return error;
 	}
-	for(i = 0; i < MODEL_SIGNALS; i++) {
-		const float difference = scaled[i] - reconstructed[i];
-		total += difference * difference;
-	}
-	scored->score = total / MODEL_SIGNALS;
+	scored->score = scoring_error(scaled, reconstructed, MODEL_SIGNALS);
 	scored->flagged = scored->score > THRESHOLD_SCORE;
 	return MODEL_OK;
 }

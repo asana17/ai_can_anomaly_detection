@@ -6,8 +6,7 @@
 #include "model.h"
 #include "model_config.h"
 #include "moving.h"
-#include "rule_hits.h"
-#include "scale.h"
+#include "scoring.h"
 #include "threshold.h"
 #include "../rule_check_from_flash/raw_rows.h"
 
@@ -32,12 +31,6 @@ typedef struct {
 	INT rule;
 	ModelStatus error;
 } Report;
-
-typedef struct {
-	float score;
-	UW cycles;
-	INT rule;
-} Detection;
 
 LOCAL ID row_mbf, report_mbf;
 LOCAL volatile INT preprocess_dropped, preprocess_skipped;
@@ -80,34 +73,11 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	tk_slp_tsk(TMO_FEVR);
 }
 
-/* Score one row with the rules and the autoencoder. */
-LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Detection *detection)
-{
-	float scaled[MODEL_SIGNALS];
-	float reconstructed[MODEL_SIGNALS];
-	float total = 0.0f;
-	UW i;
-	ModelStatus error;
-
-	detection->rule = rule_hits(physical, MIN_SPEED);
-	scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
-	error = model_run(scaled, reconstructed, &detection->cycles);
-	if(error != MODEL_OK) {
-		return error;
-	}
-	for(i = 0; i < MODEL_SIGNALS; i++) {
-		const float difference = scaled[i] - reconstructed[i];
-		total += difference * difference;
-	}
-	detection->score = total / MODEL_SIGNALS;
-	return MODEL_OK;
-}
-
 /* Report the row that completes HOLD flagged rows, and the row the run ends on. */
 LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 {
 	DetectState state;
-	Detection detection;
+	ScoringRow scored;
 	Row row;
 	Report report = {0};
 	INT ringing = 0, alarmed;
@@ -117,24 +87,25 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 		if(row.no == RULE_ROWS) {
 			break;
 		}
-		report.error = score_row(row.physical, &detection);
+		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
+			MIN_SPEED, &scored);
 		if(report.error != MODEL_OK) {
 			report.no = row.no;
 			tk_snd_mbf(report_mbf, &report, sizeof(report), TMO_FEVR);
 			break;
 		}
 		scored_rows++;
-		flagged_rows += detect_flagged(detection.score, THRESHOLD_SCORE,
-			detection.rule);
-		if(detection.cycles > maximum_cycles) {
-			maximum_cycles = detection.cycles;
+		flagged_rows += detect_flagged(scored.score, THRESHOLD_SCORE,
+			scored.rule_hit);
+		if(scored.cycles > maximum_cycles) {
+			maximum_cycles = scored.cycles;
 		}
-		alarmed = detect_alarmed(&state, row.no, detection.score, THRESHOLD_SCORE,
-			detection.rule, HOLD);
+		alarmed = detect_alarmed(&state, row.no, scored.score, THRESHOLD_SCORE,
+			scored.rule_hit, HOLD);
 		if(alarmed != ringing) {
 			report.no = row.no;
-			memcpy(&report.score_bits, &detection.score, sizeof(detection.score));
-			report.rule = detection.rule;
+			memcpy(&report.score_bits, &scored.score, sizeof(scored.score));
+			report.rule = scored.rule_hit;
 			report.alarm = alarmed;
 			tk_snd_mbf(report_mbf, &report, sizeof(report), TMO_FEVR);
 			ringing = alarmed;

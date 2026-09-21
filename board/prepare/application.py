@@ -27,10 +27,10 @@ APPLICATIONS = {
     "alive": Application(),
     "mbf_test": Application(("mbf",)),
     "rule_check_from_flash": Application(("mbf",)),
-    "model_check_from_flash": Application(("mbf", "scale", "model", MODEL), True),
-    "ae_reconstruction_from_flash": Application(("scale", "model", MODEL), True),
+    "model_check_from_flash": Application(("mbf", "scale", "model", "scoring", MODEL), True),
+    "ae_reconstruction_from_flash": Application(("scale", "model", "scoring", MODEL), True),
     "scoring_and_detect_from_flash": Application(
-        ("mbf", "moving", "rules", "scale", "model", "detect", MODEL), True),
+        ("mbf", "moving", "rules", "scale", "model", "scoring", "detect", MODEL), True),
 }
 
 

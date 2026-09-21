@@ -145,6 +145,7 @@ stays outside `board` and is what the C is checked against on the PC.
 | scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | scoring and detect |
 | autoencoder | ONNX from `deploy` | `model/`, `active_model/` | scoring and detect |
 | rules | the nine in `rules/instant/`, `rules/hits.py` | `rules/`, one header each and their OR | scoring and detect |
+| scoring a row | `scoring/score.py` for one row, and the error the scorers in `models/` take | `scoring/` | scoring and detect |
 | threshold, rules OR, `HOLD` | `detect/alarm.py` | `detect/` | scoring and detect |
 
 Not ported:
@@ -152,8 +153,7 @@ Not ported:
 - `can_log_loader` and `profile`, which read log files.
 - `rules/rate/change_limit`. Its limits are per frame arrival, and the PC does not
   apply it to rows either.
-- `fit`, `score` and `calibrate`. Their outputs, the scale and the thresholds, enter
-  the build.
+- `fit` and `calibrate`. Their outputs, the scale and the thresholds, enter the build.
 - `grid_sample`, which ticks off the log's own timestamps. On the board the cyclic
   handler gives the tick and the preprocess task clears the slots after a gap.
 

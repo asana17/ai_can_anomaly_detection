@@ -51,7 +51,7 @@ def test_model_application_requires_the_fixed_model_inputs(tmp_path, monkeypatch
     for name in MODEL_FILES:
         (model / name).touch()
     selected = application_for(str(app))
-    assert selected.libraries == ("mbf", "scale", "model", MODEL)
+    assert selected.libraries == ("mbf", "scale", "model", "scoring", MODEL)
 
 
 def test_stedgeai_runtime_requires_header_and_cm33_archive(tmp_path):
