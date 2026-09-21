@@ -156,7 +156,11 @@ J1939's own terms, frame, PGN and SPN, are described in
   score one other split, the first 25% of the time as test. `fit` and the stages after
   it wait for the `evaluate` item.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
-  due 2026-09-30. Next is the model in the build, step 3 there.
+  due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
+  on 80 rows. Counting the calibration rows its difference moves across the threshold
+  waits for `score`, and more rows wait for fetching them from the dataset. Next is
+  step 4. Write the rules in C one at a time and test them against `rules/` on the PC,
+  then put them in the anomaly task on the board.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
