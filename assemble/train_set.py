@@ -1,4 +1,4 @@
-"""Cut the training rows into train and calibration rows, and fit the scale on them.
+"""Cut the training rows into train and calibration rows.
 
 The rows at or below the split's speed go to neither. The rows a rule hits never go
 to train.
@@ -15,13 +15,11 @@ from dataclasses import replace
 import numpy as np
 
 from assemble.grid import read_grid, rows_of_logs
-from assemble.scale import scale_for
 from assemble.split import read_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from preprocess.features.moving import moving
-from preprocess.features.scale import Scale
 from rules.hits import rule_hits
 
 
@@ -74,15 +72,13 @@ def widen_to_grid(training, among_training):
 
 
 def read_train_set(folder):
-    """A train set's train and calibration rows, and the scale fitted on the train ones."""
-    train_rows, calibration_rows = (np.load(os.path.join(folder, f"{name}_rows.npy"))
-                                    for name in ("train", "calibration"))
-    scale = Scale(*np.load(os.path.join(folder, "scale.npy")))
-    return train_rows, calibration_rows, scale
+    """A train set's train and calibration rows."""
+    return tuple(np.load(os.path.join(folder, f"{name}_rows.npy"))
+                 for name in ("train", "calibration"))
 
 
 def fetch_train_set(repo, revision, train_path, local_dir):
-    """The rows a train set names, its scale, and the directories they came from.
+    """The rows a train set names, and the directories they came from.
 
     The train set is read at `revision` of `repo`, and the split and grid it names at
     the commits it names them at.
@@ -94,16 +90,16 @@ def fetch_train_set(repo, revision, train_path, local_dir):
     grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
                            repo_type="dataset")
     raw, _, _, _ = read_grid(grid_dir)
-    train_rows, calibration_rows, scale = read_train_set(folder)
+    train_rows, calibration_rows = read_train_set(folder)
     return {"train": raw[train_rows], "calibration": raw[calibration_rows],
-            "scale": scale, "min_speed": split_meta["inputs"]["min_speed"],
+            "min_speed": split_meta["inputs"]["min_speed"],
             "dataset": {"train_set": {"repo": repo, "revision": revision,
                                       "path": train_path},
                         "split": split, "grid": grid}}
 
 
 def write_train_set(folder, repo, revision, split_path, local_dir, settings):
-    """Write which rows train and calibrate, and the scale, and return the split."""
+    """Write which rows train and calibrate, and return the split."""
     split_dir, split_meta = read_dir(repo, split_path, local_dir, revision,
                                      repo_type="dataset")
     grid = split_meta["grid"]
@@ -129,7 +125,6 @@ def write_train_set(folder, repo, revision, split_path, local_dir, settings):
     hit = rule_hits(raw[train_rows], replace(settings, MIN_SPEED=min_speed))
     train_rows[train_rows] = ~hit
     calibration_rows = widen_to_grid(training, calibration_part & apart)
-    scale = scale_for(raw[train_rows])
     print(f"{int(training.sum())} rows from {len(cut['train'])} logs, "
           f"{int(train_rows.sum())} train and {int(calibration_rows.sum())} "
           f"calibration, {int(hit.sum())} of {len(hit)} train rows a rule hits dropped",
@@ -137,7 +132,6 @@ def write_train_set(folder, repo, revision, split_path, local_dir, settings):
 
     np.save(os.path.join(folder, "train_rows.npy"), train_rows)
     np.save(os.path.join(folder, "calibration_rows.npy"), calibration_rows)
-    np.save(os.path.join(folder, "scale.npy"), np.stack([scale.mean, scale.std]))
     return {"split": {"repo": repo, "revision": revision, "path": split_path},
             "grid": grid, "rule_hits": {"rows": len(hit), "hit": int(hit.sum())}}
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from assemble.scale import scale_for
+from evaluate.fit import scale_for
 from preprocess.features.scale import Scale
 
 

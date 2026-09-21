@@ -11,7 +11,6 @@ from evaluate.pc import score
 from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
 from models.onnx_files import onnx_name
-from preprocess.features.scale import Scale
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -68,11 +67,9 @@ def stand_in(monkeypatch, hub):
         "thresholds/20260101-000000/thresholds.json": [
             {"model": "pca", "k": 2, "threshold": 0.5}]}
     monkeypatch.setattr(score, "fetch_fitted_models", lambda *args: (
-        {"scale.mean": torch.zeros(len(SIGNALS)),
+        {"scale.mean": torch.zeros(len(SIGNALS)), "scale.std": torch.ones(len(SIGNALS)),
          "pca.k2.centre": torch.zeros(len(SIGNALS)),
          "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}, {}))
-    monkeypatch.setattr(score, "fetch_scale", lambda *args: Scale(
-        np.zeros(len(SIGNALS), np.float32), np.ones(len(SIGNALS), np.float32)))
 
     raw = np.zeros((6, len(SIGNALS)), np.float32)
     raw[:, WHEEL] = 10.0
@@ -141,10 +138,6 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
             {**as_dict(MODEL), "threshold": 0.25}],
         "quantize/20260101-000000/meta.json": {
             "inputs": {"onnx": "onnx/20260101-000000"}}})
-
-    def no_weights(*args):
-        raise AssertionError("an int8 file needs no weights")
-    monkeypatch.setattr(score, "fetch_fitted_models", no_weights)
 
 
 def test_thresholds_taken_with_onnx_files_score_with_them(tmp_path, hub,

@@ -9,7 +9,6 @@ from deploy.export import write_onnx_files
 from deploy.quantize import write_int8_files
 from models.autoencoder import NonlinearAutoencoder, residuals
 from models.onnx_files import onnx_residuals
-from preprocess.features.scale import Scale
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -68,11 +67,12 @@ def exported(monkeypatch, tmp_path):
             "train_set": where, "split": dict(where, path="splits/20260101-000000"),
             "grid": dict(where, path="grids/20260101-000000"), "exported": [ENTRY]}
     monkeypatch.setattr(quantize, "read_dir", lambda *args: (source, meta))
+    monkeypatch.setattr(quantize, "fetch_fitted_models", lambda *args: (
+        {"scale.mean": torch.zeros(signals), "scale.std": torch.ones(signals)}, {}))
     raw = np.random.default_rng(0).normal(size=(256, signals)).astype(np.float32)
     raw[:, SIGNALS.index("wheel_speed")] = 10.0
     monkeypatch.setattr(quantize, "fetch_train_set", lambda *args: {
-        "train": raw, "calibration": raw, "min_speed": 5.0,
-        "scale": Scale(np.zeros(signals, np.float32), np.ones(signals, np.float32))})
+        "train": raw, "calibration": raw, "min_speed": 5.0})
 
 
 def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch):

@@ -22,6 +22,9 @@ WHEEL = SIGNALS.index("wheel_speed")
 TRAIN_SET = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}
 
 
+SCALE = Scale(np.zeros(len(SIGNALS), np.float32), np.ones(len(SIGNALS), np.float32))
+
+
 def rows_at(speeds):
     """One row per speed, every other signal 0."""
     raw = np.zeros((len(speeds), len(SIGNALS)), np.float32)
@@ -32,9 +35,7 @@ def rows_at(speeds):
 def stand_in(monkeypatch, raw, flagged):
     """A train set holding `raw` as its calibration rows, with `flagged` ruled out."""
     monkeypatch.setattr(calibrate, "fetch_train_set", lambda *args: {
-        "calibration": raw, "min_speed": 5.0,
-        "scale": Scale(np.zeros(len(SIGNALS), np.float32),
-                       np.ones(len(SIGNALS), np.float32)), "dataset": {}})
+        "calibration": raw, "min_speed": 5.0, "dataset": {}})
     monkeypatch.setattr(calibrate, "rule_hits", lambda raw, settings: flagged)
 
 
@@ -46,7 +47,7 @@ def test_the_quantile_leaves_that_share_of_the_scores_above_it():
 def test_a_row_at_or_below_the_speed_sets_no_threshold(monkeypatch):
     raw = rows_at([1.0, 5.0, 9.0])
     stand_in(monkeypatch, raw, np.zeros(len(raw), bool))
-    rows = calibrate.calibration_rows(calibrate.fetch_train_set(), Settings())
+    rows = calibrate.calibration_rows(calibrate.fetch_train_set(), SCALE, Settings())
 
     assert rows[:, WHEEL].tolist() == [9.0]
 
@@ -54,7 +55,7 @@ def test_a_row_at_or_below_the_speed_sets_no_threshold(monkeypatch):
 def test_a_row_a_rule_flags_sets_no_threshold(monkeypatch):
     raw = rows_at([9.0, 20.0])
     stand_in(monkeypatch, raw, np.array([True, False]))
-    rows = calibrate.calibration_rows(calibrate.fetch_train_set(), Settings())
+    rows = calibrate.calibration_rows(calibrate.fetch_train_set(), SCALE, Settings())
 
     assert rows[:, WHEEL].tolist() == [20.0]
 
@@ -62,6 +63,7 @@ def test_a_row_a_rule_flags_sets_no_threshold(monkeypatch):
 def run_and_train_set(monkeypatch, raw, models=({"model": "pca", "k": 2},)):
     """A stand-in run holding `models`, fitted on a train set whose rows are `raw`."""
     weights = {"scale.mean": torch.zeros(len(SIGNALS)),
+               "scale.std": torch.ones(len(SIGNALS)),
                "pca.k2.centre": torch.zeros(len(SIGNALS)),
                "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}
     where = {"repo": "u/d", "revision": REVISION, "path": "train_sets/20260101-000000"}

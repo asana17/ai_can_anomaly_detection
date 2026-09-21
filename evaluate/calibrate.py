@@ -26,7 +26,7 @@ from common.settings import Settings
 from evaluate.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
-from models.torch_files import torch_scorer
+from models.torch_files import scale_of, torch_scorer
 from preprocess.features.moving import moving
 from rules.hits import rule_hits
 
@@ -52,8 +52,8 @@ def thresholds_for(models, scorer_of, rows, *, target):
     return kept
 
 
-def calibration_rows(train_set, settings):
-    """The rows of `train_set` a threshold is taken from, z-scored on its scale.
+def calibration_rows(train_set, scale, settings):
+    """The rows of `train_set` a threshold is taken from, z-scored on `scale`.
 
     Two kinds of calibration row are left out: rows at or below the train set's
     `min_speed`, and rows that a rule in `rules/instant` flags.
@@ -62,7 +62,7 @@ def calibration_rows(train_set, settings):
     # a row a rule already flags says nothing about where to put a model's threshold
     kept = moving(raw, min_speed=min_speed) & ~rule_hits(raw, replace(
         settings, MIN_SPEED=min_speed))
-    return train_set["scale"].apply(raw[kept])
+    return scale.apply(raw[kept])
 
 
 def write_thresholds(folder, runs_repo, revision, models_path, onnx_directory,
@@ -75,7 +75,7 @@ def write_thresholds(folder, runs_repo, revision, models_path, onnx_directory,
     weights, fitted = fetch_fitted_models(runs_repo, revision, models_path, runs_dir)
     at = fitted["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
-    rows = calibration_rows(train_set, settings)
+    rows = calibration_rows(train_set, scale_of(weights), settings)
     if onnx_directory is None:
         scorer_of = torch_scorer(weights)
         runtime = {"torch": torch.__version__}

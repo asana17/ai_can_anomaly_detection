@@ -6,7 +6,6 @@ import numpy as np
 from evaluate import fit
 from evaluate.fit import MODELS, models_in
 from models.fits import Pca, as_dict
-from preprocess.features.scale import Scale
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -22,14 +21,12 @@ def test_the_models_beside_fit_spread_into_one_model_per_value():
 
 
 def train_set(monkeypatch, rows=8):
-    """A stand-in train set of `rows` moving rows, with a scale that changes nothing."""
+    """A stand-in train set of `rows` moving rows."""
     raw = np.zeros((rows, len(SIGNALS)), np.float32)
     raw[:, SIGNALS.index("wheel_speed")] = np.arange(rows) + 10.0
     raw[:, 0] = np.arange(rows)
     monkeypatch.setattr(fit, "fetch_train_set", lambda *args: {
         "train": raw, "calibration": raw, "min_speed": 5.0,
-        "scale": Scale(np.zeros(len(SIGNALS), np.float32),
-                       np.ones(len(SIGNALS), np.float32)),
         "dataset": {"train_set": {"repo": "u/d", "revision": REVISION,
                                   "path": "train_sets/20260101-000000"},
                     "split": {"repo": "u/d", "revision": REVISION,

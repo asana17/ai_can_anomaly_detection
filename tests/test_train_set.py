@@ -175,7 +175,7 @@ def _grid_and_split(hub, speeds, test_start, test_end, hit=slice(0)):
     return raw, t, half
 
 
-def test_the_stage_writes_which_rows_train_and_calibrate_and_the_scale(tmp_path, hub):
+def test_the_stage_writes_which_rows_train_and_calibrate(tmp_path, hub):
     raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 600.0, 999.9)
     made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
     folder = tmp_path / made["path"]
@@ -185,7 +185,6 @@ def test_the_stage_writes_which_rows_train_and_calibrate_and_the_scale(tmp_path,
     assert not train_rows[half:].any() and not calibration_rows[half:].any()
     assert train_rows.any() and calibration_rows.any()
     assert not (train_rows & calibration_rows).any()
-    assert np.load(folder / "scale.npy").shape == (2, len(SIGNALS))
     meta = json.loads((folder / "meta.json").read_text())
     assert meta["split"]["path"] == "splits/20260101-000000"
     assert meta["grid"]["path"] == "grids/20260101-000000"
@@ -230,15 +229,13 @@ def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
     assert found["path"] == "train_sets/20260101-000000" and hub.uploaded == []
 
 
-def test_read_train_set_reads_the_rows_and_the_scale_back(tmp_path):
+def test_read_train_set_reads_the_rows_back(tmp_path):
     np.save(tmp_path / "train_rows.npy", np.array([True, False]))
     np.save(tmp_path / "calibration_rows.npy", np.array([False, True]))
-    np.save(tmp_path / "scale.npy", np.array([[1.0, 2.0], [3.0, 4.0]]))
-    train_rows, calibration_rows, scale = train_set.read_train_set(str(tmp_path))
+    train_rows, calibration_rows = train_set.read_train_set(str(tmp_path))
 
     assert train_rows.tolist() == [True, False]
     assert calibration_rows.tolist() == [False, True]
-    assert scale.mean.tolist() == [1.0, 2.0] and scale.std.tolist() == [3.0, 4.0]
 
 
 def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
@@ -252,7 +249,6 @@ def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
         "train_sets/20260101-000000/train_rows.npy": np.array([True, False, False]),
         "train_sets/20260101-000000/calibration_rows.npy":
             np.array([False, True, False]),
-        "train_sets/20260101-000000/scale.npy": np.array([[1.0], [2.0]]),
         "splits/20260101-000000/meta.json": {"inputs": {"min_speed": 5.0}},
         "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1}},
         "grids/20260101-000000/grid_raw.npy":
@@ -265,5 +261,4 @@ def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
 
     assert got["train"].tolist() == [[10.0]], "the third row is in neither part"
     assert got["calibration"].tolist() == [[30.0]]
-    assert got["scale"].std.tolist() == [2.0]
     assert got["min_speed"] == 5.0, "the split decides the speed, not Settings"

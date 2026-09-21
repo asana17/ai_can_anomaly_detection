@@ -41,12 +41,25 @@ A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
 ## The rows it fits on
 
 A train set marks three kinds of row: train, calibration, and neither. `fit` reads the
-train rows.
+train rows and drops none of them. The [train set](../../assemble/docs/train_set.md)
+already chose them, the rows above `MIN_SPEED` that no rule hits.
 
-Rows at or below `MIN_SPEED` are dropped, since only faster rows are ever scored.
-`MIN_SPEED` is the value the [split](../../assemble/docs/split.md) was cut with, and
-comes from its `meta.json`. What is left is z-scored on the train set's
-[scale](../../preprocess/docs/scale.md).
+`MIN_SPEED` is the value the [split](../../assemble/docs/split.md) was cut with. It
+comes from the split's `meta.json`, and `fit` records it in its own.
+
+## The scale
+
+`scale_for(rows)` takes the mean and std of a [scale](../../preprocess/docs/scale.md)
+from the train rows, and the models are fitted on the rows z-scored with it. A signal
+that never changes keeps a std of 1, so it stays at 0 instead of dividing by zero. The
+scale goes into `weights.safetensors`, and whatever scores rows for these models reads
+it from there.
+
+The mean and std are taken only over the train rows, the moving rows no rule hits,
+because those are the rows the models are fitted on and asked about. Stopped rows
+spread some signals far wider than moving ones do, such as `clutch_slip` and
+`input_shaft_speed`. With them in the std, those signals would count for less in the
+residual than the others.
 
 ## The models it fits
 

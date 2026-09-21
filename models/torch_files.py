@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+from preprocess.features.scale import Scale
+
+
+def scale_of(weights):
+    """The scale the rows of a fit were z-scored with, kept in its `weights`."""
+    return Scale(weights["scale.mean"].numpy(), weights["scale.std"].numpy())
+
 
 def torch_scorer(weights):
     """What scores rows with a model in torch, on `weights` of a fit."""

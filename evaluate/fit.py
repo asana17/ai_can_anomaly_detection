@@ -21,6 +21,7 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from assemble.train_set import fetch_train_set
 from models.fits import as_dict, models_from
+from preprocess.features.scale import Scale
 
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models.json")
 
@@ -29,6 +30,13 @@ def fetch_fitted_models(runs_repo, revision, models_path, runs_dir):
     """The weights and `meta.json` of `models_path`, at `revision` of `runs_repo`."""
     folder, meta = read_dir(runs_repo, models_path, runs_dir, revision)
     return load_file(os.path.join(folder, "weights.safetensors")), meta
+
+
+def scale_for(rows: np.ndarray) -> Scale:
+    """The mean and std to z-score on, taken from the rows a model is fitted on."""
+    std = rows.std(axis=0)
+    std[std == 0] = 1.0                       # a constant signal stays at 0
+    return Scale(rows.mean(axis=0), std)
 
 
 def models_in(path):
@@ -41,7 +49,8 @@ def models_in(path):
 def write_models(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
-    scale, min_speed = train_set["scale"], train_set["min_speed"]
+    min_speed = train_set["min_speed"]
+    scale = scale_for(train_set["train"])
     rows = scale.apply(train_set["train"])
     print(f"{len(rows)} rows to fit on", flush=True)
 

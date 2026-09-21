@@ -9,9 +9,8 @@ logs again.
 - A row an instant [rule](../../rules) hits is never a train row.
 - A calibration row may be one a rule hits.
 
-It writes only which rows those are. The rows stay in the [grid](grid.md). The
-[scale](scale.md) is fitted on the train rows. The test logs are
-[attack_set](attack_set.md)'s.
+It writes only which rows those are. The rows stay in the [grid](grid.md). The test
+logs are [attack_set](attack_set.md)'s.
 
 ```python
 training = rows_of_logs(logs, counts, train_logs)   # logs and counts from grid.md
@@ -20,8 +19,6 @@ train_rows, calibration_rows = split_rows(raw[training], t[training], share=shar
                                           period=period)
 train_rows &= moving(raw, min_speed=min_speed)
 train_rows[train_rows] = ~rule_hits(raw[train_rows], settings)
-scale = scale_for(raw[train_rows])
-rows = scale.apply(raw[train_rows])
 ```
 
 ## Running it
@@ -47,15 +44,9 @@ It writes these files into `local_dir/train_sets/<time>/` and uploads that direc
 | file | holds |
 |---|---|
 | `train_rows.npy`, `calibration_rows.npy` | a True or False for every row of the grid, True where the row trains or calibrates. A row in neither is False in both, as is every test row |
-| `scale.npy` | the mean and std, fitted on the moving train rows |
 | `meta.json` | where the train set came from and how many train rows a rule hit, as [meta.train_sets.schema.json](../../common/schemas/meta.train_sets.schema.json) describes |
 
-## The scale is fitted on the moving train rows
-
-The mean and std are taken only over the rows [evaluate](../../evaluate) scores,
-because those are the rows PCA is fitted on. Stopped rows spread some signals far
-wider than moving ones do, such as `clutch_slip` and `input_shaft_speed`. With them in
-the std, those signals would count for less in the residual than the others.
+## Stopped rows stay in the grid
 
 The grid keeps stopped rows. `HOLD` in [evaluate](../../evaluate) counts rows that are
 next to each other in a `seg`, and two rows are only next to each other when they are
