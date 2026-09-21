@@ -29,6 +29,5 @@ class Settings:
     RATE: float = 1e-3          # Adam's learning rate
     IMPROVEMENT: float = 1e-4   # share of the best loss an epoch must cut, fit's threshold
     PATIENCE: int = 10          # epochs in a row without that before training stops
-    TORCH_SEED: int = 3         # the torch rng each autoencoder is built and trained with
     HIDDEN: tuple = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each reported
 
