@@ -4,5 +4,6 @@ data/
 out/
 st_ai_ws/
 .DS_Store
+__pycache__/
 board/application/rows/rows.h
 board/flash.json

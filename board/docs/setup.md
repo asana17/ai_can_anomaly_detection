@@ -6,7 +6,7 @@ the green LED blinks.
 
 The steps follow section 4 of the
 [mtk3_bsp2 STM32Cube document](https://github.com/tron-forum/mtk3_bsp2/blob/main/doc/bsp2_stm32_cube_jp.md#4-%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%81%AE%E4%BD%9C%E6%88%90%E6%89%8B%E9%A0%86).
-`board/prepare.py` does the steps it has you do by hand. The CubeMX project lives outside
+`board.prepare` does the steps it has you do by hand. The CubeMX project lives outside
 this repository. This repository holds only what we wrote:
 
 | path | what it is |
@@ -15,7 +15,7 @@ this repository. This repository holds only what we wrote:
 | `board/application/alive/` | the one this page checks, the LED and the count |
 | `board/lib/` | source components selected for each application |
 | `board/patches/` | a fix to mtk3_bsp2 `1ab52cc`, which does not build for this board without it |
-| `board/prepare.py` | adds mtk3_bsp2, Unity and our application to a generated project |
+| `board/prepare/` | validates an application and prepares a generated CubeIDE project |
 
 ## What to install
 
@@ -62,7 +62,8 @@ this before the project is opened in CubeIDE, which rewrites the project files w
 is open. Running it again changes nothing.
 
 ```
-python3 ~/ai_can_detection/board/prepare.py ~/NUCLEO-H533RE/ai_can_detection alive
+cd ~/ai_can_detection
+python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection alive
 ```
 
 Where this differs from the BSP2 document:
@@ -81,8 +82,8 @@ Where this differs from the BSP2 document:
 - [Unity](https://github.com/ThrowTheSwitch/Unity), the test framework the test
   applications use, is cloned at v2.7.0 into the folder `Unity`. Its `src` is built.
 
-After CubeMX generates again, run `prepare.py` again. To build another application,
-close the project in CubeIDE, run `prepare.py` with that folder, and open it again.
+After CubeMX generates again, run `board.prepare` again. To build another application,
+close the project in CubeIDE, run `python3 -m board.prepare` with that folder, and open it again.
 
 ## 3. Build and flash in CubeIDE
 
