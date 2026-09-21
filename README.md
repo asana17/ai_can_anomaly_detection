@@ -139,7 +139,7 @@ J1939's own terms, frame, PGN and SPN, are described in
     writing `detections/`. `calibrate` then reads scores.
   - List in the board docs what the board runs. `preprocess` without
     `can_log_loader` and `profile`, `rules`, the model, `detect`. The C goes in
-    `board/common/` and the Python stays outside `board`.
+    `board/lib/`, a folder per part, and the Python stays outside `board`.
   - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
     A diagram of the old layout is in `git stash`, stale.
   - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
