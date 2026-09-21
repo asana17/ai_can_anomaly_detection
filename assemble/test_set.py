@@ -148,11 +148,12 @@ def fetch_test_set(repo, revision, test_path, local_dir):
     log_split, grid = meta["log_split"], meta["grid"]
     _, log_split_meta = read_dir(log_split["repo"], log_split["path"], local_dir,
                                  log_split["revision"], repo_type="dataset")
-    grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
-                           repo_type="dataset")
+    grid_dir, grid_meta = read_dir(grid["repo"], grid["path"], local_dir,
+                                   grid["revision"], repo_type="dataset")
     rows, attacks = read_test_set(folder)
     return {**rows, "attacks": attacks, "before": rows_before_each(grid_dir),
             "min_speed": log_split_meta["inputs"]["min_speed"],
+            "period": grid_meta["inputs"]["period"],
             "dataset": {"test_set": {"repo": repo, "revision": revision,
                                      "path": test_path},
                         "log_split": log_split, "grid": grid}}

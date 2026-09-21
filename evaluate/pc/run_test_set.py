@@ -34,12 +34,6 @@ def fetch_thresholds(directory, runs_dir):
         return json.load(f), meta
 
 
-def period_of(times):
-    """The grid period, taken from the commonest step between rows."""
-    steps = np.diff(times)
-    return float(np.median(steps[steps > 0]))
-
-
 def z_distance_an_attack_moved(attack, attacked, std):
     """How far `attack` took a row from the one the bus really produced.
 
@@ -105,7 +99,7 @@ def attacked_rows_of(attacked, rule_hit, settings):
     """The test set's rows, with the quiet ones marked and their hours worked out."""
     quiet = (attacked["wheel"] > settings.MIN_SPEED) & ~attacked["label"]
     return AttackedRows(quiet=quiet, rule_hit=rule_hit, segment=attacked["seg"],
-                        hours=float(quiet.sum() * period_of(attacked["t"]) / 3600))
+                        hours=float(quiet.sum() * attacked["period"] / 3600))
 
 
 def injected_attacks_of(attacked, settings):

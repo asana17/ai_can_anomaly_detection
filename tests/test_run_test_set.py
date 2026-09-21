@@ -88,7 +88,7 @@ def stand_in(monkeypatch, hub, onnx_files=None):
         "wheel": np.full(6, 10.0, np.float32),
         "attacks": [{"log": "a.csv", "first": 1, "last": 2}],
         "before": lambda log: {t: np.zeros(len(SIGNALS), np.float32) for t in times},
-        "min_speed": 5.0,
+        "min_speed": 5.0, "period": 0.1,
         "dataset": {name: dict(WHERE, path=f"{name}s/20260101-000000")
                     for name in ("test_set", "log_split", "grid")}})
     return scored
@@ -144,11 +144,6 @@ def test_a_model_with_no_threshold_is_refused(tmp_path, hub, monkeypatch):
         {"model": "pca", "k": 4, "threshold": 0.5}]
     with pytest.raises(ValueError):
         run(tmp_path)
-
-
-def test_period_comes_from_the_commonest_step():
-    times = np.array([0.0, 0.1, 0.2, 0.3, 30.0, 30.1])   # one recording gap
-    assert abs(run_test_set.period_of(times) - 0.1) < 1e-9
 
 
 def test_an_attack_is_measured_by_the_largest_change_it_made():
