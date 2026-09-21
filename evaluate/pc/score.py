@@ -1,10 +1,10 @@
 """Count what each detector catches on the attacked test rows.
 
-    python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild] [--int8]
+    python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 
-The models and their thresholds come from a directory `evaluate.calibrate` wrote. With
-`--int8` each model is its int8 file, from the directory `deploy.quantize` made from the
-same fit at the same `TARGET`.
+The models and their thresholds come from a directory `evaluate.calibrate` wrote. When
+it took the thresholds with ONNX files, each model is its ONNX file of the same
+precision.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import torch
 from assemble.attack_set import fetch_attack_set
 from assemble.train_set import read_train_set
 from common.cli import arguments
-from common.hub_dirs import find, read_dir, reuse_or_make
+from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from evaluate.counting import (alarms, moved_by, persistent,
                                prepare_scoring_input, touched)
@@ -37,24 +37,6 @@ def fetch_thresholds(directory, runs_dir):
                             directory["revision"])
     with open(os.path.join(folder, "thresholds.json")) as f:
         return folder, json.load(f), meta
-
-
-def find_quantize(runs_repo, thresholds_meta, runs_dir):
-    """The `quantize/` directory made from the fit the thresholds were taken for.
-
-    It is the one quantized at the `TARGET` of the thresholds.
-    """
-    models_path = thresholds_meta["models"]["path"]
-    exported = find(runs_repo, "onnx", {"models": models_path}, runs_dir)
-    if exported is None:
-        raise ValueError(f"no onnx directory is made from {models_path}")
-    target = thresholds_meta["inputs"]["target"]
-    quantized = find(runs_repo, "quantize", {"onnx": exported["path"], "target": target},
-                     runs_dir)
-    if quantized is None:
-        raise ValueError(f"no quantize directory is made from {exported['path']} at "
-                         f"TARGET {target}")
-    return quantized
 
 
 def fetch_scale(directory, local_dir):
@@ -133,7 +115,7 @@ def score_models(thresholds, scorer_of, rows_to_score, attacks_to_check, setting
 
 
 def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
-                 thresholds_meta, onnx_files, local_dir, runs_dir, settings):
+                 thresholds_meta, local_dir, runs_dir, settings):
     """Score the attack set, and write what each detector caught.
 
     `detection.json` gets one entry per detector. It holds the threshold the detector
@@ -141,9 +123,10 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
     `HOLD`. `attacks.json` lists the attacks that were actually injected, where each
     one was and how far it moved a row. What comes back goes into `meta.json`.
 
-    Each model scores in torch, or with its ONNX file when `onnx_files` names the
-    directory and the precision of them.
+    Each model scores as it did when its threshold was taken, in torch, or with its
+    ONNX file of the precision the thresholds record.
     """
+    onnx_files = thresholds_meta["onnx_files"]
     if onnx_files is None:
         models = thresholds_meta["models"]
         weights, _ = fetch_models(models["repo"], models["revision"], models["path"],
@@ -151,8 +134,8 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
         scorer_of = torch_scorer(weights)
         runtime = {"torch": torch.__version__}
     else:
-        # the ONNX files come with thresholds of their own
-        onnx_folder, thresholds, _ = fetch_thresholds(onnx_files, runs_dir)
+        onnx_folder, _ = read_dir(onnx_files["repo"], onnx_files["path"], runs_dir,
+                                  onnx_files["revision"])
         scorer_of = onnx_scorer(onnx_folder, onnx_files["precision"])
         runtime = {"onnxruntime": onnxruntime.__version__}
     scale = fetch_scale(thresholds_meta["train_set"], local_dir)
@@ -184,29 +167,22 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
 
 
 def main(repo, revision, attack_path, local_dir, runs_repo, runs_revision,
-         thresholds_path, runs_dir, rebuild=False, int8=False):
+         thresholds_path, runs_dir, rebuild=False):
     settings = Settings()
     attack_set_directory = {"repo": repo, "revision": revision, "path": attack_path}
     thresholds_directory = {"repo": runs_repo, "revision": runs_revision,
                             "path": thresholds_path}
     _, thresholds, thresholds_meta = fetch_thresholds(thresholds_directory, runs_dir)
-    onnx_files, onnx_path = None, None
-    if int8:
-        # the int8 files are in the directory quantize made from the fit
-        onnx_files = {**find_quantize(runs_repo, thresholds_meta, runs_dir),
-                      "precision": "int8"}
-        onnx_path = onnx_files["path"]
     inputs = {"attack_set": attack_path, "thresholds": thresholds_path,
-              "onnx_files": onnx_path, "moved": settings.MOVED, "hold": settings.HOLD}
+              "moved": settings.MOVED, "hold": settings.HOLD}
     return reuse_or_make(runs_repo, "scores", inputs, runs_dir,
                          lambda folder: write_scores(folder, attack_set_directory,
                                                      thresholds_directory, thresholds,
-                                                     thresholds_meta, onnx_files,
-                                                     local_dir, runs_dir, settings),
+                                                     thresholds_meta, local_dir,
+                                                     runs_dir, settings),
                          rebuild)
 
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "attack_path", "local_dir", "runs_repo",
-                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False,
-                    int8=False))
+                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False))

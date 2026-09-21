@@ -3,8 +3,8 @@
 `score` counts the attacks each detector catches on the attacked test rows. A detector
 is the instant rules, or the rules together with one model. The models and their thresholds
 come from a directory [calibrate](calibrate.md) wrote, so nothing is fitted or
-thresholded here. With `--int8` each model is its int8 file, and its threshold the one
-[quantize](../../deploy/docs/quantize.md) took.
+thresholded here. When calibrate took the thresholds with ONNX files, each model is
+its ONNX file of the same precision.
 
 An [attack set](../../assemble/docs/attack_set.md) holds two things: the attacked test
 logs as rows on the grid, and the same logs as CAN frames. `score` reads the rows. The
@@ -15,7 +15,7 @@ It writes one directory of the runs repository, `scores/<time>/`.
 ## Running it
 
 ```
-python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild] [--int8]
+python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 ```
 
 | argument | |
@@ -29,11 +29,6 @@ python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_rep
 | `thresholds/<time>` | the thresholds the models run at. The models themselves are read too |
 | `runs_dir` | local folder `scores/<time>/` is written to, kept after the upload |
 | `--rebuild` | run again even if `runs_repo` already holds a directory with the same `inputs` |
-| `--int8` | score each model with its int8 file instead of its weights |
-
-With `--int8` the int8 files are looked up in `runs_repo` as it is now. They are the
-`quantize/` made from the `onnx/` of the thresholds' fit, at the thresholds' `TARGET`. It
-stops when there is none.
 
 It writes these files into `runs_dir/scores/<time>/` and uploads that directory to
 `runs_repo` as `scores/<time>/`.
@@ -46,9 +41,9 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 
 | field in `meta.json` | holds |
 |---|---|
-| `inputs` | `attack_sets/<time>`, `thresholds/<time>`, the `quantize/<time>` with `--int8` or null as `onnx_files`, `MOVED` and `HOLD`. A later call with the same `inputs` reuses this directory |
+| `inputs` | `attack_sets/<time>`, `thresholds/<time>`, `MOVED` and `HOLD`. A later call with the same `inputs` reuses this directory |
 | `thresholds`, `models` | the directories the thresholds and the weights came from, each a repo, a revision and a path |
-| `onnx_files` | the directory the ONNX files came from, and their `precision`. Null when the models scored in torch |
+| `onnx_files` | the directory the ONNX files came from, and their `precision`, as the thresholds record it. Null when the models scored in torch |
 | `attack_set`, `split`, `grid` | the dataset directories the rows came from |
 | `min_speed` | the speed a row had to exceed to be counted |
 | `rows` | how many attacked rows were read |
@@ -61,8 +56,9 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 
 ## What int8 costs
 
-Score the same attack set and thresholds once without `--int8` and once with it. The
-rows, the rules and the counting are the same for both. The arithmetic that scores a
+Score the same attack set twice, once with thresholds calibrate took in torch and once
+with thresholds it took with the int8 files of the same fit. The rows, the rules and
+the counting are the same for both. The arithmetic that scores a
 row is the only difference, so the gap between the two is what the quantization costs.
 
 ## When an alarm counts as catching an attack

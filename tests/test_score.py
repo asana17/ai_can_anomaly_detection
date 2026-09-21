@@ -2,7 +2,6 @@ import json
 import os
 
 import numpy as np
-import pytest
 import torch
 
 from assemble.scale import Scale
@@ -59,7 +58,9 @@ def stand_in(monkeypatch, hub):
     where = {"repo": "u/runs", "revision": "abc", "path": "models/t"}
     hub.files = {
         "thresholds/t/meta.json": {
-            "inputs": {"models": "models/t", "target": 0.001}, "models": where,
+            "inputs": {"models": "models/t", "target": 0.001, "onnx_files": None,
+                       "precision": None},
+            "models": where, "onnx_files": None,
             "train_set": dict(where, repo="u/d", path="train_sets/t")},
         "thresholds/t/thresholds.json": [{"model": "pca", "k": 2, "threshold": 0.5}]}
     monkeypatch.setattr(score, "fetch_models", lambda *args: (
@@ -102,17 +103,17 @@ def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
 
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"attack_set": "attack_sets/t",
-                              "thresholds": "thresholds/t", "onnx_files": None,
+                              "thresholds": "thresholds/t",
                               "moved": Settings().MOVED,
                               "hold": list(Settings().HOLD)}
     assert meta["attacks"] == 1 and meta["attacks_scorable"] == 1
     assert meta["rows"] == 6
 
 
-def int8_stand_in(monkeypatch, tmp_path, hub, quantized_at=0.001):
+def int8_stand_in(monkeypatch, tmp_path, hub):
     """What `stand_in` holds, with the model a nonlinear autoencoder and its int8 file.
 
-    The thresholds were taken at `TARGET` 0.001, and the int8 file at `quantized_at`.
+    The thresholds were taken with the int8 file.
     """
     stand_in(monkeypatch, hub)
     torch.manual_seed(0)
@@ -121,36 +122,30 @@ def int8_stand_in(monkeypatch, tmp_path, hub, quantized_at=0.001):
     write_onnx_files([(onnx_name(MODEL), net)], len(SIGNALS), str(tmp_path / "float"))
     write_int8_files([onnx_name(MODEL)], str(tmp_path / "float"), rows,
                      str(tmp_path / "quantize" / "t"), batch=16)
+    onnx_files = {"repo": "u/runs", "revision": "abc", "path": "quantize/t",
+                  "precision": "int8"}
+    hub.files["thresholds/t/meta.json"].update(
+        inputs={"models": "models/t", "target": 0.001, "onnx_files": "quantize/t",
+                "precision": "int8"},
+        onnx_files=onnx_files)
     hub.files.update({
-        "thresholds/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.5}],
-        "onnx/t/meta.json": {"inputs": {"models": "models/t"}},
-        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t", "target": quantized_at}},
-        "quantize/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.25}]})
+        "thresholds/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.25}],
+        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t", "target": 0.001}}})
 
     def no_weights(*args):
         raise AssertionError("an int8 file needs no weights")
     monkeypatch.setattr(score, "fetch_models", no_weights)
 
 
-def run_int8(tmp_path):
-    return score.main("u/d", "abc", "attack_sets/t", str(tmp_path), "u/runs", "def",
-                      "thresholds/t", str(tmp_path), int8=True)
-
-
-def test_int8_scores_each_model_with_its_int8_file(tmp_path, hub, monkeypatch):
+def test_thresholds_taken_with_onnx_files_score_with_them(tmp_path, hub,
+                                                            monkeypatch):
     int8_stand_in(monkeypatch, tmp_path, hub)
-    made = run_int8(tmp_path)
+    made = score.main("u/d", "abc", "attack_sets/t", str(tmp_path), "u/runs", "def",
+                      "thresholds/t", str(tmp_path))
 
     caught = json.load(open(tmp_path / made["path"] / "detection.json"))
     assert caught[1]["model"] == "nonlinear ae"
-    assert caught[1]["threshold"] == 0.25, "the threshold comes from quantize"
+    assert caught[1]["threshold"] == 0.25
     meta = json.load(open(tmp_path / made["path"] / "meta.json"))
-    assert meta["inputs"]["onnx_files"] == "quantize/t"
     assert meta["onnx_files"]["precision"] == "int8"
-
-
-def test_int8_files_quantized_at_another_target_are_not_scored(tmp_path, hub,
-                                                               monkeypatch):
-    int8_stand_in(monkeypatch, tmp_path, hub, quantized_at=0.01)
-    with pytest.raises(ValueError):
-        run_int8(tmp_path)
+    assert "onnxruntime" in meta["versions"]
