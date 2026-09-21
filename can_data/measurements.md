@@ -33,6 +33,20 @@ Over 1,200 logs and 60,001,200 frames.
 Rates are the median gap per (PGN, source address) stream, not frames divided by
 log duration. The latter understates any log that contains a gap.
 
+### The nine decoded PGNs
+
+Over every log, 11,194 of them, holding 218,251,623 frames of the nine PGNs this
+repo decodes.
+
+- **One source address.** Every one of those frames comes from `230`. No other
+  address sends the nine, so a slot per PGN holds what a slot per CAN ID would, which
+  is what [signal_state](../preprocess/docs/signal_state.md) keeps.
+- **Reserved values arrive only while the truck stands.** Not one comes while the
+  wheel speed before it is above 5 km/h. `steering_angle` has the most at 398,974
+  frames and `brake_pedal` the fewest at 1,947. Only `clutch_slip` (16,721) and
+  `input_shaft_speed` (3,509) ever send the `0xFE` error. The rows the model and the
+  rules see are therefore untouched by how a reserved value is read.
+
 ### The gearbox
 
 A 12 speed box. Grouping the gridded rows by current gear, engine speed over wheel
