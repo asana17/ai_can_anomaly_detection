@@ -1,10 +1,10 @@
 """Fit every model on a train set, and keep the fitted models.
 
-    python3 -m evaluate.fit repo revision train_sets/<time> local_dir runs_repo runs_dir [--models models.json] [--rebuild]
+    python3 -m models.fit repo revision train_sets/<time> local_dir runs_repo runs_dir [--models models.json] [--rebuild]
 
 The models are the ones `models.json` beside this file lists, the list this
 repository's own experiments use, unless `--models` names another file.
-`evaluate.calibrate` reads their thresholds off the calibration rows.
+`models.calibrate` reads their thresholds off the calibration rows.
 """
 
 from __future__ import annotations

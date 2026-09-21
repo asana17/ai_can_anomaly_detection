@@ -7,7 +7,7 @@ import torch
 
 from deploy.export import write_onnx_files
 from deploy.quantize import write_int8_files
-from evaluate import score
+from scoring import score
 from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
 from models.onnx_files import onnx_name, onnx_residuals

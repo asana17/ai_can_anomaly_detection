@@ -20,7 +20,7 @@ from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.fit import fetch_fitted_models
+from models.fit import fetch_fitted_models
 from models.fits import model_from
 from models.onnx_files import onnx_name
 from models.torch_files import scale_of

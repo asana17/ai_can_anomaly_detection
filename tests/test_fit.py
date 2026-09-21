@@ -3,8 +3,8 @@ import os
 
 import numpy as np
 
-from evaluate import fit
-from evaluate.fit import MODELS, models_in
+from models import fit
+from models.fit import MODELS, models_in
 from models.fits import Pca, as_dict
 from preprocess.features.signal_state import SIGNALS
 

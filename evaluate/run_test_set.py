@@ -1,8 +1,8 @@
 """Count what each detector catches on the attacked test rows.
 
-    python3 -m evaluate.pc.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+    python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 
-The models and their thresholds come from a directory `evaluate.calibrate` wrote. The
+The models and their thresholds come from a directory `models.calibrate` wrote. The
 test set is scored with them, as the calibration set was.
 """
 
@@ -21,8 +21,8 @@ from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from detect.alarm import alarmed_rows
 from evaluate.count_alarms import attacks_with_a_flagged_row, count_alarms
-from evaluate.fit import fetch_fitted_models
-from evaluate import score
+from models.fit import fetch_fitted_models
+from scoring import score
 from models.torch_files import scale_of
 
 

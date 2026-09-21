@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from common.settings import Settings
-from evaluate import calibrate
+from models import calibrate
 
 REVISION = "ab" * 20
 COMMIT = "de" * 20

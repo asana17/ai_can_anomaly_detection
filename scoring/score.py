@@ -1,6 +1,6 @@
 """Score every row of a set with each fitted model, and flag the rows a rule hits.
 
-    python3 -m evaluate.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
 
 `<set>` is `calibration_sets/<time>` or `test_sets/<time>`. With `--onnx_files` each
 model is its ONNX file of `precision` in that directory, made from the same fit.
@@ -22,7 +22,7 @@ from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.fit import fetch_fitted_models
+from models.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import scale_of, torch_scorer

@@ -7,7 +7,7 @@ import torch
 
 from common.settings import Settings
 from detect.alarm import alarmed_rows
-from evaluate.pc import run_test_set
+from evaluate import run_test_set
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
