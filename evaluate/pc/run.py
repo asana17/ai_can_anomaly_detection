@@ -13,7 +13,7 @@ import torch
 
 from common.load_dataset import arrays_from, attacks_from, fetch
 from common.settings import Settings
-from evaluate.counting import detection, scored_set, training_rows
+from evaluate.counting import detection, prepare_scoring_input, training_rows
 from evaluate.pc.record import end_run, start_run
 from models.autoencoder import LinearAutoencoder, NonlinearAutoencoder, fit
 from models.autoencoder import residuals as reconstruction_errors
@@ -36,11 +36,13 @@ def main(repo, revision, out_dir, runs_repo, runs_dir):
           f"train {data['rows'].shape}, {len(got['attacks'])} attacks", flush=True)
 
     tr, calibrate = training_rows(data, scale, settings)
-    test = scored_set(got, scale, settings)
-    rows, mv, quiet, rules = test["rows"], test["mv"], test["quiet"], test["rules"]
-    attacks, scored, hours = test["attacks"], test["scored"], test["hours"]
+    rows_to_score, attacks_to_check = prepare_scoring_input(got, scale, settings)
+    rows, mv = rows_to_score["rows"], rows_to_score["mv"]
+    quiet, rules, hours = (rows_to_score["quiet"], rows_to_score["rules"],
+                           rows_to_score["hours"])
+    attacks, scored = attacks_to_check["injected"], attacks_to_check["scorable"]
     print(f"moving rows: train {len(tr)}, calibration {len(calibrate)}, "
-          f"test {int(test['truth'].sum())}. "
+          f"test {int(mv.sum())}. "
           f"{int(scored.sum())} attacks reach a moving row and moved it")
 
     passed = quiet & ~rules                 # no attack and no rule, like calibration rows
@@ -102,7 +104,7 @@ def main(repo, revision, out_dir, runs_repo, runs_dir):
     # with a model added, a row is flagged when a rule or the model flags it
     detections = []
     for name, flag in detectors:
-        cells = detection(flag, test, settings)
+        cells = detection(flag, rows_to_score, attacks_to_check, settings)
         print(f"{name:>{width}}   "
               + "  ".join(f"{c['found']:>7}/{int(scored.sum()):<3d}" for c in cells)
               + "   " + "  ".join(f"{c['alarms_per_hour']:12.1f}" for c in cells))

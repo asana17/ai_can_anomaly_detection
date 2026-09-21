@@ -92,26 +92,40 @@ def moved_by(attack, attacked, std):
                                     / std) for i in changed))
 
 
-def scored_set(got, scale, settings):
-    """The attacked rows, what a detector reads in them, and what an alarm is counted in."""
+def prepare_scoring_input(got, scale, settings):
+    """Work out what a detector reads and what it is judged against.
+
+    The rows come back first, then the attacks. `rows_to_score` holds the rows a
+    detector reads (`rows`), which of them are above `MIN_SPEED` (`mv`), which carry
+    no attack (`quiet`), where a rule fires (`rules`), the segment ids (`seg`), and how
+    many hours the quiet rows cover.
+
+    `attacks_to_check` holds every attack that was injected (`injected`), and which of
+    them are scorable (`scorable`). An attack is scorable when it reaches a row whose
+    speed before the attack was above `MIN_SPEED`, and moved a row by at least `MOVED`.
+    The rest are left out of the rate, since no detector could be asked to catch them.
+    """
     mv = moving(scale.undo(got["rows"]), min_speed=settings.MIN_SPEED)
-    truth = got["wheel"] > settings.MIN_SPEED   # what is scored, the speed before it
+    truth = got["wheel"] > settings.MIN_SPEED   # the speed before the attack
     quiet = truth & ~got["label"]
     moved = np.array([a["moved"] for a in got["attacks"]])
-    return {"rows": got["rows"], "seg": got["seg"],
-            "mv": mv,                           # what a detector reads, attack included
-            "truth": truth, "quiet": quiet, "attacks": got["attacks"],
-            "rules": rule_hits(got["raw"], settings) & mv,
-            "scored": touched(truth, got["attacks"]) & (moved >= settings.MOVED),
-            "hours": float(quiet.sum() * period_of(got["t"]) / 3600)}
+    rows_to_score = {"rows": got["rows"], "seg": got["seg"], "mv": mv, "quiet": quiet,
+                     "rules": rule_hits(got["raw"], settings) & mv,
+                     "hours": float(quiet.sum() * period_of(got["t"]) / 3600)}
+    attacks_to_check = {"injected": got["attacks"],
+                        "scorable": (touched(truth, got["attacks"])
+                                     & (moved >= settings.MOVED))}
+    return rows_to_score, attacks_to_check
 
 
-def detection(flag, test, settings):
+def detection(flag, rows_to_score, attacks_to_check, settings):
     """How many attacks a flag finds at each `HOLD`, and how many alarms it raises."""
     out = []
     for need in settings.HOLD:
-        on = persistent(test["rules"] | flag, test["seg"], need)
+        on = persistent(rows_to_score["rules"] | flag, rows_to_score["seg"], need)
         out.append({"hold": need,
-                    "found": found(on, test["attacks"], test["scored"]),
-                    "alarms_per_hour": alarms(on & test["quiet"]) / test["hours"]})
+                    "found": found(on, attacks_to_check["injected"],
+                                   attacks_to_check["scorable"]),
+                    "alarms_per_hour": (alarms(on & rows_to_score["quiet"])
+                                        / rows_to_score["hours"])})
     return out

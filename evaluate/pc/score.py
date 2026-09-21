@@ -20,7 +20,8 @@ from assemble.attack_set import fetch_attack_set
 from assemble.train_set import read_train_set
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.counting import alarms, moved_by, persistent, scored_set, touched
+from evaluate.counting import (alarms, moved_by, persistent,
+                               prepare_scoring_input, touched)
 from evaluate.fit import fetch_models
 from models.fits import model_from
 
@@ -41,28 +42,28 @@ def fetch_scale(directory, local_dir):
     return scale
 
 
-def false_positive_rate(flag, test):
+def false_positive_rate(flag, rows_to_score):
     """How often the model flags a row that has no attack on it."""
-    clean = test["quiet"] & ~test["rules"]
+    clean = rows_to_score["quiet"] & ~rows_to_score["rules"]
     return float((flag & clean).sum() / clean.sum())
 
 
-def alarming_rows(flag, test, need):
+def alarming_rows(flag, rows_to_score, need):
     """Raise an alarm where the flag has continued for `need` rows."""
-    return persistent(test["rules"] | flag, test["seg"], need)
+    return persistent(rows_to_score["rules"] | flag, rows_to_score["seg"], need)
 
 
-def attacks_caught(alarmed, test):
+def attacks_caught(alarmed, attacks_to_check):
     """Match the alarms against the attacks, and count the attacks they landed in."""
-    caught = touched(alarmed, test["attacks"])
+    caught = touched(alarmed, attacks_to_check["injected"])
     return {"found": int(caught.sum()),
-            "found_moved": int((caught & test["scored"]).sum()),
+            "found_scorable": int((caught & attacks_to_check["scorable"]).sum()),
             "caught": [int(at) for at in np.flatnonzero(caught)]}
 
 
-def false_alarm_rate(alarmed, test):
+def false_alarm_rate(alarmed, rows_to_score):
     """Divide the false alarms by the hours the attack set covers."""
-    return float(alarms(alarmed & test["quiet"]) / test["hours"])
+    return float(alarms(alarmed & rows_to_score["quiet"]) / rows_to_score["hours"])
 
 
 def preprocess_attack_set(directory, local_dir, scale):
@@ -75,31 +76,35 @@ def preprocess_attack_set(directory, local_dir, scale):
     return attacked
 
 
-def counted(flag, test, settings):
+def counted(flag, rows_to_score, attacks_to_check, settings):
     """Everything one detector is judged on, at each `HOLD`."""
-    kept = {"false_positive_rate": false_positive_rate(flag, test)}
+    kept = {"false_positive_rate": false_positive_rate(flag, rows_to_score)}
     for need in settings.HOLD:
-        alarmed = alarming_rows(flag, test, need)
-        kept[str(need)] = {**attacks_caught(alarmed, test),
-                           "alarms_per_hour": false_alarm_rate(alarmed, test)}
+        alarmed = alarming_rows(flag, rows_to_score, need)
+        kept[str(need)] = {**attacks_caught(alarmed, attacks_to_check),
+                           "alarms_per_hour": false_alarm_rate(alarmed, rows_to_score)}
     return kept
 
 
-def score_rules(test, settings):
+def score_rules(rows_to_score, attacks_to_check, settings):
     """Score the rules on their own, the detector every model is compared against."""
     # the rules are added to every flag, so a flag of nothing leaves the rules alone
-    return {"detector": "rules", **counted(np.zeros_like(test["rules"]), test, settings)}
+    nothing = np.zeros_like(rows_to_score["rules"])
+    return {"detector": "rules",
+            **counted(nothing, rows_to_score, attacks_to_check, settings)}
 
 
-def score_models(thresholds, weights, test, settings):
+def score_models(thresholds, weights, rows_to_score, attacks_to_check, settings):
     """Score each model with the rules, at the threshold calibrate gave it."""
+    rows = rows_to_score["rows"]
     kept = []
     for entry in thresholds:
         model = model_from({name: value for name, value in entry.items()
                             if name != "threshold"})    # the rest describes the model
-        scores = model.load(weights, test["rows"].shape[1])(test["rows"])
-        flag = (scores > entry["threshold"]) & test["mv"]
-        kept.append({**entry, **counted(flag, test, settings)})
+        scores = model.load(weights, rows.shape[1])(rows)
+        flag = (scores > entry["threshold"]) & rows_to_score["mv"]
+        kept.append({**entry,
+                     **counted(flag, rows_to_score, attacks_to_check, settings)})
         print(f"{model.name} scored", flush=True)
     return kept
 
@@ -121,22 +126,25 @@ def write_scores(folder, attack_set_directory, thresholds_directory, local_dir,
     attacked = preprocess_attack_set(attack_set_directory, local_dir, scale)
 
     settings = replace(settings, MIN_SPEED=attacked["min_speed"])
-    test = scored_set(attacked, scale, settings)
-    print(f"{int(test['scored'].sum())} of {len(attacked['attacks'])} attacks moved a "
-          f"scored row, in {test['hours']:.1f} hours", flush=True)
+    rows_to_score, attacks_to_check = prepare_scoring_input(attacked, scale, settings)
+    print(f"{int(attacks_to_check['scorable'].sum())} of "
+          f"{len(attacked['attacks'])} attacks are scorable, in "
+          f"{rows_to_score['hours']:.1f} hours", flush=True)
 
     with open(os.path.join(folder, "detection.json"), "w") as f:
-        json.dump([score_rules(test, settings),
-                   *score_models(thresholds, weights, test, settings)], f, indent=2)
+        json.dump([score_rules(rows_to_score, attacks_to_check, settings),
+                   *score_models(thresholds, weights, rows_to_score, attacks_to_check,
+                                 settings)], f, indent=2)
     with open(os.path.join(folder, "attacks.json"), "w") as f:
         json.dump([{"log": a["log"], "first": a["first"], "last": a["last"],
                     "moved": a["moved"]} for a in attacked["attacks"]], f, indent=2)
 
     return {"thresholds": thresholds_directory, "models": models,
             **attacked["dataset"],
-            "min_speed": settings.MIN_SPEED, "rows": len(test["rows"]),
+            "min_speed": settings.MIN_SPEED, "rows": len(rows_to_score["rows"]),
             "attacks": len(attacked["attacks"]),
-            "attacks_moved": int(test["scored"].sum()), "hours": float(test["hours"]),
+            "attacks_scorable": int(attacks_to_check["scorable"].sum()),
+            "hours": float(rows_to_score["hours"]),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "platform": platform.platform()}}
 

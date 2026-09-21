@@ -14,7 +14,7 @@ import numpy as np
 from common.load_dataset import arrays_from, attacks_from, fetch
 from common.hub_dirs import download
 from common.settings import Settings
-from evaluate.counting import detection, scored_set, training_rows
+from evaluate.counting import detection, prepare_scoring_input, training_rows
 from models.autoencoder import NonlinearAutoencoder, residuals
 from quantize.export import load, onnx_residuals, threshold_for
 
@@ -24,7 +24,7 @@ def rows_for(out_dir, settings):
     data = arrays_from(out_dir, settings)
     _, calibration = training_rows(data, data["scale"], settings)
     got = attacks_from(out_dir, settings)
-    return calibration, scored_set(got, data["scale"], settings)
+    return calibration, prepare_scoring_input(got, data["scale"], settings)
 
 
 def models_in(export_dir):
@@ -47,10 +47,10 @@ def sources_for(run_dir, export_dir, k, h, signals):
 def main(repo, revision, out_dir, runs_repo, runs_dir, *exports):
     settings = Settings()
     fetch(repo, revision, out_dir)
-    calibration, test = rows_for(out_dir, settings)
-    scored = int(test["scored"].sum())
+    calibration, (rows_to_score, attacks_to_check) = rows_for(out_dir, settings)
+    scored = int(attacks_to_check["scorable"].sum())
     print(f"{len(calibration)} calibration rows, {scored} attacks scored in "
-          f"{test['hours']:.1f} hours", flush=True)
+          f"{rows_to_score['hours']:.1f} hours", flush=True)
 
     for exported in exports:
         export_dir = download(runs_repo, f"quantize/{exported}", runs_dir)
@@ -65,8 +65,8 @@ def main(repo, revision, out_dir, runs_repo, runs_dir, *exports):
             for name, score in sources.items():
                 # the model and the int8 ONNX keep a threshold of their own scores
                 cut = threshold_for(score(calibration), settings.TARGET)
-                cells = detection((score(test["rows"]) > cut) & test["mv"], test,
-                                  settings)
+                flag = (score(rows_to_score["rows"]) > cut) & rows_to_score["mv"]
+                cells = detection(flag, rows_to_score, attacks_to_check, settings)
                 print(f"{f'k={k} h={h}':>12}  {name:>6}  {cut:12.6g}  "
                       + "  ".join(f"{c['found']:>7}/{scored:<3d}" for c in cells)
                       + "   " + "  ".join(f"{c['alarms_per_hour']:12.1f}" for c in cells),

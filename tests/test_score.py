@@ -12,36 +12,38 @@ from preprocess.features.signal_state import SIGNALS
 WHEEL = SIGNALS.index("wheel_speed")
 
 
-def a_test(scored=np.array([True])):
+def a_test(scorable=np.array([True])):
     """Six rows, one attack over rows 1 and 2, four rows nothing flags."""
-    return {"rules": np.zeros(6, bool),
-            "quiet": np.array([True, False, False, True, True, True]),
-            "seg": np.zeros(6, np.int32), "mv": np.ones(6, bool),
-            "attacks": [{"first": 1, "last": 2}], "scored": scored, "hours": 2.0}
+    rows_to_score = {"rules": np.zeros(6, bool),
+                     "quiet": np.array([True, False, False, True, True, True]),
+                     "seg": np.zeros(6, np.int32), "mv": np.ones(6, bool),
+                     "hours": 2.0}
+    attacks_to_check = {"injected": [{"first": 1, "last": 2}], "scorable": scorable}
+    return rows_to_score, attacks_to_check
 
 
-def caught(flag, test, need=1):
+def caught(flag, rows_to_score, attacks_to_check, need=1):
     """What `flag` catches, as `score_models` counts it."""
-    on = score.alarming_rows(flag, test, need)
-    return {**score.attacks_caught(on, test),
-            "alarms_per_hour": score.false_alarm_rate(on, test)}
+    alarmed = score.alarming_rows(flag, rows_to_score, need)
+    return {**score.attacks_caught(alarmed, attacks_to_check),
+            "alarms_per_hour": score.false_alarm_rate(alarmed, rows_to_score)}
 
 
 def test_what_a_flag_catches_and_what_it_costs():
     flag = np.array([False, True, False, False, True, False])
 
-    got = caught(flag, a_test())
+    got = caught(flag, *a_test())
     assert got["found"] == 1, "the attack has a flagged row"
     assert got["caught"] == [0], "and it is the first attack"
     assert got["alarms_per_hour"] == 0.5, "one alarm outside an attack, 2 hours"
-    assert score.false_positive_rate(flag, a_test()) == 0.25
+    assert score.false_positive_rate(flag, a_test()[0]) == 0.25
 
 
 def test_an_attack_that_moved_no_row_is_counted_apart():
     flag = np.array([False, True, False, False, False, False])
 
-    got = caught(flag, a_test(np.array([False])))
-    assert got["found"] == 1 and got["found_moved"] == 0
+    got = caught(flag, *a_test(np.array([False])))
+    assert got["found"] == 1 and got["found_scorable"] == 0
 
 
 def stand_in(monkeypatch):
@@ -92,7 +94,7 @@ def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
                               "thresholds": "thresholds/t",
                               "moved": Settings().MOVED,
                               "hold": list(Settings().HOLD)}
-    assert meta["attacks"] == 1 and meta["attacks_moved"] == 1
+    assert meta["attacks"] == 1 and meta["attacks_scorable"] == 1
     assert meta["rows"] == 6
 
 

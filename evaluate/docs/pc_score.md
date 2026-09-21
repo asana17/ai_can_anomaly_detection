@@ -46,7 +46,7 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 | `min_speed` | the speed a row had to exceed to be counted |
 | `rows` | how many attacked rows were read |
 | `attacks` | how many attacks were injected into the test logs |
-| `attacks_moved` | how many of them moved a row above `min_speed` by at least `MOVED` |
+| `attacks_scorable` | how many of them reach a row above `min_speed` and moved it by at least `MOVED` |
 | `hours` | hours of rows above `min_speed` with no attack in them, what the false alarms are counted over |
 | `versions` | Python, NumPy, torch and the platform |
 | `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
@@ -89,7 +89,7 @@ Under each `HOLD`:
 | key | holds |
 |---|---|
 | `found` | attacks caught, of all the attacks injected |
-| `found_moved` | the same over the attacks that moved a row above `MIN_SPEED` by at least `MOVED` |
+| `found_scorable` | the same over the attacks that reach a row above `MIN_SPEED` and moved it by at least `MOVED` |
 | `alarms_per_hour` | false alarms an hour |
 | `caught` | which attacks were caught, numbered as `attacks.json` lists them |
 
