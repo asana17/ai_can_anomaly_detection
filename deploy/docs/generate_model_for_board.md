@@ -1,13 +1,14 @@
-# generate
+# generate_model_for_board
 
-The board runs C code that ST Edge AI Core generates from an ONNX file. `generate`
-generates that code from every float file of one [export](export.md), and keeps it in
-the runs repository, where it records the code the board ran.
+The board runs C code that ST Edge AI Core generates from an ONNX file.
+`generate_model_for_board` generates that code from every float file of one
+[export](export.md), and keeps it in the runs repository, where it records the code the
+board ran.
 
 ## Running it
 
 ```
-python3 -u -m deploy.generate stedgeai runs_repo runs_dir onnx/<time>
+python3 -u -m deploy.generate_model_for_board stedgeai runs_repo runs_dir onnx/<time>
 ```
 
 | argument | what it is |
@@ -42,9 +43,9 @@ directory and `meta.json` say which model it is.
 | `models` | the models directory the export's weights came from |
 | `target` | the `--target` passed to the generator |
 | `exported` | every model in the directory, as the export lists it |
-| `commit` | the commit of this repository `generate` ran from |
+| `commit` | the commit of this repository `generate_model_for_board` ran from |
 | `uncommitted` | `git status --porcelain` at the start, empty when nothing was changed |
 | `versions` | Python and ST Edge AI Core |
-| `generated` | when `generate` started |
+| `generated` | when `generate_model_for_board` started |
 
 The threshold to compile in is not here. It is in the `thresholds.json` of [calibrate](../../evaluate/docs/calibrate.md).

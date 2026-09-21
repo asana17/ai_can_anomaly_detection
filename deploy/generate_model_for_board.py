@@ -1,6 +1,6 @@
 """Generate C code with ST Edge AI Core from every float ONNX file of an export, and keep it.
 
-    python3 -m deploy.generate stedgeai runs_repo runs_dir onnx/<time>
+    python3 -m deploy.generate_model_for_board stedgeai runs_repo runs_dir onnx/<time>
 """
 
 from __future__ import annotations

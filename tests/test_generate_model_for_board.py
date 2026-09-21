@@ -4,8 +4,8 @@ import sys
 
 import pytest
 
-from deploy import generate as generate_stage
-from deploy.generate import KEPT, generate, models_in
+from deploy import generate_model_for_board
+from deploy.generate_model_for_board import KEPT, generate, models_in
 
 WRITTEN = (*KEPT, "extra.txt")
 
@@ -62,7 +62,7 @@ def test_every_float_file_of_the_export_is_generated(tmp_path, hub):
     models = {"repo": "u/runs", "revision": "abc", "path": "models/t"}
     hub.files = {"onnx/t/meta.json": {"models": models,
                                       "exported": [_entry(8, 64), _entry(2, 32)]}}
-    generate_stage.main(_stedgeai(tmp_path), "u/runs", str(tmp_path), "onnx/t")
+    generate_model_for_board.main(_stedgeai(tmp_path), "u/runs", str(tmp_path), "onnx/t")
 
     path = hub.uploaded[0]["path_in_repo"]
     folder = tmp_path / path
