@@ -46,7 +46,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   [board/docs/goal.md](board/docs/goal.md) is what the board is building towards, the
   TRON Programming Contest 2026 entry, and the order it is built in.
 - [common/](common) holds the settings of a run and reads the dataset, which
-  `evaluate`, `deploy` and `board` all use.
+  `evaluate`, `deploy` and `board` all use. [common/schemas](common/schemas)
+  describes every JSON file a stage uploads.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
   What the runs found is in [evaluate/pc/results.md](evaluate/pc/results.md), and what
   quantizing their models costs is in [deploy/results.md](deploy/results.md).
@@ -74,7 +75,10 @@ J1939's own terms, frame, PGN and SPN, are described in
   `window` into `board/rule_rows.py` first.
 - Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`, and
   fold `common/hf_upload.py` into `common/hub_dirs.py`.
-- Describe `thresholds.json` with a JSON Schema, checked when calibrate writes it.
+- Check the files a stage writes against [common/schemas](common/schemas), in
+  `write_meta` and in each writer. Add `jsonschema` to the requirements. The test
+  fixtures need real revisions and `<kind>/<time>` paths, and the fit and score ones
+  need `split` and `grid`.
 - Pick the rows of a part by time rather than by log. `train_set` still asks which logs
   a row came from, though the split already records when the test block starts and ends.
   Measure how many rows it changes before changing it.
@@ -83,8 +87,10 @@ J1939's own terms, frame, PGN and SPN, are described in
   recorded back to back. Measure what it costs before changing it.
 - Draw the attacks over the test block's time rather than one per log. It changes every
   attack drawn.
+- Record in `attacked.json` which donor log each attack copied from. `source` is a time
+  in that log, and nothing says which log it is. Add `donor` to its schema then.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
-  score one other split, the first 25% of the time as test. The three items above come
+  score one other split, the first 25% of the time as test. The four items above come
   first. Each changes the dataset, so after it the dataset and the runs would be made
   again. Build the train sets with `--rebuild`. The ones on the Hub still hold the slow
   rows under the same inputs.
