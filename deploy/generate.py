@@ -16,8 +16,8 @@ import time
 
 from common.git import git
 from common.hub_dirs import claim, download, upload
-from deploy.export import file_of
 from models.fits import model_from
+from models.onnx_files import onnx_file_path, onnx_name
 
 TARGET = "stm32h5"
 KEPT = ("network.c", "network.h", "network_data.c", "network_data.h",
@@ -66,9 +66,8 @@ def main(stedgeai, runs_repo, runs_dir, export):
             "generated": time.strftime("%Y-%m-%dT%H:%M:%S%z", generated)}
     os.makedirs(dest)
     for model in models:
-        name = file_of(model)
-        generate(stedgeai, os.path.join(export_dir, f"{name}_float.onnx"),
-                 os.path.join(dest, name))
+        generate(stedgeai, onnx_file_path(export_dir, model, "float"),
+                 os.path.join(dest, onnx_name(model)))
     with open(os.path.join(dest, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
     upload(runs_repo, path, runs_dir, f"add {path} from {export}, {len(models)} models")

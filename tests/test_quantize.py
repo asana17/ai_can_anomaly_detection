@@ -8,9 +8,9 @@ from assemble.scale import Scale
 from common.settings import Settings
 from deploy import quantize
 from deploy.export import write_onnx_files
-from deploy.quantize import (int8_thresholds, onnx_residuals, threshold_for,
-                             write_int8_files)
+from deploy.quantize import int8_thresholds, threshold_for, write_int8_files
 from models.autoencoder import NonlinearAutoencoder, residuals
+from models.onnx_files import onnx_residuals
 from preprocess.features.signal_state import SIGNALS
 
 ENTRY = {"model": "nonlinear ae", "k": 4, "hidden": 8, "epochs": 1, "batch": 128,

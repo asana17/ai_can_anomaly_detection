@@ -16,6 +16,7 @@ from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from evaluate.fit import fetch_models
 from models.fits import NonlinearAe, as_dict, models_from
+from models.onnx_files import onnx_name
 
 
 def write_onnx_files(models, signals, dest):
@@ -29,11 +30,6 @@ def write_onnx_files(models, signals, dest):
                           dynamic_axes={"row": {0: "batch"}, "out": {0: "batch"}})
 
 
-def file_of(model):
-    """What the ONNX files of `model` are named."""
-    return f"nonlinear_ae_k{model.k}_h{model.hidden}"
-
-
 def write_export(folder, runs_repo, revision, models_path, runs_dir):
     """Write each nonlinear autoencoder of a fit as float ONNX, and return what to record."""
     weights, models_meta = fetch_models(runs_repo, revision, models_path, runs_dir)
@@ -43,7 +39,7 @@ def write_export(folder, runs_repo, revision, models_path, runs_dir):
     # the board runs a nonlinear autoencoder, so the other models are left out
     wanted = [model for model in models_from(models_meta["inputs"]["models"])
               if isinstance(model, NonlinearAe)]
-    write_onnx_files([(file_of(model), model.network_with_weights(weights, signals))
+    write_onnx_files([(onnx_name(model), model.network_with_weights(weights, signals))
                       for model in wanted], signals, folder)
     return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},
             **{name: models_meta[name] for name in ("train_set", "split", "grid")},

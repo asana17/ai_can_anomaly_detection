@@ -21,10 +21,10 @@ from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from deploy.export import file_of
 from evaluate.calibrate import calibration_rows
 from evaluate.fit import rows_to_fit
 from models.fits import model_from
+from models.onnx_files import onnx_file_path, onnx_name, onnx_residuals
 
 
 class Rows(CalibrationDataReader):
@@ -37,17 +37,6 @@ class Rows(CalibrationDataReader):
     def get_next(self):
         batch = next(self.batches, None)
         return None if batch is None else {self.name: batch.astype(np.float32)}
-
-
-def onnx_residuals(path, rows, batch=8192):
-    """Each row's mean squared reconstruction error from the ONNX file at `path`."""
-    session = onnxruntime.InferenceSession(path, providers=["CPUExecutionProvider"])
-    out = []
-    for fed in np.array_split(np.asarray(rows, dtype=np.float32),
-                              max(len(rows) // batch, 1)):
-        got = session.run(None, {"row": fed})[0]
-        out.append(((got - fed) ** 2).mean(axis=1))
-    return np.concatenate(out)
 
 
 def threshold_for(scores, target):
@@ -73,8 +62,8 @@ def int8_thresholds(exported, calibration, folder, target):
     """Give each int8 file the score above which a row counts as an anomaly."""
     kept = []
     for entry in exported:
-        scores = onnx_residuals(
-            os.path.join(folder, f"{file_of(model_from(entry))}_int8.onnx"), calibration)
+        scores = onnx_residuals(onnx_file_path(folder, model_from(entry), "int8"),
+                                calibration)
         kept.append({**entry, "threshold": threshold_for(scores, target)})
     return kept
 
@@ -90,7 +79,7 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     at = exported["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
 
-    write_int8_files([file_of(model_from(entry)) for entry in exported["exported"]],
+    write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
                      source, rows_to_fit(train_set), folder, settings.BATCH)
     calibration = calibration_rows(train_set, settings)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
