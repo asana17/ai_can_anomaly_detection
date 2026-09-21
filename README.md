@@ -122,12 +122,8 @@ J1939's own terms, frame, PGN and SPN, are described in
   train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
   scale in the models, `detect` holds step 4, and `split_test_logs`, `calibration_set`,
   `train_set` and `test_set` build the sets, and `score`, `calibrate` and
-  `pc.run_test_set` are split as drawn, with their schemas and tests, all done
-  2026-09-22. Row 13 is to be fixed along with the rest.
-
-  | # | what | today | after |
-  |---|---|---|---|
-  | 13 | stage docs | `evaluate/docs/*` | follow rows 1 to 11, place `pc_run.md` |
+  `pc.run_test_set` are split as drawn, with their schemas and tests, and the stage
+  docs follow them, all done 2026-09-22.
 
   - Build the log split and the three sets again. Their inputs changed, so no
     `--rebuild` is needed. The stages after them follow the new paths.
@@ -151,9 +147,11 @@ J1939's own terms, frame, PGN and SPN, are described in
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
   waits for `score`, and more rows wait for fetching them from the dataset. Step 4 is
-  under way. The nine instant rules are C headers in `board/lib/rules/`, matched with
-  `rules/` on the PC. What else goes to C is listed in goal.md, What goes to C. Next
-  is the threshold and `HOLD` of `detect/alarm.py` in C, then the anomaly task.
+  under way. The nine instant rules with their OR, and the threshold and `HOLD` of
+  `detect/alarm.py`, are C in `board/lib/`, matched with the PC in the tests. The
+  anomaly task ties them to the model in the `anomaly_from_flash` application, written
+  and not built or flashed yet. What else goes to C is listed in goal.md, What goes to
+  C.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
