@@ -5,7 +5,7 @@ import sys
 import pytest
 
 from deploy import generate_model_for_board
-from deploy.generate_model_for_board import KEPT, generate, models_in
+from deploy.generate_model_for_board import KEPT, TARGET, generate
 
 WRITTEN = (*KEPT, "extra.txt")
 
@@ -36,12 +36,6 @@ def _entry(k, hidden):
             "rate": 0.001, "improvement": 0.0, "patience": 1, "seed": 0}
 
 
-def test_every_model_the_export_lists_is_read_in_its_order(tmp_path):
-    (tmp_path / "meta.json").write_text(json.dumps(
-        {"exported": [_entry(8, 64), _entry(2, 32)]}))
-    assert [(m.k, m.hidden) for m in models_in(str(tmp_path))] == [(8, 64), (2, 32)]
-
-
 def test_only_the_files_named_are_kept(tmp_path):
     dest = tmp_path / "dest"
     generate(_stedgeai(tmp_path), "model.onnx", str(dest))
@@ -62,15 +56,17 @@ def test_every_float_file_of_the_export_is_generated(tmp_path, hub):
     models = {"repo": "u/runs", "revision": "abc", "path": "models/t"}
     hub.files = {"onnx/t/meta.json": {"models": models,
                                       "exported": [_entry(8, 64), _entry(2, 32)]}}
-    generate_model_for_board.main(_stedgeai(tmp_path), "u/runs", str(tmp_path), "onnx/t")
+    made = generate_model_for_board.main(_stedgeai(tmp_path), "u/runs", "def", "onnx/t",
+                                         str(tmp_path))
 
-    path = hub.uploaded[0]["path_in_repo"]
-    folder = tmp_path / path
-    assert path.startswith("board/")
+    folder = tmp_path / made["path"]
+    assert made["path"].startswith("board/")
     assert sorted(os.listdir(folder)) == ["meta.json", "nonlinear_ae_k2_h32",
                                           "nonlinear_ae_k8_h64"]
     assert (folder / "nonlinear_ae_k8_h64" / "network.c").read_text() == str(
         tmp_path / "onnx" / "t" / "nonlinear_ae_k8_h64_float.onnx")
     meta = json.load(open(folder / "meta.json"))
-    assert meta["export"] == "onnx/t" and meta["models"] == models
+    assert meta["onnx"] == {"repo": "u/runs", "revision": "def", "path": "onnx/t"}
+    assert meta["inputs"] == {"onnx": "onnx/t", "target": TARGET}
+    assert meta["models"] == models
     assert meta["exported"] == [_entry(8, 64), _entry(2, 32)]
