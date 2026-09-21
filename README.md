@@ -140,9 +140,6 @@ J1939's own terms, frame, PGN and SPN, are described in
     too.
   - Split `evaluate.pc.score` into `score`, writing `scores/`, and `pc.detect`,
     writing `detections/`. `calibrate` then reads scores.
-  - List in the board docs what the board runs. `preprocess` without
-    `can_log_loader` and `profile`, `rules`, the model, `detect`. The C goes in
-    `board/lib/`, a folder per part, and the Python stays outside `board`.
   - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
     A diagram of the old layout is in `git stash`, stale.
   - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
@@ -161,9 +158,10 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
-  waits for `score`, and more rows wait for fetching them from the dataset. Next is
-  step 4. Write the rules in C one at a time and test them against `rules/` on the PC,
-  then put them in the anomaly task on the board.
+  waits for `score`, and more rows wait for fetching them from the dataset. Step 4 is
+  under way. The nine instant rules are C headers in `board/lib/rules/`, matched with
+  `rules/` on the PC. What else goes to C is listed in goal.md, What goes to C. Next
+  is the threshold and `HOLD` of `detect/alarm.py` in C, then the anomaly task.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
