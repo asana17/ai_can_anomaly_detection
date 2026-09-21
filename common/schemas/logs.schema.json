@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "logs.json",
+  "description": "The logs in the order they were read, and how many rows each contributed.",
+  "type": "object",
+  "properties": {
+    "logs": {
+      "description": "Each log's path under the data directory, in the order read.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rows": {
+      "description": "How many rows each log contributed, in the same order.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  },
+  "required": [
+    "logs",
+    "rows"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "split.json",
+  "description": "The logs of train and test, and the first and last time of the test block.",
+  "type": "object",
+  "properties": {
+    "train": {
+      "description": "The train logs.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "test": {
+      "description": "The test logs.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "test_start": {
+      "description": "The first time of the test block, in epoch seconds.",
+      "type": "number"
+    },
+    "test_end": {
+      "description": "The last time of the test block, in epoch seconds.",
+      "type": "number"
+    }
+  },
+  "required": [
+    "train",
+    "test",
+    "test_start",
+    "test_end"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "attacked.json",
+  "description": "Each attack, its log, and the rows it reaches.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "pgn": {
+        "description": "The PGN replayed.",
+        "type": "integer",
+        "minimum": 0
+      },
+      "start": {
+        "description": "When the replay starts, in epoch seconds.",
+        "type": "number"
+      },
+      "stop": {
+        "description": "When the replay stops, in epoch seconds.",
+        "type": "number"
+      },
+      "source": {
+        "description": "The time in the donor log the replay copies from.",
+        "type": "number"
+      },
+      "log": {
+        "description": "The attacked log's path under the data directory.",
+        "type": "string"
+      },
+      "first": {
+        "description": "The first row the attack reaches, counted over every row of the attack set.",
+        "type": "integer",
+        "minimum": 0
+      },
+      "last": {
+        "description": "The last row the attack reaches, counted the same way.",
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "required": [
+      "pgn",
+      "start",
+      "stop",
+      "source",
+      "log",
+      "first",
+      "last"
+    ],
+    "additionalProperties": false
+  }
+}

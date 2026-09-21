@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "losses.json",
+  "description": "One entry per autoencoder, the model and its mean training loss for each epoch it ran.",
+  "type": "array",
+  "items": {
+    "$ref": "model.schema.json",
+    "properties": {
+      "losses": {
+        "description": "The mean training loss of each epoch it ran. As many losses as its `epochs` means it stopped at that limit rather than converging.",
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 1
+      }
+    },
+    "required": [
+      "losses"
+    ],
+    "unevaluatedProperties": false
+  }
+}

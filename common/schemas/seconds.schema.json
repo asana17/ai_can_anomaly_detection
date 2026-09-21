@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "seconds.json",
+  "description": "Each log's seconds above `min_speed`, counted off the grid, keyed by the log.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "number",
+    "minimum": 0
+  }
+}

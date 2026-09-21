@@ -32,8 +32,8 @@ It writes these files into `local_dir/splits/<time>/` and uploads that directory
 
 | file | holds |
 |---|---|
-| `split.json` | `train` and `test`, the logs of each, and `test_start` and `test_end`, the first and last time of the test block. `read_split` reads it back |
-| `seconds.json` | each log's seconds above `MIN_SPEED`, counted off the grid |
+| `split.json` | `train` and `test`, the logs of each, and the first and last time of the test block, as [split.schema.json](../../common/schemas/split.schema.json) describes. `read_split` reads it back |
+| `seconds.json` | each log's seconds above `MIN_SPEED`, counted off the grid, as [seconds.schema.json](../../common/schemas/seconds.schema.json) describes |
 | `meta.json` | where the split came from, as [meta.splits.schema.json](../../common/schemas/meta.splits.schema.json) describes |
 
 ## Train and test are sized by the seconds above the minimum speed

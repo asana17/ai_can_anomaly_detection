@@ -35,8 +35,8 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 
 | file | holds |
 |---|---|
-| `detection.json` | one entry per detector, the rules first, then each model as the thresholds record it |
-| `attacks.json` | one entry per attack, its log, the rows it reaches, and its `moved` |
+| `detection.json` | one entry per detector, the rules first, then each model as the thresholds record it, as [detection.schema.json](../../common/schemas/detection.schema.json) describes |
+| `attacks.json` | one entry per attack, its log, the rows it reaches, and its `moved`, as [attacks.schema.json](../../common/schemas/attacks.schema.json) describes |
 | `meta.json` | where the rows, the models and the thresholds came from, as [meta.scores.schema.json](../../common/schemas/meta.scores.schema.json) describes |
 
 ## What int8 costs
@@ -71,21 +71,7 @@ the train set. A replay can copy values close to the ones it overwrote, and then
 
 ## What each entry of `detection.json` holds
 
-| key | holds |
-|---|---|
-| `detector` | `rules`, on the first entry only. Every other entry is a model, written as the thresholds record it |
-| `threshold` | the score above which the model flags a row |
-| `false_positive_rate` | the share of rows with no attack and no rule on them that the model flags. Read it against `TARGET` |
-| `"1"`, `"10"` | what it caught at each `HOLD`, below |
-
-Under each `HOLD`:
-
-| key | holds |
-|---|---|
-| `found` | attacks caught, of all the attacks injected |
-| `found_scorable` | the same over the attacks that reach a row above `MIN_SPEED` and moved it by at least `MOVED` |
-| `alarms_per_hour` | false alarms an hour |
-| `caught` | which attacks were caught, numbered as `attacks.json` lists them |
+[detection.schema.json](../../common/schemas/detection.schema.json) describes each entry.
 
 `caught` lists which attacks they were, so `found` can be worked out again over any
 part of them, such as the attacks above some `moved`, or the attacks of one kind once

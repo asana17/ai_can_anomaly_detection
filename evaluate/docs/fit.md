@@ -31,7 +31,7 @@ hours of training.
 | file | holds |
 |---|---|
 | `weights.safetensors` | every fitted model's weights, and `scale.mean` and `scale.std`, the values its rows were z-scored with |
-| `losses.json` | one entry per autoencoder, the model and its mean training loss for each epoch it ran. As many losses as its `epochs` means it stopped at that limit rather than converging |
+| `losses.json` | one entry per autoencoder, the model and its mean training loss for each epoch it ran, as [losses.schema.json](../../common/schemas/losses.schema.json) describes |
 | `meta.json` | what was fitted, and on what, as [meta.models.schema.json](../../common/schemas/meta.models.schema.json) describes |
 
 A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
