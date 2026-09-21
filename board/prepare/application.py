@@ -29,6 +29,8 @@ APPLICATIONS = {
     "rule_check_from_flash": Application(("mbf",)),
     "model_check_from_flash": Application(("mbf", "scale", "model", MODEL), True),
     "ae_reconstruction_from_flash": Application(("scale", "model", MODEL), True),
+    "score_and_detect_from_flash": Application(
+        ("mbf", "moving", "rules", "scale", "model", "detector", MODEL), True),
 }
 
 
