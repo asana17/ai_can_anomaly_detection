@@ -52,6 +52,19 @@ def write_int8_files(names, source, rows, dest, batch):
                             calibrate_method=CalibrationMethod.MinMax)
 
 
+def batch_for(models, settings):
+    """The batch the quantizer feeds rows at, `BATCH`, checked against the fit.
+
+    It stops when an autoencoder was fitted at another batch, since `BATCH` is that
+    one value and the fit reads its own from the `--models` file.
+    """
+    fitted = {entry["batch"] for entry in models if "batch" in entry}
+    if fitted - {settings.BATCH}:
+        raise ValueError(f"the models were fitted at batch {sorted(fitted)}, "
+                         f"and BATCH is {settings.BATCH}")
+    return settings.BATCH
+
+
 def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
                     settings):
     """Write each float file of an export as int8, and return what to record.
@@ -62,12 +75,13 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     at = exported["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
     models = exported["models"]
-    weights, _ = fetch_fitted_models(runs_repo, models["revision"], models["path"],
-                                     runs_dir)
+    weights, fitted = fetch_fitted_models(runs_repo, models["revision"],
+                                          models["path"], runs_dir)
     rows = scale_of(weights).apply(train_set["train"])
 
     write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
-                     source, rows, folder, settings.BATCH)
+                     source, rows, folder,
+                     batch_for(fitted["inputs"]["models"], settings))
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},
             **{name: exported[name]
                for name in ("models", "train_set", "log_split", "grid")},

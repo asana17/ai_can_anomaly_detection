@@ -2,11 +2,13 @@ import json
 import os
 
 import numpy as np
+import pytest
 import torch
 
 from deploy import quantize
 from deploy.export import write_onnx_files
-from deploy.quantize import write_int8_files
+from deploy.quantize import batch_for, write_int8_files
+from common.settings import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals
 from models.onnx_files import onnx_residuals
 from preprocess.features.signal_state import SIGNALS
@@ -14,8 +16,9 @@ from preprocess.features.signal_state import SIGNALS
 REVISION = "ab" * 20
 COMMIT = "de" * 20
 
-ENTRY = {"model": "nonlinear ae", "k": 4, "hidden": 8, "epochs": 1, "batch": 128,
-         "rate": 0.001, "improvement": 0.0, "patience": 1, "seed": 0}
+ENTRY = {"model": "nonlinear ae", "k": 4, "hidden": 8, "epochs": 1,
+         "batch": Settings().BATCH, "rate": 0.001, "improvement": 0.0, "patience": 1,
+         "seed": 0}
 
 
 def _model():
@@ -69,7 +72,8 @@ def exported(monkeypatch, tmp_path):
             "grid": dict(where, path="grids/20260101-000000"), "exported": [ENTRY]}
     monkeypatch.setattr(quantize, "read_dir", lambda *args: (source, meta))
     monkeypatch.setattr(quantize, "fetch_fitted_models", lambda *args: (
-        {"scale.mean": torch.zeros(signals), "scale.std": torch.ones(signals)}, {}))
+        {"scale.mean": torch.zeros(signals), "scale.std": torch.ones(signals)},
+        {"inputs": {"models": [ENTRY]}}))
     raw = np.random.default_rng(0).normal(size=(256, signals)).astype(np.float32)
     raw[:, SIGNALS.index("wheel_speed")] = 10.0
     monkeypatch.setattr(quantize, "fetch_train_set", lambda *args: {
@@ -89,3 +93,14 @@ def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch)
     assert meta["onnx"] == {"repo": "u/runs", "revision": COMMIT,
                             "path": "onnx/20260101-000000"}
     assert meta["models"]["path"] == "models/20260101-000000"
+
+
+def test_a_model_fitted_at_another_batch_stops_it():
+    settings = Settings()
+    with pytest.raises(ValueError):
+        batch_for([dict(ENTRY, batch=settings.BATCH * 2)], settings)
+
+
+def test_pca_alone_leaves_the_batch_to_settings():
+    settings = Settings()
+    assert batch_for([{"model": "pca", "k": 4}], settings) == settings.BATCH
