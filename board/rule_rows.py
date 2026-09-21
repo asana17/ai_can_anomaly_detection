@@ -8,11 +8,22 @@ import sys
 
 import numpy as np
 
-from board.rows import bits, window
 from preprocess.features.signal_state import SIGNALS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HEADER = os.path.join(HERE, "application", "rule_check_from_flash", "raw_rows.h")
+
+
+def window(first, last, total, n):
+    """Return an n-row slice centered on an inclusive attack interval."""
+    start = min(max((first + last + 1 - n) // 2, 0), total - n)
+    return slice(start, start + n)
+
+
+def bits(rows):
+    """Format each float32 value as its exact 32-bit hexadecimal representation."""
+    words = np.ascontiguousarray(rows, dtype=np.float32).view(np.uint32)
+    return [[f"0x{word:08x}" for word in row] for row in words.tolist()]
 
 
 def header(raw: np.ndarray, start: int) -> str:
