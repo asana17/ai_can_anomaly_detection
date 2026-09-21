@@ -22,7 +22,7 @@ flowchart LR
     CAN[CAN receive interrupt] -->|latest frame per ID| SLOT[(slots)]
     CYC[cyclic handler 0.1 s] -. wakes .-> PRE[preprocess 6]
     SLOT --> PRE
-    PRE -->|row queue| DET[detect 8]
+    PRE -->|row queue| DET[anomaly 8]
     DET -->|report queue| REP[report 5]
     REP --> OUT[UART, later CAN transmit]
     DET -. ALARM flag .-> STA[status 10]
@@ -38,7 +38,7 @@ The numbers are task priorities, smaller runs first.
 | cyclic handler | wakes preprocess every 0.1 s | |
 | report 5 | sends each report out, the only part that touches UART or CAN transmit | UART, see below |
 | preprocess 6 | copies the slots, decodes and scales them into one numbered row | drops the oldest row and counts it |
-| detect 8 | runs the rules and the autoencoder on each row, reports anomalies | waits for the report queue |
+| anomaly 8 | runs the rules and the autoencoder on each row, reports anomalies | waits for the report queue |
 | status 10 | every second reports drops, queue space and CPU use, blinks the LED | waits for the report queue |
 
 The interrupt only stores, as a CAN driver does in a car. Signals are last is best, so a
@@ -52,16 +52,17 @@ Preprocessing resets when no slot has changed for 1 s, as the PC does across a g
 Preprocessing copies one slot at a time with interrupts disabled (`DI` and `EI`), so the
 interrupt never meets a half written slot and waits only for one short copy. The queues
 between tasks are message buffers, which the kernel serialises. A full row queue drops
-its oldest row, since detection should see the bus as it is now. The message buffer has
-no such mode, so preprocessing takes one row out with `tk_rcv_mbf` and sends again.
+its oldest row, since the anomaly task should see the bus as it is now. The message
+buffer has no such mode, so preprocessing takes one row out with `tk_rcv_mbf` and sends
+again.
 
-Preprocessing and detection are separate tasks so that each row is taken at its tick
-however long inference runs. Preprocessing sits above detection and preempts it, where
-one task doing both would read the slots late by whatever the previous inference
-overran. The row queue between them absorbs an inference that runs long now and then,
-and keeps the rows consecutive, which a windowed model will need. It should hold only a
-few rows, since a deep queue lets detection judge a bus that has moved on. The depth
-waits for the measured time per row.
+Preprocessing and the anomaly task are separate tasks so that each row is taken at its
+tick however long inference runs. Preprocessing sits above the anomaly task and preempts
+it, where one task doing both would read the slots late by whatever the previous
+inference overran. The row queue between them absorbs an inference that runs long now
+and then, and keeps the rows consecutive, which a windowed model will need. It should
+hold only a few rows, since a deep queue lets the anomaly task judge a bus that has
+moved on. The depth waits for the measured time per row.
 
 The order follows what can afford to wait. The interrupt runs above every task. Reports
 are rare and are the point of an IDS, so they run first among tasks. Status runs last,
@@ -77,7 +78,7 @@ If `tm_printf` spins while UART sends, the report task keeps the CPU for the who
 
 | report | from | says |
 |---|---|---|
-| anomaly | detect | the row, the score as float32 bits, rule or autoencoder |
+| anomaly | anomaly task | the row, the score as float32 bits, rule or autoencoder |
 | coverage | status | rows dropped, frames the FDCAN FIFO lost, queue space, CPU use |
 
 A "no anomaly" holds only while coverage shows nothing dropped.
@@ -89,7 +90,7 @@ it watches.
 
 The rules and the instant autoencoder, the pair evaluated on the PC in
 [results.md](../../evaluate/pc/results.md). A windowed model waits for the second
-comparison in the experiment plan. When it comes, only the detect task changes.
+comparison in the experiment plan. When it comes, only the anomaly task changes.
 
 ## Low power
 
