@@ -17,7 +17,7 @@ from common.hub_dirs import download
 from common.settings import Settings
 from evaluate.counting import detection, prepare_scoring_input, training_rows
 from models.autoencoder import NonlinearAutoencoder, residuals
-from quantize.export import onnx_residuals, threshold_for
+from deploy.export import onnx_residuals, threshold_for
 
 
 def rows_for(out_dir, settings):

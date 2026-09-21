@@ -1,6 +1,6 @@
 """Generate C code with ST Edge AI Core from every float ONNX file of an export, and keep it.
 
-    python3 -m quantize.generate stedgeai runs_repo runs_dir exported
+    python3 -m deploy.generate stedgeai runs_repo runs_dir exported
 """
 
 from __future__ import annotations

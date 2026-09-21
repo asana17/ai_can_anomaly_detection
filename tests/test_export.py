@@ -2,7 +2,7 @@ import numpy as np
 import onnxruntime
 import torch
 
-from quantize.export import write_onnx_files
+from deploy.export import write_onnx_files
 from models.autoencoder import NonlinearAutoencoder
 
 

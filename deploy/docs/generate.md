@@ -7,7 +7,7 @@ the runs repository, where it records the code the board ran.
 ## Running it
 
 ```
-python3 -u -m quantize.generate stedgeai runs_repo runs_dir exported
+python3 -u -m deploy.generate stedgeai runs_repo runs_dir exported
 ```
 
 | argument | what it is |

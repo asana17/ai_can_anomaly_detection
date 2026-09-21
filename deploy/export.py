@@ -1,6 +1,6 @@
 """Write every nonlinear autoencoder of a fit out as float and int8 ONNX, and keep them.
 
-    python3 -m quantize.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
+    python3 -m deploy.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ import torch
 from safetensors.torch import save_file
 
 from evaluate.quantize.compare import models_in, sources_for
-from quantize.export import onnx_residuals, threshold_for, write_onnx_files
+from deploy.export import onnx_residuals, threshold_for, write_onnx_files
 from evaluate.counting import detection
 from common.settings import Settings
 from models.autoencoder import NonlinearAutoencoder, residuals

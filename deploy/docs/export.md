@@ -7,7 +7,7 @@ out as float and int8 ONNX for that, and keeps them in the runs repository.
 ## Running it
 
 ```
-python3 -u -m quantize.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
+python3 -u -m deploy.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
 ```
 
 | argument | what it is |

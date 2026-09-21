@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from quantize.generate import KEPT, generate, models_in
+from deploy.generate import KEPT, generate, models_in
 
 WRITTEN = (*KEPT, "extra.txt")
 

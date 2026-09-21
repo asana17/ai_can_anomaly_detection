@@ -1,4 +1,4 @@
-# quantize
+# deploy
 
 Turns the models from [models](../models) into the files a board can run.
 

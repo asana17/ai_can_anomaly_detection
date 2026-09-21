@@ -17,7 +17,7 @@ Each export's directory is downloaded into `runs_dir`. Its `meta.json` names the
 every `k` and `h` it holds, and the run's directory is downloaded too. Each `k` and `h`
 is measured.
 
-[pc run](pc_run.md) fits the models. [export](../../quantize/docs/export.md) quantizes a
+[pc run](pc_run.md) fits the models. [export](../../deploy/docs/export.md) quantizes a
 copy of each nonlinear autoencoder to int8. `compare` then puts a model and its int8
 ONNX through the same two steps.
 
