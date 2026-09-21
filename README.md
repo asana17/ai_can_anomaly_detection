@@ -70,25 +70,21 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Move `fit` and `calibrate` into a `train` package. After this `deploy` imports nothing
-  from `evaluate`.
+- Rethink how `fit`, `calibrate` and `score` sit in `evaluate` before running them.
+  Moving `fit` and `calibrate` into a `train` package is one way. After it `deploy`
+  imports nothing from `evaluate`.
 - Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`, and
   fold `common/hf_upload.py` into `common/hub_dirs.py`.
-- Pick the rows of a part by time rather than by log. `train_set` still asks which logs
-  a row came from, though the split already records when the test block starts and ends.
-  Measure how many rows it changes before changing it.
-- Read the logs as one stream. `grid` restarts at every log, so segments break at each
-  boundary and a log's first rows wait for all 17 signals, although the logs are
-  recorded back to back. Measure what it costs before changing it.
-- Draw the attacks over the test block's time rather than one per log. It changes every
-  attack drawn.
+- Draw the attacks over the test block's time rather than one per log. One per log puts
+  most attacks where the truck stands, and four times as many per moving hour in the
+  logs that move least. Measure first whether that shifts a model's numbers, from
+  `caught` in a score. The rules catch the same share in every band of a log's moving
+  seconds.
 - Record in `attacked.json` which donor log each attack copied from. `source` is a time
   in that log, and nothing says which log it is. Add `donor` to its schema then.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
-  score one other split, the first 25% of the time as test. The four items above come
-  first. Each changes the dataset, so after it the dataset and the runs would be made
-  again. Build the train sets with `--rebuild`. The ones on the Hub still hold the slow
-  rows under the same inputs.
+  score one other split, the first 25% of the time as test. `fit` and the stages after
+  it wait for the `evaluate` item.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Next is the model in the build, step 3 there.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
