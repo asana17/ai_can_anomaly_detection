@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "meta.json",
+  "description": "What every directory a stage writes records of itself. Each stage's own schema adds its keys to these.",
+  "type": "object",
+  "properties": {
+    "inputs": {
+      "description": "What the directory is made from. A later call with the same `inputs` reuses this directory.",
+      "type": "object"
+    },
+    "commit": {
+      "description": "The commit of this repository it ran from.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "uncommitted": {
+      "description": "`git status --porcelain` at the start, empty when nothing was changed.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "started": {
+      "$ref": "#/$defs/time",
+      "description": "When it started."
+    },
+    "finished": {
+      "$ref": "#/$defs/time",
+      "description": "When it ended."
+    }
+  },
+  "required": [
+    "inputs",
+    "commit",
+    "uncommitted",
+    "started",
+    "finished"
+  ],
+  "$defs": {
+    "time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{4}$"
+    },
+    "directory": {
+      "description": "A directory of a Hugging Face repo, at one commit.",
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "revision",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "versions": {
+      "description": "The versions it ran with.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "onnx_files": {
+      "description": "The directory the ONNX files came from, and their `precision`. Null when the models scored in torch.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "repo": {
+              "type": "string"
+            },
+            "revision": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "path": {
+              "type": "string"
+            },
+            "precision": {
+              "enum": [
+                "float",
+                "int8"
+              ]
+            }
+          },
+          "required": [
+            "repo",
+            "revision",
+            "path",
+            "precision"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "period": {
+      "description": "Seconds between two rows on the grid.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "min_speed": {
+      "description": "km/h, the speed a row has to exceed to be scored.",
+      "type": "number",
+      "minimum": 0
+    },
+    "target": {
+      "description": "Share of normal rows the threshold cuts off.",
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 1
+    }
+  }
+}

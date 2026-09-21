@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "attack_sets/<time>/meta.json",
+  "description": "Where an attack set came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "split": {
+          "description": "The `splits/<time>` directory.",
+          "type": "string",
+          "pattern": "^splits/[0-9]{8}-[0-9]{6}$"
+        },
+        "seed": {
+          "description": "The seed the attacks are drawn with.",
+          "type": "integer"
+        },
+        "donors": {
+          "description": "Training logs the replayed payloads are taken from.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "split",
+        "seed",
+        "donors"
+      ],
+      "additionalProperties": false
+    },
+    "split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The split whose test logs were attacked."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid the split was cut from."
+    }
+  },
+  "required": [
+    "split",
+    "grid"
+  ],
+  "unevaluatedProperties": false
+}

@@ -26,7 +26,7 @@ It writes these files into `local_dir/grids/<time>/` and uploads that directory 
 |---|---|
 | `grid_{raw,t,seg}.npy` | every log read into rows, their times and segment ids |
 | `logs.json` | the logs in the order they were read, and how many rows each contributed |
-| `meta.json` | `inputs` (one SHA-256 over the logs' paths and sizes, their count, `PERIOD`, `MAX_HOLD`), commit, uncommitted files, start, end |
+| `meta.json` | where the grid came from, as [meta.grids.schema.json](../../common/schemas/meta.grids.schema.json) describes |
 
 ## What the rows hold
 

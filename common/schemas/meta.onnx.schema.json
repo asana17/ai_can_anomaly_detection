@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "onnx/<time>/meta.json",
+  "description": "Where an export came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "models": {
+          "description": "The `models/<time>` directory.",
+          "type": "string",
+          "pattern": "^models/[0-9]{8}-[0-9]{6}$"
+        }
+      },
+      "required": [
+        "models"
+      ],
+      "additionalProperties": false
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The directory the weights came from."
+    },
+    "train_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The train set, as the models record it."
+    },
+    "split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The split, as the models record it."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid, as the models record it."
+    },
+    "exported": {
+      "description": "One entry per file, the model as the models directory writes it down.",
+      "type": "array",
+      "items": {
+        "$ref": "model.schema.json",
+        "unevaluatedProperties": false
+      }
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy, torch and ONNX."
+    }
+  },
+  "required": [
+    "models",
+    "train_set",
+    "split",
+    "grid",
+    "exported",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}

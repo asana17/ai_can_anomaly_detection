@@ -39,19 +39,7 @@ It writes these files into `runs_dir/thresholds/<time>/` and uploads that direct
 | file | holds |
 |---|---|
 | `thresholds.json` | each model's threshold, as [thresholds.schema.json](../../common/schemas/thresholds.schema.json) describes |
-| `meta.json` | where the models and the rows came from |
-
-| field in `meta.json` | holds |
-|---|---|
-| `inputs` | `models/<time>`, `TARGET`, and the `--onnx_files` directory and `--precision` or null. A later call with the same `inputs` reuses this directory |
-| `models` | the directory the models came from, as a repo, a revision and a path |
-| `onnx_files` | the directory the ONNX files came from, as a repo, a revision and a path, and their `precision`. Null when the models scored in torch |
-| `train_set`, `split`, `grid` | the dataset directories the rows came from, as the fit records them |
-| `min_speed` | the speed a row had to exceed to set a threshold |
-| `rows` | how many rows each threshold was taken from |
-| `versions` | Python, NumPy, the platform, and torch or ONNX Runtime, whichever scored |
-| `commit`, `uncommitted` | the commit of this repository the call started from, and any uncommitted files |
-| `started`, `finished` | when it started and ended |
+| `meta.json` | where the models and the rows came from, as [meta.thresholds.schema.json](../../common/schemas/meta.thresholds.schema.json) describes |
 
 ## The rows it scores
 

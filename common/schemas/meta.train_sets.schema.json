@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "train_sets/<time>/meta.json",
+  "description": "Where a train set came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "split": {
+          "description": "The `splits/<time>` directory.",
+          "type": "string",
+          "pattern": "^splits/[0-9]{8}-[0-9]{6}$"
+        },
+        "calibration": {
+          "description": "Share of the training seconds above `min_speed` held out to set thresholds.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "block": {
+          "description": "Seconds above `min_speed` in one calibration window.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "gap": {
+          "description": "Seconds of training rows dropped around a calibration row.",
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "split",
+        "calibration",
+        "block",
+        "gap"
+      ],
+      "additionalProperties": false
+    },
+    "split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The split it was taken from."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid the split was cut from."
+    }
+  },
+  "required": [
+    "split",
+    "grid"
+  ],
+  "unevaluatedProperties": false
+}

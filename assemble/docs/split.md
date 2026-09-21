@@ -34,7 +34,7 @@ It writes these files into `local_dir/splits/<time>/` and uploads that directory
 |---|---|
 | `split.json` | `train` and `test`, the logs of each, and `test_start` and `test_end`, the first and last time of the test block. `read_split` reads it back |
 | `seconds.json` | each log's seconds above `MIN_SPEED`, counted off the grid |
-| `meta.json` | `inputs` (`grids/<time>`, `MIN_SPEED`, `N_SPLITS`, `FOLD`), `grid` (repo, revision, path), commit, uncommitted files, start, end |
+| `meta.json` | where the split came from, as [meta.splits.schema.json](../../common/schemas/meta.splits.schema.json) describes |
 
 ## Train and test are sized by the seconds above the minimum speed
 

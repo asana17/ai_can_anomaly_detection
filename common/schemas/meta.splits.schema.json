@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "splits/<time>/meta.json",
+  "description": "Where a split came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "grid": {
+          "description": "The `grids/<time>` directory.",
+          "type": "string",
+          "pattern": "^grids/[0-9]{8}-[0-9]{6}$"
+        },
+        "min_speed": {
+          "$ref": "meta.schema.json#/$defs/min_speed"
+        },
+        "n_splits": {
+          "description": "Blocks the seconds above `min_speed` are cut into, by time.",
+          "type": "integer",
+          "minimum": 2
+        },
+        "fold": {
+          "description": "The block that is the test set, 0 the first.",
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "grid",
+        "min_speed",
+        "n_splits",
+        "fold"
+      ],
+      "additionalProperties": false
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid it was cut from."
+    }
+  },
+  "required": [
+    "grid"
+  ],
+  "unevaluatedProperties": false
+}

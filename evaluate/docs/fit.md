@@ -32,17 +32,7 @@ hours of training.
 |---|---|
 | `weights.safetensors` | every fitted model's weights, and `scale.mean` and `scale.std`, the values its rows were z-scored with |
 | `losses.json` | one entry per autoencoder, the model and its mean training loss for each epoch it ran. As many losses as its `epochs` means it stopped at that limit rather than converging |
-| `meta.json` | what was fitted, and on what |
-
-| field in `meta.json` | holds |
-|---|---|
-| `inputs` | `train_sets/<time>`, and every model with the values it was fitted with. A later run with the same `inputs` reuses this directory |
-| `train_set`, `split`, `grid` | the dataset directories the rows came from, each a repo, a revision and a path |
-| `min_speed` | the speed a row had to exceed to be fitted on |
-| `rows` | how many rows the models were fitted on |
-| `versions` | Python, NumPy, torch and the platform |
-| `commit`, `uncommitted` | the commit of this repository the run started from, and any uncommitted files |
-| `started`, `finished` | when the run started and ended |
+| `meta.json` | what was fitted, and on what, as [meta.models.schema.json](../../common/schemas/meta.models.schema.json) describes |
 
 A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
 `pca.k{k}.basis` for PCA, an autoencoder's own `state_dict` names under

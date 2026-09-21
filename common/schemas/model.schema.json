@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "model",
+  "description": "One model as a fit writes it down, its name and the values it is fitted with. It leaves other keys open, so what holds it closes it.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/pca"
+    },
+    {
+      "$ref": "#/$defs/linear_ae"
+    },
+    {
+      "$ref": "#/$defs/nonlinear_ae"
+    }
+  ],
+  "$defs": {
+    "k": {
+      "description": "How many numbers a row is compressed into, the directions PCA keeps or the autoencoder's `latent_dim`. Fewer leave more of a normal row out of the reconstruction.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "hidden": {
+      "description": "How many units the hidden layer has. Below `k` the hidden layer is the narrowest point, so a larger `k` changes nothing.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "epochs": {
+      "description": "The most times training may go through every training row.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "batch": {
+      "description": "How many rows are used for each update of the weights.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "rate": {
+      "description": "How far each update moves the weights, the learning rate of the Adam optimizer.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "improvement": {
+      "description": "The share an epoch has to cut from the best loss so far to count as an improvement.",
+      "type": "number",
+      "minimum": 0
+    },
+    "patience": {
+      "description": "How many epochs in a row may fail to improve before training stops.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "seed": {
+      "description": "The seed set right before the autoencoder is built. It decides the starting weights and the order the rows are shuffled in.",
+      "type": "integer"
+    },
+    "pca": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "pca"
+        },
+        "k": {
+          "$ref": "#/$defs/k"
+        }
+      },
+      "required": [
+        "model",
+        "k"
+      ]
+    },
+    "linear_ae": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "linear ae"
+        },
+        "k": {
+          "$ref": "#/$defs/k"
+        },
+        "epochs": {
+          "$ref": "#/$defs/epochs"
+        },
+        "batch": {
+          "$ref": "#/$defs/batch"
+        },
+        "rate": {
+          "$ref": "#/$defs/rate"
+        },
+        "improvement": {
+          "$ref": "#/$defs/improvement"
+        },
+        "patience": {
+          "$ref": "#/$defs/patience"
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        }
+      },
+      "required": [
+        "model",
+        "k",
+        "epochs",
+        "batch",
+        "rate",
+        "improvement",
+        "patience",
+        "seed"
+      ]
+    },
+    "nonlinear_ae": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "nonlinear ae"
+        },
+        "k": {
+          "$ref": "#/$defs/k"
+        },
+        "hidden": {
+          "$ref": "#/$defs/hidden"
+        },
+        "epochs": {
+          "$ref": "#/$defs/epochs"
+        },
+        "batch": {
+          "$ref": "#/$defs/batch"
+        },
+        "rate": {
+          "$ref": "#/$defs/rate"
+        },
+        "improvement": {
+          "$ref": "#/$defs/improvement"
+        },
+        "patience": {
+          "$ref": "#/$defs/patience"
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        }
+      },
+      "required": [
+        "model",
+        "k",
+        "hidden",
+        "epochs",
+        "batch",
+        "rate",
+        "improvement",
+        "patience",
+        "seed"
+      ]
+    }
+  }
+}

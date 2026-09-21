@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "grids/<time>/meta.json",
+  "description": "Where a grid came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "logs": {
+          "description": "One SHA-256 over the logs' paths and sizes.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "count": {
+          "description": "How many logs were read.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "period": {
+          "$ref": "meta.schema.json#/$defs/period"
+        },
+        "max_hold": {
+          "description": "Seconds, the longest gap between frames a row may be built across.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "logs",
+        "count",
+        "period",
+        "max_hold"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [],
+  "unevaluatedProperties": false
+}

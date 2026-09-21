@@ -30,7 +30,7 @@ It writes these files into `local_dir/attack_sets/<time>/` and uploads that dire
 | `attacked_{raw,t,seg,label,wheel}.npy` | the test logs with the attacks in, on the grid |
 | `attacked.json` | each attack, its log, and the rows it reaches |
 | `frames/test-NNNNN.parquet` | the same logs frame by frame, as [injected_frames](injected_frames.md) writes them |
-| `meta.json` | `inputs` (`splits/<time>`, `SEED`, `DONORS`), `split` and `grid` (repo, revision, path), commit, uncommitted files, start, end |
+| `meta.json` | where the attack set came from, as [meta.attack_sets.schema.json](../../common/schemas/meta.attack_sets.schema.json) describes |
 
 ## Injecting the frames
 

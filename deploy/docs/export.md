@@ -29,17 +29,7 @@ It writes these files into `runs_dir/onnx/<time>/` and uploads that directory to
 | file | holds |
 |---|---|
 | `nonlinear_ae_k{k}_h{h}_float.onnx` | one file per model, in float32 |
-| `meta.json` | where the models came from, and which models were written |
-
-| key in `meta.json` | holds |
-|---|---|
-| `inputs` | the models directory. A later call with the same `inputs` reuses this directory |
-| `models` | the directory the weights came from, as a repo, a revision and a path |
-| `train_set`, `split`, `grid` | the dataset directories the rows came from, as the models record them |
-| `exported` | one entry per file, the model as the models directory writes it down |
-| `versions` | Python, NumPy, torch and ONNX |
-| `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
-| `started`, `finished` | when it started and ended |
+| `meta.json` | where the models came from, and which models were written, as [meta.onnx.schema.json](../../common/schemas/meta.onnx.schema.json) describes |
 
 ## Versions
 

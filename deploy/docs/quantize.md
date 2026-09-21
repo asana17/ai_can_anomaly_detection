@@ -27,16 +27,7 @@ It writes these files into `runs_dir/quantize/<time>/` and uploads that director
 | file | holds |
 |---|---|
 | `nonlinear_ae_k{k}_h{h}_int8.onnx` | one file per model, in int8 QDQ form, the input ST Edge AI Core takes |
-| `meta.json` | where the export came from |
-
-| key in `meta.json` | holds |
-|---|---|
-| `inputs` | the export. A later call with the same `inputs` reuses this directory |
-| `onnx` | the export the float files came from, as a repo, a revision and a path |
-| `models`, `train_set`, `split`, `grid` | the directories the export records |
-| `versions` | Python, NumPy, ONNX and ONNX Runtime |
-| `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
-| `started`, `finished` | when it started and ended |
+| `meta.json` | where the export came from, as [meta.quantize.schema.json](../../common/schemas/meta.quantize.schema.json) describes |
 
 ## Where the quantization ranges come from
 

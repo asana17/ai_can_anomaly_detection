@@ -39,7 +39,7 @@ It writes these files into `local_dir/train_sets/<time>/` and uploads that direc
 |---|---|
 | `train_rows.npy`, `calibration_rows.npy` | a True or False for every row of the grid, True where the row trains or calibrates. A row in neither is False in both, as is every test row |
 | `scale.npy` | the mean and std, fitted on the moving train rows |
-| `meta.json` | `inputs` (`splits/<time>`, `CALIBRATION`, `BLOCK`, `GAP`), `split` and `grid` (repo, revision, path), commit, uncommitted files, start, end |
+| `meta.json` | where the train set came from, as [meta.train_sets.schema.json](../../common/schemas/meta.train_sets.schema.json) describes |
 
 ## The scale is fitted on the moving train rows
 

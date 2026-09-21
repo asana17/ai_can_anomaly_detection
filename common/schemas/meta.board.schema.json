@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "board/<time>/meta.json",
+  "description": "Where the board's C code came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "onnx": {
+          "description": "The `onnx/<time>` directory.",
+          "type": "string",
+          "pattern": "^onnx/[0-9]{8}-[0-9]{6}$"
+        },
+        "target": {
+          "description": "The `--target` passed to the generator.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "onnx",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "onnx": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The export the float files came from."
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The models directory the export's weights came from."
+    },
+    "exported": {
+      "description": "Every model in the directory, as the export lists it.",
+      "type": "array",
+      "items": {
+        "$ref": "model.schema.json",
+        "unevaluatedProperties": false
+      }
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python and ST Edge AI Core."
+    }
+  },
+  "required": [
+    "onnx",
+    "models",
+    "exported",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}

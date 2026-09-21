@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "quantize/<time>/meta.json",
+  "description": "Where int8 files came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "onnx": {
+          "description": "The `onnx/<time>` directory.",
+          "type": "string",
+          "pattern": "^onnx/[0-9]{8}-[0-9]{6}$"
+        }
+      },
+      "required": [
+        "onnx"
+      ],
+      "additionalProperties": false
+    },
+    "onnx": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The export the float files came from."
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The models directory, as the export records it."
+    },
+    "train_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The train set, as the export records it."
+    },
+    "split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The split, as the export records it."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid, as the export records it."
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy, ONNX and ONNX Runtime."
+    }
+  },
+  "required": [
+    "onnx",
+    "models",
+    "train_set",
+    "split",
+    "grid",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}

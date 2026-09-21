@@ -37,22 +37,7 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 |---|---|
 | `detection.json` | one entry per detector, the rules first, then each model as the thresholds record it |
 | `attacks.json` | one entry per attack, its log, the rows it reaches, and its `moved` |
-| `meta.json` | where the rows, the models and the thresholds came from |
-
-| field in `meta.json` | holds |
-|---|---|
-| `inputs` | `attack_sets/<time>`, `thresholds/<time>`, `MOVED` and `HOLD`. A later call with the same `inputs` reuses this directory |
-| `thresholds`, `models` | the directories the thresholds and the weights came from, each a repo, a revision and a path |
-| `onnx_files` | the directory the ONNX files came from, and their `precision`, as the thresholds record it. Null when the models scored in torch |
-| `attack_set`, `split`, `grid` | the dataset directories the rows came from |
-| `min_speed` | the speed a row had to exceed to be counted |
-| `rows` | how many attacked rows were read |
-| `attacks` | how many attacks were injected into the test logs |
-| `attacks_scorable` | how many of them reach a row above `min_speed` and moved it by at least `MOVED` |
-| `hours` | hours of rows above `min_speed` with no attack in them, what the false alarms are counted over |
-| `versions` | Python, NumPy, the platform, and torch or ONNX Runtime, whichever scored |
-| `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
-| `started`, `finished` | when it started and ended |
+| `meta.json` | where the rows, the models and the thresholds came from, as [meta.scores.schema.json](../../common/schemas/meta.scores.schema.json) describes |
 
 ## What int8 costs
 

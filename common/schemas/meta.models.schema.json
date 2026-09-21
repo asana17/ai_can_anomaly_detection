@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "models/<time>/meta.json",
+  "description": "Where fitted models came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "train_set": {
+          "description": "The `train_sets/<time>` directory.",
+          "type": "string",
+          "pattern": "^train_sets/[0-9]{8}-[0-9]{6}$"
+        },
+        "models": {
+          "description": "Every model with the values it was fitted with.",
+          "type": "array",
+          "items": {
+            "$ref": "model.schema.json",
+            "unevaluatedProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "train_set",
+        "models"
+      ],
+      "additionalProperties": false
+    },
+    "train_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The train set the rows came from."
+    },
+    "split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The split the train set was taken from."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid the split was cut from."
+    },
+    "min_speed": {
+      "$ref": "meta.schema.json#/$defs/min_speed",
+      "description": "The speed a row had to exceed to be fitted on."
+    },
+    "rows": {
+      "description": "How many rows the models were fitted on.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy, torch and the platform."
+    }
+  },
+  "required": [
+    "train_set",
+    "split",
+    "grid",
+    "min_speed",
+    "rows",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}

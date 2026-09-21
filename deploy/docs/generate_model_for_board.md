@@ -39,15 +39,6 @@ directory and `meta.json` say which model it is.
 | `network_details.h` | the layers |
 | `network_c_info.json`, `network_generate_report.txt` | the flash and RAM the model takes, as the generator reports it |
 | `LICENSE.txt` | SLA0104, the licence the generator writes for the code |
-
-| key in `meta.json` | holds |
-|---|---|
-| `inputs` | the export and the `--target` passed to the generator. A later call with the same `inputs` reuses this directory |
-| `onnx` | the export the float files came from, as a repo, a revision and a path |
-| `models` | the models directory the export's weights came from |
-| `exported` | every model in the directory, as the export lists it |
-| `versions` | Python and ST Edge AI Core |
-| `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
-| `started`, `finished` | when it started and ended |
+| `meta.json` | where the export came from, as [meta.board.schema.json](../../common/schemas/meta.board.schema.json) describes |
 
 The threshold to compile in is not here. It is in the `thresholds.json` of [calibrate](../../evaluate/docs/calibrate.md).
