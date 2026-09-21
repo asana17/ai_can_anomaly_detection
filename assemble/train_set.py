@@ -1,6 +1,7 @@
 """Cut the training rows into train and calibration rows, and fit the scale on them.
 
-The rows at or below the split's speed go to neither.
+The rows at or below the split's speed go to neither. The rows a rule hits never go
+to train.
 
     python3 -m assemble.train_set repo revision splits/<time> local_dir [--rebuild]
 """
@@ -9,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import replace
 
 import numpy as np
 
@@ -20,6 +22,7 @@ from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from preprocess.features.moving import moving
 from preprocess.features.scale import Scale
+from rules.hits import rule_hits
 
 
 def split_rows(raw, times, *, share: float, block: float, gap: float, min_speed: float,
@@ -122,17 +125,21 @@ def write_train_set(folder, repo, revision, split_path, local_dir, settings):
                             gap=settings.GAP)
     train_rows = (widen_to_grid(training, train_part & apart)
                   & moving(raw, min_speed=min_speed))
+    # the model is only asked about the rows no rule hits, so it fits on those alone
+    hit = rule_hits(raw[train_rows], replace(settings, MIN_SPEED=min_speed))
+    train_rows[train_rows] = ~hit
     calibration_rows = widen_to_grid(training, calibration_part & apart)
     scale = scale_for(raw[train_rows])
     print(f"{int(training.sum())} rows from {len(cut['train'])} logs, "
           f"{int(train_rows.sum())} train and {int(calibration_rows.sum())} "
-          f"calibration", flush=True)
+          f"calibration, {int(hit.sum())} of {len(hit)} train rows a rule hits dropped",
+          flush=True)
 
     np.save(os.path.join(folder, "train_rows.npy"), train_rows)
     np.save(os.path.join(folder, "calibration_rows.npy"), calibration_rows)
     np.save(os.path.join(folder, "scale.npy"), np.stack([scale.mean, scale.std]))
     return {"split": {"repo": repo, "revision": revision, "path": split_path},
-            "grid": grid}
+            "grid": grid, "rule_hits": {"rows": len(hit), "hit": int(hit.sum())}}
 
 
 def main(repo, revision, split_path, local_dir, rebuild=False):

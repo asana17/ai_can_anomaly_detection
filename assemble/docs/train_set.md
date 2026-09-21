@@ -1,17 +1,26 @@
 # train_set
 
-[split](split.md) cuts the logs into train and test. This cuts the train logs' rows
-again, into the rows a model is fitted on and the rows its threshold is read off, and
-fits the [scale](scale.md) on the first of the two. Some rows fall into neither. It
-writes only which rows those are, the rows stay in the [grid](grid.md). The test logs
-are [attack_set](attack_set.md)'s.
+[split](split.md) cuts the logs into train and test. This cuts the rows of the train
+logs again.
+
+- Train rows are the rows a model is fitted on.
+- Calibration rows are the rows its threshold is read off.
+- Some rows fall into neither.
+- A row an instant [rule](../../rules) hits is never a train row.
+- A calibration row may be one a rule hits.
+
+It writes only which rows those are. The rows stay in the [grid](grid.md). The
+[scale](scale.md) is fitted on the train rows. The test logs are
+[attack_set](attack_set.md)'s.
 
 ```python
 training = rows_of_logs(logs, counts, train_logs)   # logs and counts from grid.md
 train_rows, calibration_rows = split_rows(raw[training], t[training], share=share,
                                           block=block, gap=gap, min_speed=min_speed,
                                           period=period)
-scale = scale_for(raw[train_rows & moving(raw, min_speed=min_speed)])
+train_rows &= moving(raw, min_speed=min_speed)
+train_rows[train_rows] = ~rule_hits(raw[train_rows], settings)
+scale = scale_for(raw[train_rows])
 rows = scale.apply(raw[train_rows])
 ```
 
@@ -39,7 +48,7 @@ It writes these files into `local_dir/train_sets/<time>/` and uploads that direc
 |---|---|
 | `train_rows.npy`, `calibration_rows.npy` | a True or False for every row of the grid, True where the row trains or calibrates. A row in neither is False in both, as is every test row |
 | `scale.npy` | the mean and std, fitted on the moving train rows |
-| `meta.json` | where the train set came from, as [meta.train_sets.schema.json](../../common/schemas/meta.train_sets.schema.json) describes |
+| `meta.json` | where the train set came from and how many train rows a rule hit, as [meta.train_sets.schema.json](../../common/schemas/meta.train_sets.schema.json) describes |
 
 ## The scale is fitted on the moving train rows
 
@@ -51,6 +60,12 @@ the std, those signals would count for less in the residual than the others.
 The grid keeps stopped rows. `HOLD` in [evaluate](../../evaluate) counts rows that are
 next to each other in a `seg`, and two rows are only next to each other when they are
 `period` apart. Dropping a stopped row would put two rows side by side that are not.
+
+## Rows a rule hits are not fitted on
+
+A model is only asked about the rows no instant rule hits, so it is fitted on those
+alone. Rows a rule hits stay in the calibration rows, as the rules are applied again
+where they are scored. `rule_hits` is given the split's `min_speed`.
 
 ## The calibration set
 

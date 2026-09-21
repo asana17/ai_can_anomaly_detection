@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pytest
 
 from assemble import train_set
 from assemble.grid import grid_rows
@@ -142,11 +143,22 @@ def test_rows_within_the_gap_of_the_test_block_are_dropped():
 
 
 LOGS = ["part_1/a.csv", "part_1/b.csv"]
+ENGINE = SIGNALS.index("engine_speed")
 
 
-def _grid_and_split(hub, speeds, test_start, test_end):
-    """A grid of two logs carrying `speeds`, split with the first log as train."""
+@pytest.fixture(autouse=True)
+def _rules_hit_the_rows_with_an_engine_speed(monkeypatch):
+    """The rows `_rows` makes carry only a wheel speed, which the real rules would hit."""
+    monkeypatch.setattr(train_set, "rule_hits", lambda raw, settings: raw[:, ENGINE] > 0)
+
+
+def _grid_and_split(hub, speeds, test_start, test_end, hit=slice(0)):
+    """A grid of two logs carrying `speeds`, split with the first log as train.
+
+    The rows in `hit` are the ones a rule hits.
+    """
     raw, t = _rows(speeds)
+    raw[hit, ENGINE] = 1000.0
     half = len(t) // 2
     hub.files = {
         "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1, "max_hold": 1.0}},
@@ -196,6 +208,18 @@ def test_the_stage_keeps_the_slow_rows_out_of_train(tmp_path, hub):
     made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
     train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
     assert not train_rows[1000:2000].any() and train_rows[:1000].any()
+
+
+def test_the_stage_keeps_the_rows_a_rule_hits_out_of_train(tmp_path, hub):
+    raw, t, half = _grid_and_split(hub, np.full(10000, 50.0), 600.0, 999.9,
+                                   hit=slice(1000, 2000))
+    made = train_set.main("u/d", REVISION, "splits/20260101-000000", str(tmp_path))
+    folder = tmp_path / made["path"]
+    train_rows = np.load(folder / "train_rows.npy")
+    assert not train_rows[1000:2000].any() and train_rows[:1000].any()
+    rule_hits = json.loads((folder / "meta.json").read_text())["rule_hits"]
+    assert rule_hits["hit"] > 0
+    assert rule_hits["rows"] - rule_hits["hit"] == train_rows.sum()
 
 
 def test_the_stage_names_a_train_set_of_the_same_split(tmp_path, hub):
