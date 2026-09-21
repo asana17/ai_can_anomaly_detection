@@ -38,7 +38,7 @@ It writes these files into `runs_dir/thresholds/<time>/` and uploads that direct
 
 | file | holds |
 |---|---|
-| `thresholds.json` | one entry per model, the model as the fit records it and `threshold`, its score at `TARGET` |
+| `thresholds.json` | each model's threshold, as [thresholds.schema.json](../../common/schemas/thresholds.schema.json) describes |
 | `meta.json` | where the models and the rows came from |
 
 | field in `meta.json` | holds |
