@@ -75,10 +75,10 @@ each attack's rows and each log's segment ids along as it goes.
 
 `label` is never True across the whole attack window, only where a row changed.
 
-Putting the rows on the [scale](scale.md) is for whoever scores them, as is measuring
-how far an attack moved a row in those units. [evaluate](../../evaluate) scores only
-the attacks that moved one by at least `MOVED`, so an attack that changed nothing a
-model could see is not counted as a miss.
+Putting the rows on the [scale](../../preprocess/docs/scale.md) is for whoever scores
+them, as is measuring how far an attack moved a row in those units.
+[evaluate](../../evaluate) scores only the attacks that moved one by at least `MOVED`,
+so an attack that changed nothing a model could see is not counted as a miss.
 
 [evaluate](../../evaluate) uses `wheel` to decide whether a row is scored. So an attack
 that fakes a stop still leaves the scored rows the same as with no attack.

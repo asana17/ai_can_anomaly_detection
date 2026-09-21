@@ -39,8 +39,8 @@ It writes these files into `local_dir/grids/<time>/` and uploads that directory 
 | `seg` | rows | a number shared by the rows that follow each other `period` apart. It goes up at a new log and after a gap longer than `max_hold` |
 
 The rules read `raw`, since a rule is written in those units. A model reads the rows on
-the [scale](scale.md) instead. [evaluate](../../evaluate) reads `seg` to count rows
-that follow each other.
+the [scale](../../preprocess/docs/scale.md) instead. [evaluate](../../evaluate) reads
+`seg` to count rows that follow each other.
 
 `read_grid(folder)` reads a `grids/<time>/` directory back, returning `raw`, `t`, and
 the logs and row counts `logs.json` holds. `rows_of_logs(logs, counts, chosen)` turns
