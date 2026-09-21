@@ -170,7 +170,7 @@ it watches.
 ## Detection
 
 The rules and the instant autoencoder, the pair evaluated on the PC in
-[results.md](../../evaluate/pc/results.md). A windowed model waits for the second
+[results.md](../../evaluate/results.md). A windowed model waits for the second
 comparison in the experiment plan. When it comes, only the score and detect task changes.
 
 ## Low power
