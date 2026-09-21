@@ -35,8 +35,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [can_data/](can_data) describes the logs and what profiling them found.
 - [preprocess/](preprocess) turns raw CAN logs into rows, by reading the log,
   decomposing the ID, decoding signals, and putting them on a 100 ms grid.
-- [assemble/](assemble) splits the logs by time and builds the train, calibration,
-  and test sets into `out`, the dataset every run reads.
+- [assemble/](assemble) builds the grid, splits the logs by time, and marks the train,
+  calibration and attacked test rows, each stage a directory on the Hugging Face Hub.
 - [attack/](attack) synthesizes anomalies for a labeled test set.
 - [rules/](rules) holds the deterministic checks.
 - [models/](models) holds the learned half, fit on normal rows only.
@@ -45,8 +45,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   each. [board/docs/setup.md](board/docs/setup.md) builds and flashes one from nothing.
   [board/docs/goal.md](board/docs/goal.md) is what the board is building towards, the
   TRON Programming Contest 2026 entry, and the order it is built in.
-- [common/](common) holds the settings of a run and reads the dataset, which
-  `evaluate`, `deploy` and `board` all use. [common/schemas](common/schemas)
+- [common/](common) holds the settings of a run and reads and writes the Hub
+  directories every stage uses. [common/schemas](common/schemas)
   describes every JSON file a stage uploads. The tests check each file a stage
   uploads against them.
 - [evaluate/](evaluate) runs the comparison and prints what each detector catches.
@@ -115,35 +115,35 @@ J1939's own terms, frame, PGN and SPN, are described in
   | scoring pipeline | `preprocess`, `rules`, the model | `score` | in C |
   | `detect` | threshold, OR the rule flags, `HOLD` | `pc.detect` | in C |
 
-  What differs from today's code. Rows 11 to 13 are not looked into yet, and rows 1 to
-  10 only as far as the functions read on 2026-09-22.
+  What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
+  train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
+  scale in the models, all done 2026-09-22. Rows 11 to 13 are to be fixed along with
+  the rest.
 
   | # | what | today | after |
   |---|---|---|---|
-  | 1 | `moving` | `assemble/grid.py` | `preprocess` |
-  | 2 | `Scale` | `assemble/scale.py` holds `Scale` and `scale_for` | `Scale.apply` in `preprocess`, `scale_for` with `fit` |
-  | 3 | train rows | moving, rule hits kept | moving, no rule hit |
-  | 4 | calibration rows | not selected, `calibrate` selects moving and no rule hit | moving only in `train_set`, rules applied in `score` |
-  | 5 | fitting the scale | `train_set` writes `scale.npy` | `fit`, kept with the models |
-  | 6 | reading the scale | `calibrate`, `score`, `quantize` read the train set | read from the models |
+  | 4 | calibration rows | moving only in `train_set`, `calibrate` drops rule hits | rules applied in `score` |
   | 7 | step 4 | `counting.persistent`, the threshold and OR inside `score` | a new `detect` package |
   | 8 | scoring stage | `pc.score` scores and counts | `score` writes `scores/`, `pc.detect` writes `detections/` |
   | 9 | `calibrate` | selects rows, scores, takes the quantile | reads scores, takes the quantile |
-  | 10 | counting | `counting.py`, beside `persistent` | counting only, in `evaluate` |
+  | 10 | counting | `counting.py`, beside `persistent` | counting only |
   | 11 | JSON Schemas | `detection` and others for today's dirs | match `scores/`, `detections/`, `thresholds/`, `models/` |
   | 12 | tests | e.g. `test_train_set.py` checks `scale.npy`, `test_score.py` patches `fetch_scale`, `test_run.py` tests `persistent` | follow rows 1 to 11 |
   | 13 | stage docs | `evaluate/docs/*`, `assemble/docs/train_set.md` and others | follow rows 1 to 11, place `pc_run.md` |
 
-  - In `train_set` keep only moving rows no rule hit as train rows, as the model only
-    sees those, and only moving rows as calibration rows. Then rebuild it. The scale
-    and `quantize` then read the rows the model fits on.
-  - Keep the counting of what was caught in `evaluate`, for the board to use too.
+  - Rebuild `train_set` with `--rebuild`. Its inputs did not change, so without it the
+    old train set comes back. The stages after it follow its new path.
+  - Keep the counting of what was caught apart from `persistent`, for the board to use
+    too.
   - Split `evaluate.pc.score` into `score`, writing `scores/`, and `pc.detect`,
     writing `detections/`. `calibrate` then reads scores.
   - List in the board docs what the board runs. `preprocess` without
     `can_log_loader` and `profile`, `rules`, the model, `detect`. The C goes in
     `board/common/` and the Python stays outside `board`.
   - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
+    A diagram of the old layout is in `git stash`, stale.
+  - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
+    `fit`, `calibrate`, `score`, `pc.detect` and counting go, and break it up.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Draw the attacks over the test block's time rather than one per log. One per log puts
   most attacks where the truck stands, and four times as many per moving hour in the
