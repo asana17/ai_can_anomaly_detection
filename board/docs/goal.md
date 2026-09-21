@@ -87,6 +87,44 @@ The slots keep updating meanwhile, so nothing is lost. A burst of reports delays
 for all of them, which is one more reason anomaly reports go out on start and end only.
 If `tm_printf` spins while UART sends, the report task keeps the CPU for the whole line.
 
+## From the PC
+
+What the board runs comes from the PC stages, and what it raises goes back to them.
+A dotted line is not built yet.
+
+```mermaid
+flowchart TB
+    subgraph pc["PC"]
+        fit -- models --> export["deploy.export<br/>float ONNX"]
+        export --> gen["deploy.generate_model_for_board<br/>C from ST Edge AI Core"]
+        gen --> prepare["board.prepare<br/>CubeIDE project"]
+        fit -. scale .-> prepare
+        calibration[(calibration set)] --> score
+        fit -- scale, models --> score
+        score -- calibration set scores --> calibrate
+        calibrate -. thresholds .-> prepare
+        prepare --> flash["board.flash<br/>build and flash"]
+        frames[(injected_frames)]
+        attack[(attack set)]
+        counting["counting<br/>caught, alarms per hour"]
+    end
+
+    subgraph board["board"]
+        irq[CAN receive interrupt] --> slots[(slots)]
+        slots --> pre["preprocess 6<br/>decode, rows above MIN_SPEED, scale"]
+        pre -- row queue --> ano["anomaly 8<br/>rules, autoencoder, threshold, HOLD"]
+        ano -- report queue --> rep["report 5<br/>UART"]
+    end
+
+    flash --> board
+    frames -. replayed through the USB-CAN adapter .-> irq
+    attack -. where each attack is .-> counting
+    rep -. anomaly reports .-> counting
+```
+
+The preprocess task runs step 1 of the steps in the [README](../../README.md#todo), the
+anomaly task steps 2 to 4. How the scale and the thresholds enter the build is open.
+
 ## Reports
 
 | report | from | says |
