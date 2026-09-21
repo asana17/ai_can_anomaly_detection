@@ -68,15 +68,17 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Check whether quantize's `batch` changes the int8 files. If not, drop it from
-  quantize's `inputs` and from `evaluate.pc.score`'s lookup.
-- Rename `deploy/generate.py` to `generate_model_for_board`, with its doc and test.
-- Move `board/rows.py` onto the attack set and a train set's scale.
+- Set the int8 thresholds in calibrate. Calibrate takes a `quantize/` directory as
+  score does with `--int8`. Quantize then only writes int8 files.
+- Leave the rows at or below `min_speed` out of the train rows the train set stage
+  saves. Quantize then reads its rows straight from the train set.
+- Move `fetch_models` into `models/fits.py`. After these three `deploy` imports nothing
+  from `evaluate`.
+- Delete `board/rows.py`. No application reads the `rows.h` it writes. Move `bits` and
+  `window` into `board/rule_rows.py` first.
 - Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`, and
   fold `common/hf_upload.py` into `common/hub_dirs.py`.
-- Move what `deploy` imports from `evaluate` to where it belongs by what it is.
-- Describe `thresholds.json` with a JSON Schema. Calibrate and quantize write it through
-  one function that checks it.
+- Describe `thresholds.json` with a JSON Schema, checked when calibrate writes it.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
   score one other split, the first 25% of the time as test.
 - Pick the rows of a part by time rather than by log. `train_set` still asks which logs
