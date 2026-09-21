@@ -70,9 +70,62 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Rethink how `fit`, `calibrate` and `score` sit in `evaluate` before running them.
-  Moving `fit` and `calibrate` into a `train` package is one way. After it `deploy`
-  imports nothing from `evaluate`.
+- Rework `evaluate` before running `fit` and the stages after it. A row goes through
+  four steps, the same on the PC and the board. The first three are the scoring
+  pipeline.
+  1. `preprocess` marks the moving rows. `moving` moves there from `assemble.grid`.
+  2. `rules` flags the moving rows it hits.
+  3. The model scores the moving rows no rule hit.
+  4. A new `detect` compares the scores with the threshold, adds the rule flags, and
+     holds them over `HOLD`. `persistent` moves there from `evaluate/counting.py`.
+
+  `score` runs the scoring pipeline over a set of rows and keeps each row's scores and
+  rule flags. It scores the calibration rows for `calibrate`, which takes the
+  threshold from them, and the attacked rows for `pc.detect`, so a new threshold or
+  `HOLD` needs no rescoring. About 33 MB and 430 MB for 40 models, reckoned from the
+  grid's row counts. Rows are selected by mask and never cut out, since `HOLD` counts
+  rows in a row. No function joins the steps.
+
+  The stages after it.
+
+  ```mermaid
+  flowchart TB
+      grid --> split --> train_set & attack_set
+      train_set --> train[(train set)]
+      train_set --> calibration[(calibration set)]
+      attack_set --> attack[(attack set)]
+      train --> fit
+      fit -- scale, models --> score
+      calibration --> score
+      attack --> score
+      score -- calibration set scores --> calibrate
+      score -- attack set scores, rule flags --> detect["pc.detect"]
+      calibrate -- thresholds --> detect
+      detect -- alarms --> counting["counting<br/>caught, alarms per hour"]
+      fit -- models --> export["deploy.export"] -- float ONNX --> quantize["deploy.quantize"]
+      train -- representative rows for int8 --> quantize
+      fit -- scale for the representative rows --> quantize
+      quantize -. int8 ONNX .-> score
+  ```
+
+  The same two parts run on the PC and on the board.
+
+  | part | steps | on the PC | on the board |
+  |---|---|---|---|
+  | scoring pipeline | `preprocess`, `rules`, the model | `score` | in C |
+  | `detect` | threshold, OR the rule flags, `HOLD` | `pc.detect` | in C |
+
+  - In `train_set` keep only moving rows no rule hit as train rows, as the model only
+    sees those, and only moving rows as calibration rows. Then rebuild it. The scale
+    and `quantize` then read the rows the model fits on.
+  - Keep the counting of what was caught in `evaluate`, for the board to use too.
+  - Split `evaluate.pc.score` into `score`, writing `scores/`, and `pc.detect`,
+    writing `detections/`. `calibrate` then reads scores. Wait until the staged schema
+    change to `score.py` is committed.
+  - List in the board docs what the board runs. `preprocess` without
+    `can_log_loader` and `profile`, `rules`, the model, `detect`. The C goes in
+    `board/common/` and the Python stays outside `board`.
+  - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Draw the attacks over the test block's time rather than one per log. One per log puts
   most attacks where the truck stands, and four times as many per moving hour in the
