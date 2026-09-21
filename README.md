@@ -125,8 +125,11 @@ J1939's own terms, frame, PGN and SPN, are described in
   `pc.run_test_set` are split as drawn, with their schemas and tests, and the stage
   docs follow them, all done 2026-09-22.
 
-  - Build the log split and the three sets again. Their inputs changed, so no
-    `--rebuild` is needed. The stages after them follow the new paths.
+  - Build the grid again with `--rebuild`. A signal is decoded in float32 now, as the
+    board computes it, and a value J1939 reserves leaves NaN in its row rather than the
+    value before it, so the rows themselves changed. Then the log split and the three
+    sets, whose inputs change with the grid, so those need no `--rebuild`. The stages
+    after them follow the new paths.
   - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
     A diagram of the old layout is in `git stash`, stale.
   - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
