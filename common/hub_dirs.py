@@ -32,7 +32,7 @@ def read_dir(repo, path, local_dir, revision, repo_type="model"):
 
 
 def find(repo, kind, inputs, local_dir, repo_type="model"):
-    """The directory under `kind/` whose `meta.json` holds `inputs`, or None.
+    """The newest directory under `kind/` whose `meta.json` holds `inputs`, or None.
 
     It is returned as `{repo, revision, path}`, the revision being the one it was found
     at.
@@ -40,7 +40,8 @@ def find(repo, kind, inputs, local_dir, repo_type="model"):
     inputs = json.loads(json.dumps(inputs))     # a tuple comes back from meta.json a list
     revision = HfApi().repo_info(repo, repo_type=repo_type).sha
     for name in sorted(HfApi().list_repo_files(repo, repo_type=repo_type,
-                                               revision=revision)):
+                                               revision=revision),
+                       reverse=True):           # names are times, so newest first
         parts = name.split("/")
         if len(parts) != 3 or parts[0] != kind or parts[2] != "meta.json":
             continue
