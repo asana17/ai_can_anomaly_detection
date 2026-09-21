@@ -65,11 +65,11 @@ def _workspace_path(path):
     return f'"${{workspace_loc:/${{ProjName}}/{path}}}"'
 
 
-def configure(cproject, libraries=(), include_dirs=(), runtime=None):
+def configure(cproject, libraries=(), runtime=None):
     """Select sources/includes and, when needed, the st-ai runtime."""
     head, root = _parse(cproject, "cproject")
     library_paths = tuple(f"lib/{library}" for library in libraries)
-    project_includes = INCLUDES + library_paths + tuple(include_dirs)
+    project_includes = INCLUDES + library_paths
     for tool in root.iter("tool"):
         if tool.get("superClass") in COMPILE_TOOLS:
             defines = _list_option(tool, "definedsymbols", "Define symbols (-D)",

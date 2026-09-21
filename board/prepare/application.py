@@ -9,6 +9,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APPS = os.path.join(HERE, "application")
 LIB = os.path.join(HERE, "lib")
 TEST_COMMON = os.path.join(HERE, "test_common")
+MODEL = "active_model"
 MODEL_FILES = (
     "active_model.c", "active_model.h", "active_model_data.c",
     "active_model_data.h", "active_model_details.h", "model_config.h",
@@ -18,8 +19,6 @@ MODEL_FILES = (
 @dataclass(frozen=True)
 class Application:
     libraries: tuple[str, ...] = ()
-    include_dirs: tuple[str, ...] = ()
-    model_dir: str | None = None
     needs_stedgeai: bool = False
 
 
@@ -27,9 +26,7 @@ APPLICATIONS = {
     "alive": Application(),
     "mbf_test": Application(("mbf",)),
     "rule_check_from_flash": Application(("mbf",)),
-    "model_check_from_flash": Application(
-        ("mbf", "scale", "model"),
-        ("application/generated",), "generated", True),
+    "model_check_from_flash": Application(("mbf", "scale", "model", MODEL), True),
 }
 
 
@@ -48,8 +45,8 @@ def application_for(app_dir):
     if name not in APPLICATIONS:
         raise SystemExit(f"no build inputs for application {name}")
     application = APPLICATIONS[name]
-    if application.model_dir:
-        model_dir = os.path.join(app_dir, application.model_dir)
+    if MODEL in application.libraries:
+        model_dir = os.path.join(LIB, MODEL)
         missing = [name for name in MODEL_FILES
                    if not os.path.isfile(os.path.join(model_dir, name))]
         if missing:

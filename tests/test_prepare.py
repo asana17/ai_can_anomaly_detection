@@ -2,8 +2,8 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from board.prepare.application import (LIB, MODEL_FILES, TEST_COMMON, application_dir,
-                                       application_for)
+from board.prepare.application import (LIB, MODEL, MODEL_FILES, TEST_COMMON,
+                                       application_dir, application_for)
 from board.prepare.cubeide import (COMPILE_TOOLS, DEFINES, LINKER_TOOL, MARKER,
                                    configure, link_folder, link_folders, start_kernel)
 from board.prepare.dependencies import stedgeai_runtime
@@ -40,17 +40,17 @@ def test_application_can_be_an_arbitrary_directory(tmp_path):
     assert application_dir(str(app)) == str(app)
 
 
-def test_model_application_requires_the_fixed_generated_inputs(tmp_path):
+def test_model_application_requires_the_fixed_model_inputs(tmp_path, monkeypatch):
+    monkeypatch.setattr("board.prepare.application.LIB", str(tmp_path))
+    model = tmp_path / MODEL
+    model.mkdir()
     app = tmp_path / "model_check_from_flash"
-    generated = app / "generated"
-    generated.mkdir(parents=True)
     with pytest.raises(SystemExit, match="active_model.c"):
         application_for(str(app))
     for name in MODEL_FILES:
-        (generated / name).touch()
+        (model / name).touch()
     selected = application_for(str(app))
-    assert selected.libraries == ("mbf", "scale", "model")
-    assert selected.include_dirs == ("application/generated",)
+    assert selected.libraries == ("mbf", "scale", "model", MODEL)
 
 
 def test_stedgeai_runtime_requires_header_and_cm33_archive(tmp_path):
@@ -126,26 +126,26 @@ def test_switching_application_replaces_the_selected_libraries():
         assert not any("lib/" in path for path in paths)
 
 
-def test_model_adds_generated_headers_and_stedgeai_runtime():
+def test_model_adds_its_headers_and_stedgeai_runtime():
     runtime = type("Runtime", (), {
         "include_dir": "/opt/Middlewares/ST/AI/Inc",
         "library_dir": "/opt/Middlewares/ST/AI/Lib/GCC/ARMCortexM33",
         "library": "NetworkRuntime1201_CM33_GCC.a",
     })()
-    configured = configure(CPROJECT, ("model",), ("application/generated",), runtime)
+    configured = configure(CPROJECT, ("model", MODEL), runtime)
     root = ET.fromstring(configured.split("?>", 2)[2])
     assert _values(root, COMPILE_TOOLS[1], "includepaths")[-3:] == [
         '"${workspace_loc:/${ProjName}/lib/model}"',
-        '"${workspace_loc:/${ProjName}/application/generated}"',
+        '"${workspace_loc:/${ProjName}/lib/active_model}"',
         '"/opt/Middlewares/ST/AI/Inc"',
     ]
     assert _values(root, LINKER_TOOL, "libraries") == [
         ":NetworkRuntime1201_CM33_GCC.a"]
     assert _values(root, LINKER_TOOL, "directories") == [
         "/opt/Middlewares/ST/AI/Lib/GCC/ARMCortexM33"]
-    assert configure(configured, ("model",), ("application/generated",), runtime) == configured
+    assert configure(configured, ("model", MODEL), runtime) == configured
     switched = ET.fromstring(configure(configured).split("?>", 2)[2])
-    assert not any("application/generated" in path
+    assert not any("lib/" in path
                    for path in _values(switched, COMPILE_TOOLS[1], "includepaths"))
     assert _values(switched, LINKER_TOOL, "libraries") == []
     assert _values(switched, LINKER_TOOL, "directories") == []

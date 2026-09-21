@@ -28,7 +28,7 @@ def main(project_dir, application, stedgeai_root=None):
     changes = (
         ("main.c", main_c, start_kernel),
         (".cproject", os.path.join(project_dir, ".cproject"),
-         lambda text: configure(text, selected.libraries, selected.include_dirs, runtime)),
+         lambda text: configure(text, selected.libraries, runtime)),
         (".project", os.path.join(project_dir, ".project"),
          lambda text: link_folders(text, app_dir)),
     )
