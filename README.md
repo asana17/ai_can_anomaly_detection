@@ -70,7 +70,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 - Move `fit` and `calibrate` into a `train` package. After this `deploy` imports nothing
   from `evaluate`.
-- Move `rule_hits` and `instant` from `evaluate/counting.py` into `rules/`.
 - Delete `board/rows.py`. No application reads the `rows.h` it writes. Move `bits` and
   `window` into `board/rule_rows.py` first.
 - Retire `evaluate/pc/run.py`, `assemble/dataset.py` and `common/load_dataset.py`, and

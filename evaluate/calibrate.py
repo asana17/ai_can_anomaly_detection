@@ -24,11 +24,11 @@ from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.counting import rule_hits
 from evaluate.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import torch_scorer
+from rules.hits import rule_hits
 
 
 def quantile(scores, share: float):
