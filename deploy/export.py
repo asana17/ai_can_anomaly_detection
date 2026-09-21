@@ -1,6 +1,6 @@
 """Write every nonlinear autoencoder of a fit out as float ONNX, and keep them.
 
-    python3 -m deploy.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
+    python3 -m deploy.export runs_repo revision models/<time> runs_dir [--rebuild]
 """
 
 from __future__ import annotations
@@ -12,10 +12,9 @@ import numpy as np
 import onnx
 import torch
 
-from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import reuse_or_make
-from evaluate.fit import fetch_models, rows_to_fit
+from evaluate.fit import fetch_models
 from models.fits import NonlinearAe, as_dict, models_from
 
 
@@ -35,12 +34,11 @@ def file_of(model):
     return f"nonlinear_ae_k{model.k}_h{model.hidden}"
 
 
-def write_export(folder, runs_repo, revision, models_path, runs_dir, local_dir):
+def write_export(folder, runs_repo, revision, models_path, runs_dir):
     """Write each nonlinear autoencoder of a fit as float ONNX, and return what to record."""
     weights, models_meta = fetch_models(runs_repo, revision, models_path, runs_dir)
-    at = models_meta["train_set"]
-    train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
-    signals = rows_to_fit(train_set).shape[1]
+    # the scale is fitted on every signal a row holds
+    signals = weights["scale.mean"].shape[0]
 
     # the board runs a nonlinear autoencoder, so the other models are left out
     wanted = [model for model in models_from(models_meta["inputs"]["models"])
@@ -54,14 +52,14 @@ def write_export(folder, runs_repo, revision, models_path, runs_dir, local_dir):
                          "torch": torch.__version__, "onnx": onnx.__version__}}
 
 
-def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False):
+def main(runs_repo, revision, models_path, runs_dir, rebuild=False):
     inputs = {"models": models_path}
     return reuse_or_make(runs_repo, "onnx", inputs, runs_dir,
                          lambda folder: write_export(folder, runs_repo, revision,
-                                                     models_path, runs_dir, local_dir),
+                                                     models_path, runs_dir),
                          rebuild)
 
 
 if __name__ == "__main__":
-    main(**arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
+    main(**arguments(("runs_repo", "revision", "models_path", "runs_dir"),
                     rebuild=False))

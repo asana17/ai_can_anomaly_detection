@@ -7,7 +7,7 @@ out as float ONNX for that, and keeps them in the runs repository.
 ## Running it
 
 ```
-python3 -u -m deploy.export runs_repo revision models/<time> runs_dir local_dir [--rebuild]
+python3 -u -m deploy.export runs_repo revision models/<time> runs_dir [--rebuild]
 ```
 
 | argument | what it is |
@@ -16,7 +16,6 @@ python3 -u -m deploy.export runs_repo revision models/<time> runs_dir local_dir 
 | `revision` | commit of `runs_repo` to read the models at, as [fit](../../evaluate/docs/fit.md) printed it |
 | `models/<time>` | the fitted models to export |
 | `runs_dir` | local folder the models are downloaded to and `onnx/<time>/` is written to |
-| `local_dir` | local folder the train set the models name is downloaded to |
 | `--rebuild` | export again even if `runs_repo` already holds a directory with the same `inputs` |
 
 Limitation: only the nonlinear autoencoders are exported. Every one in the models
