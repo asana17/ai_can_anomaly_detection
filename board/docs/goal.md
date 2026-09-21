@@ -37,20 +37,20 @@ The numbers are task priorities, smaller runs first.
 | CAN receive interrupt | overwrites the slot of the frame's ID with its raw bytes and receive time | nothing to fill |
 | cyclic handler | wakes preprocess every 0.1 s | |
 | report 5 | sends each report out, the only part that touches UART or CAN transmit | UART, see below |
-| preprocess 6 | copies the slots, decodes and scales them into one numbered row, sent only above `MIN_SPEED` | drops the oldest row and counts it |
-| anomaly 8 | runs the rules and the autoencoder on each row, holds a flag over `HOLD` rows, reports anomalies | waits for the report queue |
+| preprocess 6 | copies the slots and decodes them into one numbered row, sent only above `MIN_SPEED` | drops the oldest row and counts it |
+| anomaly 8 | runs the rules on each row and the autoencoder on its scaled values, holds a flag over `HOLD` rows, reports anomalies | waits for the report queue |
 | status 10 | every second reports drops, queue space and CPU use, blinks the LED | waits for the report queue |
 
 The interrupt only stores, as a CAN driver does in a car. Signals are last is best, so a
 slot keeps the latest frame of its ID and there is no frame queue to overflow. Decoding
-and scaling run in the preprocess task, woken by the cyclic handler. A row is the
+runs in the preprocess task, woken by the cyclic handler. A row is the
 values held at a 0.1 s tick, which is how the PC builds rows in
 [grid_sample.py](../../preprocess/features/grid_sample.py). The values still differ from
 the PC's, since the board ticks on its own clock and frames arrive with their own jitter.
 Preprocessing resets when no slot has changed for 1 s, as the PC does across a gap.
 
 A row goes to the anomaly task only when its decoded wheel speed is above `MIN_SPEED`,
-5 km/h, read before scaling as `moving` does on the PC. The PC flags nothing on the
+5 km/h, as `moving` reads it on the PC. The PC flags nothing on the
 other rows, so the board skips them and runs no inference while the truck stands. The
 anomaly task sees the gap in the row numbers and restarts `HOLD` there. A row dropped
 from a full queue restarts it too, and coverage counts those apart.
@@ -61,6 +61,9 @@ between tasks are message buffers, which the kernel serialises. A full row queue
 its oldest row, since the anomaly task should see the bus as it is now. The message
 buffer has no such mode, so preprocessing takes one row out with `tk_rcv_mbf` and sends
 again.
+
+A row carries physical values, which is what the rules read. The anomaly task scales
+them for the autoencoder, so the scale sits with the model rather than with decoding.
 
 The anomaly task flags a row when a rule hits it or the autoencoder's score is over its
 threshold, the threshold `calibrate` took on the PC. A flag becomes an anomaly only
@@ -110,8 +113,8 @@ flowchart TB
 
     subgraph board["board"]
         irq[CAN receive interrupt] --> slots[(slots)]
-        slots --> pre["preprocess 6<br/>decode, rows above MIN_SPEED, scale"]
-        pre -- row queue --> ano["anomaly 8<br/>rules, autoencoder, threshold, HOLD"]
+        slots --> pre["preprocess 6<br/>decode, rows above MIN_SPEED"]
+        pre -- row queue --> ano["anomaly 8<br/>rules, scale, autoencoder, threshold, HOLD"]
         ano -- report queue --> rep["report 5<br/>UART"]
     end
 
@@ -137,7 +140,7 @@ stays outside `board` and is what the C is checked against on the PC.
 | SPN decode | `preprocess/frames/spn_decode.py`, `spn_spec.py`, `frame_decode.py` | `spn_decode/` | preprocess |
 | hold last payload | `preprocess/features/signal_state.py` | `signal_state/` | interrupt, preprocess |
 | rows above `MIN_SPEED` | `preprocess/features/moving.py` | `moving/` | preprocess |
-| scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | preprocess |
+| scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | anomaly |
 | autoencoder | ONNX from `deploy` | `model/`, `active_model/` | anomaly |
 | rules | the nine in `rules/instant/`, `rules/hits.py` | `rules/`, one header each and their OR | anomaly |
 | threshold, rules OR, `HOLD` | `detect/alarm.py` | `detector/` | anomaly |
