@@ -139,7 +139,7 @@ stays outside `board` and is what the C is checked against on the PC.
 | scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | preprocess |
 | autoencoder | ONNX from `deploy` | `model/`, `active_model/` | anomaly |
 | rules | the nine in `rules/instant/` | `rules/`, one header each | anomaly |
-| threshold, rules OR, `HOLD` | `detect/alarm.py` | not yet | anomaly |
+| threshold, rules OR, `HOLD` | `detect/alarm.py` | `detector/` | anomaly |
 
 Not ported:
 
