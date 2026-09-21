@@ -77,14 +77,14 @@ J1939's own terms, frame, PGN and SPN, are described in
   pipeline.
   1. `preprocess` marks the moving rows.
   2. `rules` flags the moving rows it hits.
-  3. The model scores the moving rows no rule hit.
+  3. The model scores the moving rows.
   4. `detect` compares the scores with the threshold, adds the rule flags, and holds
      them over `HOLD`.
 
   `score` runs the scoring pipeline over a set of rows and keeps each row's scores and
-  rule flags. It scores the calibration rows for `calibrate`, which takes the
-  threshold from them, and the test set's rows for `pc.detect`, so a new threshold or
-  `HOLD` needs no rescoring. About 33 MB and 430 MB for 40 models, reckoned from the
+  rule flags. `calibrate` runs it over the calibration rows and takes the threshold
+  from them, and `pc.run_test_set` runs it over the test set's rows and counts what
+  each detector caught, so a new threshold or `HOLD` needs no rescoring. About 33 MB and 430 MB for 40 models, reckoned from the
   grid's row counts. Rows are selected by mask and never cut out, since `HOLD` counts
   rows in a row. No function joins the steps.
 
@@ -102,9 +102,8 @@ J1939's own terms, frame, PGN and SPN, are described in
       calibration --> score
       test --> score
       score -- calibration set scores --> calibrate
-      score -- test set scores, rule flags --> detect["pc.detect"]
-      calibrate -- thresholds --> detect
-      detect -- alarms --> counting["counting<br/>caught, alarms per hour"]
+      score -- test set scores, rule flags --> run["pc.run_test_set<br/>detect, then<br/>caught, alarms per hour"]
+      calibrate -- thresholds --> run
       fit -- models --> export["deploy.export"] -- float ONNX --> quantize["deploy.quantize"]
       train -- representative rows for int8 --> quantize
       fit -- scale for the representative rows --> quantize
@@ -116,34 +115,26 @@ J1939's own terms, frame, PGN and SPN, are described in
   | part | steps | on the PC | on the board |
   |---|---|---|---|
   | scoring pipeline | `preprocess`, `rules`, the model | `score` | in C |
-  | `detect` | threshold, OR the rule flags, `HOLD` | `pc.detect` | in C |
+  | `detect` | threshold, OR the rule flags, `HOLD` | `detect`, run by `pc.run_test_set` | in C |
 
   What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
   train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
   scale in the models, `detect` holds step 4, and `split_test_logs`, `calibration_set`,
-  `train_set` and `test_set` build the sets, all done 2026-09-22. Rows 11 to 13 are to
-  be fixed along with the rest.
+  `train_set` and `test_set` build the sets, and `score`, `calibrate` and
+  `pc.run_test_set` are split as drawn, with their schemas and tests, all done
+  2026-09-22. Row 13 is to be fixed along with the rest.
 
   | # | what | today | after |
   |---|---|---|---|
-  | 4 | calibration rows | moving only in `calibration_set`, `calibrate` drops rule hits | rules applied in `score` |
-  | 8 | scoring stage | `pc.score` scores and counts | `score` writes `scores/`, `pc.detect` writes `detections/` |
-  | 9 | `calibrate` | selects rows, scores, takes the quantile | reads scores, takes the quantile |
-  | 10 | counting | `counting.py`, beside what a detector reads | counting only |
-  | 11 | JSON Schemas | `detection` and others for today's dirs | match `scores/`, `detections/`, `thresholds/`, `models/` |
-  | 12 | tests | e.g. `test_train_set.py` checks `scale.npy`, `test_score.py` patches `fetch_scale` | follow rows 1 to 11 |
   | 13 | stage docs | `evaluate/docs/*` | follow rows 1 to 11, place `pc_run.md` |
 
   - Build the log split and the three sets again. Their inputs changed, so no
     `--rebuild` is needed. The stages after them follow the new paths.
-  - Keep the counting of what was caught apart from `persistent`, for the board to use
-    too.
-  - Split `evaluate.pc.score` into `score`, writing `scores/`, and `pc.detect`,
-    writing `detections/`. `calibrate` then reads scores.
   - Redraw the diagram in [evaluate/README.md](evaluate/README.md) for the new layout.
     A diagram of the old layout is in `git stash`, stale.
   - `evaluate` is not a unit of the design, only a box the stages sit in. Decide where
-    `fit`, `calibrate`, `score`, `pc.detect` and counting go, and break it up.
+    `fit`, `calibrate`, `score`, `pc.run_test_set` and `count_alarms` go, and break it
+    up.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Draw the attacks over the test span's time rather than one per log. One per log puts
   most attacks where the truck stands, and four times as many per moving hour in the
