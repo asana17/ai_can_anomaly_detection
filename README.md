@@ -120,8 +120,7 @@ J1939's own terms, frame, PGN and SPN, are described in
     and `quantize` then read the rows the model fits on.
   - Keep the counting of what was caught in `evaluate`, for the board to use too.
   - Split `evaluate.pc.score` into `score`, writing `scores/`, and `pc.detect`,
-    writing `detections/`. `calibrate` then reads scores. Wait until the staged schema
-    change to `score.py` is committed.
+    writing `detections/`. `calibrate` then reads scores.
   - List in the board docs what the board runs. `preprocess` without
     `can_log_loader` and `profile`, `rules`, the model, `detect`. The C goes in
     `board/common/` and the Python stays outside `board`.
