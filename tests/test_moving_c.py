@@ -13,10 +13,10 @@ ROWS = 100_000
 @pytest.fixture(scope="module")
 def c_moving(board_lib):
     """Build board/lib/moving for this machine and give its `moving`."""
-    function = board_lib("moving",
+    function = board_lib(["moving"],
                          '#include "moving.h"\n'
                          "bool is_moving(const float *row, float min_speed)\n"
-                         "{\n\treturn moving(row, min_speed);\n}\n", "is_moving")
+                         "{\n\treturn moving(row, min_speed);\n}\n").is_moving
     function.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_float]
     function.restype = ctypes.c_bool
     return function

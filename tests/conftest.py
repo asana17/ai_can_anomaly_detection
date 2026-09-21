@@ -86,19 +86,20 @@ C_TYPES = {"float": ctypes.c_float, "const float *": ctypes.POINTER(ctypes.c_flo
 
 @pytest.fixture(scope="session")
 def board_lib(tmp_path_factory):
-    """Build C against a part of board/lib for this machine and give one of its functions.
+    """Build C against parts of board/lib for this machine and load it.
 
-    The parts are static inline functions in headers, so `source` wraps the one a test
-    needs in a function `name` the library exports. It builds with the board's C_FLAGS.
+    The parts are static inline functions in headers, so `source` wraps the ones a test
+    needs in functions the library exports. `parts` are the folders it includes. It
+    builds with the board's C_FLAGS.
     """
-    def build(part, source, name):
-        folder = tmp_path_factory.mktemp(part)
-        (folder / f"{name}.c").write_text(source)
-        library = folder / f"{name}.so"
-        subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", *C_FLAGS,
-                        "-I", os.path.join(BOARD_LIB, part), "-o", library,
-                        folder / f"{name}.c"], check=True)
-        return getattr(ctypes.CDLL(str(library)), name)
+    def build(parts, source):
+        folder = tmp_path_factory.mktemp(parts[0])
+        (folder / "wrap.c").write_text(source)
+        library = folder / "wrap.so"
+        includes = [flag for part in parts for flag in ("-I", os.path.join(BOARD_LIB, part))]
+        subprocess.run(["clang", "-shared", "-fPIC", "-Wall", "-Werror", *C_FLAGS, *includes,
+                        "-o", library, folder / "wrap.c"], check=True)
+        return ctypes.CDLL(str(library))
     return build
 
 
@@ -112,10 +113,10 @@ def board_rule(board_lib):
     def build(name, parameters):
         names = [f"a{i}" for i in range(len(parameters))]
         declared = ", ".join(f"{kind} {a}" for kind, a in zip(parameters, names))
-        function = board_lib("rules",
+        function = board_lib(["rules"],
                              f'#include "{name}.h"\n'
                              f"bool hits({declared})\n"
-                             f"{{\n\treturn {name}_hits({', '.join(names)});\n}}\n", "hits")
+                             f"{{\n\treturn {name}_hits({', '.join(names)});\n}}\n").hits
         function.argtypes = [C_TYPES[kind] for kind in parameters]
         function.restype = ctypes.c_bool
         return function

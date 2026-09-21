@@ -16,10 +16,10 @@ class CanId(ctypes.Structure):
 @pytest.fixture(scope="module")
 def can_id_decompose(board_lib):
     """Build board/lib/can_id for this machine and give its `can_id_decompose`."""
-    function = board_lib("can_id",
+    function = board_lib(["can_id"],
                          '#include "can_id.h"\n'
                          "CanId decompose(uint32_t arb_id)\n"
-                         "{\n\treturn can_id_decompose(arb_id);\n}\n", "decompose")
+                         "{\n\treturn can_id_decompose(arb_id);\n}\n").decompose
     function.argtypes = [ctypes.c_uint32]
     function.restype = CanId
     return function

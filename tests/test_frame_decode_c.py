@@ -20,11 +20,11 @@ def c_decode_frame(board_lib):
 
     It returns a {name: value} dict as the Python does.
     """
-    function = board_lib("spn_decode",
+    function = board_lib(["spn_decode"],
                          '#include "frame_decode.h"\n'
                          "size_t decode(uint32_t pgn, const uint8_t *data, size_t size,"
                          " FrameDecodeValue *out)\n"
-                         "{\n\treturn frame_decode(pgn, data, size, out);\n}\n", "decode")
+                         "{\n\treturn frame_decode(pgn, data, size, out);\n}\n").decode
     function.restype = ctypes.c_size_t
     out = (FrameDecodeValue * len(SIGNALS))()
 
