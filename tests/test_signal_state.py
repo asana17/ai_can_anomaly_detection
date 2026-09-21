@@ -1,26 +1,39 @@
+import math
+
 from preprocess.features.signal_state import SIGNALS, SignalState
 
+EEC1 = 61444
+ENGINE_SPEED_1000 = bytes([0, 0, 0, 0x40, 0x1F, 0, 0, 0])   # raw 8000 * 0.125
 
-def test_holds_latest_value_per_signal():
+
+def test_row_decodes_the_latest_payload():
     s = SignalState()
-    s.update({"engine_speed": 1000.0})
-    s.update({"engine_speed": 1200.0})
-    assert s.row()[SIGNALS.index("engine_speed")] == 1200.0
+    s.update(EEC1, bytes(8))
+    s.update(EEC1, ENGINE_SPEED_1000)
+    assert s.row()[SIGNALS.index("engine_speed")] == 1000.0
 
 
-def test_unknown_signal_is_ignored():
+def test_a_reserved_value_is_nan_not_the_one_before():
     s = SignalState()
-    s.update({"not_a_signal": 5.0})
-    assert all(v is None for v in s.row())
+    s.update(EEC1, ENGINE_SPEED_1000)
+    s.update(EEC1, bytes([0, 0, 0, 0xFF, 0xFF, 0, 0, 0]))
+    assert math.isnan(s.row()[SIGNALS.index("engine_speed")])
 
 
-def test_ready_only_when_all_signals_seen():
+def test_a_pgn_not_in_spec_is_ignored():
+    s = SignalState()
+    s.update(65408, bytes(8))
+    assert all(math.isnan(v) for v in s.row())
+
+
+def test_ready_once_every_pgn_has_arrived():
     s = SignalState()
     assert not s.ready()
-    for name in SIGNALS:
-        s.update({name: 1.0})
-    assert s.ready()
-    assert s.row() == [1.0] * len(SIGNALS)
+    for pgn in (61444, 61443, 65265, 65266, 61442, 61445, 65132, 61441):
+        s.update(pgn, bytes(8))
+    assert not s.ready()
+    s.update(61449, bytes([0xFF] * 8))
+    assert s.ready(), "a PGN whose values are all reserved has still arrived"
 
 
 def test_signals_come_from_spec():
@@ -28,9 +41,3 @@ def test_signals_come_from_spec():
     assert "wheel_speed" in SIGNALS
     assert "yaw_rate" in SIGNALS
     assert len(SIGNALS) == 17
-
-
-def test_values_gives_names_and_skips_what_has_not_arrived():
-    s = SignalState()
-    s.update({"engine_speed": 1000.0, "wheel_speed": 50.0})
-    assert s.values() == {"engine_speed": 1000.0, "wheel_speed": 50.0}

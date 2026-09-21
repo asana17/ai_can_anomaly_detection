@@ -7,7 +7,6 @@ from typing import Iterable, Iterator
 from preprocess.features.signal_state import SignalState
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import CanFrame
-from preprocess.frames.frame_decode import decode_frame
 
 
 def resample(
@@ -34,7 +33,7 @@ def resample(
             if state.ready():
                 yield (next_tick, state.row())
             next_tick += period
-        state.update(decode_frame(pgn, f.data))
+        state.update(pgn, f.data)
         previous = f.timestamp
         if next_tick is None:
             next_tick = f.timestamp + period

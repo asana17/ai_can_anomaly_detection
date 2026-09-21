@@ -12,9 +12,9 @@ for t, vec in resample(frames, period=0.1, max_hold=1.0):
     ...   # one row every 100 ms; vec holds all signals, in SIGNALS order
 ```
 
-It outputs a row at each tick using the latest value of every signal. It waits
-until all signals have been seen, and between frames it holds the last value, so
-every row is complete.
+It outputs a row at each tick from the latest payload of every PGN. It waits until
+every PGN has arrived, and between frames it holds the last payload. A value J1939
+reserves is NaN in the row, see [signal_state](signal_state.md).
 
 `max_hold` is how long a value may be held. A gap longer than that means the
 recording stopped, not that the signals held steady, so `resample` emits no rows

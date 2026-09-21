@@ -35,8 +35,8 @@ Each module is documented under [docs/](docs).
 
 ### features: signals to model input
 
-- [signal_state](docs/signal_state.md) keeps the latest value of each signal, so
-  they can be read together as one row.
+- [signal_state](docs/signal_state.md) keeps the latest payload of each PGN and
+  decodes them into one row, so signals that arrive apart are read together.
 - [grid_sample](docs/grid_sample.md) samples the signal state on a fixed time grid
   into a regular series of rows, holding a value only across a short gap.
 - [scale](docs/scale.md) puts rows on a mean and std per signal, and takes them off.
