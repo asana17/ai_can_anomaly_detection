@@ -1,7 +1,7 @@
 # quantize
 
-`quantize` takes every float file of one [export](export.md), quantizes it to int8,
-and keeps them in the runs repository. It is run only when an int8 model is wanted.
+Quantize float onnx file [export](export.md) created to int8.
+This process also gives each int8 model a threshold, and keeps them in the runs repository.
 
 ## Running it
 
@@ -13,7 +13,7 @@ python3 -u -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir 
 |---|---|
 | `runs_repo` | Hugging Face model repo holding the export and uploaded to, needs `hf auth login` |
 | `revision` | commit of `runs_repo` to read the export at, as [export](export.md) printed it |
-| `onnx/<time>` | the export to quantize |
+| `onnx/<time>` | the float onnx to quantize, which export step created |
 | `runs_dir` | local folder the export is downloaded to and `quantize/<time>/` is written to |
 | `local_dir` | local folder the train set the models name is downloaded to |
 | `--rebuild` | quantize again even if `runs_repo` already holds a directory with the same `inputs` |
@@ -26,19 +26,19 @@ It writes these files into `runs_dir/quantize/<time>/` and uploads that director
 | file | holds |
 |---|---|
 | `nonlinear_ae_k{k}_h{h}_int8.onnx` | one file per model, in int8 QDQ form, the input ST Edge AI Core takes |
-| `meta.json` | where the export came from, and the threshold each int8 file reaches |
+| `thresholds.json` | one entry per model, the model as the models directory writes it down, and the `threshold` its int8 file reaches, in the form [calibrate](../../evaluate/docs/calibrate.md) writes |
+| `meta.json` | where the export came from |
 
 | key in `meta.json` | holds |
 |---|---|
 | `inputs` | the export, `TARGET` and `BATCH`. A later call with the same `inputs` reuses this directory |
 | `onnx` | the export the float files came from, as a repo, a revision and a path |
 | `models`, `train_set`, `split`, `grid` | the directories the export records |
-| `thresholds` | one entry per model, the model as the models directory writes it down, and the `int8_threshold` its int8 file reaches on the calibration rows at `TARGET` |
 | `versions` | Python, NumPy, ONNX and ONNX Runtime |
 | `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
 | `started`, `finished` | when it started and ended |
 
-## Where the int8 thresholds come from
+## Where the thresholds come from
 
 An int8 model does not score a row quite as the float model does, so it cannot keep
 the float model's threshold. Each int8 file scores the calibration rows of the train

@@ -1,10 +1,11 @@
-"""Quantize every float ONNX file of an export to int8, and keep them.
+"""Quantize every float ONNX file of an export to int8, and keep them with their thresholds.
 
     python3 -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir [--rebuild]
 """
 
 from __future__ import annotations
 
+import json
 import os
 import platform
 import tempfile
@@ -69,12 +70,12 @@ def write_int8_files(names, source, rows, dest, batch):
 
 
 def int8_thresholds(exported, calibration, folder, target):
-    """Calibrate each int8 model again on the calibration rows."""
+    """Give each int8 file the score above which a row counts as an anomaly."""
     kept = []
     for entry in exported:
         scores = onnx_residuals(
             os.path.join(folder, f"{file_of(model_from(entry))}_int8.onnx"), calibration)
-        kept.append({**entry, "int8_threshold": threshold_for(scores, target)})
+        kept.append({**entry, "threshold": threshold_for(scores, target)})
     return kept
 
 
@@ -82,7 +83,8 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
                     settings):
     """Write each float file of an export as int8, and return what to record.
 
-    The int8 file is quantized on the rows the model was fitted on.
+    The int8 file is quantized on the rows the model was fitted on, and its threshold
+    is taken from the calibration rows, into `thresholds.json` as calibrate writes it.
     """
     source, exported = read_dir(runs_repo, onnx_path, runs_dir, revision)
     at = exported["train_set"]
@@ -91,11 +93,11 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     write_int8_files([file_of(model_from(entry)) for entry in exported["exported"]],
                      source, rows_to_fit(train_set), folder, settings.BATCH)
     calibration = calibration_rows(train_set, settings)
-    thresholds = int8_thresholds(exported["exported"], calibration, folder,
-                                 settings.TARGET)
+    with open(os.path.join(folder, "thresholds.json"), "w") as f:
+        json.dump(int8_thresholds(exported["exported"], calibration, folder,
+                                  settings.TARGET), f, indent=2)
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},
             **{name: exported[name] for name in ("models", "train_set", "split", "grid")},
-            "thresholds": thresholds,
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "onnx": onnx.__version__,
                          "onnxruntime": onnxruntime.__version__}}
