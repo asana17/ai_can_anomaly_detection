@@ -65,7 +65,9 @@ def attacked_log(hurt, span, before, *, period: float, max_hold: float):
     # a grid holds float32, so the rows it did not hold are cast to match the ones it did
     clean = np.asarray([before[t] if seen else row
                         for t, seen, row in zip(times, known, rows)], np.float32)
-    label = known & (rows != clean).any(axis=1)
+    # NaN is a value J1939 reserves, the same on both sides when the attack left it
+    changed = (rows != clean) & ~(np.isnan(rows) & np.isnan(clean))
+    label = known & changed.any(axis=1)
 
     one = {"raw": rows, "t": times, "seg": seg.astype(np.int32), "label": label,
            "wheel": clean[:, SIGNALS.index("wheel_speed")]}

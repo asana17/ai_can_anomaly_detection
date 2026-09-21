@@ -99,6 +99,18 @@ def test_rows_outside_every_attack_are_not_labelled(tmp_path):
     assert not d["label"][~covered].any()
 
 
+def test_a_signal_the_truck_sends_as_not_available_is_not_labelled(tmp_path):
+    path = tmp_path / "a.csv"
+    _write_log(path)
+    path.write_text(path.read_text().replace(";0x18F001E6;8;207;0;", ";0x18F001E6;8;207;255;"))
+    d = _injected([str(path)])
+    clean, _, _ = grid_rows([str(path)], period=PERIOD, max_hold=MAX_HOLD)
+    assert np.isnan(clean[:, signal_state.SIGNALS.index("brake_pedal")]).all()
+    differs = [not np.array_equal(c, r, equal_nan=True) for c, r in zip(clean, d["raw"])]
+    assert d["label"].tolist() == differs
+    assert not d["label"].all()
+
+
 def test_a_log_too_short_to_attack_still_contributes_rows(tmp_path):
     d = _injected([_write_log(tmp_path / "a.csv", seconds=5)], 0)
     assert len(d["raw"]) > 0
