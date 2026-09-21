@@ -77,6 +77,21 @@ def training_rows(data, scale, settings):
             data["calibration_rows"][above(data["calibration_rows"]) & clean])
 
 
+def moved_by(attack, attacked, std):
+    """How far `attack` took a row from the one the bus really produced.
+
+    It is the largest distance over the rows the attack changed, between the attacked
+    row and the original, divided by `std`. That is the train set's, so the distance
+    is in the units a model reads. `attacked` holds the attacked rows and `before`,
+    which gives a log's rows as they were.
+    """
+    original = attacked["before"](attack["log"])
+    changed = [i for i in range(attack["first"], attack["last"] + 1)
+               if attacked["label"][i]]
+    return float(max(np.linalg.norm((attacked["raw"][i] - original[attacked["t"][i]])
+                                    / std) for i in changed))
+
+
 def scored_set(got, scale, settings):
     """The attacked rows, what a detector reads in them, and what an alarm is counted in."""
     mv = moving(scale.undo(got["rows"]), min_speed=settings.MIN_SPEED)

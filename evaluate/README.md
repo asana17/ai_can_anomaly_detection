@@ -10,22 +10,25 @@ components, and each autoencoder gets the same `k` as its `latent_dim`, so every
 is compared at the same `k`. The linear and nonlinear autoencoders differ only in the
 hidden layer and its ReLU, so the gap between them is what the nonlinearity buys.
 
-Building a detector takes two commands, each writing one directory of the runs
-repository.
+Building a detector and measuring it is one command per stage, each writing one
+directory of the runs repository.
 
 ```
 python3 -m evaluate.fit REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
 python3 -m evaluate.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
+python3 -m evaluate.pc.score REPO REVISION ATTACK_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR
 ```
 
-Scoring the attacked test rows is still `evaluate.pc.run`, which fits, thresholds and
-scores in one command and reads the dataset in the old flat layout.
+`evaluate.pc.run` still does all three in one command, reading the dataset in the old
+flat layout. It goes once the stages have been run end to end.
 
 Documented under [docs/](docs).
 
 - [fit](docs/fit.md) trains the models on the train rows and uploads them.
 - [calibrate](docs/calibrate.md) gives each model the score above which a row counts
   as an anomaly.
+- [pc_score](docs/pc_score.md) counts what each detector catches on the attacked test
+  rows.
 - [pc_run](docs/pc_run.md) says what is reused, what counts as an alarm, and how each
   parameter was set.
 - [quantize_compare](docs/quantize_compare.md) says how the cost of quantizing a model
