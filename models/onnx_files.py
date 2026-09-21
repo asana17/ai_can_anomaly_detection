@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from functools import partial
 
 import numpy as np
 import onnxruntime
@@ -27,3 +28,9 @@ def onnx_residuals(path, rows, batch=8192):
         got = session.run(None, {"row": fed})[0]
         out.append(((got - fed) ** 2).mean(axis=1))
     return np.concatenate(out)
+
+
+def onnx_scorer(folder, precision):
+    """What scores rows with a model in ONNX Runtime, on its `precision` file."""
+    return lambda model: partial(onnx_residuals,
+                                 onnx_file_path(folder, model, precision))

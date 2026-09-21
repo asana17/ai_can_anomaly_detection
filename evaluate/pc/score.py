@@ -13,7 +13,6 @@ import json
 import os
 import platform
 from dataclasses import replace
-from functools import partial
 
 import numpy as np
 import onnxruntime
@@ -28,7 +27,7 @@ from evaluate.counting import (alarms, moved_by, persistent,
                                prepare_scoring_input, touched)
 from evaluate.fit import fetch_models
 from models.fits import model_from
-from models.onnx_files import onnx_file_path, onnx_residuals
+from models.onnx_files import onnx_scorer
 
 
 def fetch_thresholds(directory, runs_dir):
@@ -64,12 +63,6 @@ def torch_scorer(models, runs_dir):
     # the scale is fitted on every signal a row holds
     signals = weights["scale.mean"].shape[0]
     return lambda model: model.scorer(weights, signals)
-
-
-def onnx_scorer(folder, precision):
-    """What scores rows with a model in ONNX Runtime, on its `precision` file."""
-    return lambda model: partial(onnx_residuals,
-                                 onnx_file_path(folder, model, precision))
 
 
 def fetch_scale(directory, local_dir):
