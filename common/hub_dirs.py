@@ -13,7 +13,6 @@ import time
 
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
 
-from common import hf_upload
 from common.git import source
 
 
@@ -83,9 +82,19 @@ def upload(repo, path, local_dir, message, repo_type="model"):
     """Upload directory `path` of `local_dir` to `repo` in one commit.
 
     It prints and returns it as `{repo, revision, path}`, the revision being that commit.
+    When the upload fails, the `hf upload` command that does the same is printed before
+    the error is raised again. The files stay in `local_dir`.
     """
-    commit = hf_upload.upload(repo, os.path.join(local_dir, path), message,
-                              repo_type=repo_type, path_in_repo=path)
+    folder = os.path.join(local_dir, path)
+    try:
+        commit = HfApi().upload_folder(repo_id=repo, repo_type=repo_type,
+                                       folder_path=folder, path_in_repo=path,
+                                       commit_message=message)
+    except Exception:
+        print(f"upload failed, {folder} is kept. To upload it again:\n"
+              f"hf upload {repo} {folder} {path} --repo-type {repo_type} "
+              f"--commit-message '{message}'", flush=True)
+        raise
     print(f"{repo} {commit.oid} {path}", flush=True)
     return {"repo": repo, "revision": commit.oid, "path": path}
 

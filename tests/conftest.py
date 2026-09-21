@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from board.prepare.cubeide import C_FLAGS
-from common import hf_upload, hub_dirs
+from common import hub_dirs
 from common.schema_validate import check
 
 REVISION = "ab" * 20
@@ -75,7 +75,6 @@ def hub(monkeypatch):
                 fetch(name, local_dir)
 
     monkeypatch.setattr(hub_dirs, "HfApi", Hub)
-    monkeypatch.setattr(hf_upload, "HfApi", Hub)
     monkeypatch.setattr(hub_dirs, "hf_hub_download", hf_hub_download)
     monkeypatch.setattr(hub_dirs, "snapshot_download", snapshot_download)
     return Hub
