@@ -5,10 +5,9 @@ import numpy as np
 import torch
 
 from assemble.scale import Scale
-from common.settings import Settings
 from deploy import quantize
 from deploy.export import write_onnx_files
-from deploy.quantize import int8_thresholds, threshold_for, write_int8_files
+from deploy.quantize import write_int8_files
 from models.autoencoder import NonlinearAutoencoder, residuals
 from models.onnx_files import onnx_residuals
 from preprocess.features.signal_state import SIGNALS
@@ -46,19 +45,6 @@ def test_only_the_int8_file_is_kept(tmp_path):
         "nonlinear_ae_k4_h8_int8.onnx"]
 
 
-def test_each_int8_file_gets_a_threshold_beside_its_model(tmp_path):
-    rows = _rows()
-    dest = _quantized(tmp_path, _model(), rows)
-    got = int8_thresholds([ENTRY], rows, dest, 0.01)
-    scores = onnx_residuals(f"{dest}/nonlinear_ae_k4_h8_int8.onnx", rows)
-    assert got[0] == {**ENTRY, "threshold": threshold_for(scores, 0.01)}
-
-
-def test_the_threshold_cuts_off_the_target_share():
-    scores = np.arange(1000, dtype=np.float32)
-    assert (scores > threshold_for(scores, 0.01)).sum() == 10
-
-
 def test_onnx_residuals_reads_the_rows_it_is_given(tmp_path):
     model, rows = _model(), _rows()
     write_onnx_files([("ae", model)], 17, str(tmp_path / "out"))
@@ -83,8 +69,6 @@ def exported(monkeypatch, tmp_path):
     monkeypatch.setattr(quantize, "fetch_train_set", lambda *args: {
         "train": raw, "calibration": raw, "min_speed": 5.0,
         "scale": Scale(np.zeros(signals, np.float32), np.ones(signals, np.float32))})
-    monkeypatch.setattr("evaluate.calibrate.rule_hits",
-                        lambda raw, settings: np.zeros(len(raw), bool))
 
 
 def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch):
@@ -93,12 +77,8 @@ def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch)
 
     folder = tmp_path / made["path"]
     assert made["path"].startswith("quantize/")
-    assert sorted(os.listdir(folder)) == ["meta.json", "nonlinear_ae_k4_h8_int8.onnx",
-                                          "thresholds.json"]
-    kept = json.load(open(folder / "thresholds.json"))
-    assert len(kept) == 1 and kept[0].keys() == {*ENTRY, "threshold"}
-    assert kept[0]["threshold"] > 0
+    assert sorted(os.listdir(folder)) == ["meta.json", "nonlinear_ae_k4_h8_int8.onnx"]
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"onnx": "onnx/t", "target": Settings().TARGET}
+    assert meta["inputs"] == {"onnx": "onnx/t"}
     assert meta["onnx"] == {"repo": "u/runs", "revision": "def", "path": "onnx/t"}
     assert meta["models"]["path"] == "models/t"

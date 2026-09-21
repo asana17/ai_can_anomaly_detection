@@ -29,6 +29,10 @@ Without `--onnx_files` each model scores in torch, on the weights [fit](fit.md) 
 into `models/<time>`. With `--onnx_files` the `revision` has to hold `<dir>` too. It
 stops when `<dir>` is not made from `models/<time>`.
 
+An int8 file does not score a row quite as the float model does, so it cannot keep
+the float model's threshold. Its threshold is taken with `--onnx_files` and
+`--precision int8`.
+
 It writes these files into `runs_dir/thresholds/<time>/` and uploads that directory to
 `runs_repo` as `thresholds/<time>/`.
 

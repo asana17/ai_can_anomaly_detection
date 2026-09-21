@@ -1,7 +1,8 @@
 # quantize
 
-Quantize float onnx file [export](export.md) created to int8.
-This process also gives each int8 model a threshold, and keeps them in the runs repository.
+Quantize float onnx file [export](export.md) created to int8, and keep them in the runs
+repository. [calibrate](../../evaluate/docs/calibrate.md) with `--onnx_files` and
+`--precision int8` gives each int8 file its threshold.
 
 ## Running it
 
@@ -26,24 +27,16 @@ It writes these files into `runs_dir/quantize/<time>/` and uploads that director
 | file | holds |
 |---|---|
 | `nonlinear_ae_k{k}_h{h}_int8.onnx` | one file per model, in int8 QDQ form, the input ST Edge AI Core takes |
-| `thresholds.json` | one entry per model, the model as the models directory writes it down, and the `threshold` its int8 file reaches, in the form [calibrate](../../evaluate/docs/calibrate.md) writes |
 | `meta.json` | where the export came from |
 
 | key in `meta.json` | holds |
 |---|---|
-| `inputs` | the export, `TARGET` and `BATCH`. A later call with the same `inputs` reuses this directory |
+| `inputs` | the export. A later call with the same `inputs` reuses this directory |
 | `onnx` | the export the float files came from, as a repo, a revision and a path |
 | `models`, `train_set`, `split`, `grid` | the directories the export records |
 | `versions` | Python, NumPy, ONNX and ONNX Runtime |
 | `commit`, `uncommitted` | the commit of this repository it ran from, and any uncommitted files |
 | `started`, `finished` | when it started and ended |
-
-## Where the thresholds come from
-
-An int8 model does not score a row quite as the float model does, so it cannot keep
-the float model's threshold. Each int8 file scores the calibration rows of the train
-set, and its threshold is the score `TARGET` of them are above, as
-[calibrate](../../evaluate/docs/calibrate.md) does for the float models.
 
 ## Where the quantization ranges come from
 

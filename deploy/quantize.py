@@ -1,11 +1,10 @@
-"""Quantize every float ONNX file of an export to int8, and keep them with their thresholds.
+"""Quantize every float ONNX file of an export to int8.
 
     python3 -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir [--rebuild]
 """
 
 from __future__ import annotations
 
-import json
 import os
 import platform
 import tempfile
@@ -21,10 +20,9 @@ from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
-from evaluate.calibrate import calibration_rows
 from evaluate.fit import rows_to_fit
 from models.fits import model_from
-from models.onnx_files import onnx_file_path, onnx_name, onnx_residuals
+from models.onnx_files import onnx_name
 
 
 class Rows(CalibrationDataReader):
@@ -37,11 +35,6 @@ class Rows(CalibrationDataReader):
     def get_next(self):
         batch = next(self.batches, None)
         return None if batch is None else {self.name: batch.astype(np.float32)}
-
-
-def threshold_for(scores, target):
-    """The score that cuts `target` of the calibration rows off."""
-    return float(np.percentile(scores, 100 * (1 - target)))
 
 
 def write_int8_files(names, source, rows, dest, batch):
@@ -58,22 +51,11 @@ def write_int8_files(names, source, rows, dest, batch):
                             calibrate_method=CalibrationMethod.MinMax)
 
 
-def int8_thresholds(exported, calibration, folder, target):
-    """Give each int8 file the score above which a row counts as an anomaly."""
-    kept = []
-    for entry in exported:
-        scores = onnx_residuals(onnx_file_path(folder, model_from(entry), "int8"),
-                                calibration)
-        kept.append({**entry, "threshold": threshold_for(scores, target)})
-    return kept
-
-
 def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
                     settings):
     """Write each float file of an export as int8, and return what to record.
 
-    The int8 file is quantized on the rows the model was fitted on, and its threshold
-    is taken from the calibration rows, into `thresholds.json` as calibrate writes it.
+    The int8 file is quantized on the rows the model was fitted on.
     """
     source, exported = read_dir(runs_repo, onnx_path, runs_dir, revision)
     at = exported["train_set"]
@@ -81,10 +63,6 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
 
     write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
                      source, rows_to_fit(train_set), folder, settings.BATCH)
-    calibration = calibration_rows(train_set, settings)
-    with open(os.path.join(folder, "thresholds.json"), "w") as f:
-        json.dump(int8_thresholds(exported["exported"], calibration, folder,
-                                  settings.TARGET), f, indent=2)
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},
             **{name: exported[name] for name in ("models", "train_set", "split", "grid")},
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
@@ -94,7 +72,7 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
 
 def main(runs_repo, revision, onnx_path, runs_dir, local_dir, rebuild=False):
     settings = Settings()
-    inputs = {"onnx": onnx_path, "target": settings.TARGET}
+    inputs = {"onnx": onnx_path}
     return reuse_or_make(runs_repo, "quantize", inputs, runs_dir,
                          lambda folder: write_quantized(folder, runs_repo, revision,
                                                         onnx_path, runs_dir, local_dir,

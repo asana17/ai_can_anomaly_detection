@@ -68,11 +68,9 @@ J1939's own terms, frame, PGN and SPN, are described in
 
 ## TODO
 
-- Set the int8 thresholds in calibrate. Calibrate takes a `quantize/` directory as
-  score does with `--int8`. Quantize then only writes int8 files.
 - Leave the rows at or below `min_speed` out of the train rows the train set stage
   saves. Quantize then reads its rows straight from the train set.
-- Move `fetch_models` into `models/fits.py`. After these three `deploy` imports nothing
+- Move `fetch_models` into `models/fits.py`. After these two `deploy` imports nothing
   from `evaluate`.
 - Delete `board/rows.py`. No application reads the `rows.h` it writes. Move `bits` and
   `window` into `board/rule_rows.py` first.

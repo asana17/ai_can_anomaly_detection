@@ -130,7 +130,7 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
         onnx_files=onnx_files)
     hub.files.update({
         "thresholds/t/thresholds.json": [{**as_dict(MODEL), "threshold": 0.25}],
-        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t", "target": 0.001}}})
+        "quantize/t/meta.json": {"inputs": {"onnx": "onnx/t"}}})
 
     def no_weights(*args):
         raise AssertionError("an int8 file needs no weights")
