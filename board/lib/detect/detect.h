@@ -1,5 +1,5 @@
-#ifndef BOARD_DETECTOR_H
-#define BOARD_DETECTOR_H
+#ifndef BOARD_DETECT_H
+#define BOARD_DETECT_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -8,14 +8,14 @@ typedef struct {
 	uint32_t number; /* the number of the last row that went in */
 	uint32_t run;    /* rows flagged in a row, ending at that row */
 	bool seen;       /* a row has gone in */
-} Detector;
+} DetectState;
 
 /**
  * @brief Forget the run, as before the first row.
  *
  * @param[out] state The state.
  */
-static inline void detector_clear(Detector *state)
+static inline void detect_clear(DetectState *state)
 {
 	state->number = 0;
 	state->run = 0;
@@ -33,7 +33,7 @@ static inline void detector_clear(Detector *state)
  * @retval true The row is flagged. A NaN score is never above @p threshold.
  * @retval false It is not.
  */
-static inline bool detector_flagged(float score, float threshold, bool rule_hit)
+static inline bool detect_flagged(float score, float threshold, bool rule_hit)
 {
 	return score > threshold || rule_hit;
 }
@@ -54,12 +54,12 @@ static inline bool detector_flagged(float score, float threshold, bool rule_hit)
  * @retval true The row ends a run of @p hold flagged rows.
  * @retval false It does not.
  */
-static inline bool detector_alarmed(Detector *state, uint32_t number, float score,
+static inline bool detect_alarmed(DetectState *state, uint32_t number, float score,
 				    float threshold, bool rule_hit, uint32_t hold)
 {
 	bool follows = state->seen && number == state->number + 1u;
 
-	if(!detector_flagged(score, threshold, rule_hit)) {
+	if(!detect_flagged(score, threshold, rule_hit)) {
 		state->run = 0;
 	} else if(follows) {
 		state->run = state->run + 1u;

@@ -1,7 +1,7 @@
 #include <string.h>
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
-#include "detector.h"
+#include "detect.h"
 #include "mbf.h"
 #include "model.h"
 #include "model_config.h"
@@ -106,13 +106,13 @@ LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Detection *dete
 /* Report the row that completes HOLD flagged rows, and the row the run ends on. */
 LOCAL void score_and_detect_task(INT stacd, void *exinf)
 {
-	Detector state;
+	DetectState state;
 	Detection detection;
 	Row row;
 	Report report = {0};
 	INT ringing = 0, alarmed;
 
-	detector_clear(&state);
+	detect_clear(&state);
 	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
 		if(row.no == RULE_ROWS) {
 			break;
@@ -124,12 +124,12 @@ LOCAL void score_and_detect_task(INT stacd, void *exinf)
 			break;
 		}
 		scored_rows++;
-		flagged_rows += detector_flagged(detection.score, THRESHOLD_SCORE,
+		flagged_rows += detect_flagged(detection.score, THRESHOLD_SCORE,
 			detection.rule);
 		if(detection.cycles > maximum_cycles) {
 			maximum_cycles = detection.cycles;
 		}
-		alarmed = detector_alarmed(&state, row.no, detection.score, THRESHOLD_SCORE,
+		alarmed = detect_alarmed(&state, row.no, detection.score, THRESHOLD_SCORE,
 			detection.rule, HOLD);
 		if(alarmed != ringing) {
 			report.no = row.no;

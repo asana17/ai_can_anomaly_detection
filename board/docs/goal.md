@@ -143,7 +143,7 @@ stays outside `board` and is what the C is checked against on the PC.
 | scale | `Scale.apply` in `preprocess/features/scale.py` | `scale/` | score and detect |
 | autoencoder | ONNX from `deploy` | `model/`, `active_model/` | score and detect |
 | rules | the nine in `rules/instant/`, `rules/hits.py` | `rules/`, one header each and their OR | score and detect |
-| threshold, rules OR, `HOLD` | `detect/alarm.py` | `detector/` | score and detect |
+| threshold, rules OR, `HOLD` | `detect/alarm.py` | `detect/` | score and detect |
 
 Not ported:
 
