@@ -13,5 +13,5 @@ Documented under [docs/](docs).
   Edge AI Core from every float file of an export.
 
 What the int8 files cost in detection is measured by
-[pc detect](../evaluate/docs/pc_detect.md#what-int8-costs), and what it came to
+[run test set](../evaluate/docs/run_test_set.md#what-int8-costs), and what it came to
 is in [results](results.md).

@@ -71,11 +71,6 @@
           "type": "integer",
           "minimum": 0
         },
-        "found_scorable": {
-          "description": "The same over the attacks that reach a row above `min_speed` and moved it by at least `moved`.",
-          "type": "integer",
-          "minimum": 0
-        },
         "alarms_per_hour": {
           "description": "False alarms an hour.",
           "type": "number",
@@ -88,11 +83,16 @@
             "type": "integer",
             "minimum": 0
           }
+        },
+        "found_worth_catching": {
+          "description": "The same over the attacks that reach a row above `min_speed` and moved it by at least `moved`.",
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
         "found",
-        "found_scorable",
+        "found_worth_catching",
         "alarms_per_hour",
         "caught"
       ],

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "detections/<time>/meta.json",
-  "description": "Where scores came from.",
+  "title": "test_runs/<time>/meta.json",
+  "description": "Where a run of the detectors over a test set came from.",
   "allOf": [
     {
       "$ref": "meta.schema.json"
@@ -44,13 +44,17 @@
       ],
       "additionalProperties": false
     },
+    "scores": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The scores the detectors read, written as the test set was scored."
+    },
     "thresholds": {
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The directory the thresholds came from."
     },
     "onnx_files": {
       "$ref": "meta.schema.json#/$defs/onnx_files",
-      "description": "The ONNX files the models scored as, as the thresholds record them. Null when the models scored in torch."
+      "description": "The ONNX files the models scored as, as the scores record them. Null when the models scored in torch."
     },
     "models": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -82,11 +86,6 @@
       "type": "integer",
       "minimum": 0
     },
-    "attacks_scorable": {
-      "description": "How many of them reach a row above `min_speed` and moved it by at least `moved`.",
-      "type": "integer",
-      "minimum": 0
-    },
     "hours": {
       "description": "Hours of rows above `min_speed` with no attack in them, what the false alarms are counted over.",
       "type": "number",
@@ -94,10 +93,16 @@
     },
     "versions": {
       "$ref": "meta.schema.json#/$defs/versions",
-      "description": "Python, NumPy, the platform, and torch or ONNX Runtime, whichever scored."
+      "description": "Python, NumPy and the platform."
+    },
+    "attacks_worth_catching": {
+      "description": "How many of them reach a row above `min_speed` and moved it by at least `moved`.",
+      "type": "integer",
+      "minimum": 0
     }
   },
   "required": [
+    "scores",
     "thresholds",
     "onnx_files",
     "models",
@@ -107,7 +112,7 @@
     "min_speed",
     "rows",
     "attacks",
-    "attacks_scorable",
+    "attacks_worth_catching",
     "hours",
     "versions"
   ],
