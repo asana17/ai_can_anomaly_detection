@@ -66,8 +66,7 @@ The anomaly task flags a row when a rule hits it or the autoencoder's score is o
 threshold, the threshold `calibrate` took on the PC. A flag becomes an anomaly only
 after `HOLD` flagged rows in a row, as `persistent` counts it on the PC, so a single odd
 row raises nothing. The anomaly report goes out when the run reaches `HOLD` and again
-when it ends. The PC counts every value in `HOLD`, 1 and 10 rows. The board runs one,
-not chosen yet.
+when it ends. The PC counts every value in `HOLD`, 1 and 10 rows. The board runs 10.
 
 Preprocessing and the anomaly task are separate tasks so that each row is taken at its
 tick however long inference runs. Preprocessing sits above the anomaly task and preempts
