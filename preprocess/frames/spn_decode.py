@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
+import numpy as np
+
 
 class SpnField(NamedTuple):
     start_bit: int
@@ -32,4 +34,5 @@ def decode(data: bytes, field: SpnField) -> float | None:
     top_byte = raw >> max(field.length - 8, 0)
     if top_byte >= 0xFE:        # 0xFE marks an error, 0xFF marks not available
         return None
-    return raw * field.scale + field.offset
+    # float32 as the board computes, the product rounded before the offset is added
+    return float(np.float32(raw) * np.float32(field.scale) + np.float32(field.offset))

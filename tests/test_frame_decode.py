@@ -1,3 +1,5 @@
+import numpy as np
+
 from preprocess.frames.frame_decode import decode_frame
 
 
@@ -12,7 +14,7 @@ def test_decodes_named_signals():
 def test_na_fields_are_omitted():
     # LFE1 (65266): only fuel_rate carries data, the rest is 0xFF
     values = decode_frame(65266, bytes([54, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
-    assert values == {"fuel_rate": 2.7}
+    assert values == {"fuel_rate": np.float32(2.7)}  # decoded in float32
 
 
 def test_unknown_pgn_returns_empty():
