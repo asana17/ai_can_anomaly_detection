@@ -6,8 +6,13 @@ import pytest
 import torch
 
 from assemble.scale import Scale
+from deploy.export import write_onnx_files
+from deploy.quantize import write_int8_files
 from evaluate import calibrate
 from common.settings import Settings
+from models.autoencoder import NonlinearAutoencoder
+from models.fits import FitArguments, NonlinearAe, as_dict
+from models.onnx_files import onnx_name, onnx_residuals
 from preprocess.features.signal_state import SIGNALS
 
 WHEEL = SIGNALS.index("wheel_speed")
@@ -51,14 +56,14 @@ def test_a_row_a_rule_flags_sets_no_threshold(monkeypatch):
     assert rows[:, WHEEL].tolist() == [20.0]
 
 
-def run_and_train_set(monkeypatch, raw):
-    """A stand-in run holding one PCA, fitted on a train set whose rows are `raw`."""
+def run_and_train_set(monkeypatch, raw, models=({"model": "pca", "k": 2},)):
+    """A stand-in run holding `models`, fitted on a train set whose rows are `raw`."""
     weights = {"scale.mean": torch.zeros(len(SIGNALS)),
                "pca.k2.centre": torch.zeros(len(SIGNALS)),
                "pca.k2.basis": torch.zeros(len(SIGNALS), 2)}
     where = {"repo": "u/d", "revision": "abc", "path": "train_sets/t"}
     meta = {"inputs": {"train_set": "train_sets/t",
-                       "models": [{"model": "pca", "k": 2}]},
+                       "models": list(models)},
             "train_set": where, "split": dict(where, path="splits/s"),
             "grid": dict(where, path="grids/g"), "min_speed": 5.0}
     monkeypatch.setattr(calibrate, "fetch_models", lambda *args: (weights, meta))
@@ -75,5 +80,48 @@ def test_a_threshold_is_kept_for_every_model_of_the_run(tmp_path, hub, monkeypat
     kept = json.load(open(folder / "thresholds.json"))
     assert [k["model"] for k in kept] == ["pca"] and kept[0]["threshold"] > 0
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"models": "models/t", "target": Settings().TARGET}
+    assert meta["inputs"] == {"models": "models/t", "target": Settings().TARGET,
+                              "onnx_files": None, "precision": None}
     assert meta["models"]["revision"] == "def" and meta["rows"] == len(raw)
+
+
+def int8_run(monkeypatch, tmp_path, hub, raw):
+    """A stand-in run holding one nonlinear autoencoder, with its int8 file."""
+    model = NonlinearAe(k=4, hidden=8, arguments=FitArguments(
+        epochs=2, batch=16, rate=1e-3, improvement=1e-4, patience=2, seed=0))
+    run_and_train_set(monkeypatch, raw, models=(as_dict(model),))
+    torch.manual_seed(0)
+    net = NonlinearAutoencoder(signals=len(SIGNALS), latent_dim=4, hidden=8)
+    write_onnx_files([(onnx_name(model), net)], len(SIGNALS), str(tmp_path / "float"))
+    write_int8_files([onnx_name(model)], str(tmp_path / "float"), raw,
+                     str(tmp_path / "quantize" / "t"), batch=16)
+    hub.files = {"quantize/t/meta.json": {"inputs": {"onnx": "onnx/t"},
+                                          "models": {"path": "models/t"}}}
+    return tmp_path / "quantize" / "t" / f"{onnx_name(model)}_int8.onnx"
+
+
+def test_onnx_thresholds_come_from_the_onnx_files(tmp_path, hub, monkeypatch):
+    raw = np.random.default_rng(0).normal(size=(64, len(SIGNALS))).astype(np.float32)
+    raw[:, WHEEL] = 10.0
+    int8_file = int8_run(monkeypatch, tmp_path, hub, raw)
+    made = calibrate.main("u/runs", "def", "models/t", str(tmp_path), str(tmp_path),
+                          onnx_files="quantize/t", precision="int8")
+
+    kept = json.load(open(tmp_path / made["path"] / "thresholds.json"))
+    scores = onnx_residuals(str(int8_file), raw)
+    assert kept[0]["threshold"] == calibrate.quantile(scores, Settings().TARGET)
+    meta = json.load(open(tmp_path / made["path"] / "meta.json"))
+    assert meta["inputs"]["onnx_files"] == "quantize/t"
+    assert meta["inputs"]["precision"] == "int8"
+    assert meta["onnx_files"]["precision"] == "int8"
+
+
+def test_onnx_files_need_to_be_made_from_the_fit(tmp_path, hub,
+                                                            monkeypatch):
+    raw = rows_at(np.arange(20) + 10.0)
+    run_and_train_set(monkeypatch, raw)
+    hub.files = {"quantize/t/meta.json": {"inputs": {"onnx": "onnx/u"},
+                                          "models": {"path": "models/u"}}}
+    with pytest.raises(ValueError):
+        calibrate.main("u/runs", "def", "models/t", str(tmp_path), str(tmp_path),
+                       onnx_files="quantize/t", precision="int8")

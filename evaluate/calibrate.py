@@ -1,10 +1,11 @@
 """Give every fitted model the score above which a row counts as an anomaly.
 
-    python3 -m evaluate.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild]
+    python3 -m evaluate.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
 
 The score comes from the calibration rows, which no model was fitted on. A model
 reconstructs the rows it was fitted on better than the rest, so a threshold taken from
-those would sit too low.
+those would sit too low. With `--onnx_files` each model is its ONNX file of `precision`
+in that directory, made from the same fit.
 """
 
 from __future__ import annotations
@@ -15,16 +16,18 @@ import platform
 from dataclasses import replace
 
 import numpy as np
+import onnxruntime
 import torch
 
 from assemble.grid import moving
 from assemble.train_set import fetch_train_set
 from common.cli import arguments
-from common.hub_dirs import reuse_or_make
+from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from evaluate.counting import rule_hits
 from evaluate.fit import fetch_models
 from models.fits import as_dict, models_from
+from models.onnx_files import onnx_scorer
 from models.torch_files import torch_scorer
 
 
@@ -62,34 +65,56 @@ def calibration_rows(train_set, settings):
     return train_set["scale"].apply(raw[kept])
 
 
-def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_dir,
-                     settings):
-    """Write `thresholds.json` into `folder`, and return what its `meta.json` adds."""
+def write_thresholds(folder, runs_repo, revision, models_path, onnx_directory,
+                     onnx_folder, runs_dir, local_dir, settings):
+    """Write `thresholds.json` into `folder`, and return what its `meta.json` adds.
+
+    Each model scores in torch, or with its ONNX file when `onnx_directory` names the
+    directory and the precision of them, the directory downloaded into `onnx_folder`.
+    """
     weights, fitted = fetch_models(runs_repo, revision, models_path, runs_dir)
     at = fitted["train_set"]
     train_set = fetch_train_set(at["repo"], at["revision"], at["path"], local_dir)
     rows = calibration_rows(train_set, settings)
-    thresholds = thresholds_for(models_from(fitted["inputs"]["models"]),
-                                torch_scorer(weights), rows, target=settings.TARGET)
+    if onnx_directory is None:
+        scorer_of = torch_scorer(weights)
+        runtime = {"torch": torch.__version__}
+    else:
+        scorer_of = onnx_scorer(onnx_folder, onnx_directory["precision"])
+        runtime = {"onnxruntime": onnxruntime.__version__}
+    thresholds = thresholds_for(models_from(fitted["inputs"]["models"]), scorer_of,
+                                rows, target=settings.TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
         json.dump(thresholds, f, indent=2)
     return {"models": {"repo": runs_repo, "revision": revision, "path": models_path},
+            "onnx_files": onnx_directory,
             **{name: fitted[name] for name in ("train_set", "split", "grid")},
             "min_speed": fitted["min_speed"], "rows": len(rows),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
-                         "torch": torch.__version__, "platform": platform.platform()}}
+                         **runtime, "platform": platform.platform()}}
 
 
-def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False):
+def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
+         onnx_files=None, precision=None):
     settings = Settings()
-    inputs = {"models": models_path, "target": settings.TARGET}
+    onnx_directory, onnx_folder = None, None
+    if onnx_files is not None:
+        onnx_directory = {"repo": runs_repo, "revision": revision, "path": onnx_files,
+                          "precision": precision}
+        onnx_folder, onnx_meta = read_dir(runs_repo, onnx_files, runs_dir, revision)
+        made_from = onnx_meta["models"]["path"]
+        if made_from != models_path:
+            raise ValueError(f"{onnx_files} is made from {made_from}, not {models_path}")
+    inputs = {"models": models_path, "target": settings.TARGET, "onnx_files": onnx_files,
+              "precision": precision}
     return reuse_or_make(runs_repo, "thresholds", inputs, runs_dir,
                          lambda folder: write_thresholds(folder, runs_repo, revision,
-                                                         models_path, runs_dir,
+                                                         models_path, onnx_directory,
+                                                         onnx_folder, runs_dir,
                                                          local_dir, settings),
                          rebuild)
 
 
 if __name__ == "__main__":
     main(**arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
-                    rebuild=False))
+                    rebuild=False, onnx_files=None, precision=None))
