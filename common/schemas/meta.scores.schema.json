@@ -11,10 +11,10 @@
     "inputs": {
       "type": "object",
       "properties": {
-        "attack_set": {
-          "description": "The `attack_sets/<time>` directory.",
+        "test_set": {
+          "description": "The `test_sets/<time>` directory.",
           "type": "string",
-          "pattern": "^attack_sets/[0-9]{8}-[0-9]{6}$"
+          "pattern": "^test_sets/[0-9]{8}-[0-9]{6}$"
         },
         "thresholds": {
           "description": "The `thresholds/<time>` directory.",
@@ -37,7 +37,7 @@
         }
       },
       "required": [
-        "attack_set",
+        "test_set",
         "thresholds",
         "moved",
         "hold"
@@ -56,13 +56,13 @@
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The directory the weights came from."
     },
-    "attack_set": {
+    "test_set": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The attack set the rows came from."
+      "description": "The test set the rows came from."
     },
     "log_split": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The log split the attack set was drawn on."
+      "description": "The log split the test set was drawn on."
     },
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -101,7 +101,7 @@
     "thresholds",
     "onnx_files",
     "models",
-    "attack_set",
+    "test_set",
     "log_split",
     "grid",
     "min_speed",

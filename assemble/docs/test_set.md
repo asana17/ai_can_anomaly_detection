@@ -1,4 +1,4 @@
-# attack_set
+# test_set
 
 Injects one attack into each test log, then puts the frames on the grid and says which
 rows each attack changed.
@@ -6,7 +6,7 @@ rows each attack changed.
 ## Running it
 
 ```
-python3 -m assemble.attack_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
+python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
 ```
 
 | argument | |
@@ -15,22 +15,22 @@ python3 -m assemble.attack_set repo revision log_splits/<time> data_dir local_di
 | `revision` | commit of `repo` to read `log_splits/<time>/` at, as [split_test_logs](split_test_logs.md) printed it |
 | `log_splits/<time>` | the [log split](split_test_logs.md) whose test logs are attacked. The grid it names is read too |
 | `data_dir` | local folder holding the CAN frame logs the log split names |
-| `local_dir` | local folder `attack_sets/<time>/` is written to, kept after the upload |
-| `--rebuild` | build even if `repo` already has `attack_sets/<time>/` for the same log split, `SEED` and `DONORS` |
+| `local_dir` | local folder `test_sets/<time>/` is written to, kept after the upload |
+| `--rebuild` | build even if `repo` already has `test_sets/<time>/` for the same log split, `SEED` and `DONORS` |
 
 `PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
 ticks as the grid's. The payloads are replayed from `DONORS` of the non-test logs,
 spread evenly over them.
 
-It writes these files into `local_dir/attack_sets/<time>/` and uploads that directory to
-`repo` as `attack_sets/<time>/`.
+It writes these files into `local_dir/test_sets/<time>/` and uploads that directory to
+`repo` as `test_sets/<time>/`.
 
 | file | holds |
 |---|---|
 | `attacked_{raw,t,seg,label,wheel}.npy` | the test logs with the attacks in, on the grid |
-| `attacked.json` | each attack, its log, and the rows it reaches, as [attacked.schema.json](../../common/schemas/attacked.schema.json) describes |
+| `injected.json` | each attack, its log, and the rows it reaches, as [injected.schema.json](../../common/schemas/injected.schema.json) describes |
 | `frames/test-NNNNN.parquet` | the same logs frame by frame, as [injected_frames](injected_frames.md) writes them |
-| `meta.json` | where the attack set came from, as [meta.attack_sets.schema.json](../../common/schemas/meta.attack_sets.schema.json) describes |
+| `meta.json` | where the test set came from, as [meta.test_sets.schema.json](../../common/schemas/meta.test_sets.schema.json) describes |
 
 ## Injecting the frames
 

@@ -52,7 +52,7 @@ def header(raw: np.ndarray, start: int) -> str:
 def main(out_dir: str, attack_no: int, n: int) -> None:
     if n < 1:
         raise ValueError("row count must be positive")
-    with open(os.path.join(out_dir, "attacked.json")) as f:
+    with open(os.path.join(out_dir, "injected.json")) as f:
         attacks = json.load(f)
     attack = attacks[attack_no]
     raw = np.load(os.path.join(out_dir, "attacked_raw.npy"), mmap_mode="r")

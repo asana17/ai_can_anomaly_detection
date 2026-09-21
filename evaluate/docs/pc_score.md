@@ -6,7 +6,7 @@ come from a directory [calibrate](calibrate.md) wrote, so nothing is fitted or
 thresholded here. When calibrate took the thresholds with ONNX files, each model is
 its ONNX file of the same precision.
 
-An [attack set](../../assemble/docs/attack_set.md) holds two things: the attacked test
+A [test set](../../assemble/docs/test_set.md) holds two things: the attacked test
 logs as rows on the grid, and the same logs as CAN frames. `score` reads the rows. The
 frames are there to replay the attacks on a real bus, which is what the board does.
 
@@ -15,14 +15,14 @@ It writes one directory of the runs repository, `scores/<time>/`.
 ## Running it
 
 ```
-python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+python3 -m evaluate.pc.score repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 ```
 
 | argument | |
 |---|---|
-| `repo` | Hugging Face dataset repo holding `attack_sets/<time>/` |
-| `revision` | commit of `repo` to read it at, as [attack_set](../../assemble/docs/attack_set.md) printed it |
-| `attack_sets/<time>` | the attack set whose rows the detectors read. The log split and grid it names are read too |
+| `repo` | Hugging Face dataset repo holding `test_sets/<time>/` |
+| `revision` | commit of `repo` to read it at, as [test_set](../../assemble/docs/test_set.md) printed it |
+| `test_sets/<time>` | the test set whose rows the detectors read. The log split and grid it names are read too |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_repo` | Hugging Face model repo holding the thresholds and uploaded to, needs `hf auth login` |
 | `revision` | commit of `runs_repo` to read the thresholds at, as [calibrate](calibrate.md) printed it |
@@ -41,7 +41,7 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 
 ## What int8 costs
 
-Score the same attack set twice, once with thresholds calibrate took in torch and once
+Score the same test set twice, once with thresholds calibrate took in torch and once
 with thresholds it took with the int8 files of the same fit. The rows, the rules and
 the counting are the same for both. The arithmetic that scores a
 row is the only difference, so the gap between the two is what the quantization costs.

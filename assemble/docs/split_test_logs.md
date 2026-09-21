@@ -1,7 +1,7 @@
 # split_test_logs
 
 `split_test_logs` cuts the logs into test and non-test logs by time. Whole logs go to
-one side or the other. [attack_set](attack_set.md) attacks the test logs.
+one side or the other. [test_set](test_set.md) attacks the test logs.
 [calibration_set](calibration_set.md) and [train_set](train_set.md) take their rows
 from the non-test logs.
 

@@ -1,7 +1,7 @@
 """Read from and add to a repository on Hugging Face, one directory at a time.
 
 Each run, export and generation is one directory of the runs repository, and each base
-and attack set one of the dataset repository. A directory is written into `local_dir`
+and test set one of the dataset repository. A directory is written into `local_dir`
 first and stays there, then uploaded in one commit, so a failed upload loses nothing.
 """
 

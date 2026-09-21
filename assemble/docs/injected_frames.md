@@ -9,7 +9,7 @@ write_and_pass_frames(inject_frames(logs, rng, source_logs), dest,
                       frames_per_file=10_000_000)
 ```
 
-`write_and_pass_frames` writes the frames of each log [inject_frames](attack_set.md)
+`write_and_pass_frames` writes the frames of each log [inject_frames](test_set.md)
 yields, and yields the log as it came, so the frames and the rows come from the same
 draw of attacks. The files are `dest/test-NNNNN.parquet`, each holding about
 `frames_per_file` frames. That argument has a default, so a caller that does not care
@@ -24,8 +24,8 @@ leaves it out.
 | `attacked` | True where the attack changed the payload |
 
 An attack changes some payloads without moving any row, so `attacked` is not the label
-to score a detector on. The label is on the rows, in [attack_set](attack_set.md). Which
-attack a log holds is in the attack set's `attacks`, by `log`.
+to score a detector on. The label is on the rows, in [test_set](test_set.md). Which
+attack a log holds is in the test set's `attacks`, by `log`.
 
 A row cut short in the source log is dropped on reading, so a log can hold a few frames
 fewer than its file.

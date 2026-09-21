@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "attacked.json",
+  "title": "injected.json",
   "description": "Each attack, its log, and the rows it reaches.",
   "type": "array",
   "items": {
@@ -28,7 +28,7 @@
         "type": "string"
       },
       "first": {
-        "description": "The first row the attack reaches, counted over every row of the attack set.",
+        "description": "The first row the attack reaches, counted over every row of the test set.",
         "type": "integer",
         "minimum": 0
       },

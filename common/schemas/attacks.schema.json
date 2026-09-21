@@ -11,7 +11,7 @@
         "type": "string"
       },
       "first": {
-        "description": "The first row the attack reaches, counted over every row of the attack set.",
+        "description": "The first row the attack reaches, counted over every row of the test set.",
         "type": "integer",
         "minimum": 0
       },

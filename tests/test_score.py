@@ -77,15 +77,15 @@ def stand_in(monkeypatch, hub):
     raw[:, WHEEL] = 10.0
     raw[1:3, 0] = 40.0                      # the rows the attack changed
     times = np.arange(6) * 0.1
-    monkeypatch.setattr(score, "fetch_attack_set", lambda *args: {
+    monkeypatch.setattr(score, "fetch_test_set", lambda *args: {
         "raw": raw, "t": times, "seg": np.zeros(6, np.int32),
         "label": np.array([False, True, True, False, False, False]),
         "wheel": np.full(6, 10.0, np.float32),
         "attacks": [{"log": "a.csv", "first": 1, "last": 2}],
         "before": lambda log: {t: np.zeros(len(SIGNALS), np.float32) for t in times},
         "min_speed": 5.0,
-        "dataset": {"attack_set": {"repo": "u/d", "revision": REVISION,
-                                   "path": "attack_sets/20260101-000000"},
+        "dataset": {"test_set": {"repo": "u/d", "revision": REVISION,
+                                 "path": "test_sets/20260101-000000"},
                     "log_split": {"repo": "u/d", "revision": REVISION,
                                   "path": "log_splits/20260101-000000"},
                     "grid": {"repo": "u/d", "revision": REVISION,
@@ -96,7 +96,7 @@ def stand_in(monkeypatch, hub):
 
 def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
     stand_in(monkeypatch, hub)
-    made = score.main("u/d", REVISION, "attack_sets/20260101-000000", str(tmp_path),
+    made = score.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
                       "u/runs", COMMIT, "thresholds/20260101-000000", str(tmp_path))
 
     folder = tmp_path / made["path"]
@@ -109,7 +109,7 @@ def test_every_model_is_scored_beside_the_rules(tmp_path, hub, monkeypatch):
     assert len(kept) == 1 and kept[0]["moved"] > 0, "every attack keeps what it moved"
 
     meta = json.load(open(folder / "meta.json"))
-    assert meta["inputs"] == {"attack_set": "attack_sets/20260101-000000",
+    assert meta["inputs"] == {"test_set": "test_sets/20260101-000000",
                               "thresholds": "thresholds/20260101-000000",
                               "moved": Settings().MOVED,
                               "hold": list(Settings().HOLD)}
@@ -145,7 +145,7 @@ def int8_stand_in(monkeypatch, tmp_path, hub):
 def test_thresholds_taken_with_onnx_files_score_with_them(tmp_path, hub,
                                                             monkeypatch):
     int8_stand_in(monkeypatch, tmp_path, hub)
-    made = score.main("u/d", REVISION, "attack_sets/20260101-000000", str(tmp_path),
+    made = score.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
                       "u/runs", COMMIT, "thresholds/20260101-000000", str(tmp_path))
 
     caught = json.load(open(tmp_path / made["path"] / "detection.json"))

@@ -5,8 +5,8 @@ import random
 import numpy as np
 import pytest
 
-from assemble import attack_set
-from assemble.attack_set import grid_rows_injected, inject_frames
+from assemble import test_set
+from assemble.test_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
 from preprocess.features import signal_state
 
@@ -144,12 +144,12 @@ def _hub_files(tmp_path, hub, logs):
 def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
     logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
     _hub_files(tmp_path, hub, logs)
-    made = attack_set.main("u/d", REVISION, "log_splits/20260101-000000", str(tmp_path),
-                           str(tmp_path / "local"))
+    made = test_set.main("u/d", REVISION, "log_splits/20260101-000000", str(tmp_path),
+                         str(tmp_path / "local"))
     folder = tmp_path / "local" / made["path"]
     label = np.load(folder / "attacked_label.npy")
     assert np.load(folder / "attacked_raw.npy").shape == (len(label), SIGNALS)
-    attacks = json.loads((folder / "attacked.json").read_text())
+    attacks = json.loads((folder / "injected.json").read_text())
     assert [a["log"] for a in attacks] == ["b.csv"]
     assert label[attacks[0]["first"]] and label[attacks[0]["last"]]
     assert len(list((folder / "frames").glob("*.parquet"))) == 1
@@ -157,9 +157,9 @@ def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
     assert meta["grid"]["path"] == "grids/20260101-000000"
 
 
-def test_the_stage_names_an_attack_set_of_the_same_log_split(tmp_path, hub):
+def test_the_stage_names_a_test_set_of_the_same_log_split(tmp_path, hub):
     inputs = {"log_split": "log_splits/20260101-000000", "seed": 0, "donors": 24}
-    hub.files = {"attack_sets/20260101-000000/meta.json": {"inputs": inputs}}
-    found = attack_set.main("u/d", REVISION, "log_splits/20260101-000000",
-                            str(tmp_path), str(tmp_path / "local"))
-    assert found["path"] == "attack_sets/20260101-000000" and hub.uploaded == []
+    hub.files = {"test_sets/20260101-000000/meta.json": {"inputs": inputs}}
+    found = test_set.main("u/d", REVISION, "log_splits/20260101-000000",
+                          str(tmp_path), str(tmp_path / "local"))
+    assert found["path"] == "test_sets/20260101-000000" and hub.uploaded == []

@@ -3,7 +3,7 @@
 The frames of a log arrive at their own rates, so they are read into one row every
 `period` seconds, each column holding the last value that signal carried.
 `grid_rows(logs, period, max_hold)` does that for whole logs, returning `raw`, `t` and
-`seg`. [attack_set](attack_set.md) reads the frames it attacked the same way.
+`seg`. [test_set](test_set.md) reads the frames it attacked the same way.
 
 ## Running it
 

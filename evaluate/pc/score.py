@@ -1,6 +1,6 @@
 """Count what each detector catches on the attacked test rows.
 
-    python3 -m evaluate.pc.score repo revision attack_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+    python3 -m evaluate.pc.score repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 
 The models and their thresholds come from a directory `evaluate.calibrate` wrote. When
 it took the thresholds with ONNX files, each model is its ONNX file of the same
@@ -18,7 +18,7 @@ import numpy as np
 import onnxruntime
 import torch
 
-from assemble.attack_set import fetch_attack_set
+from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
@@ -53,14 +53,14 @@ def attacks_caught(alarmed, attacks_to_check):
 
 
 def false_alarm_rate(alarmed, rows_to_score):
-    """Divide the false alarms by the hours the attack set covers."""
+    """Divide the false alarms by the hours the test set covers."""
     return float(alarms(alarmed & rows_to_score["quiet"]) / rows_to_score["hours"])
 
 
-def preprocess_attack_set(directory, local_dir, scale):
-    """Scale the rows of a fetched attack set, and give each attack its `moved`."""
-    attacked = fetch_attack_set(directory["repo"], directory["revision"],
-                                directory["path"], local_dir)
+def preprocess_test_set(directory, local_dir, scale):
+    """Scale the rows of a fetched test set, and give each attack its `moved`."""
+    attacked = fetch_test_set(directory["repo"], directory["revision"],
+                              directory["path"], local_dir)
     attacked["rows"] = scale.apply(attacked["raw"])
     for attack in attacked["attacks"]:
         attack["moved"] = moved_by(attack, attacked, scale.std)
@@ -101,9 +101,9 @@ def score_models(thresholds, scorer_of, rows_to_score, attacks_to_check, setting
     return kept
 
 
-def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
+def write_scores(folder, test_set_directory, thresholds_directory, thresholds,
                  thresholds_meta, local_dir, runs_dir, settings):
-    """Score the attack set, and write what each detector caught.
+    """Score the test set, and write what each detector caught.
 
     `detection.json` gets one entry per detector. It holds the threshold the detector
     ran at, how often it flagged a row with no attack, and what it caught at each
@@ -126,7 +126,7 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
         scorer_of = onnx_scorer(onnx_folder, onnx_files["precision"])
         runtime = {"onnxruntime": onnxruntime.__version__}
     scale = scale_of(weights)
-    attacked = preprocess_attack_set(attack_set_directory, local_dir, scale)
+    attacked = preprocess_test_set(test_set_directory, local_dir, scale)
 
     settings = replace(settings, MIN_SPEED=attacked["min_speed"])
     rows_to_score, attacks_to_check = prepare_scoring_input(attacked, scale, settings)
@@ -153,17 +153,17 @@ def write_scores(folder, attack_set_directory, thresholds_directory, thresholds,
                          **runtime, "platform": platform.platform()}}
 
 
-def main(repo, revision, attack_path, local_dir, runs_repo, runs_revision,
+def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
          thresholds_path, runs_dir, rebuild=False):
     settings = Settings()
-    attack_set_directory = {"repo": repo, "revision": revision, "path": attack_path}
+    test_set_directory = {"repo": repo, "revision": revision, "path": test_path}
     thresholds_directory = {"repo": runs_repo, "revision": runs_revision,
                             "path": thresholds_path}
     _, thresholds, thresholds_meta = fetch_thresholds(thresholds_directory, runs_dir)
-    inputs = {"attack_set": attack_path, "thresholds": thresholds_path,
+    inputs = {"test_set": test_path, "thresholds": thresholds_path,
               "moved": settings.MOVED, "hold": settings.HOLD}
     return reuse_or_make(runs_repo, "scores", inputs, runs_dir,
-                         lambda folder: write_scores(folder, attack_set_directory,
+                         lambda folder: write_scores(folder, test_set_directory,
                                                      thresholds_directory, thresholds,
                                                      thresholds_meta, local_dir,
                                                      runs_dir, settings),
@@ -171,5 +171,5 @@ def main(repo, revision, attack_path, local_dir, runs_repo, runs_revision,
 
 
 if __name__ == "__main__":
-    main(**arguments(("repo", "revision", "attack_path", "local_dir", "runs_repo",
+    main(**arguments(("repo", "revision", "test_path", "local_dir", "runs_repo",
                      "runs_revision", "thresholds_path", "runs_dir"), rebuild=False))

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "attack_sets/<time>/meta.json",
-  "description": "Where an attack set came from.",
+  "title": "test_sets/<time>/meta.json",
+  "description": "Where a test set came from.",
   "allOf": [
     {
       "$ref": "meta.schema.json"

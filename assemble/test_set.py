@@ -1,6 +1,6 @@
 """Build the test arrays with attacks in them, and say which rows they cover.
 
-    python3 -m assemble.attack_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
+    python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
 """
 
 from __future__ import annotations
@@ -127,37 +127,37 @@ def donor_logs(non_test_logs, count):
     return non_test_logs[::max(len(non_test_logs) // count, 1)][:count]
 
 
-def read_attack_set(folder):
-    """An attack set's rows, and the attacks that were injected into them."""
+def read_test_set(folder):
+    """A test set's rows, and the attacks that were injected into them."""
     rows = {name: np.load(os.path.join(folder, f"attacked_{name}.npy"))
             for name in ARRAYS}
-    with open(os.path.join(folder, "attacked.json")) as f:
+    with open(os.path.join(folder, "injected.json")) as f:
         return rows, json.load(f)
 
 
-def fetch_attack_set(repo, revision, attack_path, local_dir):
-    """The rows an attack set holds, its attacks, and the directories they came from.
+def fetch_test_set(repo, revision, test_path, local_dir):
+    """The rows a test set holds, its attacks, and the directories they came from.
 
-    The attack set is read at `revision` of `repo`, and the log split and grid it names
+    The test set is read at `revision` of `repo`, and the log split and grid it names
     at the commits it names them at. `before` gives a log's rows as they were before the
     attack, which is what `moved` is measured against.
     """
-    folder, meta = read_dir(repo, attack_path, local_dir, revision, repo_type="dataset")
+    folder, meta = read_dir(repo, test_path, local_dir, revision, repo_type="dataset")
     log_split, grid = meta["log_split"], meta["grid"]
     _, log_split_meta = read_dir(log_split["repo"], log_split["path"], local_dir,
                                  log_split["revision"], repo_type="dataset")
     grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
                            repo_type="dataset")
-    rows, attacks = read_attack_set(folder)
+    rows, attacks = read_test_set(folder)
     return {**rows, "attacks": attacks, "before": rows_before_each(grid_dir),
             "min_speed": log_split_meta["inputs"]["min_speed"],
-            "dataset": {"attack_set": {"repo": repo, "revision": revision,
-                                       "path": attack_path},
+            "dataset": {"test_set": {"repo": repo, "revision": revision,
+                                     "path": test_path},
                         "log_split": log_split, "grid": grid}}
 
 
-def write_attack_set(folder, repo, revision, log_split_path, data_dir, local_dir,
-                     settings):
+def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
+                   settings):
     """Write the attacked frames and rows, and return the log split and grid for
     meta.json."""
     log_split_dir, log_split_meta = read_dir(repo, log_split_path, local_dir, revision,
@@ -182,7 +182,7 @@ def write_attack_set(folder, repo, revision, log_split_path, data_dir, local_dir
           f"{len(got['attacks'])} attacks", flush=True)
     for name in ARRAYS:
         np.save(os.path.join(folder, f"attacked_{name}.npy"), got[name])
-    with open(os.path.join(folder, "attacked.json"), "w") as f:
+    with open(os.path.join(folder, "injected.json"), "w") as f:
         json.dump([dict(a, log=os.path.relpath(a["log"], data_dir))
                    for a in got["attacks"]], f)
     return {"log_split": {"repo": repo, "revision": revision, "path": log_split_path},
@@ -193,10 +193,10 @@ def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False):
     settings = Settings()
     inputs = {"log_split": log_split_path, "seed": settings.SEED,
               "donors": settings.DONORS}
-    return reuse_or_make(repo, "attack_sets", inputs, local_dir,
-                         lambda folder: write_attack_set(folder, repo, revision,
-                                                         log_split_path, data_dir,
-                                                         local_dir, settings),
+    return reuse_or_make(repo, "test_sets", inputs, local_dir,
+                         lambda folder: write_test_set(folder, repo, revision,
+                                                       log_split_path, data_dir,
+                                                       local_dir, settings),
                          rebuild, repo_type="dataset")
 
 

@@ -2,9 +2,9 @@ import random
 
 import pyarrow.parquet as pq
 
-from assemble.attack_set import inject_frames
+from assemble.test_set import inject_frames
 from assemble.injected_frames import write_and_pass_frames
-from test_attack_set import _write_log
+from test_test_set import _write_log
 
 
 def test_the_frames_pass_on_unchanged_and_are_written(tmp_path):
