@@ -62,8 +62,21 @@ screen /dev/cu.usbmodem11202 115200
 The numeric suffix can change when the board is reconnected. Replace the example
 device with the path reported by `ls`. To leave `screen`, press `Ctrl-A`, then `\`.
 
-Automatic UART capture and Unity result detection are not part of this script. They
-can be added later with a separate test-application workflow.
+Automatic UART capture and result detection are deliberately not part of
+`board/flash.py`; the hardware smoke test below owns that workflow.
+
+## Hardware smoke test
+
+Run the fixed `model_check_from_flash` smoke test with:
+
+```sh
+python3 board/smoke_test.py CUBEIDE_PROJECT_DIR
+```
+
+It prepares that application, opens the ST-LINK UART before reset, invokes
+`board/flash.py`, and passes when UART reports all 80 rows processed with no dropped
+rows or model errors. To replace the smoke application later, edit `APPLICATION` and
+`EXPECTED_UART` at the top of `board/smoke_test.py`.
 
 ## Unit tests
 
