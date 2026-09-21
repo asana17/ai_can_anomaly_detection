@@ -1,4 +1,4 @@
-# Score and detect from Flash
+# Scoring and detect from Flash
 
 This application scores the physical rows of `rule_check_from_flash/raw_rows.h` and
 detects on them.
@@ -6,11 +6,11 @@ detects on them.
 ```mermaid
 flowchart LR
     rows[(Flash rows)] --> pre["preprocess 6<br/>rows above MIN_SPEED, one every 100 ms"]
-    pre -- row queue --> sd["score and detect 8<br/>rules, scale, autoencoder, threshold, HOLD"]
+    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, HOLD"]
     sd -- report queue --> report["report 5<br/>UART"]
 ```
 
-The numbers are task priorities, smaller runs first. The score and detect task flags a
+The numbers are task priorities, smaller runs first. The scoring and detect task flags a
 row a rule hits or whose score is above `THRESHOLD_SCORE`, and reports the row that
 completes `HOLD` flagged rows in a row and the row the run ends on.
 
@@ -28,6 +28,6 @@ model files of `board/lib/active_model/` and changes with them.
 ## Prepare, build and flash
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR score_and_detect_from_flash
+python3 -m board.prepare CUBEIDE_PROJECT_DIR scoring_and_detect_from_flash
 python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```

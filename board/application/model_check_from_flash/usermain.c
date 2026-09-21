@@ -94,7 +94,7 @@ LOCAL ModelStatus evaluate_row(const float physical[MODEL_SIGNALS], Detection *d
 }
 
 /* Detect anomalies in each physical row. */
-LOCAL void detect_task(INT stacd, void *exinf)
+LOCAL void scoring_task(INT stacd, void *exinf)
 {
 	Row row;
 	Report report = {0};
@@ -159,8 +159,8 @@ LOCAL T_CTSK source_ctsk = {
 	.itskpri = 6, .stksz = 1024, .task = source_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
-LOCAL T_CTSK detect_ctsk = {
-	.itskpri = 8, .stksz = 1024, .task = detect_task,
+LOCAL T_CTSK scoring_ctsk = {
+	.itskpri = 8, .stksz = 1024, .task = scoring_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CTSK report_ctsk = {
@@ -170,7 +170,7 @@ LOCAL T_CTSK report_ctsk = {
 
 EXPORT INT usermain(void)
 {
-	ID source, detect, report;
+	ID source, scoring, report;
 	ModelStatus error;
 
 	error = model_init();
@@ -184,13 +184,13 @@ EXPORT INT usermain(void)
 		return -10;
 	}
 	source = tk_cre_tsk(&source_ctsk);
-	detect = tk_cre_tsk(&detect_ctsk);
+	scoring = tk_cre_tsk(&scoring_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
-	if(source < E_OK || detect < E_OK || report < E_OK) {
+	if(source < E_OK || scoring < E_OK || report < E_OK) {
 		return -11;
 	}
 	tk_sta_tsk(report, 0);
-	tk_sta_tsk(detect, 0);
+	tk_sta_tsk(scoring, 0);
 	tk_sta_tsk(source, 0);
 	tk_slp_tsk(TMO_FEVR);
 	return 0;

@@ -104,7 +104,7 @@ LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Detection *dete
 }
 
 /* Report the row that completes HOLD flagged rows, and the row the run ends on. */
-LOCAL void score_and_detect_task(INT stacd, void *exinf)
+LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 {
 	DetectState state;
 	Detection detection;
@@ -151,7 +151,7 @@ LOCAL void report_task(INT stacd, void *exinf)
 	Report report;
 	INT alarms = 0, errors = 0;
 
-	tm_printf((UB*)"score_and_detect %s: starting %d rows at row %d, hold %u\n",
+	tm_printf((UB*)"scoring_and_detect %s: starting %d rows at row %d, hold %u\n",
 		ACTIVE_MODEL_ID, RULE_ROWS, FIRST_ROW, HOLD);
 	while(tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
 		if(report.no == RULE_ROWS) {
@@ -172,7 +172,7 @@ LOCAL void report_task(INT stacd, void *exinf)
 				FIRST_ROW + report.no, report.score_bits, report.rule);
 		}
 	}
-	tm_printf((UB*)"score_and_detect: scored %u/%d, skipped %d, flagged_rows %u, alarms %d,"
+	tm_printf((UB*)"scoring_and_detect: scored %u/%d, skipped %d, flagged_rows %u, alarms %d,"
 		" dropped %d, errors %d, max_cycles %u\n",
 		scored_rows, RULE_ROWS, preprocess_skipped, flagged_rows, alarms,
 		preprocess_dropped, errors, maximum_cycles);
@@ -183,8 +183,8 @@ LOCAL T_CTSK preprocess_ctsk = {
 	.itskpri = 6, .stksz = 1024, .task = preprocess_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
-LOCAL T_CTSK score_and_detect_ctsk = {
-	.itskpri = 8, .stksz = 1024, .task = score_and_detect_task,
+LOCAL T_CTSK scoring_and_detect_ctsk = {
+	.itskpri = 8, .stksz = 1024, .task = scoring_and_detect_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CTSK report_ctsk = {
@@ -194,7 +194,7 @@ LOCAL T_CTSK report_ctsk = {
 
 EXPORT INT usermain(void)
 {
-	ID preprocess, score_and_detect, report;
+	ID preprocess, scoring_and_detect, report;
 	ModelStatus error;
 
 	error = model_init();
@@ -208,13 +208,13 @@ EXPORT INT usermain(void)
 		return -10;
 	}
 	preprocess = tk_cre_tsk(&preprocess_ctsk);
-	score_and_detect = tk_cre_tsk(&score_and_detect_ctsk);
+	scoring_and_detect = tk_cre_tsk(&scoring_and_detect_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
-	if(preprocess < E_OK || score_and_detect < E_OK || report < E_OK) {
+	if(preprocess < E_OK || scoring_and_detect < E_OK || report < E_OK) {
 		return -11;
 	}
 	tk_sta_tsk(report, 0);
-	tk_sta_tsk(score_and_detect, 0);
+	tk_sta_tsk(scoring_and_detect, 0);
 	tk_sta_tsk(preprocess, 0);
 	tk_slp_tsk(TMO_FEVR);
 	return 0;
