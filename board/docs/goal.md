@@ -9,9 +9,9 @@ our instructions.
 
 1. Flash `ai_can_anomaly_detection` and see it start. It builds, and the board was away
    when it was written.
-2. The CAN side, as [connecting_can_bus.md](connecting_can_bus.md) describes. Still to
-   agree are the clock settings, where the frame timestamp comes from, and whether the
-   entry ships with CAN hardware.
+2. The bus, as [connecting_can_bus.md](connecting_can_bus.md) describes. FDCAN1 is
+   enabled and the receive callback is written. The wiring and a PC sender are left,
+   and whether the entry ships with CAN hardware is open.
 3. A status task that reports every second the rows dropped, the frames the FDCAN FIFO
    lost, queue space and CPU use, and blinks the green LED. CPU use needs WFI in
    `low_pow`, which is empty in the STM32 port, and idle time counted with DWT. The
@@ -41,7 +41,7 @@ our instructions.
 | CAN path on replayed frames | alarm from tick 29 to 80, 60 rows flagged, 89 rows, no errors | `can_path_from_flash` on the board, 2,937 frames |
 | reconstruction error in C | bit equal to numpy on 51% of rows, largest relative difference 3.8e-7 | host build of `board/lib/scoring` against the PC scorer |
 | generated C renamed by prepare | the same as the C built on the board before, but for the unused `HAVE_NETWORK_INFO` | `board/20260916-232708/nonlinear_ae_k8_h64` |
-| image size, the entry | text 84,500, data 2,548, bss 11,828 bytes | `arm-none-eabi-size` of `ai_can_anomaly_detection`, `nonlinear_ae_k16_h128`, Debug at `-O0` |
+| image size, the entry | text 93,972, data 2,548, bss 11,932 bytes | `arm-none-eabi-size` of `ai_can_anomaly_detection` with FDCAN1, `nonlinear_ae_k16_h128`, Debug at `-O0` |
 | image size, the Flash replay | text 123,196, data 2,572, bss 11,580 bytes | `arm-none-eabi-size` of `can_path_from_flash`, 2,937 frames in Flash, Debug at `-O0` |
 
 The image sizes are what `arm-none-eabi-size` prints. Whether the memory the kernel
