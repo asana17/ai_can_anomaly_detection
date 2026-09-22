@@ -112,8 +112,9 @@ J1939's own terms, frame, PGN and SPN, are described in
   `evaluate`, all done 2026-09-22.
 
   - Build the grid again with `--rebuild`. A signal is decoded in float32 now, as the
-    board computes it, and a value J1939 reserves leaves NaN in its row rather than the
-    value before it, so the rows themselves changed. Then the log split and the three
+    board computes it, a value J1939 reserves leaves NaN in its row rather than the
+    value before it, and a tick with no frame since the one before gets no row, so the
+    rows themselves changed. Then the log split and the three
     sets, whose inputs change with the grid, so those need no `--rebuild`. The stages
     after them follow the new paths.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
@@ -132,12 +133,12 @@ J1939's own terms, frame, PGN and SPN, are described in
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
-  waits for `score`, and more rows wait for fetching them from the dataset. Step 4 is
-  under way. The nine instant rules with their OR, and the threshold and `HOLD` of
-  `detect/alarm.py`, are C in `board/lib/`, matched with the PC in the tests. The
-  anomaly task ties them to the model in the `anomaly_from_flash` application, written
-  and not built or flashed yet. What else goes to C is listed in goal.md, What goes to
-  C.
+  waits for `score`, and more rows wait for fetching them from the dataset. Step 4
+  runs on the board. `scoring_and_detect_from_flash` scores Flash rows and raises the
+  alarm, and `can_path_from_flash` replays CAN frames through the slots, a preprocess
+  task on a 0.1 s cyclic handler, scoring and detect, and report. Next is the docs for
+  the CAN side, how to connect the receive callback, the FDCAN interrupt priority `DI`
+  must mask, and what the CAN side builds. Then steps 2, 5 and 6.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
   rules.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
