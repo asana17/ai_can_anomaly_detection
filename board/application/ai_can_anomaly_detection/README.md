@@ -3,15 +3,15 @@
 The application the entry runs. It builds a row from the slots every 0.1 s, scores it
 with the rules and the autoencoder, and reports each alarm over UART.
 
-Nothing writes the slots. `slots_store` is the one call that does, and the FDCAN receive
-callback that makes it is the CAN side's work, as
-[connecting_can_bus.md](../../docs/connecting_can_bus.md) describes. Until it is written
-the application prints its first line, counts every tick as quiet and scores nothing.
-It is a placeholder for the application that reads a bus.
+FDCAN1 receives the frames, and its receive callback stores each one in the slots with
+`slots_store`. The application builds. It has not run on the board, and no frame has
+reached it, since the bus is not wired.
+[connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN settings and
+what is left.
 
 ```mermaid
 flowchart LR
-    irq[CAN receive interrupt] -- slots_store --> slots[(slots)]
+    irq["FDCAN1 receive callback"] -- slots_store --> slots[(slots)]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
     pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, HOLD"]
@@ -65,6 +65,6 @@ which compiles at `-O0`.
 
 | what | bytes |
 |---|---|
-| text | 84,500 |
+| text | 93,972 |
 | data | 2,548 |
-| bss | 11,828 |
+| bss | 11,932 |

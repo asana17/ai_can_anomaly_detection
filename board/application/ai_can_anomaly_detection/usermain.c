@@ -1,6 +1,7 @@
 #include <string.h>
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
+#include "stm32h5xx_hal.h"
 #include "detect.h"
 #include "mbf.h"
 #include "model.h"
@@ -16,6 +17,7 @@
 #define MAX_HOLD_ROWS 10u /* rows with no frame that end a stretch, Settings.MAX_HOLD */
 #define MIN_SPEED 5.0f /* Settings.MIN_SPEED in common/settings.py */
 #define HOLD 10u /* the value of Settings.HOLD the board runs */
+#define CAN_BYTES 8u /* a classic CAN frame's payload, which DLC 9 to 15 also mean */
 
 typedef struct {
 	UW no;
@@ -33,6 +35,8 @@ typedef struct {
 /* What the CAN receive interrupt writes with slots_store(). */
 EXPORT Slots bus;
 
+IMPORT FDCAN_HandleTypeDef hfdcan1; /* set up by MX_FDCAN1_Init in the CubeMX main.c */
+
 LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id;
 LOCAL volatile UW rows_sent, rows_quiet, rows_not_ready, rows_skipped, rows_dropped, resets;
 LOCAL volatile UW scored_rows, flagged_rows, maximum_cycles;
@@ -47,6 +51,43 @@ LOCAL T_CMBF report_cmbf = {
 	.bufsz = REPORT_DEPTH * MBF_MESSAGE_STORAGE_SIZE(sizeof(Report)),
 	.maxmsz = sizeof(Report),
 };
+
+/* Store each frame FDCAN received as the latest of its PGN. */
+EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+	FDCAN_RxHeaderTypeDef header;
+	uint8_t data[CAN_BYTES];
+	uint32_t size;
+
+	while(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
+		if(header.IdType != FDCAN_EXTENDED_ID) {
+			continue; /* J1939 uses 29-bit IDs only */
+		}
+		size = header.DataLength;
+		if(size > CAN_BYTES) {
+			size = CAN_BYTES;
+		}
+		/* DWT counts cycles once model_init has run, which is before reception starts */
+		slots_store(&bus, header.Identifier, data, size, DWT->CYCCNT);
+	}
+}
+
+/* Accept every frame into RX FIFO 0, interrupt on each, and start the bus. */
+LOCAL INT can_start(void)
+{
+	if(HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0,
+		FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK) {
+		return -1;
+	}
+	if(HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0)
+		!= HAL_OK) {
+		return -2;
+	}
+	if(HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
+		return -3;
+	}
+	return 0;
+}
 
 /* Wake preprocessing every PERIOD. */
 LOCAL void tick(void *exinf)
@@ -152,7 +193,7 @@ LOCAL void report_task(INT stacd, void *exinf)
 {
 	Report report;
 
-	tm_printf((UB*)"ai_can_anomaly_detection %s: hold %u, waiting for frames\n",
+	tm_printf((UB*)"ai_can_anomaly_detection %s: hold %u, reading FDCAN1\n",
 		ACTIVE_MODEL_ID, HOLD);
 	while(tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
 		if(report.error != MODEL_OK) {
@@ -214,6 +255,10 @@ EXPORT INT usermain(void)
 	tick_id = tk_cre_cyc(&tick_ccyc);
 	if(tick_id < E_OK) {
 		return -12;
+	}
+	if(can_start() != 0) {
+		tm_printf((UB*)"FDCAN start error\n");
+		return -13;
 	}
 	tk_slp_tsk(TMO_FEVR);
 	return 0;
