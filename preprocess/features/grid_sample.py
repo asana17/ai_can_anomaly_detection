@@ -20,20 +20,27 @@ def resample(
     gap means the recording stopped, so no rows are emitted across it and the grid
     restarts from the first frame after. The gap is measured on the bus rather than
     per signal. No stream here goes quiet while the others keep running.
+
+    A tick with no frame since the tick before gets no row, since the row would hold
+    only old values. The board takes its rows as the bus runs, and cannot yet tell a
+    short silence from one longer than `max_hold`, so it drops those rows the same way.
     """
     state = SignalState()
     next_tick = None
     previous = None
+    fresh = False       # a frame has arrived since the last tick
     for f in frames:
         pgn = decompose_can_id(f.can_id).pgn
         if previous is not None and f.timestamp - previous > max_hold:
             state = SignalState()       # what it holds predates the gap
             next_tick = None
         while next_tick is not None and f.timestamp >= next_tick:
-            if state.ready():
+            if fresh and state.ready():
                 yield (next_tick, state.row())
+            fresh = False
             next_tick += period
         state.update(pgn, f.data)
+        fresh = True
         previous = f.timestamp
         if next_tick is None:
             next_tick = f.timestamp + period

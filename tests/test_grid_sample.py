@@ -54,12 +54,20 @@ def _all_signals(t):
 
 
 def test_emits_on_grid_holding_last_value():
-    frames = _all_signals(0.0) + [_eec1(0.5, 1200), _eec1(2.3, 1500)]
+    frames = _all_signals(0.0) + [_eec1(0.5, 1200), _eec1(1.5, 1300), _eec1(2.3, 1500)]
     out = list(resample(frames, period=1.0, max_hold=5.0))
     assert [t for t, _ in out] == [1.0, 2.0]
     idx = SIGNALS.index("engine_speed")
     assert out[0][1][idx] == 1200.0  # held from t=0.5 at tick 1.0
-    assert out[1][1][idx] == 1200.0  # 1500 arrives at 2.3, after tick 2.0
+    assert out[1][1][idx] == 1300.0  # 1500 arrives at 2.3, after tick 2.0
+    assert out[1][1][SIGNALS.index("fuel_rate")] == 2.0  # held from t=0.0
+
+
+def test_a_tick_with_no_new_frame_gets_no_row():
+    # nothing arrives between ticks 1.0 and 2.0, so tick 2.0 would hold only old values
+    frames = _all_signals(0.0) + [_eec1(0.5, 1200), _eec1(2.3, 1500)]
+    out = list(resample(frames, period=1.0, max_hold=5.0))
+    assert [t for t, _ in out] == [1.0]
 
 
 def test_no_emit_until_all_signals_seen():

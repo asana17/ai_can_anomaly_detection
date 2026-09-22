@@ -16,6 +16,10 @@ It outputs a row at each tick from the latest payload of every PGN. It waits unt
 every PGN has arrived, and between frames it holds the last payload. A value J1939
 reserves is NaN in the row, see [signal_state](signal_state.md).
 
+A tick with no frame since the tick before gets no row, since the row would hold only
+old values. The board takes its rows as the bus runs, and cannot yet tell a short
+silence from one longer than `max_hold`, so it drops those rows the same way.
+
 `max_hold` is how long a value may be held. A gap longer than that means the
 recording stopped, not that the signals held steady, so `resample` emits no rows
 across the gap, restarts the grid from the first frame after, and drops the values
