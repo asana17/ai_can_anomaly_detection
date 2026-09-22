@@ -117,11 +117,13 @@ J1939's own terms, frame, PGN and SPN, are described in
     sets, whose inputs change with the grid, so those need no `--rebuild`. The stages
     after them follow the new paths.
 - Fold `common/hf_upload.py` into `common/hub_dirs.py`.
+- Build the test set again with `--rebuild`. The replay copies from moving rows onto
+  moving rows now, so the inputs are the same and the attacks are not. Count the logs
+  that lose their attack to that.
 - Draw the attacks over the test span's time rather than one per log. One per log puts
-  most attacks where the truck stands, and four times as many per moving hour in the
-  logs that move least. Measure first whether that shifts a model's numbers, from
-  `caught` in a score. The rules catch the same share in every band of a log's moving
-  seconds.
+  four times as many per moving hour in the logs that move least. Measure first whether
+  that shifts a model's numbers, from `caught` in a score. The rules catch the same
+  share in every band of a log's moving seconds.
 - Record in `injected.json` which donor log each attack copied from. `source` is a time
   in that log, and nothing says which log it is. Add `donor` to its schema then.
 - Build the dataset in the new layout, then check the whole path on a few logs, then
