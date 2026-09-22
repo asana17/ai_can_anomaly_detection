@@ -200,8 +200,8 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
                                  os.path.relpath(log, data_dir)),
                              period=period, max_hold=max_hold,
                              min_speed=log_split_meta["inputs"]["min_speed"])
-    got = grid_rows_injected(write_and_pass_frames(injected,
-                                                   os.path.join(folder, "frames")))
+    got = grid_rows_injected(
+        write_and_pass_frames(injected, os.path.join(folder, "frames"), data_dir))
 
     print(f"{len(got['t'])} rows from {len(cut['test'])} test logs, "
           f"{len(got['attacks'])} attacks", flush=True)

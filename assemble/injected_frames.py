@@ -21,12 +21,12 @@ def _columns(log, frames, hurt):
             "attacked": [a.data != b.data for a, b in zip(frames, hurt)]}
 
 
-def write_and_pass_frames(injected, dest, frames_per_file=FRAMES_PER_FILE):
+def write_and_pass_frames(injected, dest, data_dir, frames_per_file=FRAMES_PER_FILE):
     """Write the frames of each log `injected` yields to `dest`, and yield the log as it
     came.
 
     The files are `dest/test-NNNNN.parquet`, each holding about `frames_per_file`
-    frames.
+    frames. A log is named by its path under `data_dir`.
     """
     os.makedirs(dest)                       # raises rather than overwrite
     count, batches = 0, []
@@ -39,7 +39,8 @@ def write_and_pass_frames(injected, dest, frames_per_file=FRAMES_PER_FILE):
 
     for item in injected:
         path, frames, hurt = item[:3]
-        batches.append(pa.RecordBatch.from_pydict(_columns(path, frames, hurt),
+        log = os.path.relpath(path, data_dir)
+        batches.append(pa.RecordBatch.from_pydict(_columns(log, frames, hurt),
                                                   schema=SCHEMA))
         if sum(b.num_rows for b in batches) >= frames_per_file:
             flush()

@@ -5,8 +5,7 @@ for sending the same attacks over a real CAN bus, which takes each message's ID,
 and time, and the rows on the grid do not hold those.
 
 ```python
-write_and_pass_frames(inject_frames(logs, rng, source_logs), dest,
-                      frames_per_file=10_000_000)
+write_and_pass_frames(injected, dest, data_dir, frames_per_file=10_000_000)
 ```
 
 `write_and_pass_frames` writes the frames of each log [inject_frames](test_set.md)
@@ -17,7 +16,7 @@ leaves it out.
 
 | column | holds |
 |---|---|
-| `log` | the log the frame is from, the path it was read from |
+| `log` | the log the frame is from, its path under `data_dir` as in `injected.json` |
 | `timestamp` | epoch seconds |
 | `can_id` | the 29-bit identifier |
 | `data` | the payload bytes |
