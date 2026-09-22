@@ -37,11 +37,12 @@ def write_and_pass_frames(injected, dest, frames_per_file=FRAMES_PER_FILE):
                        os.path.join(dest, f"test-{count:05d}.parquet"))
         count, batches = count + 1, []
 
-    for path, frames, hurt, span in injected:
+    for item in injected:
+        path, frames, hurt = item[:3]
         batches.append(pa.RecordBatch.from_pydict(_columns(path, frames, hurt),
                                                   schema=SCHEMA))
         if sum(b.num_rows for b in batches) >= frames_per_file:
             flush()
-        yield path, frames, hurt, span
+        yield item
     if batches:
         flush()

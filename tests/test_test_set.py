@@ -57,7 +57,7 @@ def _injected(logs, seed=0):
     before = _rows_before_attack(logs)
     injected = inject_frames(logs, random.Random(seed), rows_before_attack=before,
                              period=PERIOD, max_hold=MAX_HOLD, min_speed=5.0)
-    return grid_rows_injected(injected, before, period=PERIOD, max_hold=MAX_HOLD)
+    return grid_rows_injected(injected)
 
 
 def test_donors_are_spread_over_the_logs_that_move():
@@ -109,11 +109,12 @@ def test_a_replay_that_stops_a_changed_row_is_not_kept(tmp_path, monkeypatch):
 
     monkeypatch.setattr(test_set, "inject", stopping)
     log = _write_log(tmp_path / "a.csv")
-    [(_, frames, hurt, span)] = inject_frames(
+    [(_, frames, hurt, rows, attack)] = inject_frames(
         [log], random.Random(0), rows_before_attack=_rows_before_attack([log]),
         period=PERIOD, max_hold=MAX_HOLD, min_speed=5.0)
-    assert span is None
+    assert attack is None
     assert hurt == frames
+    assert not rows["label"].any()
 
 
 def test_only_the_rows_that_differ_from_the_clean_log_are_labelled(tmp_path):

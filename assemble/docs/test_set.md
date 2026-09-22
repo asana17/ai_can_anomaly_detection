@@ -38,7 +38,7 @@ It writes these files into `local_dir/test_sets/<time>/` and uploads that direct
 ```python
 injected = inject_frames(logs, rng, source_logs, rows_before_attack=rows_before_attack,
                          period=period, max_hold=max_hold, min_speed=min_speed)
-# -> (path, frames, hurt, span) per log
+# -> (path, frames, hurt, rows, attack) per log
 ```
 
 At most one attack per log, chosen by [inject](../../attack/docs/inject.md). It copies
@@ -56,18 +56,19 @@ really produces, and no detector should be asked to flag it.
 ## Building the rows
 
 ```python
-grid_rows_injected(injected, rows_before_attack, period=period, max_hold=max_hold)
+grid_rows_injected(injected)
 # -> {raw, t, seg, label, wheel, attacks}
 ```
 
 It takes what `inject_frames` yields rather than drawing the attacks itself, so the
-frames can go somewhere else on the way. `rows_before_attack(log)` gives that log's
-rows by time as they were before the attack, which a [grid](grid.md) holds already. It
-raises on a log whose rows line up with none of them, which is what a grid built on
-another `period` looks like.
+frames can go somewhere else on the way.
 
-`attacked_log` does one log and `grid_rows_injected` lays the logs end to end, moving
-each attack's rows and each log's segment ids along as it goes.
+`attacked_log` puts one log on the grid, called by `inject_frames` with
+`rows_before_attack(log)`, that log's rows by time as they were before the attack,
+which a [grid](grid.md) holds already. It raises on a log whose rows line up with none
+of them, which is what a grid built on another `period` looks like.
+`grid_rows_injected` lays the logs end to end, moving each attack's rows and each
+log's segment ids along as it goes.
 
 | key | what it holds |
 |---|---|

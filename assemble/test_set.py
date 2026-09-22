@@ -29,14 +29,14 @@ ARRAYS = ("raw", "t", "seg", "label", "wheel")      # what attacked_log builds a
 
 def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attack,
                   period: float, max_hold: float, min_speed: float):
-    """Try one replay in each log, and yield its frames before and after it.
+    """Try one replay in each log, and yield its frames before and after it, and its rows.
 
-    Each item is the path, the frames, the frames with the attack in, and the attack's
-    span, or the same frames twice and None when no attack landed. `source_logs` are
-    the logs the replayed payloads are taken from, each log itself when there are none,
-    and `rows_before_attack(log)` gives a log's rows by time. The replay copies from
-    moving rows onto moving rows, and lands only when every row it changed is still
-    moving.
+    Each item is the path, the frames, the frames with the attack in, and the rows and
+    attack `attacked_log` gives, or the same frames twice and None for the attack when
+    no attack landed. `source_logs` are the logs the replayed payloads are taken from,
+    each log itself when there are none, and `rows_before_attack(log)` gives a log's
+    rows by time. The replay copies from moving rows onto moving rows, and lands only
+    when every row it changed is still moving.
     """
     pool = [(list(load_can_log(p)),
              moving_spans(rows_before_attack(p), min_speed=min_speed, period=period))
@@ -53,9 +53,10 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
             changed = rows["label"]
             if (attack is not None and np.all(rows["wheel"][changed] > min_speed)
                     and moving(rows["raw"][changed], min_speed=min_speed).all()):
-                yield path, frames, *made
+                yield path, frames, made[0], rows, attack
                 continue
-        yield path, frames, frames, None
+        rows, _ = attacked_log(frames, None, {}, period=period, max_hold=max_hold)
+        yield path, frames, frames, rows, None
 
 
 def attacked_log(hurt, span, before, *, period: float, max_hold: float):
@@ -99,19 +100,14 @@ def _starts(sizes):
     return [0, *itertools.accumulate(sizes[:-1])]
 
 
-def grid_rows_injected(injected, rows_before_attack, *, period: float,
-                       max_hold: float):
+def grid_rows_injected(injected):
     """Every log of `injected` on the grid, laid end to end.
 
-    A log with no attack contributes its rows too. `rows_before_attack(log)` gives a
-    log's rows by time before the attack. Each attack gets its `log`, and its `first`
-    and `last` count over all the rows here.
+    A log with no attack contributes its rows too. Each attack gets its `log`, and its
+    `first` and `last` count over all the rows here.
     """
     parts, found = [], []
-    for path, _, hurt, span in injected:
-        before = rows_before_attack(path) if span is not None else {}
-        one, attack = attacked_log(hurt, span, before, period=period,
-                                   max_hold=max_hold)
+    for path, _, _, one, attack in injected:
         if not len(one["t"]):
             continue
         parts.append(one)
@@ -204,10 +200,8 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
                                  os.path.relpath(log, data_dir)),
                              period=period, max_hold=max_hold,
                              min_speed=log_split_meta["inputs"]["min_speed"])
-    got = grid_rows_injected(
-        write_and_pass_frames(injected, os.path.join(folder, "frames")),
-        lambda log: before(os.path.relpath(log, data_dir)), period=period,
-        max_hold=max_hold)
+    got = grid_rows_injected(write_and_pass_frames(injected,
+                                                   os.path.join(folder, "frames")))
 
     print(f"{len(got['t'])} rows from {len(cut['test'])} test logs, "
           f"{len(got['attacks'])} attacks", flush=True)
