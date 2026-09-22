@@ -9,7 +9,8 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APPS = os.path.join(HERE, "application")
 LIB = os.path.join(HERE, "lib")
 TEST_COMMON = os.path.join(HERE, "test_common")
-MODEL = "active_model"
+MODEL = "active_model"          # the model the sample applications check against
+DEPLOYED_MODEL = "deployed_model"  # the model the entry runs
 MODEL_FILES = (
     "active_model.c", "active_model.h", "active_model_data.c",
     "active_model_data.h", "active_model_details.h", "model_config.h",
@@ -31,6 +32,9 @@ APPLICATIONS = {
     "ae_reconstruction_from_flash": Application(("scale", "model", "scoring", MODEL), True),
     "scoring_and_detect_from_flash": Application(
         ("mbf", "moving", "rules", "scale", "model", "scoring", "detect", MODEL), True),
+    "ai_can_anomaly_detection": Application(
+        ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
+         "model", "scoring", "detect", DEPLOYED_MODEL), True),
     "can_path_from_flash": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
          "model", "scoring", "detect", MODEL), True),
@@ -52,8 +56,10 @@ def application_for(app_dir):
     if name not in APPLICATIONS:
         raise SystemExit(f"no build inputs for application {name}")
     application = APPLICATIONS[name]
-    if MODEL in application.libraries:
-        model_dir = os.path.join(LIB, MODEL)
+    for model in (MODEL, DEPLOYED_MODEL):
+        if model not in application.libraries:
+            continue
+        model_dir = os.path.join(LIB, model)
         missing = [name for name in MODEL_FILES
                    if not os.path.isfile(os.path.join(model_dir, name))]
         if missing:
