@@ -30,6 +30,8 @@ our instructions.
    for the new layout's outputs on the Hub.
 7. Instructions a judge can follow, slides, the third party software listed (the
    ST Edge AI runtime), and the source published.
+8. Send reports with `TMO_POL` and count the ones dropped. With `TMO_FEVR` a full
+   report queue makes scoring and detect wait on report, below it.
 
 ## Measured
 
