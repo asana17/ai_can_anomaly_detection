@@ -86,3 +86,18 @@ def test_the_replay_leaves_the_times_of_the_attacked_log_alone():
     trace = _trace()
     hurt, _ = inject(trace, random.Random(4), source_log=_flat(kmh=80.0))
     assert [f.timestamp for f in hurt] == [f.timestamp for f in trace]
+
+
+def test_the_stretch_lies_in_the_spans_given():
+    _, info = inject(_trace(), random.Random(0), spans=[(10.0, 22.0)])
+    assert 10.0 <= info["start"] < info["stop"] <= 22.0
+
+
+def test_the_moment_copied_lies_in_the_source_spans_given():
+    _, info = inject(_trace(), random.Random(0), source_log=_flat(kmh=80.0),
+                     source_spans=[(30.0, 42.0)])
+    assert 30.0 <= info["source"] <= 42.0 - (info["stop"] - info["start"])
+
+
+def test_spans_too_short_give_nothing():
+    assert inject(_trace(), random.Random(0), spans=[(10.0, 11.0), (20.0, 21.5)]) is None

@@ -20,25 +20,42 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import Settings
 from preprocess.features.grid_sample import resample
+from preprocess.features.moving import moving, moving_spans
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import load_can_log
 
 ARRAYS = ("raw", "t", "seg", "label", "wheel")      # what attacked_log builds a row of
 
 
-def inject_frames(logs, rng: random.Random, source_logs=None):
-    """Inject one attack into each log, and yield its frames before and after it.
+def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attack,
+                  period: float, max_hold: float, min_speed: float):
+    """Try one replay in each log, and yield its frames before and after it.
 
     Each item is the path, the frames, the frames with the attack in, and the attack's
     span, or the same frames twice and None when no attack landed. `source_logs` are
-    the logs the replayed payloads are taken from.
+    the logs the replayed payloads are taken from, each log itself when there are none,
+    and `rows_before_attack(log)` gives a log's rows by time. The replay copies from
+    moving rows onto moving rows, and lands only when every row it changed is still
+    moving.
     """
-    pool = [list(load_can_log(p)) for p in source_logs] if source_logs else []
+    pool = [(list(load_can_log(p)),
+             moving_spans(rows_before_attack(p), min_speed=min_speed, period=period))
+            for p in source_logs]
     for path in logs:
         frames = list(load_can_log(path))
-        made = inject(frames, rng, source_log=rng.choice(pool) if pool else None)
-        hurt, span = made if made else (frames, None)
-        yield path, frames, hurt, span
+        before = rows_before_attack(path)
+        spans = moving_spans(before, min_speed=min_speed, period=period)
+        donor, source_spans = rng.choice(pool) if source_logs else (frames, spans)
+        made = inject(frames, rng, source_log=donor, spans=spans,
+                      source_spans=source_spans)
+        if made:
+            rows, attack = attacked_log(*made, before, period=period, max_hold=max_hold)
+            changed = rows["label"]
+            if (attack is not None and np.all(rows["wheel"][changed] > min_speed)
+                    and moving(rows["raw"][changed], min_speed=min_speed).all()):
+                yield path, frames, *made
+                continue
+        yield path, frames, frames, None
 
 
 def attacked_log(hurt, span, before, *, period: float, max_hold: float):
@@ -175,7 +192,11 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
              for name in ("non_test", "test")}
     before = rows_before_each(grid_dir)
     injected = inject_frames(under["test"], random.Random(settings.SEED),
-                             donor_logs(under["non_test"], settings.DONORS))
+                             donor_logs(under["non_test"], settings.DONORS),
+                             rows_before_attack=lambda log: before(
+                                 os.path.relpath(log, data_dir)),
+                             period=period, max_hold=max_hold,
+                             min_speed=log_split_meta["inputs"]["min_speed"])
     got = grid_rows_injected(
         write_and_pass_frames(injected, os.path.join(folder, "frames")),
         lambda log: before(os.path.relpath(log, data_dir)), period=period,

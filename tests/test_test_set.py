@@ -9,6 +9,7 @@ from assemble import test_set
 from assemble.test_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
 from preprocess.features import signal_state
+from preprocess.frames.can_log_loader import CanFrame
 
 REVISION = "ab" * 20
 
@@ -53,17 +54,18 @@ def _rows_before_attack(logs):
 
 def _injected(logs, seed=0):
     """The rows of `logs` with one attack each, drawn from `seed`."""
-    return grid_rows_injected(inject_frames(logs, random.Random(seed)),
-                              _rows_before_attack(logs), period=PERIOD,
-                              max_hold=MAX_HOLD)
+    before = _rows_before_attack(logs)
+    injected = inject_frames(logs, random.Random(seed), rows_before_attack=before,
+                             period=PERIOD, max_hold=MAX_HOLD, min_speed=5.0)
+    return grid_rows_injected(injected, before, period=PERIOD, max_hold=MAX_HOLD)
 
 
 def test_rows_before_the_attack_from_another_grid_are_refused(tmp_path):
     log = _write_log(tmp_path / "a.csv")
     shifted = {t + 0.05: row for t, row in _rows_before_attack([log])(log).items()}
     with pytest.raises(ValueError):
-        grid_rows_injected(inject_frames([log], random.Random(0)), lambda _: shifted,
-                           period=PERIOD, max_hold=MAX_HOLD)
+        list(inject_frames([log], random.Random(0), rows_before_attack=lambda _: shifted,
+                           period=PERIOD, max_hold=MAX_HOLD, min_speed=5.0))
 
 
 def test_it_returns_a_row_for_every_grid_tick(tmp_path):
@@ -80,6 +82,32 @@ def test_the_label_marks_the_rows_an_attack_changed(tmp_path):
         assert d["t"][a["first"]] >= a["start"]
         # the grid holds the last payload, so one row past the window still carries it
         assert d["t"][a["last"]] <= a["stop"] + 0.1
+
+
+def test_every_changed_grid_row_stays_moving(tmp_path):
+    log = _write_log(tmp_path / "a.csv")
+    d = _injected([log])
+    assert d["attacks"]
+    wheel = signal_state.SIGNALS.index("wheel_speed")
+    assert np.all(d["wheel"][d["label"]] > 5.0)
+    assert np.all(d["raw"][d["label"], wheel] > 5.0)
+
+
+def test_a_replay_that_stops_a_changed_row_is_not_kept(tmp_path, monkeypatch):
+    def stopping(frames, rng, **kwargs):
+        start = frames[0].timestamp + 20.0
+        hurt = [CanFrame(f.timestamp, f.can_id, bytes(8))
+                if f.can_id == 0x18FEF1E6 and start <= f.timestamp <= start + 2.0 else f
+                for f in frames]
+        return hurt, dict(pgn=65265, start=start, stop=start + 2.0, source=0.0)
+
+    monkeypatch.setattr(test_set, "inject", stopping)
+    log = _write_log(tmp_path / "a.csv")
+    [(_, frames, hurt, span)] = inject_frames(
+        [log], random.Random(0), rows_before_attack=_rows_before_attack([log]),
+        period=PERIOD, max_hold=MAX_HOLD, min_speed=5.0)
+    assert span is None
+    assert hurt == frames
 
 
 def test_only_the_rows_that_differ_from_the_clean_log_are_labelled(tmp_path):

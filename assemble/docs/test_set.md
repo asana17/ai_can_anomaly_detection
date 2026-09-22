@@ -35,14 +35,19 @@ It writes these files into `local_dir/test_sets/<time>/` and uploads that direct
 ## Injecting the frames
 
 ```python
-inject_frames(logs, rng, source_logs)
+injected = inject_frames(logs, rng, source_logs, rows_before_attack=rows_before_attack,
+                         period=period, max_hold=max_hold, min_speed=min_speed)
 # -> (path, frames, hurt, span) per log
 ```
 
-One attack per log, chosen by [inject](../../attack/docs/inject.md). `inject_frames`
-does the injection and yields each log's frames before and after the attack, so
-anything that needs the attacked frames gets the same attacks from the same random
-generator, `rng`.
+At most one attack per log, chosen by [inject](../../attack/docs/inject.md). It copies
+from the moving rows of one donor onto the moving rows of the log, the rows a model is
+trained on. It lands only when every row it changed is moving before and after it, and
+is not drawn again when it does not.
+
+`inject_frames` does the injection and yields each log's frames before and after the
+attack, so anything that needs the attacked frames gets the same attacks from the same
+random generator, `rng`.
 
 A replay can copy a value close to the one it replaced. The result is a row the bus
 really produces, and no detector should be asked to flag it.
@@ -50,8 +55,7 @@ really produces, and no detector should be asked to flag it.
 ## Building the rows
 
 ```python
-grid_rows_injected(inject_frames(logs, rng, source_logs), rows_before_attack,
-                   period=period, max_hold=max_hold)
+grid_rows_injected(injected, rows_before_attack, period=period, max_hold=max_hold)
 # -> {raw, t, seg, label, wheel, attacks}
 ```
 
