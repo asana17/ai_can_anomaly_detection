@@ -16,6 +16,7 @@ this repository. This repository holds only what we wrote:
 | `board/lib/` | source components selected for each application |
 | `board/patches/` | a fix to mtk3_bsp2 `1ab52cc`, which does not build for this board without it |
 | `board/prepare/` | validates an application and prepares a generated CubeIDE project |
+| `board/cubemx/` | the project's `.ioc`, copied here by every `board.prepare` run |
 
 ## What to install
 
@@ -65,6 +66,10 @@ is open. Running it again changes nothing.
 cd ~/ai_can_detection
 python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection alive
 ```
+
+It also copies the project's `.ioc` into `board/cubemx/`. The CubeMX settings live
+outside the repository, so a change to them shows up in `git status` after the next
+run. Start a new project from that file to build with the same settings.
 
 Where this differs from the BSP2 document:
 

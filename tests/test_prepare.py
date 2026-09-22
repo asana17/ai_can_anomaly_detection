@@ -4,6 +4,7 @@ import pytest
 
 from board.prepare.application import (LIB, MODEL, MODEL_FILES, TEST_COMMON,
                                        application_dir, application_for)
+from board.prepare.cli import keep_ioc
 from board.prepare.cubeide import (C_COMPILER, C_FLAGS, COMPILE_TOOLS, DEFINES, LINKER_TOOL,
                                    MARKER, configure, link_folder, link_folders,
                                    start_kernel)
@@ -52,6 +53,30 @@ def test_model_application_requires_the_fixed_model_inputs(tmp_path, monkeypatch
         (model / name).touch()
     selected = application_for(str(app))
     assert selected.libraries == ("mbf", "scale", "model", "scoring", MODEL)
+
+
+def test_the_project_ioc_is_kept_in_the_repository(tmp_path, monkeypatch):
+    monkeypatch.setattr("board.prepare.cli.CUBEMX", str(tmp_path / "cubemx"))
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "board.ioc").write_text("Mcu.IP0=RCC\n")
+    assert keep_ioc(str(project)) == "copied"
+    assert (tmp_path / "cubemx" / "board.ioc").read_text() == "Mcu.IP0=RCC\n"
+    assert keep_ioc(str(project)) == "already there"
+    (project / "board.ioc").write_text("Mcu.IP0=FDCAN1\n")
+    assert keep_ioc(str(project)) == "copied"
+    assert (tmp_path / "cubemx" / "board.ioc").read_text() == "Mcu.IP0=FDCAN1\n"
+
+
+def test_a_project_without_one_ioc_is_an_error(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    with pytest.raises(SystemExit, match="found 0"):
+        keep_ioc(str(project))
+    (project / "one.ioc").touch()
+    (project / "other.ioc").touch()
+    with pytest.raises(SystemExit, match="found 2"):
+        keep_ioc(str(project))
 
 
 def test_stedgeai_runtime_requires_header_and_cm33_archive(tmp_path):
