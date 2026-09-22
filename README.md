@@ -111,23 +111,13 @@ J1939's own terms, frame, PGN and SPN, are described in
   `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
   `evaluate`, all done 2026-09-22.
 
-  - Build the grid again with `--rebuild`. A signal is decoded in float32 now, as the
-    board computes it, a value J1939 reserves leaves NaN in its row rather than the
-    value before it, and a tick with no frame since the one before gets no row, so the
-    rows themselves changed. Then the log split and the three
-    sets, whose inputs change with the grid, so those need no `--rebuild`. The stages
-    after them follow the new paths.
-- Build the test set again with `--rebuild`. The replay copies from moving rows onto
-  moving rows now, so the inputs are the same and the attacks are not. Count the logs
-  that lose their attack to that.
 - Draw the attacks over the test span's time rather than one per log. One per log puts
   four times as many per moving hour in the logs that move least. Measure first whether
   that shifts a model's numbers, from `caught` in a score. The rules catch the same
   share in every band of a log's moving seconds.
-- Build the dataset in the new layout, up to the test set. Then run `fit` and the
-  stages after it on a few logs on their own Hugging Face branch. When that works, run
-  them on every log on main, then score one other split, the first 25% of the time as
-  test.
+- Run `fit` and the stages after it on every log, on `train_sets/20260922-100444` and
+  `test_sets/20260922-110745`. They passed on one day of logs in the smoke repos. Then
+  score one other split, the first 25% of the time as test.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
