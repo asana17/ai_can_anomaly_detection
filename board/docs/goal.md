@@ -7,28 +7,27 @@ our instructions.
 
 ## To do
 
-1. Put the new layout's outputs on the Hub, the test set, `models/`, `thresholds/`,
-   `onnx/` and `board/`, and fill the nulls in [`board/model.json`](../model.json).
-   Until then no application with a model, rows or frames can be prepared.
-2. Prepare, build and flash every application from the fetched files, and run the
-   smoke test. `alive`, `model_check_from_flash` and `can_path_from_flash` already build
-   and run from `fetched/`, with the downloads replaced by the files built before.
-3. Count the calibration rows the board's difference from ONNX Runtime moves across
-   the threshold. It waits for the calibration rows' scores from `score`.
-4. A status task that reports every second the rows dropped, the frames the FDCAN FIFO
+1. Flash `ai_can_anomaly_detection` and see it start. It builds, and the board was away
+   when it was written.
+2. The CAN side, as [connecting_can_bus.md](connecting_can_bus.md) describes. Still to
+   agree are the clock settings, where the frame timestamp comes from, and whether the
+   entry ships with CAN hardware.
+3. A status task that reports every second the rows dropped, the frames the FDCAN FIFO
    lost, queue space and CPU use, and blinks the green LED. CPU use needs WFI in
    `low_pow`, which is empty in the STM32 port, and idle time counted with DWT. The
    rules allow changing μT-Kernel 3.0 as long as its API stays, and leave which parts
    of the source to a technical document published separately, not found yet.
-5. Measure reception, rule and report latency with inference made heavy, the lowest
-   clock that still meets the 0.1 s tick, and the MCU current on JP2 with a tester.
-   Decide whether the entry builds at `-O0` as the Debug configuration does, and
-   measure the time per row and the image size again if not. The row queue depth waits
+4. Measure the time per row of the model the entry runs, reception, rule and report
+   latency with inference made heavy, the lowest clock that still meets the 0.1 s tick,
+   and the MCU current on JP2 with a tester. Decide whether the entry builds at `-O0`
+   as the Debug configuration does, and measure again if not. The row queue depth waits
    for the time per row.
-6. The `can_path` application on the real bus, with the CAN side, as
-   [connecting_can_bus.md](connecting_can_bus.md) describes. Still to agree with the
-   CAN side are the clock settings, where the frame timestamp comes from, and whether
-   the entry ships with CAN hardware.
+5. Count the calibration rows the board's difference from ONNX Runtime moves across the
+   threshold. It waits for the calibration rows' scores from `score`.
+6. Fetch the model from the runs repository in `board.prepare`, so the entry's model can
+   be changed without editing files. The applications keep the files they have now, so
+   a clone builds with nothing fetched. The work is written and set aside, and it waits
+   for the new layout's outputs on the Hub.
 7. Instructions a judge can follow, slides, the third party software listed (the
    ST Edge AI runtime), and the source published.
 
@@ -42,7 +41,11 @@ our instructions.
 | CAN path on replayed frames | alarm from tick 29 to 80, 60 rows flagged, 89 rows, no errors | `can_path_from_flash` on the board, 2,937 frames |
 | reconstruction error in C | bit equal to numpy on 51% of rows, largest relative difference 3.8e-7 | host build of `board/lib/scoring` against the PC scorer |
 | generated C renamed by prepare | the same as the C built on the board before, but for the unused `HAVE_NETWORK_INFO` | `board/20260916-232708/nonlinear_ae_k8_h64` |
-| image size | text 123,196, data 2,572, bss 11,580 bytes | `arm-none-eabi-size` of `can_path_from_flash`, 2,937 frames in Flash, Debug at `-O0` |
+| image size, the entry | text 84,500, data 2,548, bss 11,828 bytes | `arm-none-eabi-size` of `ai_can_anomaly_detection`, `nonlinear_ae_k16_h128`, Debug at `-O0` |
+| image size, the Flash replay | text 123,196, data 2,572, bss 11,580 bytes | `arm-none-eabi-size` of `can_path_from_flash`, 2,937 frames in Flash, Debug at `-O0` |
+
+The image sizes are what `arm-none-eabi-size` prints. Whether the memory the kernel
+gives the tasks and message buffers is inside the bss is not checked.
 
 `-ffp-contract=off` is in the CubeIDE build log, so the board's float32 arithmetic
 rounds as numpy does. `board/flash.py` builds the project's Debug configuration, which
