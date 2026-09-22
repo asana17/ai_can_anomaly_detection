@@ -179,7 +179,7 @@ LOCAL T_CTSK scoring_and_detect_ctsk = {
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CTSK report_ctsk = {
-	.itskpri = 5, .stksz = 1024, .task = report_task,
+	.itskpri = 10, .stksz = 1024, .task = report_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CCYC tick_ccyc = {
