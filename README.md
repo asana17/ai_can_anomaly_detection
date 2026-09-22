@@ -128,13 +128,16 @@ J1939's own terms, frame, PGN and SPN, are described in
   the CAN side, how to connect the receive callback, the FDCAN interrupt priority `DI`
   must mask, and what the CAN side builds. Then steps 2, 5 and 6.
 - Add kinds of anomaly beyond replay to the attacked test set, designed against the
-  rules.
+  rules and the instant models. The instant models catch replay, so the next attack
+  keeps every row inside the training distribution. A donor matched on speed and gear
+  leaves only the disagreement over time.
+- Then widen to a stretch of time, VAR against a windowed autoencoder. It is what the
+  new attack is built against. The board wants one as well, as the best-effort layer
+  under the rules and the instant model.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
   reconstruct.
 - Restate [can_data/measurements.md](can_data/measurements.md) over every log.
 - Settle whether the rules are a floor the models build on.
-- Then widen to a stretch of time, VAR against a windowed autoencoder, if the instant
-  models show it is worth doing.
 - A script that compares scores.
 - Rerun the linear autoencoder checks in the runs repo's `checks/` from a committed
   script, on the current dataset.
