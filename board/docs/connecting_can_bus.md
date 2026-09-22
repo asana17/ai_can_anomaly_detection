@@ -1,9 +1,12 @@
 # Connecting the CAN bus
 
-This page is for whoever brings real CAN frames onto the board. The detector already
-runs on the board from CAN frames to alarms, in
-[`can_path_from_flash`](../application/can_path_from_flash/README.md), with recorded
-frames from Flash in place of the bus. Only the part that feeds it frames is missing.
+This page is for whoever brings real CAN frames onto the board.
+
+The CAN bus is not wired. FDCAN is not enabled in the CubeMX project. No FDCAN receive
+callback exists. The slots are never written, so
+[`ai_can_anomaly_detection`](../application/ai_can_anomaly_detection/README.md) scores
+nothing and stands as a placeholder for the application that reads a bus. Everything
+from the slots on is written and checked.
 
 ```mermaid
 flowchart LR
@@ -12,8 +15,6 @@ flowchart LR
     cb --> slots[(slots)]
     slots --> pre[preprocess and detect, already built]
 ```
-
-Everything left of `slots` is the CAN side's.
 
 ## What the CAN side builds
 
@@ -34,11 +35,9 @@ module. How the PC talks to the adapter is left to the CAN side.
 
 ## Connecting the receive callback
 
-The bus gets its own application, `board/application/can_path/`, copied from
-`can_path_from_flash`. The replay application stays as it is, so the path can still be
-checked without a bus. Its replay task calls `slots_store` for each frame at the
-frame's own time. In `can_path` the FDCAN receive callback makes the same call and the
-replay task goes.
+`slots_store` writes the slots, and nothing in the application calls it. The callback
+calls it for each frame it takes out of the FIFO. Until then preprocessing counts every
+tick as quiet.
 
 ```c
 IMPORT Slots bus;
@@ -67,10 +66,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 `size` and `time` are left to the CAN side in the sketch above. Nothing reads `time`
 yet. The kernel tick is 10 ms, too coarse for it.
 
-In the copied `usermain` the replay task is no longer created or started. Remove `replay_ctsk`,
-the `tk_cre_tsk` and `tk_sta_tsk` of `replay`, `replay_task` and the
-`replay_frames.h` include. `replay_done` then stays 0 and preprocessing runs until
-reset, instead of stopping 1 s after the last Flash frame.
+Nothing else in the application changes. It runs until the board is reset.
 
 Frames the FDCAN FIFO lost should be counted by the driver, so a report can say the
 board did not see the whole bus. Nothing reports that count yet.
@@ -90,33 +86,33 @@ Set `FDCAN1_IT0_IRQn` to preemption priority 1 or above in CubeMX, under System 
 NVIC. At 0 the callback can overwrite a slot while preprocessing copies it. This is
 read from the port's source and not yet checked on the board.
 
-## Fetching frames and models
+`tm_printf` masks the same interrupts while it sends each character, about 87 µs at
+115200 bps, and 174 µs for a line end, computed, not measured. The FDCAN RX FIFO has
+to hold the frames that arrive meanwhile.
 
-Frames to send can be fetched from the dataset repository on Hugging Face,
-`asana17/ai_can_anomaly_detection_data`, which needs no login. A test set holds its
-logs with the attacks injected, frame by frame, as Parquet files under `frames/`. Their
-columns are in [injected_frames](../../assemble/docs/injected_frames.md). Today the
-repository holds one older export at its top level.
+## Fetching the frames to send
 
-```sh
-hf download asana17/ai_can_anomaly_detection_data frames/frames.parquet frames/attacked.json \
-  --repo-type dataset --local-dir out
-```
+The model the application runs is in the repository, in `board/lib/deployed_model/`, so
+nothing has to be fetched to build it.
+
+The frames for the PC to send are in a test set of the dataset repository on Hugging
+Face, `asana17/ai_can_anomaly_detection_data`, which needs no login. A test set holds
+its logs with the attacks injected, frame by frame, as Parquet files under `frames/`,
+and which attack each log holds in `injected.json`. Their columns are in
+[injected_frames](../../assemble/docs/injected_frames.md).
 
 The CAN logs themselves, normal traffic with no attack, come from the Turku dataset as
 [can_data.md](../../can_data/can_data.md#getting-it) describes.
 
-The model C the board builds with is already in `board/lib/active_model/`. It came from
-`board/20260916-232708/` in the runs repository `asana17/ai_can_anomaly_detection_runs`,
-and can be fetched again from there.
-
-```sh
-hf download asana17/ai_can_anomaly_detection_runs --include "board/20260916-232708/*" \
-  --local-dir runs
-```
-
 ## Checking it
 
-Prepare, build and flash `can_path` as `can_path_from_flash` is, then read the UART on the
-ST-LINK virtual COM port while the PC sends. [setup.md](setup.md) and
-[flash.md](flash.md) give the steps.
+Prepare, build and flash, then read the UART on the ST-LINK virtual COM port while the
+PC sends. [setup.md](setup.md) and [flash.md](flash.md) give the steps.
+
+```sh
+python3 -m board.prepare CUBEIDE_PROJECT_DIR ai_can_anomaly_detection
+python3 board/flash.py CUBEIDE_PROJECT_DIR
+```
+
+Without the callback the application prints its first line and nothing else, so that
+line appearing means the build and the flash worked, not the bus.
