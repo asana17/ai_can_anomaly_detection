@@ -14,22 +14,8 @@ flowchart LR
 ```
 
 The numbers are task priorities, smaller runs first. The replay task stands in for the
-CAN receive interrupt and is the only part that changes when the bus is connected.
-
-## Connecting the bus
-
-The FDCAN receive callback calls one function for each frame it receives, and replaces
-the replay task.
-
-```c
-IMPORT Slots bus;
-
-slots_store(&bus, arb_id, data, size, time);
-```
-
-`arb_id` is the 29-bit ID, `data` and `size` the payload, and `time` the receive time
-in the driver's own clock. Preprocessing reads the slots one at a time with interrupts
-disabled, so the callback needs no lock of its own.
+CAN receive interrupt and is the only part that changes when the bus is connected, as
+[connecting_can_bus.md](../../docs/connecting_can_bus.md) describes.
 
 ## Preprocessing
 
