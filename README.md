@@ -117,7 +117,6 @@ J1939's own terms, frame, PGN and SPN, are described in
     rows themselves changed. Then the log split and the three
     sets, whose inputs change with the grid, so those need no `--rebuild`. The stages
     after them follow the new paths.
-- Fold `common/hf_upload.py` into `common/hub_dirs.py`.
 - Build the test set again with `--rebuild`. The replay copies from moving rows onto
   moving rows now, so the inputs are the same and the attacks are not. Count the logs
   that lose their attack to that.
@@ -125,11 +124,10 @@ J1939's own terms, frame, PGN and SPN, are described in
   four times as many per moving hour in the logs that move least. Measure first whether
   that shifts a model's numbers, from `caught` in a score. The rules catch the same
   share in every band of a log's moving seconds.
-- Record in `injected.json` which donor log each attack copied from. `source` is a time
-  in that log, and nothing says which log it is. Add `donor` to its schema then.
-- Build the dataset in the new layout, then check the whole path on a few logs, then
-  score one other split, the first 25% of the time as test. `fit` and the stages after
-  it wait for the `evaluate` item.
+- Build the dataset in the new layout, up to the test set. Then run `fit` and the
+  stages after it on a few logs on their own Hugging Face branch. When that works, run
+  them on every log on main, then score one other split, the first 25% of the time as
+  test.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
