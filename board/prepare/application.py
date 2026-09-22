@@ -31,6 +31,9 @@ APPLICATIONS = {
     "ae_reconstruction_from_flash": Application(("scale", "model", "scoring", MODEL), True),
     "scoring_and_detect_from_flash": Application(
         ("mbf", "moving", "rules", "scale", "model", "scoring", "detect", MODEL), True),
+    "can_path_from_flash": Application(
+        ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
+         "model", "scoring", "detect", MODEL), True),
 }
 
 
