@@ -141,9 +141,11 @@ def rows_before_each(grid_dir):
     return of
 
 
-def donor_logs(non_test_logs, count):
-    """The `count` non-test logs the replayed payloads are taken from, spread evenly."""
-    return non_test_logs[::max(len(non_test_logs) // count, 1)][:count]
+def donor_logs(non_test_logs, seconds, count):
+    """The `count` non-test logs the replayed payloads are taken from, spread evenly over
+    those with `seconds` above `MIN_SPEED`."""
+    moving_logs = [log for log in non_test_logs if seconds[log] > 0]
+    return moving_logs[::max(len(moving_logs) // count, 1)][:count]
 
 
 def read_test_set(folder):
@@ -187,12 +189,17 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
                                    grid["revision"], repo_type="dataset")
     period, max_hold = (grid_meta["inputs"][n] for n in ("period", "max_hold"))
     cut = read_log_split(log_split_dir)
+    with open(os.path.join(log_split_dir, "seconds.json")) as f:
+        seconds = json.load(f)
 
     under = {name: [os.path.join(data_dir, p) for p in cut[name]]
              for name in ("non_test", "test")}
     before = rows_before_each(grid_dir)
+    donors = donor_logs(cut["non_test"], seconds, settings.DONORS)
+    if not donors:
+        raise ValueError("no non-test log moves, so there is none to replay from")
     injected = inject_frames(under["test"], random.Random(settings.SEED),
-                             donor_logs(under["non_test"], settings.DONORS),
+                             [os.path.join(data_dir, p) for p in donors],
                              rows_before_attack=lambda log: before(
                                  os.path.relpath(log, data_dir)),
                              period=period, max_hold=max_hold,

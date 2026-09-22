@@ -20,7 +20,8 @@ python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir 
 
 `PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
 ticks as the grid's. The payloads are replayed from `DONORS` of the non-test logs,
-spread evenly over them.
+spread evenly over those with seconds above `MIN_SPEED` in the log split's
+`seconds.json`.
 
 It writes these files into `local_dir/test_sets/<time>/` and uploads that directory to
 `repo` as `test_sets/<time>/`.

@@ -60,6 +60,12 @@ def _injected(logs, seed=0):
     return grid_rows_injected(injected, before, period=PERIOD, max_hold=MAX_HOLD)
 
 
+def test_donors_are_spread_over_the_logs_that_move():
+    seconds = {"a": 10.0, "b": 0.0, "c": 5.0, "d": 0.0, "e": 8.0}
+    assert test_set.donor_logs(list(seconds), seconds, 2) == ["a", "c"]
+    assert test_set.donor_logs(list(seconds), seconds, 3) == ["a", "c", "e"]
+
+
 def test_rows_before_the_attack_from_another_grid_are_refused(tmp_path):
     log = _write_log(tmp_path / "a.csv")
     shifted = {t + 0.05: row for t, row in _rows_before_attack([log])(log).items()}
@@ -178,7 +184,8 @@ def _hub_files(tmp_path, hub, logs):
                      "path": "grids/20260101-000000"}},
         "log_splits/20260101-000000/log_split.json": {
             "non_test": names[:-1], "test": names[-1:],
-            "test_start": 0.0, "test_end": 0.0}}
+            "test_start": 0.0, "test_end": 0.0},
+        "log_splits/20260101-000000/seconds.json": {name: 35.0 for name in names}}
 
 
 def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
@@ -195,6 +202,15 @@ def test_the_stage_writes_the_rows_the_labels_and_the_frames(tmp_path, hub):
     assert len(list((folder / "frames").glob("*.parquet"))) == 1
     meta = json.loads((folder / "meta.json").read_text())
     assert meta["grid"]["path"] == "grids/20260101-000000"
+
+
+def test_the_stage_refuses_a_log_split_where_no_non_test_log_moves(tmp_path, hub):
+    logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
+    _hub_files(tmp_path, hub, logs)
+    hub.files["log_splits/20260101-000000/seconds.json"] = {"a.csv": 0.0, "b.csv": 35.0}
+    with pytest.raises(ValueError, match="no non-test log moves"):
+        test_set.main("u/d", REVISION, "log_splits/20260101-000000", str(tmp_path),
+                      str(tmp_path / "local"))
 
 
 def test_the_stage_names_a_test_set_of_the_same_log_split(tmp_path, hub):
