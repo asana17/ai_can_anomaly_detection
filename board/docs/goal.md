@@ -11,25 +11,26 @@ our instructions.
    `onnx/` and `board/`, and fill the nulls in [`board/model.json`](../model.json).
    Until then no application with a model, rows or frames can be prepared.
 2. Prepare, build and flash every application from the fetched files, and run the
-   smoke test.
+   smoke test. `alive`, `model_check_from_flash` and `can_path_from_flash` already build
+   and run from `fetched/`, with the downloads replaced by the files built before.
 3. Count the calibration rows the board's difference from ONNX Runtime moves across
    the threshold. It waits for the calibration rows' scores from `score`.
 4. A status task that reports every second the rows dropped, the frames the FDCAN FIFO
    lost, queue space and CPU use, and blinks the green LED. CPU use needs WFI in
-   `low_pow`, which is empty in the STM32 port, and idle time counted with DWT. Whether
-   the contest allows changing `low_pow` is open.
+   `low_pow`, which is empty in the STM32 port, and idle time counted with DWT. The
+   rules allow changing μT-Kernel 3.0 as long as its API stays, and leave which parts
+   of the source to a technical document published separately, not found yet.
 5. Measure reception, rule and report latency with inference made heavy, the lowest
-   clock that still meets the 0.1 s tick, the MCU current on JP2 with a tester, and
-   `arm-none-eabi-size` of the whole image. The row queue depth waits for the time per
-   row.
+   clock that still meets the 0.1 s tick, and the MCU current on JP2 with a tester.
+   Decide whether the entry builds at `-O0` as the Debug configuration does, and
+   measure the time per row and the image size again if not. The row queue depth waits
+   for the time per row.
 6. The `can_path` application on the real bus, with the CAN side, as
    [connecting_can_bus.md](connecting_can_bus.md) describes. Still to agree with the
    CAN side are the clock settings, where the frame timestamp comes from, and whether
    the entry ships with CAN hardware.
 7. Instructions a judge can follow, slides, the third party software listed (the
    ST Edge AI runtime), and the source published.
-
-Whether `tm_printf` spins while UART sends is not known.
 
 ## Measured
 
@@ -41,9 +42,19 @@ Whether `tm_printf` spins while UART sends is not known.
 | CAN path on replayed frames | alarm from tick 29 to 80, 60 rows flagged, 89 rows, no errors | `can_path_from_flash` on the board, 2,937 frames |
 | reconstruction error in C | bit equal to numpy on 51% of rows, largest relative difference 3.8e-7 | host build of `board/lib/scoring` against the PC scorer |
 | generated C renamed by prepare | the same as the C built on the board before, but for the unused `HAVE_NETWORK_INFO` | `board/20260916-232708/nonlinear_ae_k8_h64` |
+| image size | text 123,196, data 2,572, bss 11,580 bytes | `arm-none-eabi-size` of `can_path_from_flash`, 2,937 frames in Flash, Debug at `-O0` |
 
 `-ffp-contract=off` is in the CubeIDE build log, so the board's float32 arithmetic
-rounds as numpy does.
+rounds as numpy does. `board/flash.py` builds the project's Debug configuration, which
+compiles at `-O0`. The st-ai runtime that runs the layers is a prebuilt library.
 
 The rows and frames of these runs came from the old layout's attack set, attack 2, and
 the model's scale and threshold from `results/20260916-001002`.
+
+## Read from the source
+
+`tm_printf` sends each character between `DI` and `EI`, and waits in a loop until the
+UART has sent it. The report task therefore keeps the CPU for the whole line, and
+every interrupt `DI` masks, the tick and the FDCAN receive interrupt among them, waits
+up to one character. That is about 87 µs at 115200 bps, and 174 µs for a line end
+with its CR, computed, not measured.
