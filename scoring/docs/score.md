@@ -15,7 +15,7 @@ It writes one directory of the runs repository, `scores/<time>/`.
 ## Running it
 
 ```
-python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 ```
 
 | argument | |
@@ -29,10 +29,10 @@ python3 -m scoring.score repo revision <set> local_dir runs_repo revision models
 | `models/<time>` | the fitted models that score the rows |
 | `runs_dir` | local folder the models are downloaded to and `scores/<time>/` is written to |
 | `--rebuild` | score again even if `runs_repo` already holds a directory with the same `inputs` |
-| `--onnx_files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
+| `--onnx-files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
 | `--precision <precision>` | which ONNX file of each model, `float` or `int8` |
 
-With `--onnx_files` the `revision` has to hold `<dir>` too. It stops when `<dir>` is
+With `--onnx-files` the `revision` has to hold `<dir>` too. It stops when `<dir>` is
 not made from `models/<time>`.
 
 It writes these files into `runs_dir/scores/<time>/` and uploads that directory to

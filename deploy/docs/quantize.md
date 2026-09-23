@@ -1,7 +1,7 @@
 # quantize
 
 Quantize float onnx file [export](export.md) created to int8, and keep them in the runs
-repository. [calibrate](../../models/docs/calibrate.md) with `--onnx_files` and
+repository. [calibrate](../../models/docs/calibrate.md) with `--onnx-files` and
 `--precision int8` gives each int8 file its threshold.
 
 ## Running it

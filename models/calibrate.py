@@ -1,11 +1,11 @@
 """Give every fitted model the score above which a row counts as an anomaly.
 
-    python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+    python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 
 The thresholds come from the scores `scoring.score` gives the calibration set the
 models' train set names, which no model was fitted on. A model reconstructs the rows
 it was fitted on better than the rest, so a threshold taken from those would sit too
-low. With `--onnx_files` each model is its ONNX file of `precision` in that directory,
+low. With `--onnx-files` each model is its ONNX file of `precision` in that directory,
 made from the same fit.
 """
 

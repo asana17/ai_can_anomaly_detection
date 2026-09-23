@@ -31,3 +31,9 @@ def test_a_missing_positional_stops_the_stage(monkeypatch):
     monkeypatch.setattr("sys.argv", ["stage"])
     with pytest.raises(SystemExit):
         arguments(("local_dir",))
+
+
+def test_a_flag_is_written_with_a_hyphen(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["stage", "out", "--dry-run", "--onnx-files", "q"])
+    assert arguments(("local_dir",), dry_run=False, onnx_files=None) == {
+        "local_dir": "out", "dry_run": True, "onnx_files": "q"}

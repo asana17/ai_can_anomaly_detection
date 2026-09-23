@@ -1,8 +1,8 @@
 """Score every row of a set with each fitted model, and flag the rows a rule hits.
 
-    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 
-`<set>` is `calibration_sets/<time>` or `test_sets/<time>`. With `--onnx_files` each
+`<set>` is `calibration_sets/<time>` or `test_sets/<time>`. With `--onnx-files` each
 model is its ONNX file of `precision` in that directory, made from the same fit.
 """
 

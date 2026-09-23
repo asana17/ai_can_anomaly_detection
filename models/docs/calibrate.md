@@ -11,7 +11,7 @@ per model, as a directory of the runs repository. No model is fitted here.
 ## Running it
 
 ```
-python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx_files <dir> --precision <precision>]
+python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 ```
 
 | argument | |
@@ -22,14 +22,14 @@ python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir 
 | `runs_dir` | local folder the models are downloaded to and `scores/<time>/` and `thresholds/<time>/` are written to |
 | `local_dir` | local folder the dataset directories those models name are downloaded to |
 | `--rebuild` | take the thresholds again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |
-| `--onnx_files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
+| `--onnx-files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
 | `--precision <precision>` | which ONNX file of each model, `float` or `int8` |
 
-With `--onnx_files` the `revision` has to hold `<dir>` too. It stops when `<dir>` is
+With `--onnx-files` the `revision` has to hold `<dir>` too. It stops when `<dir>` is
 not made from `models/<time>`.
 
 An int8 file does not score a row quite as the float model does, so it cannot keep
-the float model's threshold. Its threshold is taken with `--onnx_files` and
+the float model's threshold. Its threshold is taken with `--onnx-files` and
 `--precision int8`.
 
 It writes these files into `runs_dir/thresholds/<time>/` and uploads that directory to
