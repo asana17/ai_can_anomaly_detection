@@ -58,9 +58,25 @@ class QuantizeSettings:
 
 
 @dataclass(frozen=True)
-class RunSettings:
-    """Every stage's settings, each under the name of the stage that reads them."""
+class PipelineSettings:
+    """Where a run reads and writes. A relative folder is taken from where the pipeline
+    is started."""
 
+    data_repo: str = "asana17/ai_can_anomaly_detection_data"
+    runs_repo: str = "asana17/ai_can_anomaly_detection_runs"
+    can_data_dir: str = "data"
+    can_data_pattern: str = "part_*/*.csv"
+    local_data_dir: str = "out/data"
+    local_runs_dir: str = "out/runs"
+    snapshot_dir: str = "out/snapshots"
+
+
+@dataclass(frozen=True)
+class RunSettings:
+    """Every stage's settings, each under the name of the stage that reads them, and
+    the pipeline's."""
+
+    pipeline: PipelineSettings = PipelineSettings()
     grid: GridSettings = GridSettings()
     split_test_logs: SplitSettings = SplitSettings()
     calibration_set: CalibrationSettings = CalibrationSettings()

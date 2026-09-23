@@ -1,7 +1,7 @@
 # settings
 
 `common/settings.py` holds every value a run is made with, one class for each stage
-that reads any. A stage sees its own class alone, and a value an earlier stage fixed
+that reads any, and the folders and repos the pipeline passes to them. A stage sees its own class alone, and a value an earlier stage fixed
 comes from that stage's `meta.json`. This says how the ones below were set. None of
 them was chosen by looking at the test set.
 

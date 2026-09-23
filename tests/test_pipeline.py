@@ -80,7 +80,9 @@ def test_rebuild_of_a_stage_there_is_not_stops_it(calls, tmp_path):
 
 def test_it_runs_the_stages_in_a_worktree_with_copies_of_the_files(monkeypatch,
                                                                    tmp_path):
-    (tmp_path / "s.json").write_text(json.dumps({"split_test_logs": {"FOLD": 0}}))
+    written = {"pipeline": {"snapshot_dir": str(tmp_path / "work")},
+               "split_test_logs": {"FOLD": 0}}
+    (tmp_path / "s.json").write_text(json.dumps(written))
     (tmp_path / "m.json").write_text("[]")
     ran = []
 
@@ -91,20 +93,21 @@ def test_it_runs_the_stages_in_a_worktree_with_copies_of_the_files(monkeypatch,
     monkeypatch.setattr(worktree, "git", git)
     monkeypatch.setattr(worktree.subprocess, "run",
                         lambda args, **k: ran.append((args, k)))
-    worktree.main(str(tmp_path / "work"), "u/d", "data", "*.csv", "out", "u/r", "runs",
-                  str(tmp_path / "s.json"), str(tmp_path / "m.json"))
+    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"))
 
     (run_dir,) = (tmp_path / "work").iterdir()
     assert ran[0] == ("worktree", "add", "--detach", str(run_dir / "code"), "HEAD")
-    assert json.loads((run_dir / "settings.json").read_text()) == {
-        "split_test_logs": {"FOLD": 0}}
+    assert json.loads((run_dir / "settings.json").read_text()) == written
     args, flags = ran[1]
+    assert args[3:6] == ["asana17/ai_can_anomaly_detection_data",
+                         os.path.abspath("data"), "part_*/*.csv"]
     assert args[-2:] == [str(run_dir / "settings.json"), str(run_dir / "models.json")]
     assert flags["cwd"] == str(run_dir / "code")
 
 
 def test_a_dry_run_passes_it_on_and_removes_its_worktree(monkeypatch, tmp_path):
-    (tmp_path / "s.json").write_text("{}")
+    (tmp_path / "s.json").write_text(json.dumps(
+        {"pipeline": {"snapshot_dir": str(tmp_path / "work")}}))
     (tmp_path / "m.json").write_text("[]")
     ran = []
 
@@ -115,8 +118,7 @@ def test_a_dry_run_passes_it_on_and_removes_its_worktree(monkeypatch, tmp_path):
 
     monkeypatch.setattr(worktree, "git", git)
     monkeypatch.setattr(worktree.subprocess, "run", lambda args, **k: ran.append(args))
-    worktree.main(str(tmp_path / "work"), "u/d", "data", "*.csv", "out", "u/r", "runs",
-                  str(tmp_path / "s.json"), str(tmp_path / "m.json"), dry_run=True)
+    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"), dry_run=True)
 
     assert ran[1][-1] == "--dry-run"
     assert ran[2][:3] == ("worktree", "remove", "--force")
@@ -124,12 +126,12 @@ def test_a_dry_run_passes_it_on_and_removes_its_worktree(monkeypatch, tmp_path):
 
 
 def test_rebuild_is_passed_on_to_the_stages(monkeypatch, tmp_path):
-    (tmp_path / "s.json").write_text("{}")
+    (tmp_path / "s.json").write_text(json.dumps(
+        {"pipeline": {"snapshot_dir": str(tmp_path / "work")}}))
     (tmp_path / "m.json").write_text("[]")
     ran = []
     monkeypatch.setattr(worktree, "git", lambda *args: os.makedirs(args[-2]))
     monkeypatch.setattr(worktree.subprocess, "run", lambda args, **k: ran.append(args))
-    worktree.main(str(tmp_path / "work"), "u/d", "data", "*.csv", "out", "u/r", "runs",
-                  str(tmp_path / "s.json"), str(tmp_path / "m.json"),
+    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"),
                   rebuild=["assemble.test_set", "models.fit"])
     assert ran[0][-4:] == ["--rebuild", "assemble.test_set", "--rebuild", "models.fit"]
