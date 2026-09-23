@@ -3,7 +3,7 @@
 Picks a replay at random and applies it.
 
 ```python
-inject(frames, rng, source_log, spans=spans, source_spans=source_spans)
+random_replay(frames, rng, source_log, spans=spans, source_spans=source_spans)
 # -> (frames, {pgn, start, stop, source}), or None
 ```
 
@@ -18,7 +18,7 @@ over the times that leave the attack room.
 `source` is a time in `source_log`. [replay](replay.md) says why that should not be
 the log being attacked.
 
-`inject` returns None when no span is long enough, when the two share no PGN, or
+`random_replay` returns None when no span is long enough, when the two share no PGN, or
 when the replay wrote bytes the PGN already had. The last is no attack and should
 not be counted as one that got away.
 

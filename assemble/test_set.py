@@ -12,7 +12,7 @@ import random
 
 import numpy as np
 
-from attack.inject import inject
+from attack.inject import random_replay
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from assemble.split_test_logs import read_log_split
@@ -46,7 +46,7 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
         before = rows_before_attack(path)
         spans = moving_spans(before, min_speed=min_speed, period=period)
         donor, source_spans = rng.choice(pool) if source_logs else (frames, spans)
-        made = inject(frames, rng, source_log=donor, spans=spans,
+        made = random_replay(frames, rng, source_log=donor, spans=spans,
                       source_spans=source_spans)
         if made:
             rows, attack = attacked_log(*made, before, period=period, max_hold=max_hold)

@@ -107,7 +107,7 @@ def test_a_replay_that_stops_a_changed_row_is_not_kept(tmp_path, monkeypatch):
                 for f in frames]
         return hurt, dict(pgn=65265, start=start, stop=start + 2.0, source=0.0)
 
-    monkeypatch.setattr(test_set, "inject", stopping)
+    monkeypatch.setattr(test_set, "random_replay", stopping)
     log = _write_log(tmp_path / "a.csv")
     [(_, frames, hurt, rows, attack)] = inject_frames(
         [log], random.Random(0), rows_before_attack=_rows_before_attack([log]),

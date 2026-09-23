@@ -35,9 +35,9 @@ def _time_in(spans, length, rng):
     return rng.uniform(start, last)
 
 
-def inject(frames: Iterable[CanFrame], rng: random.Random,
-           source_log: Iterable[CanFrame] | None = None,
-           pgns=PGNS, seconds=SECONDS, *, spans=None, source_spans=None) -> tuple | None:
+def random_replay(frames: Iterable[CanFrame], rng: random.Random,
+                  source_log: Iterable[CanFrame] | None = None, pgns=PGNS,
+                  seconds=SECONDS, *, spans=None, source_spans=None) -> tuple | None:
     """Replay one PGN over a random stretch, from a random moment of `source_log`.
 
     The stretch lies in one of `spans` and the moment in one of `source_spans`, each a
