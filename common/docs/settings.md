@@ -12,13 +12,11 @@ names and values that replace the defaults. The values a stage used are in its
 | name | value | what it is |
 |---|---|---|
 | `MIN_SPEED` | 5.0 km/h | the speed a row has to exceed to be scored |
-| `TRAIN` | 0.75 | the share of the seconds above 5 km/h before the test cut |
 | `TARGET` | 0.001 | the share of the calibration rows the threshold cuts off |
 | `CALIBRATION` | 0.10 | the share of the training seconds above 5 km/h that become the calibration set |
 | `BLOCK` | 20 s | the seconds above 5 km/h in one calibration block |
 | `GAP` | 5 s | the time either side of a calibration block or the test span where rows are dropped |
 
-- **`TRAIN`** is where the test period starts.
 - **`TARGET`** is the false positive rate the threshold aims at. Raising it lowers the
   threshold, which catches more attacks and more normal rows with them. A stated
   choice, not a calculation.
