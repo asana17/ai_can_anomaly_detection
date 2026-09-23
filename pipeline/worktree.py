@@ -16,6 +16,7 @@ import time
 
 from common.cli import arguments
 from common.git import git
+from pipeline.stages import STAGES
 
 
 def check_out(run_dir, settings, models):
@@ -29,33 +30,39 @@ def check_out(run_dir, settings, models):
 
 
 def run_stages(code, run_dir, repo, data_dir, pattern, local_dir, runs_repo, runs_dir,
-               dry_run):
+               dry_run, rebuild):
     """Run the stages in the worktree `code`, on the files copied into `run_dir`."""
     subprocess.run([sys.executable, "-m", "pipeline.stages", repo,
                     os.path.abspath(data_dir), pattern, os.path.abspath(local_dir),
                     runs_repo, os.path.abspath(runs_dir),
                     os.path.join(run_dir, "settings.json"),
                     os.path.join(run_dir, "models.json"),
-                    *(["--dry-run"] if dry_run else [])],
+                    *(["--dry-run"] if dry_run else []),
+                    *[flag for name in rebuild for flag in ("--rebuild", name)]],
                    cwd=code, check=True)
 
 
 def main(work_dir, repo, data_dir, pattern, local_dir, runs_repo, runs_dir, settings,
-         models, dry_run=False):
+         models, dry_run=False, rebuild=()):
+    unknown = set(rebuild) - {stage.__name__ for stage in STAGES}
+    if unknown:
+        raise SystemExit(f"no stage is named {', '.join(sorted(unknown))}")
     stages = (repo, data_dir, pattern, local_dir, runs_repo, runs_dir)
     if dry_run:
         with tempfile.TemporaryDirectory() as run_dir:
             code = check_out(run_dir, settings, models)
             try:
-                run_stages(code, run_dir, *stages, dry_run=True)
+                run_stages(code, run_dir, *stages, dry_run=True, rebuild=rebuild)
             finally:
                 git("worktree", "remove", "--force", code)
         return
     run_dir = os.path.abspath(os.path.join(work_dir, time.strftime("%Y%m%d-%H%M%S")))
     print(f"run in {run_dir}", flush=True)
-    run_stages(check_out(run_dir, settings, models), run_dir, *stages, dry_run=False)
+    run_stages(check_out(run_dir, settings, models), run_dir, *stages, dry_run=False,
+               rebuild=rebuild)
 
 
 if __name__ == "__main__":
     main(**arguments(("work_dir", "repo", "data_dir", "pattern", "local_dir",
-                      "runs_repo", "runs_dir", "settings", "models"), dry_run=False))
+                      "runs_repo", "runs_dir", "settings", "models"), dry_run=False,
+                     rebuild=[]))

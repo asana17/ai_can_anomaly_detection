@@ -44,6 +44,7 @@ should use it. Editing anything once it runs changes nothing.
 | `SETTINGS` | JSON file of each stage's values that differ from the defaults |
 | `MODELS` | JSON file of the models to fit |
 | `--dry-run` | check what will run in a temporary worktree, removed after |
+| `--rebuild STAGE` | build the stage named as `python3 -m` names it, such as `assemble.test_set`, even when one made from the same inputs is there. The stages after it build too. Give it again for each stage to build |
 
 `LOG` starts with the run's folder and ends with the `test_runs/<time>` it wrote. When
 it is done, remove the worktree with `git worktree remove WORK_DIR/<time>/code`.
