@@ -22,8 +22,8 @@ gears agree. With the clutch open the engine is not tied to the wheels at all, s
 waits for a slip of zero. Under 5 km/h the wheel speed is too coarse, as in
 [shaft_ratio](shaft_ratio.md).
 
-Inside those gates it picks the wrong gear on 0.0080% of evaluations, 12 of 150,291,
-measured in [measurements](../../measurements.md).
+Inside those gates it picks the wrong gear on 0.0148% of evaluations, 317 of
+2,134,856 gridded rows over every log. Half of them, 154, report fifth.
 
 Gears 1 and 3 are missing from the table, too rare in the data to place, so a report
 of either is not checked. Their absence also leaves gear 2 with no near neighbour,
