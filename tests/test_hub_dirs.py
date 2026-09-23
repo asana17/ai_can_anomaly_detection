@@ -8,6 +8,13 @@ def test_find_returns_the_newest_of_two_with_the_same_inputs(tmp_path, hub):
     assert found["path"] == "splits/20260102-000000"
 
 
+def test_find_passes_over_a_directory_whose_meta_has_no_inputs(tmp_path, hub):
+    hub.files = {"splits/20260101-000000/meta.json": {"inputs": {"hold": 1}},
+                 "splits/20260102-000000/meta.json": {"made_from": "an old run"}}
+    found = hub_dirs.find("u/d", "splits", {"hold": 1}, str(tmp_path / "local"))
+    assert found["path"] == "splits/20260101-000000"
+
+
 def test_a_dry_run_makes_nothing_and_names_a_new_one(tmp_path, hub):
     hub.files = {}
     made = []

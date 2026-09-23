@@ -46,7 +46,8 @@ def find(repo, kind, inputs, local_dir, repo_type="model"):
             continue
         meta = hf_hub_download(repo, name, repo_type=repo_type, revision=revision,
                                local_dir=local_dir)
-        if json.load(open(meta))["inputs"] == inputs:
+        # one made before meta.json held its inputs has none, and matches nothing
+        if json.load(open(meta)).get("inputs") == inputs:
             return {"repo": repo, "revision": revision, "path": f"{kind}/{parts[1]}"}
     return None
 
