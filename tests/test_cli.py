@@ -37,3 +37,12 @@ def test_a_flag_is_written_with_a_hyphen(monkeypatch):
     monkeypatch.setattr("sys.argv", ["stage", "out", "--dry-run", "--onnx-files", "q"])
     assert arguments(("local_dir",), dry_run=False, onnx_files=None) == {
         "local_dir": "out", "dry_run": True, "onnx_files": "q"}
+
+
+def test_a_list_flag_gathers_every_time_it_is_given(monkeypatch):
+    monkeypatch.setattr("sys.argv",
+                        ["stage", "out", "--rebuild", "a", "--rebuild", "b"])
+    assert arguments(("local_dir",), rebuild=[]) == {"local_dir": "out",
+                                                     "rebuild": ["a", "b"]}
+    monkeypatch.setattr("sys.argv", ["stage", "out"])
+    assert arguments(("local_dir",), rebuild=[]) == {"local_dir": "out", "rebuild": []}
