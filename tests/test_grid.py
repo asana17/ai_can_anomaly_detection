@@ -79,3 +79,8 @@ def test_the_digest_changes_with_a_log_s_size(tmp_path):
     before = grid.logs_digest(data, ["part_1/a.csv", "part_1/b.csv"])
     (tmp_path / "data" / "part_1" / "a.csv").write_text("1")
     assert grid.logs_digest(data, ["part_1/a.csv", "part_1/b.csv"]) != before
+
+
+def test_no_matching_log_stops_it_before_the_hub(tmp_path):
+    with pytest.raises(SystemExit):
+        grid.main(str(tmp_path), "part_*/*.csv", str(tmp_path / "out"), "u/d")
