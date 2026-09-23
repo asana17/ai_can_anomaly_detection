@@ -2,6 +2,7 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
 #include "stm32h5xx_hal.h"
+#include "stm32h5xx_nucleo.h"
 #include "detect.h"
 #include "mbf.h"
 #include "model.h"
@@ -37,7 +38,7 @@ EXPORT Slots bus;
 
 IMPORT FDCAN_HandleTypeDef hfdcan1; /* set up by MX_FDCAN1_Init in the CubeMX main.c */
 
-LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id;
+LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id, alive_id;
 LOCAL volatile UW rows_sent, rows_quiet, rows_not_ready, rows_skipped, rows_dropped, resets;
 LOCAL volatile UW scored_rows, flagged_rows, maximum_cycles;
 
@@ -211,6 +212,16 @@ LOCAL void report_task(INT stacd, void *exinf)
 	tk_slp_tsk(TMO_FEVR);
 }
 
+LOCAL void alive_task(INT stacd, void *exinf)
+{
+	INT count = 0;
+
+	while(1) {
+		BSP_LED_Toggle(LED_GREEN);
+		tk_dly_tsk(500);
+	}
+}
+
 LOCAL T_CTSK preprocess_ctsk = {
 	.itskpri = 6, .stksz = 1024, .task = preprocess_task,
 	.tskatr = TA_HLNG | TA_RNG3,
@@ -221,6 +232,10 @@ LOCAL T_CTSK scoring_and_detect_ctsk = {
 };
 LOCAL T_CTSK report_ctsk = {
 	.itskpri = 10, .stksz = 1024, .task = report_task,
+	.tskatr = TA_HLNG | TA_RNG3,
+};
+LOCAL T_CTSK alive_ctsk = {
+	.itskpri = 12, .stksz = 1024, .task = alive_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CCYC tick_ccyc = {
@@ -246,9 +261,11 @@ EXPORT INT usermain(void)
 	preprocess_id = tk_cre_tsk(&preprocess_ctsk);
 	scoring_and_detect = tk_cre_tsk(&scoring_and_detect_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
-	if(preprocess_id < E_OK || scoring_and_detect < E_OK || report < E_OK) {
+	alive_id = tk_cre_tsk(&alive_ctsk);
+	if(preprocess_id < E_OK || scoring_and_detect < E_OK || report < E_OK || alive_id < E_OK) {
 		return -11;
 	}
+	tk_sta_tsk(alive_id, 0);
 	tk_sta_tsk(report, 0);
 	tk_sta_tsk(scoring_and_detect, 0);
 	tk_sta_tsk(preprocess_id, 0);
