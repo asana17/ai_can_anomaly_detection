@@ -11,9 +11,9 @@ so an attack that rewrites one PGN leaves the other alone. Neither reading has t
 leave its own range for the pair to be wrong, which is what
 [range_check](range_check.md) would miss.
 
-The default limit of 2 km/h comes from the normal spread. The two sit within 0.9 km/h
-of each other at p99 and more than 2 km/h apart on 0.006% of rows, measured in
-[measurements](../../measurements.md).
+The default limit of 2 km/h comes from the normal spread. Over every log the two sit
+within 0.91 km/h of each other at p99 above 5 km/h, and more than 2 km/h apart on 587
+of the 2,757,787 moving grid rows, measured in [measurements](../../measurements.md).
 
 It reports nothing until both speeds have arrived, so a caller can pass a single
 decoded frame and get an answer only once the state holds both.

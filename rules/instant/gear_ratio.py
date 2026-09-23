@@ -1,7 +1,7 @@
 """Flag the engine and wheel speeds not matching the gear the transmission reports.
 
-Each gear turns the engine a set number of times per km/h. The gears are spaced 1.28
-apart, so a measured ratio picks out one of them, and it should be the reported one.
+Each gear turns the engine a set number of times per km/h. The gears are spaced 1.26
+to 1.30 apart, so a measured ratio picks out one of them, and it should be the reported one.
 No tolerance is needed for that, only the table.
 """
 
@@ -12,7 +12,9 @@ import numpy as np
 from preprocess.features.signal_state import SIGNALS
 
 # The median of engine_speed / wheel_speed in each gear, over 150,291 evaluations
-# with the clutch closed. Gears 1 and 3 are too rare in the data to place.
+# with the clutch closed. Gears 1 and 3 are too rare in the data to place. Over every
+# log the medians sit within 1.1% of these but fifth, at 84.63. Putting fifth and
+# sixth at their medians raises the hits from 317 to 349. See rules/measurements.md.
 RATIOS = {2: 179.25, 4: 108.69, 5: 87.02, 6: 67.20, 7: 52.27,
           8: 41.37, 9: 31.69, 10: 24.82, 11: 19.37, 12: 15.24}
 

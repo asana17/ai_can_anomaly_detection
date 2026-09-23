@@ -151,7 +151,8 @@ on 4.21% they differ by more than 50 rpm, up to 1,518 rpm. One case reads engine
 against input 934 with the reported slip at 0.
 
 ETC1 byte 1 holds the driveline and torque converter states that would explain it,
-but it takes three values here, 204, 205 and 221, too few to place its bits. Until
+but over every log it takes four values, 204, 205, 220 and 221, and 0xFF, too few to
+place its bits. Until
 they are placed 4.21% is two orders worse than the rules that exist.
 
 ### Checks on the PGNs, not written

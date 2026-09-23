@@ -10,8 +10,9 @@ import numpy as np
 
 from preprocess.features.signal_state import SIGNALS
 
-# Every one of these read exactly zero on all 97,237 stopped evaluations measured.
-# See rules/measurements.md.
+# Over every log the rule fires on 141,110 of 36,041,922 evaluations with the engine
+# at zero, 139,318 of them the input shaft still turning at 100 to 312 rpm. None of
+# them is a moving grid row. See rules/measurements.md.
 MUST_BE_ZERO = ["fuel_rate", "actual_engine_torque", "engine_load",
                 "driver_demand_torque", "accel_pedal", "input_shaft_speed"]
 

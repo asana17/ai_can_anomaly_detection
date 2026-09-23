@@ -10,8 +10,9 @@ import numpy as np
 
 from preprocess.features.signal_state import SIGNALS
 
-# The shaft reads up to 31 rpm with the wheels at zero, over 278,819 evaluations.
-# See rules/measurements.md.
+# Over every log the shaft reads up to 551 rpm with the wheels at zero, and above 50
+# on 2,600 of 106,072,217 evaluations, where the tachograph speed shows the truck
+# still rolling. None of them is a moving grid row. See rules/measurements.md.
 MAX_SHAFT = 50.0
 
 def hits(raw: np.ndarray, max_shaft: float = MAX_SHAFT) -> np.ndarray:

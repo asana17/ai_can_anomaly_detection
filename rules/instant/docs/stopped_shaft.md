@@ -8,7 +8,8 @@ hits(raw, max_shaft=50.0)   # -> True per row the rule fires on
 
 The output shaft and the wheels turn together, so one cannot move while the other
 sits still. [shaft_ratio](shaft_ratio.md) checks the same thing but only above
-5 km/h, so nothing checks it while the truck is stopped.
+20 km/h, so nothing checks it while the truck is stopped.
 
-With the wheels reading zero the shaft still reads up to 31 rpm, so the limit sits at
-50 rather than 0.
+The limit sits at 50 rpm rather than 0. Over every log the shaft reads up to 551 rpm
+with the wheels at zero, and above 50 on 2,600 of 106,072,217 evaluations, where the
+tachograph speed shows the truck still rolling. None of them is a moving grid row.

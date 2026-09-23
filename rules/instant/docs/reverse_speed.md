@@ -10,5 +10,7 @@ hits(raw, max_speed=10.0)   # -> True per row the rule fires on
 entry for reverse. So once the reported gear goes negative nothing else ties it to
 the speed.
 
-Reverse never exceeded 3.5 km/h over 87,245 evaluations, so the limit sits at 10.
-The check only applies while reverse is reported, which is a narrow slice.
+The limit sits at 10 km/h. Over every log reverse reads up to 38.3 km/h, in 9 runs
+where the gear stays at -1 while the truck drives off, and the rule fires on those, 9
+of the 2,757,787 moving grid rows. The check only applies while reverse is reported,
+which is a narrow slice.

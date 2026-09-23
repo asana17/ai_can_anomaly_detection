@@ -11,8 +11,9 @@ import numpy as np
 
 from preprocess.features.signal_state import SIGNALS
 
-# Normally the two sit within 0.9 km/h of each other at p99, and more than 2 km/h
-# apart on 0.006% of rows. See rules/measurements.md.
+# Over every log the two sit within 0.91 km/h of each other at p99 above 5 km/h, and
+# more than 2 km/h apart on 587 of the 2,757,787 moving grid rows. See
+# rules/measurements.md.
 MAX_DISAGREEMENT = 2.0
 
 

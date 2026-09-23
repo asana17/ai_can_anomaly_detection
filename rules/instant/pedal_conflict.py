@@ -1,6 +1,7 @@
 """Flag the accelerator and the brake being pressed at once.
 
-Never seen together in 486,544 evaluations. See rules/measurements.md.
+Over every log both read pressed on 1,066 of the 2,757,787 moving grid rows, drivers
+holding both pedals. See rules/measurements.md.
 """
 
 from __future__ import annotations

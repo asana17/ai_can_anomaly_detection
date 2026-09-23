@@ -10,7 +10,9 @@ import numpy as np
 
 from preprocess.features.signal_state import SIGNALS
 
-# Reverse never exceeded 3.5 km/h over 87,245 evaluations. See rules/measurements.md.
+# Over every log reverse reads up to 38.3 km/h, in 9 runs where the gear stays at -1
+# while the truck drives off. The limit fires on those, 9 of the 2,757,787 moving grid
+# rows. See rules/measurements.md.
 MAX_SPEED = 10.0
 
 def hits(raw: np.ndarray, max_speed: float = MAX_SPEED) -> np.ndarray:

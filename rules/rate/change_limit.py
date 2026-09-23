@@ -7,13 +7,15 @@ the caller has to keep the previous value and the time since.
 from __future__ import annotations
 
 # The most each signal moved per second over 25 logs, rounded up and doubled to
-# leave room. Signals not listed are unbounded in practice, the input shaft because
-# a shift lets it spin free and the gears because they jump. See rules/measurements.md.
+# leave room. Over every log all but steering_angle move faster than this, and the
+# rule fires on 236 of 85,944,337 comparisons. Signals not listed are unbounded in
+# practice, the input shaft because a shift lets it spin free and the gears because
+# they jump. See rules/measurements.md.
 LIMITS = {
-    "yaw_rate": 3.0,            # rad/s2, observed 1.1
-    "steering_angle": 40.0,     # rad/s, observed 16.4
-    "wheel_speed": 50.0,        # km/h/s, observed 21.0
-    "tachograph_speed": 100.0,  # km/h/s, observed 41.9
+    "yaw_rate": 3.0,            # rad/s2, observed 1.1 over 25 logs, 5.6 over every log
+    "steering_angle": 40.0,     # rad/s, observed 16.4, 36.3
+    "wheel_speed": 50.0,        # km/h/s, observed 21.0, 374.8
+    "tachograph_speed": 100.0,  # km/h/s, observed 41.9, 745.0
 }
 
 

@@ -7,13 +7,14 @@ hits(raw, min_speed, ratios=RATIOS)   # -> True per row the rule fires on
 nearest_gear(ratio)                   # -> the gear each ratio belongs to
 ```
 
-Each gear turns the engine a set number of times per km/h, and the gears are 1.28
-apart, so a measured ratio picks out one of them. The rule asks whether that is the
-reported gear. There is no tolerance to choose, only the table.
+Each gear turns the engine a set number of times per km/h, and the gears are 1.26 to
+1.30 apart, so a measured ratio picks out one of them. The rule asks whether that is
+the reported gear. There is no tolerance to choose, only the table.
 
 That works because the spread inside a gear stays smaller than the distance to its
-neighbour. Top gear sits within 1.7% of its own ratio and 12.8% from the next one.
-Low gears are looser, up to 22%, and still land on themselves.
+neighbour. Over every log at p99, top gear sits within 0.9% of its own ratio and
+fourth within 10.8%, while the boundary with the nearest gear lies 11.8% or more
+away.
 
 ## Where it stays quiet
 
