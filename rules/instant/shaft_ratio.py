@@ -14,8 +14,12 @@ from preprocess.features.signal_state import SIGNALS
 # 15.6 at motorway speed and widens as the wheel slows. See rules/measurements.md.
 BOUNDS = (13.0, 17.5)
 
+# Below this the ratio runs past BOUNDS as the wheel slows. From 5 km/h the rule fired
+# on 1,176 of the 2,757,787 moving grid rows of every log, from 20 km/h on 15.
+MIN_SPEED = 20.0
 
-def hits(raw: np.ndarray, min_speed: float, bounds: tuple = BOUNDS) -> np.ndarray:
+
+def hits(raw: np.ndarray, min_speed: float = MIN_SPEED, bounds: tuple = BOUNDS) -> np.ndarray:
     """True where the shaft and the wheel disagree on how fast the truck goes.
 
     Below `min_speed` the wheel speed is small enough that its quantisation dominates

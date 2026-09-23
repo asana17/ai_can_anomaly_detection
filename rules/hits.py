@@ -14,7 +14,7 @@ from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
 def instant(min_speed):
     """The instant rules, the moving ones starting at `min_speed`."""
     return (range_check.hits, speed_agreement.hits,
-            partial(shaft_ratio.hits, min_speed=min_speed),
+            shaft_ratio.hits,
             partial(gear_ratio.hits, min_speed=min_speed),
             partial(steering_sign.hits, min_speed=min_speed),
             engine_off.hits, pedal_conflict.hits, stopped_shaft.hits, reverse_speed.hits,

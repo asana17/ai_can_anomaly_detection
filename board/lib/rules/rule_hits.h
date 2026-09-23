@@ -48,7 +48,7 @@ static inline bool rule_hits(const float row[], float min_speed)
 	return range_check_hits(row)
 		|| speed_agreement_hits(row[RULE_WHEEL_SPEED], row[RULE_TACHOGRAPH_SPEED])
 		|| shaft_ratio_hits(row[RULE_OUTPUT_SHAFT_SPEED], row[RULE_WHEEL_SPEED],
-			min_speed)
+			SHAFT_RATIO_MIN_SPEED)
 		|| gear_ratio_hits(row[RULE_ENGINE_SPEED], row[RULE_WHEEL_SPEED],
 			row[RULE_CURRENT_GEAR], row[RULE_SELECTED_GEAR],
 			row[RULE_CLUTCH_SLIP], min_speed)

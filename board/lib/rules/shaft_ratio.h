@@ -6,6 +6,8 @@
 /* BOUNDS in rules/instant/shaft_ratio.py */
 #define SHAFT_RATIO_LOWER 13.0f
 #define SHAFT_RATIO_UPPER 17.5f
+/* MIN_SPEED in rules/instant/shaft_ratio.py */
+#define SHAFT_RATIO_MIN_SPEED 20.0f
 
 /**
  * @brief Check whether the output shaft turns at the right rate for the wheel speed.

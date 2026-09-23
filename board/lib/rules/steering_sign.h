@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 /* MIN_YAW in rules/instant/steering_sign.py */
-#define STEERING_SIGN_MIN_YAW 0.02f
+#define STEERING_SIGN_MIN_YAW 0.05f
 
 /**
  * @brief Check whether the steering angle and the yaw rate turn the same way.
