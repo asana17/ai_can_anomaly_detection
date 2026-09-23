@@ -14,7 +14,15 @@ on.
      defaults, such as `{"FOLD": 0}`. `{}` keeps every default.
    - `MODELS`, the models to fit with their seeds, in the form of
      [models.json](../models/models.json).
-2. Run it in the background.
+2. Check what will run. Each stage prints one line, the date of the one it would use,
+   or `<new>` when this run would build it, with the values it would be made with.
+   This makes nothing.
+
+   ```
+   python3 -m pipeline.worktree WORK_DIR REPO DATA_DIR PATTERN LOCAL_DIR RUNS_REPO RUNS_DIR SETTINGS MODELS --dry-run
+   ```
+
+3. Run it in the background.
 
    ```
    nohup caffeinate -i python3 -m pipeline.worktree WORK_DIR REPO DATA_DIR PATTERN LOCAL_DIR RUNS_REPO RUNS_DIR SETTINGS MODELS > LOG 2>&1 &
@@ -34,6 +42,7 @@ should use it. Editing anything once it runs changes nothing.
 | `RUNS_DIR` | local folder the runs directories are written to |
 | `SETTINGS` | JSON file of the values that differ from the defaults |
 | `MODELS` | JSON file of the models to fit |
+| `--dry-run` | check what will run in a temporary worktree, removed after |
 
 `LOG` starts with the run's folder and ends with the `test_runs/<time>` it wrote. When
 it is done, remove the worktree with `git worktree remove WORK_DIR/<time>/code`.
