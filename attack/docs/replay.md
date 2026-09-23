@@ -1,87 +1,45 @@
 # replay
 
-Gives a window of frames the payloads the same PGNs carried at another time,
-in this log or in another.
+Copies the payloads of some PGNs from another moment into a time window.
 
 ```python
 replay(frames, [65265, 65132], start=25.0, stop=30.0, source=5.0, source_log=other)
 ```
 
-Every CCVS1 and TCO1 frame between t=25 and t=30 gets the bytes that PGN held at
-t=5 in `source_log`, walking the source at the same pace. Frame times and counts do not
-change, so the frame rate stays normal.
+| argument | |
+|---|---|
+| `frames` | the log to attack |
+| `pgns` | the PGNs overwritten, the rest are left alone |
+| `start`, `stop` | the window, in this log's times |
+| `source` | the time in `source_log` the copy starts at |
+| `source_log` | the log copied from, this one when not given |
 
-## Why replay rather than write a value
+Frame times and counts do not change. The bytes were observed, so what breaks is the
+agreement with the PGNs left alone. Naming several PGNs moves them together.
 
-The bytes were observed, so each signal in a replayed PGN stays inside its range and
-agrees with the others in that PGN. A written constant does neither, and
-[range_check](../../rules/instant/docs/range_check.md) ends it. What replay breaks is the
-agreement with the PGNs left alone.
+The source comes from another log: over 305 logs, two moments of one log sit under 0.25
+standard deviations apart for every PGN, against 0.86 to 1.76 across logs.
 
-Naming several PGNs moves them together, which is how an attack is aimed. Replay
-CCVS1 alone and the two speeds disagree. Replay CCVS1 and TCO1 together and they
-agree again, while the wheels still disagree with the engine.
+What each replay is worth against the rules and the models is in
+[measurements](../measurements.md).
 
-## The source has to come from another log
+## random_replay.replay
 
-Two moments of the same log are too alike to make an anomaly. Over 305 logs the
-median distance between them is under 0.25 standard deviations for every PGN,
-against 0.86 to 1.76 across logs.
-
-That is not picking values a detector will catch. An attacker who writes back what
-was nearly there has not attacked. The moment is still drawn uniformly, so how far it
-lands is whatever the other log holds.
-
-EBC1 stays weak either way, since the brake pedal reads zero on almost every row.
-
-## What the rules catch
-
-Replaying one PGN at a time, over a five second window in each of 20 logs taken
-from 20 seconds earlier in the same log, counting only the windows where the bytes
-changed. A same log source is the weak end above, so these are a floor.
-
-| replayed | injections | [instant](../../rules/instant) catches | [change_limit](../../rules/rate/docs/change_limit.md) catches |
-|---|---|---|---|
-| CCVS1 wheel speed | 15 | 10 | 5 |
-| TCO1 tachograph speed | 14 | 10 | 5 |
-| ETC1 shafts | 19 | 6 | 0 |
-| EEC1 engine | 19 | 4 | 0 |
-| EEC2 pedal and load | 19 | 3 | 0 |
-| ETC2 gears | 7 | 3 | 0 |
-| EBC1 brake | 7 | 2 | 0 |
-| VDC2 steering and yaw | 20 | 1 | 9 |
-| LFE1 fuel rate | 19 | 0 | 0 |
-
-Every PGN leaves injections the rules do not see, so replay is enough to build a
-test set the models have to earn. Replaying LFE1 is invisible to all ten.
-
-That says the rules as written do not cover these, not that no rule could. Fuel rate
-is the one with evidence either way, since its tie to engine speed and torque is a
-map rather than something to state.
-
-## Which replay to write, at random
-
-Picks a replay at random and applies it.
+Draws a replay and applies it.
 
 ```python
-random_replay.replay(frames, rng, source_log, spans=spans,
-                     source_spans=source_spans)
+random_replay.replay(frames, rng, source_log, spans=spans, source_spans=source_spans)
 # -> (frames, {pgn, start, stop, source}), or None
 ```
 
-How to fake an attack is above. This says which one to fake. Which
-PGN, when the attack starts, how long it runs, and which moment it copies are all
-chosen at random, so that nothing here is picked to suit a detector.
+The PGN, the start, the length and the moment copied are all drawn at random, so none
+is picked to suit a detector.
 
-The attack lies in one of `spans` and copies from one of `source_spans`. Each is a
-list of (start, end) times, the whole log when not given. The start is drawn evenly
-over the times that leave the attack room.
+| argument | |
+|---|---|
+| `rng` | a `random.Random`. One seed gives one attack, so a test set can be rebuilt |
+| `spans` | (start, end) times the attack may lie in, the whole log when not given |
+| `source_spans` | (start, end) times in `source_log` it may copy from |
 
-`source` is a time in `source_log`. Why that should not be the log being attacked is above.
-
-It returns None when no span is long enough, when the two share no PGN, or
-when the replay wrote bytes the PGN already had. The last is no attack and should
-not be counted as one that got away.
-
-`rng` is a `random.Random`, so a seed gives the same attack twice and a test set can
-be rebuilt.
+None comes back when no span leaves the attack room, when the two logs share no PGN,
+and when the replay wrote the bytes the PGN already had.
