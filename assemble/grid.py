@@ -17,7 +17,7 @@ import numpy as np
 
 from common.cli import arguments
 from common.hub_dirs import reuse_or_make
-from common.settings import Settings
+from common.settings import read_settings
 from preprocess.features.grid_sample import resample
 from preprocess.frames.can_log_loader import load_can_log
 
@@ -115,8 +115,8 @@ def write_grid(folder, data_dir, logs, settings):
     print(f"{sum(counts)} rows from {len(logs)} logs", flush=True)
 
 
-def main(data_dir, pattern, local_dir, repo, rebuild=False):
-    settings = Settings()
+def main(data_dir, pattern, local_dir, repo, rebuild=False, settings=None):
+    settings = read_settings(settings)
     logs = sorted(os.path.relpath(p, data_dir)
                   for p in glob.glob(os.path.join(data_dir, pattern)))
     if not logs:
@@ -129,4 +129,5 @@ def main(data_dir, pattern, local_dir, repo, rebuild=False):
 
 
 if __name__ == "__main__":
-    main(**arguments(("data_dir", "pattern", "local_dir", "repo"), rebuild=False))
+    main(**arguments(("data_dir", "pattern", "local_dir", "repo"), rebuild=False,
+                     settings=None))

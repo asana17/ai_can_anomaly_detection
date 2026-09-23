@@ -16,7 +16,7 @@ from assemble.grid import read_grid, rows_of_logs
 from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import Settings
+from common.settings import read_settings
 from preprocess.features.moving import moving
 
 
@@ -116,8 +116,8 @@ def write_calibration_set(folder, repo, revision, log_split_path, local_dir, set
             "grid": grid}
 
 
-def main(repo, revision, log_split_path, local_dir, rebuild=False):
-    settings = Settings()
+def main(repo, revision, log_split_path, local_dir, rebuild=False, settings=None):
+    settings = read_settings(settings)
     inputs = {"log_split": log_split_path, "calibration": settings.CALIBRATION,
               "block": settings.BLOCK, "gap": settings.GAP}
     return reuse_or_make(repo, "calibration_sets", inputs, local_dir,
@@ -128,4 +128,5 @@ def main(repo, revision, log_split_path, local_dir, rebuild=False):
 
 
 if __name__ == "__main__":
-    main(**arguments(("repo", "revision", "log_split_path", "local_dir"), rebuild=False))
+    main(**arguments(("repo", "revision", "log_split_path", "local_dir"), rebuild=False,
+                     settings=None))

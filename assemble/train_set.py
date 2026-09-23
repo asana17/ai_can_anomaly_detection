@@ -19,7 +19,7 @@ from assemble.grid import read_grid, rows_of_logs
 from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import Settings
+from common.settings import read_settings
 from preprocess.features.moving import moving
 from rules.hits import rule_hits
 
@@ -83,8 +83,8 @@ def write_train_set(folder, repo, revision, calibration_path, local_dir, setting
             "rule_hits": {"rows": len(hit), "hit": int(hit.sum())}}
 
 
-def main(repo, revision, calibration_path, local_dir, rebuild=False):
-    settings = Settings()
+def main(repo, revision, calibration_path, local_dir, rebuild=False, settings=None):
+    settings = read_settings(settings)
     inputs = {"calibration_set": calibration_path, "gap": settings.GAP}
     return reuse_or_make(repo, "train_sets", inputs, local_dir,
                          lambda folder: write_train_set(folder, repo, revision,
@@ -95,4 +95,4 @@ def main(repo, revision, calibration_path, local_dir, rebuild=False):
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "calibration_path", "local_dir"),
-                     rebuild=False))
+                     rebuild=False, settings=None))

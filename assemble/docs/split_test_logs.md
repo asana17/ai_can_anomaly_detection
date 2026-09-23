@@ -18,7 +18,7 @@ non_test_logs, test_logs = split(seconds, n_splits, fold)
 ## Running it
 
 ```
-python3 -m assemble.split_test_logs repo revision grids/<time> local_dir [--rebuild]
+python3 -m assemble.split_test_logs repo revision grids/<time> local_dir [--rebuild] [--settings <file>]
 ```
 
 | argument | |
@@ -28,6 +28,7 @@ python3 -m assemble.split_test_logs repo revision grids/<time> local_dir [--rebu
 | `grids/<time>` | the [grid](grid.md) directory whose rows are counted and cut |
 | `local_dir` | local folder `log_splits/<time>/` is written to, kept after the upload |
 | `--rebuild` | cut even if `repo` already has `log_splits/<time>/` for the same `grids/<time>`, `MIN_SPEED`, `N_SPLITS` and `FOLD` |
+| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 It writes these files into `local_dir/log_splits/<time>/` and uploads that directory to
 `repo` as `log_splits/<time>/`.

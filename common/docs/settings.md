@@ -3,6 +3,10 @@
 `common/settings.py` holds every value a run is made with. This says how the ones
 below were set. None of them was chosen by looking at the test set.
 
+A run with other values gives each stage `--settings <file>`, a JSON object of the
+names and values that replace the defaults. The values a stage used are in its
+`meta.json`.
+
 ## The split and calibration parameters
 
 | name | value | what it is |

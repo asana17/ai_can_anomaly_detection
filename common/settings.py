@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 
@@ -31,3 +32,15 @@ class Settings:
     PATIENCE: int = 10          # epochs in a row without that before training stops
     HIDDEN: tuple = (32, 64, 128)  # hidden units of a nonlinear autoencoder, each reported
 
+
+def read_settings(path):
+    """`Settings` with the values the JSON file `path` names in place of the defaults.
+
+    `path` None gives the defaults. A name `Settings` does not have raises.
+    """
+    if path is None:
+        return Settings()
+    with open(path) as f:
+        values = json.load(f)
+    return Settings(**{name: tuple(value) if isinstance(value, list) else value
+                       for name, value in values.items()})

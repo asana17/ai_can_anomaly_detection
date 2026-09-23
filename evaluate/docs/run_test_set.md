@@ -17,7 +17,7 @@ It writes one directory of the runs repository, `test_runs/<time>/`.
 ## Running it
 
 ```
-python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild] [--settings <file>]
 ```
 
 | argument | |
@@ -31,6 +31,7 @@ python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_r
 | `thresholds/<time>` | the thresholds the models run at. The models they name are read too, and scored with |
 | `runs_dir` | local folder `scores/<time>/` and `test_runs/<time>/` are written to, kept after the upload |
 | `--rebuild` | count again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |
+| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 It writes these files into `runs_dir/test_runs/<time>/` and uploads that directory to
 `runs_repo` as `test_runs/<time>/`.

@@ -1,6 +1,6 @@
 """Quantize every float ONNX file of an export to int8.
 
-    python3 -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir [--rebuild]
+    python3 -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir [--rebuild] [--settings <file>]
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from onnxruntime.quantization.shape_inference import quant_pre_process
 from assemble.train_set import fetch_train_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import Settings
+from common.settings import read_settings
 from models.fit import fetch_fitted_models
 from models.fits import model_from
 from models.onnx_files import onnx_name
@@ -90,8 +90,9 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
                          "onnxruntime": onnxruntime.__version__}}
 
 
-def main(runs_repo, revision, onnx_path, runs_dir, local_dir, rebuild=False):
-    settings = Settings()
+def main(runs_repo, revision, onnx_path, runs_dir, local_dir, rebuild=False,
+         settings=None):
+    settings = read_settings(settings)
     inputs = {"onnx": onnx_path}
     return reuse_or_make(runs_repo, "quantize", inputs, runs_dir,
                          lambda folder: write_quantized(folder, runs_repo, revision,
@@ -102,4 +103,4 @@ def main(runs_repo, revision, onnx_path, runs_dir, local_dir, rebuild=False):
 
 if __name__ == "__main__":
     main(**arguments(("runs_repo", "revision", "onnx_path", "runs_dir", "local_dir"),
-                    rebuild=False))
+                    rebuild=False, settings=None))

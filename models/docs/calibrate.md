@@ -11,7 +11,7 @@ per model, as a directory of the runs repository. No model is fitted here.
 ## Running it
 
 ```
-python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
+python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--settings <file>] [--onnx-files <dir> --precision <precision>]
 ```
 
 | argument | |
@@ -22,6 +22,7 @@ python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir 
 | `runs_dir` | local folder the models are downloaded to and `scores/<time>/` and `thresholds/<time>/` are written to |
 | `local_dir` | local folder the dataset directories those models name are downloaded to |
 | `--rebuild` | take the thresholds again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |
+| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 | `--onnx-files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
 | `--precision <precision>` | which ONNX file of each model, `float` or `int8` |
 

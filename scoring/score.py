@@ -1,6 +1,6 @@
 """Score every row of a set with each fitted model, and flag the rows a rule hits.
 
-    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
+    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--settings <file>] [--onnx-files <dir> --precision <precision>]
 
 `<set>` is `calibration_sets/<time>` or `test_sets/<time>`. With `--onnx-files` each
 model is its ONNX file of `precision` in that directory, made from the same fit.
@@ -21,7 +21,7 @@ from assemble.calibration_set import fetch_calibration_set
 from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import Settings
+from common.settings import read_settings
 from models.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
@@ -95,8 +95,8 @@ def fetch_scores(directory, runs_dir):
 
 
 def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
-         runs_dir, rebuild=False, onnx_files=None, precision=None):
-    settings = Settings()
+         runs_dir, rebuild=False, settings=None, onnx_files=None, precision=None):
+    settings = read_settings(settings)
     set_directory = {"repo": repo, "revision": revision, "path": set_path}
     models_directory = {"repo": runs_repo, "revision": runs_revision, "path": models_path}
     onnx_directory, onnx_folder = None, None
@@ -120,4 +120,4 @@ def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_p
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "set_path", "local_dir", "runs_repo",
                      "runs_revision", "models_path", "runs_dir"),
-                    rebuild=False, onnx_files=None, precision=None))
+                    rebuild=False, settings=None, onnx_files=None, precision=None))

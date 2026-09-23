@@ -1,6 +1,6 @@
 """Count what each detector catches on the attacked test rows.
 
-    python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
+    python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild] [--settings <file>]
 
 The models and their thresholds come from a directory `models.calibrate` wrote. The
 test set is scored with them, as the calibration set was.
@@ -18,7 +18,7 @@ import numpy as np
 from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import Settings
+from common.settings import read_settings
 from detect.alarm import alarmed_rows
 from evaluate.count_alarms import attacks_with_a_flagged_row, count_alarms
 from models.fit import fetch_fitted_models
@@ -204,8 +204,8 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
 
 
 def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
-         thresholds_path, runs_dir, rebuild=False):
-    settings = Settings()
+         thresholds_path, runs_dir, rebuild=False, settings=None):
+    settings = read_settings(settings)
     test_set_directory = {"repo": repo, "revision": revision, "path": test_path}
     thresholds_directory = {"repo": runs_repo, "revision": runs_revision,
                             "path": thresholds_path}
@@ -220,4 +220,5 @@ def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "test_path", "local_dir", "runs_repo",
-                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False))
+                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False,
+                    settings=None))

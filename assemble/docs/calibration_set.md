@@ -18,7 +18,7 @@ it has not seen, and a threshold read off them would sit too low.
 ## Running it
 
 ```
-python3 -m assemble.calibration_set repo revision log_splits/<time> local_dir [--rebuild]
+python3 -m assemble.calibration_set repo revision log_splits/<time> local_dir [--rebuild] [--settings <file>]
 ```
 
 | argument | |
@@ -28,6 +28,7 @@ python3 -m assemble.calibration_set repo revision log_splits/<time> local_dir [-
 | `log_splits/<time>` | the log split whose non-test logs are cut. The grid it names is read too |
 | `local_dir` | local folder `calibration_sets/<time>/` is written to, kept after the upload |
 | `--rebuild` | build even if `repo` already has `calibration_sets/<time>/` for the same log split, `CALIBRATION`, `BLOCK` and `GAP` |
+| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 `MIN_SPEED` comes from the log split's `meta.json` and `PERIOD` from the grid's.
 
