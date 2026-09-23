@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from attack.replay import replay
+from attack.replay.replay import replay
 from board.rule_rows import window
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import load_can_log

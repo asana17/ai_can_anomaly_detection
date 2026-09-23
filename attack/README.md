@@ -11,8 +11,8 @@ Documented under [docs/](docs).
   window, keeping the frame timing normal. Nothing calls it yet.
 - [replay](docs/replay.md) gives a stretch of frames the payloads those PGNs
   carried at another time, so the written values are ones the bus really produced.
-- [replay](docs/replay.md) also picks which replay to write, for building a test
-  set.
+- [random_replay](docs/random_replay.md) draws which replay to write, for building a
+  test set, taking any moment of the donor.
 
 ## Utilities
 

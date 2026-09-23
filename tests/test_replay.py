@@ -1,4 +1,4 @@
-from attack.replay import replay
+from attack.replay.replay import replay
 from preprocess.frames.can_log_loader import CanFrame
 
 CCVS1, EEC1 = 0x18FEF1E6, 0x18F004E6
