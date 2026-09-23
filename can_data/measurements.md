@@ -10,7 +10,7 @@ What profiling the logs found. The dataset itself is described in
 
 ### What is on the bus
 
-Over 1,200 logs and 60,001,200 frames.
+Over every log, 11,194 of them, and 559,711,194 frames.
 
 - **57 unique PGNs.** One log carries 52 to 57 of them (median 55), and 52 appear
   in every log. **10 source addresses**, of which `230`, the main powertrain ECU,
@@ -25,8 +25,9 @@ Over 1,200 logs and 60,001,200 frames.
   - `CCVS1` (65265), 1.18%, every 100 ms, wheel based vehicle speed
   - `LFE1` (65266), 1.18%, every 100 ms, engine fuel rate
 - `ETC2` (61445) is in every log at 10 Hz, carrying SPN 524 selected gear and SPN
-  523 current gear. Observed values are `-1` reverse, `0` neutral and `1` to `12`,
-  with `0xFF` not available in 0.68% of frames.
+  523 current gear. Observed values are `-2` and `-1` reverse, `0` neutral and `1`
+  to `12`, with `0xFF` not available in 0.44% of frames. `-2` comes in about 500
+  frames.
 - **Multi packet transport is small and always present.** TP.CM (60416) is 0.25% of
   frames and TP.DT (60160) is 0.74%. Neither carries the target SPNs.
 
@@ -54,22 +55,23 @@ speed lands on one ratio per gear.
 
 | gear | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 |
 |---|---|---|---|---|---|---|---|---|---|
-| rpm per km/h | 15.12 | 19.38 | 24.88 | 31.62 | 41.12 | 52.4 | 66.1 | 84.4 | 107.9 |
+| rpm per km/h | 15.25 | 19.43 | 24.87 | 31.71 | 41.21 | 52.37 | 66.51 | 84.73 | 108.51 |
 
-Each step is 1.28, and the same ratios appear in all four parts, which is what one
-fixed gearbox should give. The gear reported in ETC2 matches these to within 0.9%
-for gears 5 to 12. Between the ratios the histogram is nearly empty, 0.02% to 1.1%
-of the neighbouring peak, so a pair of engine and wheel speeds either sits on a gear
-or is impossible.
+Each step is 1.26 to 1.30, and the same ratios appear in all four parts, which is
+what one fixed gearbox should give. The gear reported in ETC2 matches these to
+within 0.3% for gears 4 to 12. In 0.5 rpm per km/h bins the histogram between two
+of these ratios falls to 0.6% to 4.4% of the smaller peak, so a pair of engine and
+wheel speeds either sits on a gear or is rare. Below fourth the peaks overlap more,
+10% between third and fourth and 51% between first and second.
 
-Top gear at 15.12 also matches the ETC1 output shaft, which turns at 15.25 rpm per
-km/h, so twelfth is close to direct.
+Top gear at 15.25 matches the ETC1 output shaft, which also turns at 15.25 rpm per
+km/h, so twelfth is direct.
 
 ### Three of the decoded signals are one quantity
 
 While moving, wheel_speed, output_shaft_speed and tachograph_speed correlate at
-0.9999 or above. Over 200,644 moving rows the 17 signals have an effective rank of
-15, and the two smallest principal directions hold 3.1e-06 and 5.2e-07 of the
+0.9999 or above. Over 2,757,787 moving rows the 17 signals have an effective rank
+of 15, and the two smallest principal directions hold 2.8e-06 and 4.6e-07 of the
 variance.
 
 They stay decoded because a replay of one leaves the others alone, which is what
@@ -79,25 +81,27 @@ sees fewer free directions than its 17 columns suggest.
 
 ### How much of the time the truck drives
 
-Over 1,200 logs the grid yields 704,853 rows.
+Over every log the grid yields 6,608,250 rows.
 
 | state | share |
 |---|---|
-| engine off | 17.3% |
-| engine on, at or below 5 km/h | 41.0% |
+| engine off | 16.5% |
+| engine on, at or below 5 km/h | 41.7% |
 | above 5 km/h | 41.7% |
 
-Gear coverage is far from even. Of the 293,753 rows above 5 km/h, top gear holds
-88,325 and first gear 1,713, a spread of 52 to 1. A model trained on this sees the
+Gear coverage is far from even. Of the 2,757,787 rows above 5 km/h, top gear holds
+829,206 and first gear 14,097, a spread of 59 to 1. A model trained on this sees the
 low gears rarely.
 
 ### Gaps between frames
 
-Of 60,000,000 consecutive frame gaps, 76.9% fall under 1 ms and 23.1% between 1 and
-10 ms. Only 27 land between 10 and 100 ms, and **none at all between 100 ms and
-2 seconds**. Sixty gaps exceed 2 seconds, and those are the recording breaks.
+Of 559,700,000 consecutive frame gaps, 77.05% fall under 1 ms and 22.95% between 1
+and 10 ms. Only 202 land between 10 and 100 ms, and the longest of those is 60 ms.
+Six land between 100 ms and 2 seconds, at 0.89, 1.01, 1.17, 1.39, 1.57 and 1.92
+seconds. 450 gaps in 219 logs exceed 2 seconds, and those are the recording breaks.
 
-The distribution is empty over more than a decade, so any threshold placed in that
-band separates the same 60 breaks from normal traffic. This is what
-[grid_sample](../preprocess/docs/grid_sample.md) uses `max_hold` for, and why its
-value is not delicate.
+**None at all fall between 60 ms and 0.89 seconds.** A threshold placed in that
+band separates the same 456 gaps from normal traffic. This is what
+[grid_sample](../preprocess/docs/grid_sample.md) uses `max_hold` for. The 1 second
+this repo passes lies above that band, among the six, so five of them count as
+breaks and the one at 0.89 does not.

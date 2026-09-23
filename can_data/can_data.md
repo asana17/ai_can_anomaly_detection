@@ -40,7 +40,7 @@ data/
 ```
 
 - **~11,194 logs** total.
-- Each log holds exactly **50,001 frames** (1,200 of 1,200 sampled).
+- Each log holds exactly **50,001 frames** (11,194 of 11,194).
 - Total on the order of **~560 million CAN frames**.
 
 Each log is an independent capture, but a log is **not** guaranteed to be
