@@ -1,12 +1,4 @@
-"""Replay: replace a window's payloads with ones the bus carried at another time.
-
-The written bytes were observed, so every signal in a replayed PGN stays inside its
-own range and agrees with the others in that PGN. What breaks is the agreement with
-the PGNs that were not replayed.
-
-Which replay to write is [random_replay](random_replay.py)'s, which reads `PGNS`,
-`SECONDS`, `pgns_of` and `time_in` from here.
-"""
+"""Replace a window's payloads with ones the bus carried at another moment."""
 
 from __future__ import annotations
 
@@ -15,13 +7,6 @@ from typing import Iterable
 
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import CanFrame
-
-# The PGNs worth faking, being the ones spn_spec decodes.
-PGNS = (61441, 61442, 61443, 61444, 61445, 61449, 65132, 65265, 65266)
-
-# How long an attack runs, in seconds. A log is about a minute, so a longer stretch
-# would rarely fit in one, and a grid row is 0.1 s, so the shortest covers 20 rows.
-SECONDS = (2.0, 10.0)
 
 def _by_pgn(frames: list, pgns: set) -> dict:
     """The times and payloads each of `pgns` carried, in order."""
@@ -68,15 +53,11 @@ def replay(frames: Iterable[CanFrame], pgns, start: float, stop: float,
     return out
 
 
-def pgns_of(frames) -> set:
-    """Which PGNs `frames` carries."""
-    return {decompose_can_id(f.can_id).pgn for f in frames}
-
-
-def time_in(spans, length, rng):
-    """A start drawn evenly over the times in `spans` that leave `length` room."""
-    room = [(start, end - length) for start, end in spans if end - start > length]
-    if not room:
+def write_replay(frames: list, pgn: int, start: float, length: float, source: float,
+                 source_log: list) -> tuple | None:
+    """The frames with the replay in them, and what it was, or None when it wrote the
+    payloads the PGN already had."""
+    hurt = replay(frames, [pgn], start, start + length, source, source_log)
+    if [f.data for f in hurt] == [f.data for f in frames]:
         return None
-    start, last = rng.choices(room, weights=[last - start for start, last in room])[0]
-    return rng.uniform(start, last)
+    return hurt, dict(pgn=pgn, start=start, stop=start + length, source=source)
