@@ -59,4 +59,29 @@ That says the rules as written do not cover these, not that no rule could. Fuel 
 is the one with evidence either way, since its tie to engine speed and torque is a
 map rather than something to state.
 
-Which replay to write is [random_replay](random_replay.md)'s.
+## Which replay to write, at random
+
+Picks a replay at random and applies it.
+
+```python
+random_replay.replay(frames, rng, source_log, spans=spans,
+                     source_spans=source_spans)
+# -> (frames, {pgn, start, stop, source}), or None
+```
+
+How to fake an attack is above. This says which one to fake. Which
+PGN, when the attack starts, how long it runs, and which moment it copies are all
+chosen at random, so that nothing here is picked to suit a detector.
+
+The attack lies in one of `spans` and copies from one of `source_spans`. Each is a
+list of (start, end) times, the whole log when not given. The start is drawn evenly
+over the times that leave the attack room.
+
+`source` is a time in `source_log`. Why that should not be the log being attacked is above.
+
+It returns None when no span is long enough, when the two share no PGN, or
+when the replay wrote bytes the PGN already had. The last is no attack and should
+not be counted as one that got away.
+
+`rng` is a `random.Random`, so a seed gives the same attack twice and a test set can
+be rebuilt.
