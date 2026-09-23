@@ -12,7 +12,7 @@ import numpy as np
 
 from assemble.grid import read_grid
 from common.cli import arguments
-from common.hub_dirs import download, reuse_or_make
+from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import read_settings
 from preprocess.features.moving import moving
 
@@ -72,10 +72,10 @@ def read_log_split(folder):
 def write_log_split(folder, repo, revision, grid_path, local_dir, settings):
     """Write `log_split.json` and `seconds.json` for `FOLD`, cut on the grid `grid_path`
     of `repo` at `revision`, and return the reference to it for `meta.json`."""
-    got = download(repo, grid_path, local_dir, repo_type="dataset", revision=revision)
+    got, grid_meta = read_dir(repo, grid_path, local_dir, revision, repo_type="dataset")
     raw, times, logs, counts = read_grid(got)
     seconds = seconds_of(raw, counts, logs, min_speed=settings.MIN_SPEED,
-                         period=settings.PERIOD)
+                         period=grid_meta["inputs"]["period"])
     non_test_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)
     start, end = span_of(times, counts, logs, test_logs)
     print(f"{len(non_test_logs)} non-test and {len(test_logs)} test logs, "

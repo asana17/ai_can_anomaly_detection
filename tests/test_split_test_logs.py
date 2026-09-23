@@ -72,7 +72,9 @@ def _grid(hub, rows_per_log=10):
     hub.files = {"grids/20260101-000000/logs.json": {"logs": LOGS,
                                                      "rows": [rows_per_log] * len(LOGS)},
                  "grids/20260101-000000/grid_raw.npy": raw,
-                 "grids/20260101-000000/grid_t.npy": np.arange(len(raw)) * 0.1}
+                 "grids/20260101-000000/grid_t.npy": np.arange(len(raw)) * 0.1,
+                 "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1,
+                                                                "max_hold": 1.0}}}
     return raw
 
 
