@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import replace
 
 import numpy as np
 
@@ -19,7 +18,7 @@ from assemble.grid import read_grid, rows_of_logs
 from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import read_settings
+from common.settings import TrainSettings
 from preprocess.features.moving import moving
 from rules.hits import rule_hits
 
@@ -71,7 +70,7 @@ def write_train_set(folder, repo, revision, calibration_path, local_dir, setting
                   & (seconds_from(times, read_calibration_blocks(calibration_dir))
                      > settings.GAP))
     # the model is only asked about the rows no rule hits, so it fits on those alone
-    hit = rule_hits(raw[train_rows], replace(settings, MIN_SPEED=min_speed))
+    hit = rule_hits(raw[train_rows], min_speed)
     train_rows[train_rows] = ~hit
     print(f"{int(train_rows.sum())} train rows from {len(cut['non_test'])} logs, "
           f"{int(hit.sum())} of {len(hit)} a rule hits dropped", flush=True)
@@ -84,10 +83,9 @@ def write_train_set(folder, repo, revision, calibration_path, local_dir, setting
 
 
 def main(repo, revision, calibration_path, local_dir, rebuild=False, dry_run=False,
-         settings=None):
-    settings = read_settings(settings)
-    inputs = {"calibration_set": calibration_path, "gap": settings.GAP}
-    return reuse_or_make(repo, "train_sets", inputs, local_dir,
+         settings=TrainSettings()):
+    return reuse_or_make(repo, "train_sets", {"calibration_set": calibration_path},
+                         {"gap": settings.GAP}, local_dir,
                          lambda folder: write_train_set(folder, repo, revision,
                                                         calibration_path, local_dir,
                                                         settings),
@@ -96,4 +94,4 @@ def main(repo, revision, calibration_path, local_dir, rebuild=False, dry_run=Fal
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "calibration_path", "local_dir"),
-                     rebuild=False, settings=None))
+                     rebuild=False))

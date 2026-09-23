@@ -6,7 +6,7 @@ rows each attack changed.
 ## Running it
 
 ```
-python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir [--rebuild] [--settings <file>]
+python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
 ```
 
 | argument | |
@@ -17,7 +17,6 @@ python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir 
 | `data_dir` | local folder holding the CAN frame logs the log split names |
 | `local_dir` | local folder `test_sets/<time>/` is written to, kept after the upload |
 | `--rebuild` | build even if `repo` already has `test_sets/<time>/` for the same log split, `SEED` and `DONORS` |
-| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 `PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
 ticks as the grid's. The payloads are replayed from `DONORS` of the non-test logs,

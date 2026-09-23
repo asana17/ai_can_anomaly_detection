@@ -3,7 +3,7 @@ import ctypes
 import numpy as np
 import pytest
 
-from common.settings import Settings
+from common.settings import SplitSettings
 from preprocess.features.signal_state import SIGNALS
 from rules.hits import instant, rule_hits
 from rules.instant.gear_ratio import RATIOS
@@ -106,13 +106,13 @@ def test_the_c_port_matches_the_python(c_rule_hits):
 
     Every rule hits rows no other rule hits, so one left out of the OR shows here.
     """
-    settings = Settings()
+    min_speed = SplitSettings().MIN_SPEED
     raw = _rows(np.random.default_rng(0))
-    expected = rule_hits(raw, settings)
+    expected = rule_hits(raw, min_speed)
     row = ctypes.POINTER(ctypes.c_float)
-    got = np.array([c_rule_hits(raw[i].ctypes.data_as(row), settings.MIN_SPEED)
+    got = np.array([c_rule_hits(raw[i].ctypes.data_as(row), min_speed)
                     for i in range(ROWS)])
-    alone = np.sum([check(raw) for check in instant(settings)], axis=0) == 1
-    assert all((alone & check(raw)).any() for check in instant(settings))
+    alone = np.sum([check(raw) for check in instant(min_speed)], axis=0) == 1
+    assert all((alone & check(raw)).any() for check in instant(min_speed))
     assert expected.any() and not expected.all()
     assert np.flatnonzero(got != expected).tolist() == []

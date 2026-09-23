@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import torch
 
-from common.settings import Settings
+from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
 from evaluate import run_test_set
 from preprocess.features.signal_state import SIGNALS
@@ -120,8 +120,8 @@ def test_every_model_is_counted_beside_the_rules(tmp_path, hub, monkeypatch):
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"test_set": "test_sets/20260101-000000",
                               "thresholds": "thresholds/20260101-000000",
-                              "moved": Settings().MOVED,
-                              "hold": list(Settings().HOLD)}
+                              "moved": TestRunSettings().MOVED,
+                              "hold": list(TestRunSettings().HOLD)}
     assert meta["attacks"] == 1 and meta["attacks_worth_catching"] == 1
     assert meta["rows"] == 6
 

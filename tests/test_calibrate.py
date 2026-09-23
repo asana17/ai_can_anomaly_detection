@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pytest
 
-from common.settings import Settings
+from common.settings import CalibrateSettings
 from models import calibrate
 
 REVISION = "ab" * 20
@@ -60,7 +60,7 @@ def test_a_threshold_is_kept_for_every_model_scored(tmp_path, hub):
     assert [k["model"] for k in kept] == ["pca"] and kept[0]["threshold"] > 0
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"models": "models/20260101-000000",
-                              "target": Settings().TARGET, "onnx_files": None,
+                              "target": CalibrateSettings().TARGET, "onnx_files": None,
                               "precision": None}
     assert meta["scores"]["path"] == "scores/20260101-000000", "the scores are reused"
     assert meta["rows"] == 20

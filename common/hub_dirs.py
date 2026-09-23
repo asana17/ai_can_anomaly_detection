@@ -116,24 +116,48 @@ def print_header():
     print(f"{'stage':<24}date", flush=True)
 
 
-def print_step(kind, made, inputs):
-    """Print this step's date, `<new>` when this run builds it, with the values it is
-    made with under a new one.
+def print_step(kind, made, parameters):
+    """Print this step's date, `<new>` when this run builds it, with the parameters it
+    is made with under a new one.
 
-    `made` is the directory it reuses, or None when this run builds one.
+    `made` is the directory it reuses, or None when this run builds one. A list of
+    models is shown a kind at a time, each with every value a key takes.
     """
     if made is not None:
         print(f"{kind:<24}{made['path'].split('/')[1]}", flush=True)
         return
     print(f"{kind:<24}<new>", flush=True)
-    for name, value in inputs.items():
+    for name, value in parameters.items():
+        if isinstance(value, list) and value and isinstance(value[0], dict):
+            for kind_of, taken in each_kind(value).items():
+                print(f"  {kind_of}", flush=True)
+                for key, values in taken.items():
+                    print(f"    {key:<20}{','.join(values)}", flush=True)
+            continue
         shown = value if isinstance(value, str) else json.dumps(value)
         print(f"  {name:<22}{shown}", flush=True)
 
 
-def reuse_or_make(repo, kind, inputs, local_dir, write, rebuild=False,
+def each_kind(entries):
+    """Every value each key takes, for each kind of entry, its first key's value."""
+    kinds = {}
+    for entry in entries:
+        first, *rest = entry.items()
+        taken = kinds.setdefault(str(first[1]), {})
+        for key, value in rest:
+            shown = value if isinstance(value, str) else json.dumps(value)
+            if shown not in taken.setdefault(key, []):
+                taken[key].append(shown)
+    return kinds
+
+
+def reuse_or_make(repo, kind, parents, parameters, local_dir, write, rebuild=False,
                   repo_type="model", dry_run=False):
-    """The directory under `kind/` made from `inputs`, as `{repo, revision, path}`.
+    """The directory under `kind/` made from `parents` with `parameters`, as
+    `{repo, revision, path}`.
+
+    `parents` names the directories it is made from, `parameters` the values it is made
+    with, and the two together are its `inputs`.
 
     It is the one `repo` holds already, unless `rebuild`. Otherwise a new one is claimed,
     `write(folder)` writes its files and returns what to add to `meta.json`, and it is
@@ -141,11 +165,12 @@ def reuse_or_make(repo, kind, inputs, local_dir, write, rebuild=False,
     is. With `dry_run` it makes nothing and returns `kind/<new>` for a new one, so a
     stage given that path finds nothing to reuse either.
     """
+    inputs = {**parents, **parameters}
     found = find(repo, kind, inputs, local_dir, repo_type)
     if found and not rebuild:
-        print_step(kind, found, inputs)
+        print_step(kind, found, parameters)
         return found
-    print_step(kind, None, inputs)
+    print_step(kind, None, parameters)
     if dry_run:
         return {"repo": repo, "revision": None, "path": f"{kind}/<new>"}
     started = time.time()

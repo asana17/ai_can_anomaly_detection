@@ -3,7 +3,7 @@ import ctypes
 import numpy as np
 import pytest
 
-from common.settings import Settings
+from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
 
 ROWS = 100_000
@@ -43,7 +43,7 @@ def rows():
             scores, rng.random(ROWS) < 0.02)
 
 
-@pytest.mark.parametrize("hold", Settings().HOLD)
+@pytest.mark.parametrize("hold", TestRunSettings().HOLD)
 def test_the_c_port_matches_the_python(c_detect, rows, hold):
     """Rows a gap apart restart the run, as a new segment does on the PC."""
     numbers, segment, scores, rule_hit = rows

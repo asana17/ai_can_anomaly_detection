@@ -50,8 +50,7 @@ def write_export(folder, runs_repo, revision, models_path, runs_dir):
 
 
 def main(runs_repo, revision, models_path, runs_dir, rebuild=False, dry_run=False):
-    inputs = {"models": models_path}
-    return reuse_or_make(runs_repo, "onnx", inputs, runs_dir,
+    return reuse_or_make(runs_repo, "onnx", {"models": models_path}, {}, runs_dir,
                          lambda folder: write_export(folder, runs_repo, revision,
                                                      models_path, runs_dir),
                          rebuild, dry_run=dry_run)

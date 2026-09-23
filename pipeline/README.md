@@ -10,8 +10,9 @@ on.
 ## Running it
 
 1. Write the run's values into two files outside the repository. Leave the code as it is.
-   - `SETTINGS`, the [Settings](../common/settings.py) values that differ from the
-     defaults, such as `{"FOLD": 0}`. `{}` keeps every default.
+   - `SETTINGS`, an object for each stage whose [settings](../common/settings.py)
+     differ from the defaults, such as `{"split_test_logs": {"FOLD": 0}}`. `{}` keeps
+     every default.
    - `MODELS`, the models to fit with their seeds, in the form of
      [models.json](../models/models.json).
 2. Check what will run. Each stage prints one line, the date of the one it would use,
@@ -40,7 +41,7 @@ should use it. Editing anything once it runs changes nothing.
 | `LOCAL_DIR` | local folder the dataset directories are written to |
 | `RUNS_REPO` | Hugging Face model repo, as [fit](../models/docs/fit.md) takes it |
 | `RUNS_DIR` | local folder the runs directories are written to |
-| `SETTINGS` | JSON file of the values that differ from the defaults |
+| `SETTINGS` | JSON file of each stage's values that differ from the defaults |
 | `MODELS` | JSON file of the models to fit |
 | `--dry-run` | check what will run in a temporary worktree, removed after |
 

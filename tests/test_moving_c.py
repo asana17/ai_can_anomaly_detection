@@ -3,7 +3,7 @@ import ctypes
 import numpy as np
 import pytest
 
-from common.settings import Settings
+from common.settings import SplitSettings
 from preprocess.features.moving import moving
 from preprocess.features.signal_state import SIGNALS
 
@@ -25,7 +25,7 @@ def c_moving(board_lib):
 def test_the_c_port_matches_the_python(c_moving):
     """Rows around MIN_SPEED, as float32 like the board's. NaN fills 1% of cells."""
     rng = np.random.default_rng(0)
-    min_speed = Settings().MIN_SPEED
+    min_speed = SplitSettings().MIN_SPEED
     raw = rng.uniform(0.0, 2.0, (ROWS, len(SIGNALS))).astype(np.float32) * min_speed
     raw[rng.random(ROWS) < 0.02, SIGNALS.index("wheel_speed")] = min_speed
     raw[rng.random(raw.shape) < 0.01] = np.nan

@@ -1,6 +1,6 @@
 """Score every row of a set with each fitted model, and flag the rows a rule hits.
 
-    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--settings <file>] [--onnx-files <dir> --precision <precision>]
+    python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 
 `<set>` is `calibration_sets/<time>` or `test_sets/<time>`. With `--onnx-files` each
 model is its ONNX file of `precision` in that directory, made from the same fit.
@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import os
 import platform
-from dataclasses import replace
 
 import numpy as np
 import onnxruntime
@@ -21,7 +20,6 @@ from assemble.calibration_set import fetch_calibration_set
 from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import read_settings
 from models.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
@@ -50,7 +48,7 @@ def scores_of(models, scorer_of, rows, scored):
 
 
 def write_scores(folder, set_directory, models_directory, onnx_directory, onnx_folder,
-                 local_dir, runs_dir, settings):
+                 local_dir, runs_dir):
     """Write each row's scores and rule hits into `folder`, and return what `meta.json`
     adds.
 
@@ -69,7 +67,7 @@ def write_scores(folder, set_directory, models_directory, onnx_directory, onnx_f
         runtime = {"onnxruntime": onnxruntime.__version__}
     raw, min_speed, dataset = fetch_set_rows(set_directory, local_dir)
     mv = moving(raw, min_speed=min_speed)
-    hits = rule_hits(raw, replace(settings, MIN_SPEED=min_speed)) & mv
+    hits = rule_hits(raw, min_speed) & mv
     models = models_from(fitted["inputs"]["models"])
     scores = scores_of(models, scorer_of, scale_of(weights).apply(raw), mv)
 
@@ -95,9 +93,7 @@ def fetch_scores(directory, runs_dir):
 
 
 def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
-         runs_dir, rebuild=False, dry_run=False, settings=None, onnx_files=None,
-         precision=None):
-    settings = read_settings(settings)
+         runs_dir, rebuild=False, dry_run=False, onnx_files=None, precision=None):
     set_directory = {"repo": repo, "revision": revision, "path": set_path}
     models_directory = {"repo": runs_repo, "revision": runs_revision, "path": models_path}
     onnx_directory, onnx_folder = None, None
@@ -108,17 +104,17 @@ def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_p
         made_from = onnx_meta["models"]["path"]
         if made_from != models_path:
             raise ValueError(f"{onnx_files} is made from {made_from}, not {models_path}")
-    inputs = {"set": set_path, "models": models_path, "onnx_files": onnx_files,
-              "precision": precision}
-    return reuse_or_make(runs_repo, "scores", inputs, runs_dir,
+    return reuse_or_make(runs_repo, "scores",
+                         {"set": set_path, "models": models_path,
+                          "onnx_files": onnx_files},
+                         {"precision": precision}, runs_dir,
                          lambda folder: write_scores(folder, set_directory,
                                                      models_directory, onnx_directory,
-                                                     onnx_folder, local_dir, runs_dir,
-                                                     settings),
+                                                     onnx_folder, local_dir, runs_dir),
                          rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "set_path", "local_dir", "runs_repo",
                      "runs_revision", "models_path", "runs_dir"),
-                    rebuild=False, settings=None, onnx_files=None, precision=None))
+                    rebuild=False, onnx_files=None, precision=None))

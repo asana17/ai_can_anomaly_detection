@@ -8,7 +8,7 @@ The frames of a log arrive at their own rates, so they are read into one row eve
 ## Running it
 
 ```
-python3 -m assemble.grid data_dir "part_*/*.csv" local_dir repo [--rebuild] [--settings <file>]
+python3 -m assemble.grid data_dir "part_*/*.csv" local_dir repo [--rebuild]
 ```
 
 | argument | |
@@ -18,7 +18,6 @@ python3 -m assemble.grid data_dir "part_*/*.csv" local_dir repo [--rebuild] [--s
 | `local_dir` | local folder `grids/<time>/` is written to, kept after the upload |
 | `repo` | Hugging Face dataset repo to upload to, needs `hf auth login` |
 | `--rebuild` | read them again even if `repo` already has `grids/<time>/` for the same logs, `PERIOD` and `MAX_HOLD` |
-| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 It writes these files into `local_dir/grids/<time>/` and uploads that directory to
 `repo` as `grids/<time>/`.

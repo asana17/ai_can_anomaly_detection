@@ -1,6 +1,6 @@
 """Give every fitted model the score above which a row counts as an anomaly.
 
-    python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--settings <file>] [--onnx-files <dir> --precision <precision>]
+    python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 
 The thresholds come from the scores `scoring.score` gives the calibration set the
 models' train set names, which no model was fitted on. A model reconstructs the rows
@@ -19,7 +19,7 @@ import numpy as np
 
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import read_settings
+from common.settings import CalibrateSettings
 from scoring import score
 
 
@@ -71,11 +71,10 @@ def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_d
 
 
 def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
-         dry_run=False, settings=None, onnx_files=None, precision=None):
-    settings = read_settings(settings)
-    inputs = {"models": models_path, "target": settings.TARGET, "onnx_files": onnx_files,
-              "precision": precision}
-    return reuse_or_make(runs_repo, "thresholds", inputs, runs_dir,
+         dry_run=False, settings=CalibrateSettings(), onnx_files=None, precision=None):
+    return reuse_or_make(runs_repo, "thresholds",
+                         {"models": models_path, "onnx_files": onnx_files},
+                         {"target": settings.TARGET, "precision": precision}, runs_dir,
                          lambda folder: write_thresholds(folder, runs_repo, revision,
                                                          models_path, runs_dir,
                                                          local_dir, onnx_files,
@@ -85,4 +84,4 @@ def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
 
 if __name__ == "__main__":
     main(**arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
-                    rebuild=False, settings=None, onnx_files=None, precision=None))
+                    rebuild=False, onnx_files=None, precision=None))

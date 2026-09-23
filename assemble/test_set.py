@@ -18,7 +18,7 @@ from assemble.injected_frames import write_and_pass_frames
 from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import read_settings
+from common.settings import TestSetSettings
 from preprocess.features.grid_sample import resample
 from preprocess.features.moving import moving, moving_spans
 from preprocess.features.signal_state import SIGNALS
@@ -215,11 +215,10 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
 
 
 def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False,
-         dry_run=False, settings=None):
-    settings = read_settings(settings)
-    inputs = {"log_split": log_split_path, "seed": settings.SEED,
-              "donors": settings.DONORS}
-    return reuse_or_make(repo, "test_sets", inputs, local_dir,
+         dry_run=False, settings=TestSetSettings()):
+    parameters = {"seed": settings.SEED, "donors": settings.DONORS}
+    return reuse_or_make(repo, "test_sets", {"log_split": log_split_path}, parameters,
+                         local_dir,
                          lambda folder: write_test_set(folder, repo, revision,
                                                        log_split_path, data_dir,
                                                        local_dir, settings),
@@ -228,4 +227,4 @@ def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False,
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "log_split_path", "data_dir", "local_dir"),
-                    rebuild=False, settings=None))
+                    rebuild=False))

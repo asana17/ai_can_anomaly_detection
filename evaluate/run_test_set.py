@@ -1,6 +1,6 @@
 """Count what each detector catches on the attacked test rows.
 
-    python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild] [--settings <file>]
+    python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_repo revision thresholds/<time> runs_dir [--rebuild]
 
 The models and their thresholds come from a directory `models.calibrate` wrote. The
 test set is scored with them, as the calibration set was.
@@ -11,14 +11,14 @@ from __future__ import annotations
 import json
 import os
 import platform
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 import numpy as np
 
 from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import read_settings
+from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
 from evaluate.count_alarms import attacks_with_a_flagged_row, count_alarms
 from models.fit import fetch_fitted_models
@@ -95,9 +95,9 @@ class InjectedAttacks:
     worth_catching: np.ndarray
 
 
-def attacked_rows_of(attacked, rule_hit, settings):
+def attacked_rows_of(attacked, rule_hit):
     """The test set's rows, with the quiet ones marked and their hours worked out."""
-    quiet = (attacked["wheel"] > settings.MIN_SPEED) & ~attacked["label"]
+    quiet = (attacked["wheel"] > attacked["min_speed"]) & ~attacked["label"]
     return AttackedRows(quiet=quiet, rule_hit=rule_hit, segment=attacked["seg"],
                         hours=float(quiet.sum() * attacked["period"] / 3600))
 
@@ -105,7 +105,7 @@ def attacked_rows_of(attacked, rule_hit, settings):
 def injected_attacks_of(attacked, settings):
     """The test set's attacks, with the ones worth catching marked."""
     # the speed before the attack, so an attack faking 0 km/h is still worth catching
-    truth = attacked["wheel"] > settings.MIN_SPEED
+    truth = attacked["wheel"] > attacked["min_speed"]
     moved = np.array([a["moved"] for a in attacked["attacks"]])
     return InjectedAttacks(
         injected=attacked["attacks"],
@@ -177,8 +177,7 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
     for attack in attacked["attacks"]:
         attack["moved"] = z_distance_an_attack_moved(attack, attacked, std)
 
-    settings = replace(settings, MIN_SPEED=attacked["min_speed"])
-    rows = attacked_rows_of(attacked, rule_hit, settings)
+    rows = attacked_rows_of(attacked, rule_hit)
     attacks = injected_attacks_of(attacked, settings)
     print(f"{int(attacks.worth_catching.sum())} of "
           f"{len(attacked['attacks'])} attacks are worth catching, in "
@@ -195,7 +194,7 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
     return {"scores": scores_directory, "thresholds": thresholds_directory,
             "models": thresholds_meta["models"], "onnx_files": onnx_files,
             **attacked["dataset"],
-            "min_speed": settings.MIN_SPEED, "rows": len(rule_hit),
+            "min_speed": attacked["min_speed"], "rows": len(rule_hit),
             "attacks": len(attacked["attacks"]),
             "attacks_worth_catching": int(attacks.worth_catching.sum()),
             "hours": float(rows.hours),
@@ -204,14 +203,14 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
 
 
 def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
-         thresholds_path, runs_dir, rebuild=False, dry_run=False, settings=None):
-    settings = read_settings(settings)
+         thresholds_path, runs_dir, rebuild=False, dry_run=False,
+         settings=TestRunSettings()):
     test_set_directory = {"repo": repo, "revision": revision, "path": test_path}
     thresholds_directory = {"repo": runs_repo, "revision": runs_revision,
                             "path": thresholds_path}
-    inputs = {"test_set": test_path, "thresholds": thresholds_path,
-              "moved": settings.MOVED, "hold": settings.HOLD}
-    return reuse_or_make(runs_repo, "test_runs", inputs, runs_dir,
+    return reuse_or_make(runs_repo, "test_runs",
+                         {"test_set": test_path, "thresholds": thresholds_path},
+                         {"moved": settings.MOVED, "hold": settings.HOLD}, runs_dir,
                          lambda folder: write_test_run(folder, test_set_directory,
                                                        thresholds_directory, local_dir,
                                                        runs_dir, settings),
@@ -220,5 +219,4 @@ def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "test_path", "local_dir", "runs_repo",
-                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False,
-                    settings=None))
+                     "runs_revision", "thresholds_path", "runs_dir"), rebuild=False))

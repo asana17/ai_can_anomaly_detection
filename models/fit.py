@@ -75,8 +75,8 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
 def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models=MODELS,
          rebuild=False, dry_run=False):
     fitted = models_in(models)
-    inputs = {"train_set": train_path, "models": [as_dict(model) for model in fitted]}
-    return reuse_or_make(runs_repo, "models", inputs, runs_dir,
+    return reuse_or_make(runs_repo, "models", {"train_set": train_path},
+                         {"models": [as_dict(model) for model in fitted]}, runs_dir,
                          lambda folder: write_models(folder, fitted, repo, revision,
                                                      train_path, local_dir),
                          rebuild, dry_run=dry_run)

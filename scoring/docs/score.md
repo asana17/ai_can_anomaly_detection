@@ -15,7 +15,7 @@ It writes one directory of the runs repository, `scores/<time>/`.
 ## Running it
 
 ```
-python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--settings <file>] [--onnx-files <dir> --precision <precision>]
+python3 -m scoring.score repo revision <set> local_dir runs_repo revision models/<time> runs_dir [--rebuild] [--onnx-files <dir> --precision <precision>]
 ```
 
 | argument | |
@@ -29,7 +29,6 @@ python3 -m scoring.score repo revision <set> local_dir runs_repo revision models
 | `models/<time>` | the fitted models that score the rows |
 | `runs_dir` | local folder the models are downloaded to and `scores/<time>/` is written to |
 | `--rebuild` | score again even if `runs_repo` already holds a directory with the same `inputs` |
-| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 | `--onnx-files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
 | `--precision <precision>` | which ONNX file of each model, `float` or `int8` |
 

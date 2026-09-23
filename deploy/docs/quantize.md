@@ -18,7 +18,6 @@ python3 -u -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir 
 | `runs_dir` | local folder the export is downloaded to and `quantize/<time>/` is written to |
 | `local_dir` | local folder the train set the models name is downloaded to |
 | `--rebuild` | quantize again even if `runs_repo` already holds a directory with the same `inputs` |
-| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 ## What it writes
 

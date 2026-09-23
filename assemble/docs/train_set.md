@@ -12,7 +12,7 @@ It writes only which rows those are. The rows stay in the [grid](grid.md).
 ## Running it
 
 ```
-python3 -m assemble.train_set repo revision calibration_sets/<time> local_dir [--rebuild] [--settings <file>]
+python3 -m assemble.train_set repo revision calibration_sets/<time> local_dir [--rebuild]
 ```
 
 | argument | |
@@ -22,7 +22,6 @@ python3 -m assemble.train_set repo revision calibration_sets/<time> local_dir [-
 | `calibration_sets/<time>` | the calibration set whose blocks the train rows keep away from. The log split and grid it names are read too |
 | `local_dir` | local folder `train_sets/<time>/` is written to, kept after the upload |
 | `--rebuild` | build even if `repo` already has `train_sets/<time>/` for the same calibration set and `GAP` |
-| `--settings <file>` | JSON file of [Settings](../../common/settings.py) values used in place of the defaults, such as `{"FOLD": 0}` |
 
 `MIN_SPEED` comes from the log split's `meta.json`, so the stages all use the one value.
 
