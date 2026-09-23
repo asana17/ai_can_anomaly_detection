@@ -12,7 +12,7 @@ import random
 
 import numpy as np
 
-from attack.inject import random_replay
+from attack.replay import random_replay
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from assemble.split_test_logs import read_log_split

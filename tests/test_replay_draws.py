@@ -1,6 +1,6 @@
 import random
 
-from attack.inject import random_replay
+from attack.replay import random_replay
 from preprocess.frames.can_log_loader import CanFrame
 
 CCVS1, EEC1 = 0x18FEF1E6, 0x18F004E6

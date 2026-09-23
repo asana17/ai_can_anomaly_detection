@@ -42,7 +42,7 @@ injected = inject_frames(logs, rng, source_logs, rows_before_attack=rows_before_
 # -> (path, frames, hurt, rows, attack) per log
 ```
 
-At most one attack per log, chosen by [inject](../../attack/docs/inject.md). It copies
+At most one attack per log, chosen by [replay](../../attack/docs/replay.md). It copies
 from the moving rows of one donor onto the moving rows of the log, the rows a model is
 trained on. It lands only when every row it changed is moving before and after it, and
 is not drawn again when it does not.
