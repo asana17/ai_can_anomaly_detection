@@ -31,18 +31,18 @@ gaps                # {(pgn, sender): Counter of bucketed gap -> count}
 python3 -m preprocess.profile.summary data/part_*/*.csv
 ```
 
-For the 1,200 log sample behind measurements:
+The run over every log behind measurements:
 
 ```
-1200 logs, 60,001,200 frames, 57 PGNs
+11194 logs, 559,711,194 frames, 57 PGNs
 per log 52 to 57 PGNs, median 55, 52 in every log
 public 41 PGNs at 76.1% of frames, proprietary 16 at 23.9%
 dlc 8 98.22%, 4 1.19%, 1 0.59%, 3 0.00%
-senders 230 75.94%, 232 3.92%, 192 3.55%, 200 3.55%, 184 3.55%, 168 3.55%
+senders 230 75.93%, 232 3.93%, 200 3.54%, 192 3.54%, 184 3.54%, 176 3.54%
 
     PGN     hex   frames    logs       gap  kind
-  65408  0xff80  12.406%    100%    10.0ms  proprietary
-  61449  0xf009  11.817%    100%     9.8ms  public
+  65408  0xff80  12.405%    100%    10.0ms  proprietary
+  61449  0xf009  11.816%    100%     9.8ms  public
   ...
 ```
 
