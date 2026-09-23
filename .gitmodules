@@ -1,0 +1,4 @@
+[submodule "mtk3bsp2_samples"]
+	path = mtk3bsp2_samples
+	url = https://github.com/mox692/mtk3bsp2_samples.git
+	branch = can_driver
