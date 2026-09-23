@@ -11,7 +11,7 @@ ROWS = 100_000
 
 @pytest.fixture(scope="module")
 def reserved_moving_hits(board_rule):
-    return board_rule("reserved_moving", ["const float *", "float", "float"])
+    return board_rule("reserved_moving", ["const float *", "float", "float", "float"])
 
 
 def _rows(rng):
@@ -31,8 +31,9 @@ def test_the_c_port_matches_the_python_rule(reserved_moving_hits):
     row = ctypes.POINTER(ctypes.c_float)
     wheel = SIGNALS.index("wheel_speed")
     tachograph = SIGNALS.index("tachograph_speed")
+    shaft = SIGNALS.index("output_shaft_speed")
     got = np.array([reserved_moving_hits(raw[i].ctypes.data_as(row), float(raw[i, wheel]),
-                                         float(raw[i, tachograph]))
+                                         float(raw[i, tachograph]), float(raw[i, shaft]))
                     for i in range(ROWS)])
     assert expected.any() and not expected.all()
     assert np.flatnonzero(got != expected).tolist() == []

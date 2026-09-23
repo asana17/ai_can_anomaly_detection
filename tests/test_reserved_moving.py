@@ -30,3 +30,8 @@ def test_a_moving_row_with_no_reserved_value_passes():
 
 def test_creeping_counts_as_moving():
     assert _hit({"wheel_speed": 0.5, "tachograph_speed": 0.5, "fuel_rate": np.nan})
+
+
+def test_both_speeds_reserved_are_caught_by_the_shaft():
+    assert _hit({"wheel_speed": np.nan, "tachograph_speed": np.nan,
+                 "output_shaft_speed": 1200.0})

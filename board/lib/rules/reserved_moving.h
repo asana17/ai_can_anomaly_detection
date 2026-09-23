@@ -16,16 +16,18 @@
  * @param[in] row Physical values in the order of SIGNALS.
  * @param[in] wheel_speed Wheel-based vehicle speed in km/h.
  * @param[in] tachograph_speed Tachograph vehicle speed in km/h.
- * @retval true A signal is NaN and either speed is above 0.
+ * @param[in] output_shaft_speed Transmission output shaft speed in rpm.
+ * @retval true A signal is NaN and either speed or the shaft is above 0.
  * @retval false Otherwise.
  * @pre @p row contains RESERVED_MOVING_SIGNALS elements.
  */
 static inline bool reserved_moving_hits(const float row[], float wheel_speed,
-	float tachograph_speed)
+	float tachograph_speed, float output_shaft_speed)
 {
 	size_t i;
 
-	if(!(wheel_speed > 0.0f || tachograph_speed > 0.0f)) {
+	if(!(wheel_speed > 0.0f || tachograph_speed > 0.0f
+		|| output_shaft_speed > 0.0f)) {
 		return false;
 	}
 	for(i = 0; i < RESERVED_MOVING_SIGNALS; i++) {
