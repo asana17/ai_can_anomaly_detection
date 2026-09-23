@@ -7,6 +7,7 @@
 #include "gear_ratio.h"
 #include "pedal_conflict.h"
 #include "range_check.h"
+#include "reserved_moving.h"
 #include "reverse_speed.h"
 #include "shaft_ratio.h"
 #include "speed_agreement.h"
@@ -59,7 +60,8 @@ static inline bool rule_hits(const float row[], float min_speed)
 			row[RULE_INPUT_SHAFT_SPEED])
 		|| pedal_conflict_hits(row[RULE_ACCEL_PEDAL], row[RULE_BRAKE_PEDAL])
 		|| stopped_shaft_hits(row[RULE_WHEEL_SPEED], row[RULE_OUTPUT_SHAFT_SPEED])
-		|| reverse_speed_hits(row[RULE_CURRENT_GEAR], row[RULE_WHEEL_SPEED]);
+		|| reverse_speed_hits(row[RULE_CURRENT_GEAR], row[RULE_WHEEL_SPEED])
+		|| reserved_moving_hits(row, row[RULE_WHEEL_SPEED], row[RULE_TACHOGRAPH_SPEED]);
 }
 
 #endif

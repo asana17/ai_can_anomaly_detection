@@ -89,7 +89,7 @@ def _break(raw, column, rng, rows, breaker):
     elif breaker == 8:
         raw[rows, rows % len(SIGNALS)] = 1e6
     elif breaker == 9:
-        raw[rows, rows % len(SIGNALS)] = np.nan
+        raw[rows, column["fuel_rate"]] = np.nan
 
 
 def _rows(rng):

@@ -33,6 +33,8 @@ Documented under [instant/docs/](instant/docs).
   the wheels stopped.
 - [reverse_speed](instant/docs/reverse_speed.md) flags reverse reported above a speed
   reverse cannot reach.
+- [reserved_moving](instant/docs/reserved_moving.md) flags a reserved value while the
+  truck moves. The other rules do not judge one.
 
 ## rate
 
