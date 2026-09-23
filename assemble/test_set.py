@@ -215,7 +215,7 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
 
 
 def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False,
-         settings=None):
+         dry_run=False, settings=None):
     settings = read_settings(settings)
     inputs = {"log_split": log_split_path, "seed": settings.SEED,
               "donors": settings.DONORS}
@@ -223,7 +223,7 @@ def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False,
                          lambda folder: write_test_set(folder, repo, revision,
                                                        log_split_path, data_dir,
                                                        local_dir, settings),
-                         rebuild, repo_type="dataset")
+                         rebuild, repo_type="dataset", dry_run=dry_run)
 
 
 if __name__ == "__main__":

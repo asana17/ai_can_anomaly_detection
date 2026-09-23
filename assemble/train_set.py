@@ -83,14 +83,15 @@ def write_train_set(folder, repo, revision, calibration_path, local_dir, setting
             "rule_hits": {"rows": len(hit), "hit": int(hit.sum())}}
 
 
-def main(repo, revision, calibration_path, local_dir, rebuild=False, settings=None):
+def main(repo, revision, calibration_path, local_dir, rebuild=False, dry_run=False,
+         settings=None):
     settings = read_settings(settings)
     inputs = {"calibration_set": calibration_path, "gap": settings.GAP}
     return reuse_or_make(repo, "train_sets", inputs, local_dir,
                          lambda folder: write_train_set(folder, repo, revision,
                                                         calibration_path, local_dir,
                                                         settings),
-                         rebuild, repo_type="dataset")
+                         rebuild, repo_type="dataset", dry_run=dry_run)
 
 
 if __name__ == "__main__":

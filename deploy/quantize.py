@@ -91,14 +91,14 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
 
 
 def main(runs_repo, revision, onnx_path, runs_dir, local_dir, rebuild=False,
-         settings=None):
+         dry_run=False, settings=None):
     settings = read_settings(settings)
     inputs = {"onnx": onnx_path}
     return reuse_or_make(runs_repo, "quantize", inputs, runs_dir,
                          lambda folder: write_quantized(folder, runs_repo, revision,
                                                         onnx_path, runs_dir, local_dir,
                                                         settings),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":

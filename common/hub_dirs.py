@@ -111,19 +111,43 @@ def write_meta(folder, meta, started, finished):
                   f, indent=2)
 
 
+def print_header():
+    """Print the heads of the columns `print_step` fills, one run's steps under them."""
+    print(f"{'stage':<24}date", flush=True)
+
+
+def print_step(kind, made, inputs):
+    """Print this step's date, `<new>` when this run builds it, with the values it is
+    made with under a new one.
+
+    `made` is the directory it reuses, or None when this run builds one.
+    """
+    if made is not None:
+        print(f"{kind:<24}{made['path'].split('/')[1]}", flush=True)
+        return
+    print(f"{kind:<24}<new>", flush=True)
+    for name, value in inputs.items():
+        shown = value if isinstance(value, str) else json.dumps(value)
+        print(f"  {name:<22}{shown}", flush=True)
+
+
 def reuse_or_make(repo, kind, inputs, local_dir, write, rebuild=False,
-                  repo_type="model"):
+                  repo_type="model", dry_run=False):
     """The directory under `kind/` made from `inputs`, as `{repo, revision, path}`.
 
     It is the one `repo` holds already, unless `rebuild`. Otherwise a new one is claimed,
     `write(folder)` writes its files and returns what to add to `meta.json`, and it is
-    uploaded with `inputs` and the commit in `meta.json`.
+    uploaded with `inputs` and the commit in `meta.json`. It prints which of the two it
+    is. With `dry_run` it makes nothing and returns `kind/<new>` for a new one, so a
+    stage given that path finds nothing to reuse either.
     """
     found = find(repo, kind, inputs, local_dir, repo_type)
     if found and not rebuild:
-        print(f"{found['path']} at {found['revision']} has the same inputs, pass it on "
-              f"or run again with --rebuild", flush=True)
+        print_step(kind, found, inputs)
         return found
+    print_step(kind, None, inputs)
+    if dry_run:
+        return {"repo": repo, "revision": None, "path": f"{kind}/<new>"}
     started = time.time()
     path, folder = new_dir(repo, kind, local_dir, repo_type)
     code = source()

@@ -49,12 +49,12 @@ def write_export(folder, runs_repo, revision, models_path, runs_dir):
                          "torch": torch.__version__, "onnx": onnx.__version__}}
 
 
-def main(runs_repo, revision, models_path, runs_dir, rebuild=False):
+def main(runs_repo, revision, models_path, runs_dir, rebuild=False, dry_run=False):
     inputs = {"models": models_path}
     return reuse_or_make(runs_repo, "onnx", inputs, runs_dir,
                          lambda folder: write_export(folder, runs_repo, revision,
                                                      models_path, runs_dir),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":

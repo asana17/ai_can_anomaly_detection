@@ -90,14 +90,15 @@ def write_log_split(folder, repo, revision, grid_path, local_dir, settings):
     return {"grid": {"repo": repo, "revision": revision, "path": grid_path}}
 
 
-def main(repo, revision, grid_path, local_dir, rebuild=False, settings=None):
+def main(repo, revision, grid_path, local_dir, rebuild=False, dry_run=False,
+         settings=None):
     settings = read_settings(settings)
     inputs = {"grid": grid_path, "min_speed": settings.MIN_SPEED,
               "n_splits": settings.N_SPLITS, "fold": settings.FOLD}
     return reuse_or_make(repo, "log_splits", inputs, local_dir,
                          lambda folder: write_log_split(folder, repo, revision,
                                                         grid_path, local_dir, settings),
-                         rebuild, repo_type="dataset")
+                         rebuild, repo_type="dataset", dry_run=dry_run)
 
 
 if __name__ == "__main__":

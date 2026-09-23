@@ -71,7 +71,7 @@ def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_d
 
 
 def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
-         settings=None, onnx_files=None, precision=None):
+         dry_run=False, settings=None, onnx_files=None, precision=None):
     settings = read_settings(settings)
     inputs = {"models": models_path, "target": settings.TARGET, "onnx_files": onnx_files,
               "precision": precision}
@@ -80,7 +80,7 @@ def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
                                                          models_path, runs_dir,
                                                          local_dir, onnx_files,
                                                          precision, settings),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":

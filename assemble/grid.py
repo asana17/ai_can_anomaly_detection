@@ -115,7 +115,8 @@ def write_grid(folder, data_dir, logs, settings):
     print(f"{sum(counts)} rows from {len(logs)} logs", flush=True)
 
 
-def main(data_dir, pattern, local_dir, repo, rebuild=False, settings=None):
+def main(data_dir, pattern, local_dir, repo, rebuild=False, dry_run=False,
+         settings=None):
     settings = read_settings(settings)
     logs = sorted(os.path.relpath(p, data_dir)
                   for p in glob.glob(os.path.join(data_dir, pattern)))
@@ -125,7 +126,7 @@ def main(data_dir, pattern, local_dir, repo, rebuild=False, settings=None):
               "period": settings.PERIOD, "max_hold": settings.MAX_HOLD}
     return reuse_or_make(repo, "grids", inputs, local_dir,
                          lambda folder: write_grid(folder, data_dir, logs, settings),
-                         rebuild, repo_type="dataset")
+                         rebuild, repo_type="dataset", dry_run=dry_run)
 
 
 if __name__ == "__main__":

@@ -73,13 +73,13 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
 
 
 def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models=MODELS,
-         rebuild=False):
+         rebuild=False, dry_run=False):
     fitted = models_in(models)
     inputs = {"train_set": train_path, "models": [as_dict(model) for model in fitted]}
     return reuse_or_make(runs_repo, "models", inputs, runs_dir,
                          lambda folder: write_models(folder, fitted, repo, revision,
                                                      train_path, local_dir),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":

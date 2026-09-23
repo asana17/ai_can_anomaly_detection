@@ -116,7 +116,8 @@ def write_calibration_set(folder, repo, revision, log_split_path, local_dir, set
             "grid": grid}
 
 
-def main(repo, revision, log_split_path, local_dir, rebuild=False, settings=None):
+def main(repo, revision, log_split_path, local_dir, rebuild=False, dry_run=False,
+         settings=None):
     settings = read_settings(settings)
     inputs = {"log_split": log_split_path, "calibration": settings.CALIBRATION,
               "block": settings.BLOCK, "gap": settings.GAP}
@@ -124,7 +125,7 @@ def main(repo, revision, log_split_path, local_dir, rebuild=False, settings=None
                          lambda folder: write_calibration_set(folder, repo, revision,
                                                               log_split_path, local_dir,
                                                               settings),
-                         rebuild, repo_type="dataset")
+                         rebuild, repo_type="dataset", dry_run=dry_run)
 
 
 if __name__ == "__main__":

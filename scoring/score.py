@@ -95,7 +95,8 @@ def fetch_scores(directory, runs_dir):
 
 
 def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
-         runs_dir, rebuild=False, settings=None, onnx_files=None, precision=None):
+         runs_dir, rebuild=False, dry_run=False, settings=None, onnx_files=None,
+         precision=None):
     settings = read_settings(settings)
     set_directory = {"repo": repo, "revision": revision, "path": set_path}
     models_directory = {"repo": runs_repo, "revision": runs_revision, "path": models_path}
@@ -114,7 +115,7 @@ def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_p
                                                      models_directory, onnx_directory,
                                                      onnx_folder, local_dir, runs_dir,
                                                      settings),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":

@@ -50,12 +50,13 @@ def write_board_files(folder, stedgeai, runs_repo, revision, onnx_path, runs_dir
             "versions": {"python": platform.python_version(), "stedgeai": version}}
 
 
-def main(stedgeai, runs_repo, revision, onnx_path, runs_dir, rebuild=False):
+def main(stedgeai, runs_repo, revision, onnx_path, runs_dir, rebuild=False,
+         dry_run=False):
     inputs = {"onnx": onnx_path, "target": TARGET}
     return reuse_or_make(runs_repo, "board", inputs, runs_dir,
                          lambda folder: write_board_files(folder, stedgeai, runs_repo,
                                                           revision, onnx_path, runs_dir),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":

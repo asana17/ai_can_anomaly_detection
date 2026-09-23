@@ -204,7 +204,7 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
 
 
 def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
-         thresholds_path, runs_dir, rebuild=False, settings=None):
+         thresholds_path, runs_dir, rebuild=False, dry_run=False, settings=None):
     settings = read_settings(settings)
     test_set_directory = {"repo": repo, "revision": revision, "path": test_path}
     thresholds_directory = {"repo": runs_repo, "revision": runs_revision,
@@ -215,7 +215,7 @@ def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
                          lambda folder: write_test_run(folder, test_set_directory,
                                                        thresholds_directory, local_dir,
                                                        runs_dir, settings),
-                         rebuild)
+                         rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":
