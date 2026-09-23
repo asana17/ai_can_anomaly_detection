@@ -39,8 +39,8 @@ def test_the_lowest_decodable_value_passes_as_float32():
         assert not hits(raw)[0]
 
 
-def test_a_nan_is_flagged():
-    assert _hit({"wheel_speed": float("nan")})
+def test_a_nan_is_not_flagged():
+    assert not _hit({"wheel_speed": float("nan")})
 
 
 def test_every_decodable_signal_has_limits():

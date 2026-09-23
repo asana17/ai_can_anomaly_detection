@@ -37,7 +37,7 @@ static const RangeCheckLimit RANGE_CHECK_LIMITS[] = {
  * The C port of rules/instant/range_check.py.
  *
  * @param[in] row Physical values in the order of SIGNALS.
- * @retval true A signal is outside its range, or is NaN.
+ * @retval true A signal is outside its range. NaN compares false and never is.
  * @retval false Every signal is inside its range.
  * @pre @p row contains RANGE_CHECK_SIGNALS elements.
  */
@@ -46,7 +46,7 @@ static inline bool range_check_hits(const float row[])
 	size_t i;
 
 	for(i = 0; i < RANGE_CHECK_SIGNALS; i++) {
-		if(!(row[i] >= RANGE_CHECK_LIMITS[i].low && row[i] <= RANGE_CHECK_LIMITS[i].high)) {
+		if(row[i] < RANGE_CHECK_LIMITS[i].low || row[i] > RANGE_CHECK_LIMITS[i].high) {
 			return true;
 		}
 	}

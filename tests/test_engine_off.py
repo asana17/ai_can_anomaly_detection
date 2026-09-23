@@ -27,3 +27,7 @@ def test_every_driven_signal_is_flagged_if_it_moves():
 
 def test_several_moving_at_once_are_flagged():
     assert _hit({"engine_speed": 0.0, "fuel_rate": 2.0, "engine_load": 30.0})
+
+
+def test_a_nan_driven_signal_is_not_flagged():
+    assert not _hit({"engine_speed": 0.0, "fuel_rate": float("nan")})

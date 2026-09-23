@@ -17,7 +17,10 @@ MUST_BE_ZERO = ["fuel_rate", "actual_engine_torque", "engine_load",
 
 
 def hits(raw: np.ndarray) -> np.ndarray:
-    """True where the engine reads stopped and something it drives does not."""
+    """True where the engine reads stopped and something it drives does not.
+
+    A NaN, a value J1939 reserves, compares false both ways and so never fires.
+    """
     engine = raw[:, SIGNALS.index("engine_speed")]
     driven = raw[:, [SIGNALS.index(name) for name in MUST_BE_ZERO]]
-    return (engine == 0) & (driven != 0).any(axis=1)
+    return (engine == 0) & ((driven < 0) | (driven > 0)).any(axis=1)
