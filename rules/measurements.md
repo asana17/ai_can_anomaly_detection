@@ -10,70 +10,92 @@ measured and rejected. The dataset itself is in
 
 ### How often the rules fire
 
-Every rule in [rules](README.md) over 584,694 evaluations, one per decoded
-frame. The share is of all of them, so it is lower than the rate each rule's own doc
-gives over the evaluations it applies to.
+Every rule in [rules](README.md) over 217,971,171 evaluations, one per decoded
+frame of every log. The share is of all of them, so it is lower than the rate each
+rule's own doc gives over the evaluations it applies to.
 
 | rule | fires | share |
 |---|---|---|
 | range_check | 0 | 0% |
-| speed_agreement | 39 | 0.0067% |
-| shaft_ratio | 26 | 0.0044% |
-| gear_ratio | 12 | 0.0021% |
-| steering_sign | 68 | 0.0116% |
-| engine_off | 0 | 0% |
-| pedal_conflict | 0 | 0% |
-| stopped_shaft | 0 | 0% |
-| reverse_speed | 0 | 0% |
-| any of them | 145 | 0.0248% |
+| speed_agreement | 37,941 | 0.0174% |
+| shaft_ratio | 342 | 0.0002% |
+| gear_ratio | 9,891 | 0.0045% |
+| steering_sign | 7,105 | 0.0033% |
+| engine_off | 141,110 | 0.0647% |
+| pedal_conflict | 88,830 | 0.0408% |
+| stopped_shaft | 2,600 | 0.0012% |
+| reverse_speed | 297 | 0.0001% |
+| reserved_moving | 0 | 0% |
+| any of them | 282,896 | 0.1298% |
 
-No evaluation trips two rules.
+5,003 evaluations trip two rules or more.
 
-Four of the eight compare two readings of one quantity or a fixed ratio between two.
-The other four came from asking what else holds, and are the reason the layer reaches
-past the moving truck.
+### On the rows the evaluation reads
+
+The evaluation reads the moving grid rows, 2,757,787 of them over every log. There
+the rules together fire on 2,090, 0.0758%, under the 0.1% the models' thresholds cut
+off. Two limits were set to get there.
+
+| rule | before | after |
+|---|---|---|
+| steering_sign, MIN_YAW 0.02 to 0.05 | 2,545 | 191 |
+| shaft_ratio, from 5 km/h to 20 km/h | 1,176 | 15 |
+| any of them | 5,472 | 2,090 |
+
+The rest fire on pedal_conflict 1,066, speed_agreement 587, gear_ratio 317,
+reverse_speed 9 and none of the others.
+
+Besides range_check, four rules compare two readings of one quantity or a fixed ratio
+between two. Four more came from asking what else holds, and are the reason the layer
+reaches past the moving truck. reserved_moving flags a reserved value on the move,
+which no other rule judges.
+
+Over every log, one evaluation per decoded frame.
 
 | rule | what it asks | how often it fails on normal data |
 |---|---|---|
-| steering_sign | do the steering angle and the yaw rate point the same way | 6 of 35,715 above 0.02 rad/s |
-| engine_off | with the engine at zero, are its six driven signals at zero | 0 of 97,237 |
-| pedal_conflict | are both pedals pressed at once | 0 of 486,544 |
-| stopped_shaft | with the wheels at zero, is the output shaft at zero | reads up to 31 rpm, limit at 50 |
+| steering_sign | do the steering angle and the yaw rate point the same way | 85,134 of 28,095,820 above 5 km/h and 0.02 rad/s |
+| engine_off | with the engine at zero, are its six driven signals at zero | 141,110 of 36,041,922 |
+| pedal_conflict | are both pedals pressed at once | 88,830 of 216,709,675 |
+| stopped_shaft | with the wheels at zero, is the output shaft at zero | reads up to 551 rpm, limit at 50, 2,600 of 106,072,217 above it |
 
 steering_sign is the only check on VDC2. A size check on those signals does not work,
 as the table above shows, but the direction does.
 
 [change_limit](rate/docs/change_limit.md) is not in the table. It compares a
 signal with its own previous reading rather than a whole state, so its evaluations
-are not the same ones. Over 70 logs and 949,349 comparisons it fires twice.
+are not the same ones. Over every log and 85,944,337 comparisons it fires 236 times,
+149 on yaw_rate, 44 on tachograph_speed and 43 on wheel_speed.
 
 ### Nothing reads outside its range
 
 Every decoded value is checked against the J1939 range `spn_spec` records for it.
-Across 100 logs that is 5,034,836 values over 17 signals, and none of them fall
+Across every log that is 565,906,098 values over 17 signals, and none of them fall
 outside. The rule layer's range check therefore starts from no false positives on
 this data.
 
 ### How fast each signal moves
 
-Between one frame of a PGN and the next of the same PGN, over 25 logs.
+Between one frame of a PGN and the next of the same PGN, over every log.
 
 | signal | most per second | signal | most per second |
 |---|---|---|---|
-| yaw_rate | 1.1 rad/s2 | fuel_rate | 94.5 L/h |
-| steering_angle | 16.4 rad/s | actual_engine_torque | 747.3 points |
-| wheel_speed | 21.0 km/h | output_shaft_speed | 3,010 rpm |
-| tachograph_speed | 41.9 km/h | engine_speed | 3,277 rpm |
-| current_gear | 80 gears | clutch_slip | 3,790 points |
-| selected_gear | 120 gears | input_shaft_speed | 75,235 rpm |
+| yaw_rate | 5.6 rad/s2 | fuel_rate | 470.7 L/h |
+| steering_angle | 36.3 rad/s | actual_engine_torque | 2,731.3 points |
+| wheel_speed | 374.8 km/h | output_shaft_speed | 54,891 rpm |
+| tachograph_speed | 745.0 km/h | engine_speed | 7,843 rpm |
+| current_gear | 120 gears | clutch_slip | 25,980 points |
+| selected_gear | 122 gears | input_shaft_speed | 671,757 rpm |
 
-The four on the left of the first three rows are bounded by what a truck can do and
-carry [change_limit](rate/docs/change_limit.md). The rest are not. A shift
+The four on the left of the first three rows carry
+[change_limit](rate/docs/change_limit.md). Its limits came from 25 logs. Over every
+log all of them but steering_angle move faster than their limit, which is where its
+236 hits come from. The rest carry no limit. A shift
 frees the input shaft, the clutch slip follows it, and the gear number jumps several
 places at once.
 
-Sampling on the 100 ms grid gives lower figures for the fast signals, 1,951 rpm per
-second for the engine against 3,277 here. A grid row spans 100 ms whatever arrived
+Sampling on the 100 ms grid gives lower figures for the fast signals, 3,464 rpm per
+second for the engine against 7,843 here. A grid row spans 100 ms whatever arrived
 inside it, so five engine updates fold into one difference. Limits measured one way
 do not carry to the other.
 
@@ -85,47 +107,52 @@ Each pair below is two ways of reading the same quantity, so a rule could check 
 they agree. Whether that works depends on how far apart they drift on normal data,
 against how far the quantity itself moves.
 
+Over every log, on the evaluations above 5 km/h. The drift is the p99 of the
+difference between the two, and the range is the p99 of the first one's size.
+
 | pair | drift, p99 | the quantity's range | ratio |
 |---|---|---|---|
-| wheel_speed and tachograph_speed | 0.90 km/h | 90.10 | 1.0% |
-| engine_load and actual_engine_torque | 10.0 points | 52.00 | 19.2% |
-| lateral_accel and speed times yaw_rate | 0.69 m/s2 | 1.51 | 45.7% |
-| accel_pedal and driver_demand_torque | 70.0 points | 92.80 | 75.4% |
+| wheel_speed and tachograph_speed | 0.91 km/h | 85.51 | 1.1% |
+| engine_load and actual_engine_torque | 12.0 points | 87.01 | 13.8% |
+| lateral_accel and speed times yaw_rate | 0.85 m/s2 | 1.33 | 63.9% |
+| accel_pedal and driver_demand_torque | 30.4 points | 85.21 | 35.7% |
 
-The first drifts 0.90 km/h across a 90 km/h range, so a threshold just above the
+The first drifts 0.91 km/h across an 86 km/h range, so a threshold just above the
 drift still catches nearly any tampering. That pair is
-[speed_agreement](instant/docs/speed_agreement.md). The last drifts 70 points out of
-93, which leaves almost nothing for a threshold to catch, so no rule was written for
-it, nor for the two in between.
+[speed_agreement](instant/docs/speed_agreement.md). The other three drift 14% to 64%
+of their range, which leaves little for a threshold to catch, so no rule was written
+for them.
 
-Do not screen a pair by correlation. The last pair correlates at 0.803.
+Do not screen a pair by correlation. The last pair correlates at 0.924.
 
 ### Other claims that did not hold
 
 Five more shapes were tried. Each is a claim that normal data should never break.
+Over every log, one evaluation per decoded frame, the torque and fuel claims on those
+with the engine running.
 
 | claim | how often normal data breaks it |
 |---|---|
-| reverse stays slow | never above 3.5 km/h in 87,245 |
-| a running engine burns fuel | 6.4%, from coasting cuts |
-| actual torque stays at or below demanded | 48.6% |
-| actual torque stays at or below load | 1.4% |
+| reverse stays slow | up to 38.3 km/h in 26,197,193 |
+| a running engine burns fuel | 9.8%, from coasting cuts |
+| actual torque stays at or below demanded | 48.0% |
+| actual torque stays at or below load | 1.8% |
 | selected and current gear stay one step apart | up to 12 apart |
 
-Only the first holds, and it is
-[reverse_speed](instant/docs/reverse_speed.md). A rule built on any of the
-others would fire on normal data at the rate in the second column.
+None holds over every log.
+[reverse_speed](instant/docs/reverse_speed.md) was built on the first when 87,245
+evaluations never passed 3.5 km/h, and now fires 297 times.
 
 ### Why the input shaft is not checked
 
-An unbuilt rule. With the clutch closed the two should turn together and at p90 they
-are within 2.9 rpm, but on 2.26% of rows they differ by up to 618 rpm, sustained, at
-low speed in low gears. One case reads engine 1552 against input 934 with the
-reported slip at 0.
+An unbuilt rule. With the clutch closed the two should turn together. Over every log,
+on the evaluations above 5 km/h with a slip of 0, they are within 3.9 rpm at p90, but
+on 4.21% they differ by more than 50 rpm, up to 1,518 rpm. One case reads engine 1552
+against input 934 with the reported slip at 0.
 
 ETC1 byte 1 holds the driveline and torque converter states that would explain it,
 but it takes three values here, 204, 205 and 221, too few to place its bits. Until
-they are placed 2.26% is two orders worse than the rules that exist.
+they are placed 4.21% is two orders worse than the rules that exist.
 
 ### Checks on the PGNs, not written
 
