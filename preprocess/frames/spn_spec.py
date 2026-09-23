@@ -44,8 +44,8 @@ SPEC: dict[int, list[SpnDef]] = {
         SpnDef(161, "input_shaft_speed", "rpm", SpnField(40, 16, 0.125, 0.0),
                0.0, 8031.875),
     ],
-    61445: [  # ETC2, gears run -1 to 12 with no NA. Park would decode to 126 and
-             # trip the range check, but this truck never reports it
+    61445: [  # ETC2, gears run -2 to 12, and 0.44% of frames carry NA. Park would
+             # decode to 126 and trip the range check, but this truck never reports it
         SpnDef(524, "selected_gear", "gear", SpnField(0, 8, 1.0, -125.0), -125.0, 125.0),
         SpnDef(523, "current_gear", "gear", SpnField(24, 8, 1.0, -125.0), -125.0, 125.0),
     ],
