@@ -24,12 +24,20 @@
           "description": "Training logs the replayed payloads are taken from.",
           "type": "integer",
           "minimum": 1
+        },
+        "attack": {
+          "description": "The kind of attack injected into every test log.",
+          "enum": [
+            "replay",
+            "matched_replay"
+          ]
         }
       },
       "required": [
         "log_split",
         "seed",
-        "donors"
+        "donors",
+        "attack"
       ],
       "additionalProperties": false
     },

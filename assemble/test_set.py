@@ -1,6 +1,7 @@
 """Build the test arrays with attacks in them, and say which rows they cover.
 
-    python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
+    python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir
+        [--rebuild]
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import random
 
 import numpy as np
 
-from attack.replay import random_replay
+from attack.replay import matched_replay, random_replay
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from assemble.split_test_logs import read_log_split
@@ -28,32 +29,42 @@ ARRAYS = ("raw", "t", "seg", "label", "wheel")      # what attacked_log builds a
 
 
 def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attack,
-                  period: float, max_hold: float, min_speed: float):
-    """Try one replay in each log, and yield its frames before and after it, and its rows.
+                  period: float, max_hold: float, min_speed: float,
+                  attack: str = "replay"):
+    """Try one attack in each log, and yield its frames before and after it, and its rows.
 
     Each item is the path, the frames, the frames with the attack in, and the rows and
     attack `attacked_log` gives, or the same frames twice and None for the attack when
     no attack landed. `source_logs` are the logs the replayed payloads are taken from,
     each log itself when there are none, and `rows_before_attack(log)` gives a log's
-    rows by time. The replay copies from moving rows onto moving rows, and lands only
-    when every row it changed is still moving.
+    rows by time.
+
+    `attack` is `replay`, which copies from a moving stretch of one donor, or
+    `matched_replay`, which copies from a donor moment of this log's speed and gear.
+    Either way it copies onto moving rows, and lands only when every row it changed is
+    still moving.
     """
-    pool = [(list(load_can_log(p)),
-             moving_spans(rows_before_attack(p), min_speed=min_speed, period=period))
-            for p in source_logs]
+    pool = [(list(load_can_log(p)), rows_before_attack(p)) for p in source_logs]
     for path in logs:
         frames = list(load_can_log(path))
         before = rows_before_attack(path)
         spans = moving_spans(before, min_speed=min_speed, period=period)
-        donor, source_spans = rng.choice(pool) if source_logs else (frames, spans)
-        made = random_replay.replay(frames, rng, source_log=donor, spans=spans,
-                      source_spans=source_spans)
+        if attack == "matched_replay":
+            donors = [(rows, lambda donor=donor: donor) for donor, rows in pool]
+            made = matched_replay.replay(frames, rng, donors, rows=before, spans=spans,
+                                         period=period)
+        else:
+            donor, donor_rows = rng.choice(pool) if source_logs else (frames, before)
+            made = random_replay.replay(
+                frames, rng, source_log=donor, spans=spans,
+                source_spans=moving_spans(donor_rows, min_speed=min_speed,
+                                          period=period))
         if made:
-            rows, attack = attacked_log(*made, before, period=period, max_hold=max_hold)
+            rows, found = attacked_log(*made, before, period=period, max_hold=max_hold)
             changed = rows["label"]
-            if (attack is not None and np.all(rows["wheel"][changed] > min_speed)
+            if (found is not None and np.all(rows["wheel"][changed] > min_speed)
                     and moving(rows["raw"][changed], min_speed=min_speed).all()):
-                yield path, frames, made[0], rows, attack
+                yield path, frames, made[0], rows, found
                 continue
         rows, _ = attacked_log(frames, None, {}, period=period, max_hold=max_hold)
         yield path, frames, frames, rows, None
@@ -199,7 +210,8 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
                              rows_before_attack=lambda log: before(
                                  os.path.relpath(log, data_dir)),
                              period=period, max_hold=max_hold,
-                             min_speed=log_split_meta["inputs"]["min_speed"])
+                             min_speed=log_split_meta["inputs"]["min_speed"],
+                             attack=settings.ATTACK)
     got = grid_rows_injected(
         write_and_pass_frames(injected, os.path.join(folder, "frames"), data_dir))
 
@@ -216,7 +228,8 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
 
 def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False,
          dry_run=False, settings=TestSetSettings()):
-    parameters = {"seed": settings.SEED, "donors": settings.DONORS}
+    parameters = {"seed": settings.SEED, "donors": settings.DONORS,
+                  "attack": settings.ATTACK}
     return reuse_or_make(repo, "test_sets", {"log_split": log_split_path}, parameters,
                          local_dir,
                          lambda folder: write_test_set(folder, repo, revision,

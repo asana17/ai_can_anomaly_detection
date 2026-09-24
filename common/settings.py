@@ -37,6 +37,7 @@ class TrainSettings:
 
 @dataclass(frozen=True)
 class TestSetSettings:
+    ATTACK: str = "replay"      # the kind of attack, replay or matched_replay
     DONORS: int = 24            # non-test logs the replayed payloads are taken from
     SEED: int = 0               # the rng the attacks are drawn with
 

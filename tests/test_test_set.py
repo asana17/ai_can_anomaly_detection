@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from assemble import test_set
+from common.settings import TestSetSettings
 from assemble.test_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
 from preprocess.features import signal_state
@@ -117,6 +118,37 @@ def test_a_replay_that_stops_a_changed_row_is_not_kept(tmp_path, monkeypatch):
     assert not rows["label"].any()
 
 
+# a moving row in top gear that every instant rule stays quiet on
+QUIET = {"engine_speed": 1219.2, "driver_demand_torque": 40.0,
+         "actual_engine_torque": 40.0, "accel_pedal": 30.0, "engine_load": 40.0,
+         "wheel_speed": 80.0, "fuel_rate": 20.0, "output_shaft_speed": 1220.0,
+         "clutch_slip": 0.0, "input_shaft_speed": 1219.2, "selected_gear": 12.0,
+         "current_gear": 12.0, "tachograph_speed": 80.0, "brake_pedal": 0.0,
+         "steering_angle": 0.0, "yaw_rate": 0.0, "lateral_accel": 0.0}
+
+
+def _one_row(**changes):
+    """One moving row every rule is quiet on, with `changes` written into it."""
+    values = dict(QUIET, **changes)
+    return np.array([values[name] for name in signal_state.SIGNALS], np.float32)
+
+
+def _attacked(row):
+    """The rows of one attacked log holding `row` alone, as `attacked_log` gives them."""
+    return {"raw": np.array([row]), "t": np.array([1.0]), "label": np.array([True]),
+            "wheel": np.array([QUIET["wheel_speed"]], np.float32)}
+
+
+def test_the_stage_records_the_kind_of_attack(tmp_path, hub):
+    logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
+    _hub_files(tmp_path, hub, logs)
+    made = test_set.main("u/d", REVISION, "log_splits/20260101-000000", str(tmp_path),
+                         str(tmp_path / "local"),
+                         settings=TestSetSettings(ATTACK="matched_replay"))
+    meta = json.loads((tmp_path / "local" / made["path"] / "meta.json").read_text())
+    assert meta["inputs"]["attack"] == "matched_replay"
+
+
 def test_only_the_rows_that_differ_from_the_clean_log_are_labelled(tmp_path):
     log = _write_log(tmp_path / "a.csv")
     d = _injected([log])
@@ -215,8 +247,10 @@ def test_the_stage_refuses_a_log_split_where_no_non_test_log_moves(tmp_path, hub
 
 
 def test_the_stage_names_a_test_set_of_the_same_log_split(tmp_path, hub):
-    inputs = {"log_split": "log_splits/20260101-000000", "seed": 0, "donors": 24}
-    hub.files = {"test_sets/20260101-000000/meta.json": {"inputs": inputs}}
+    inputs = {"log_split": "log_splits/20260101-000000", "seed": 0, "donors": 24,
+              "attack": "replay"}
+    hub.files = {"test_sets/20260101-000000/meta.json": {"inputs": inputs},
+                 "log_splits/20260101-000000/meta.json": {"inputs": {}}}
     found = test_set.main("u/d", REVISION, "log_splits/20260101-000000",
                           str(tmp_path), str(tmp_path / "local"))
     assert found["path"] == "test_sets/20260101-000000" and hub.uploaded == []

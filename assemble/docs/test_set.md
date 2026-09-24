@@ -6,7 +6,8 @@ rows each attack changed.
 ## Running it
 
 ```
-python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir [--rebuild]
+python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir
+    [--rebuild]
 ```
 
 | argument | |
@@ -16,7 +17,7 @@ python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir 
 | `log_splits/<time>` | the [log split](split_test_logs.md) whose test logs are attacked. The grid it names is read too |
 | `data_dir` | local folder holding the CAN frame logs the log split names |
 | `local_dir` | local folder `test_sets/<time>/` is written to, kept after the upload |
-| `--rebuild` | build even if `repo` already has `test_sets/<time>/` for the same log split, `SEED` and `DONORS` |
+| `--rebuild` | build even if `repo` already has `test_sets/<time>/` for the same log split, `ATTACK`, `SEED` and `DONORS` |
 
 `PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
 ticks as the grid's. The payloads are replayed from `DONORS` of the non-test logs,
@@ -37,7 +38,8 @@ It writes these files into `local_dir/test_sets/<time>/` and uploads that direct
 
 ```python
 injected = inject_frames(logs, rng, source_logs, rows_before_attack=rows_before_attack,
-                         period=period, max_hold=max_hold, min_speed=min_speed)
+                         period=period, max_hold=max_hold, min_speed=min_speed,
+                         attack=attack)
 # -> (path, frames, hurt, rows, attack) per log
 ```
 
@@ -45,6 +47,17 @@ At most one attack per log, chosen by [replay](../../attack/docs/replay.md). It 
 from the moving rows of one donor onto the moving rows of the log, the rows a model is
 trained on. It lands only when every row it changed is moving before and after it, and
 is not drawn again when it does not.
+
+`ATTACK` picks the kind, and one set holds one kind, so what a detector is measured
+against is one thing at a time. `replay` draws the donor and then the moment, both at
+random.
+`matched_replay` searches every donor for the moments it drove this log's speed in this
+log's gear, and takes one of those. Only the donors it draws are read, since the matched
+replay is given more donors than fit in memory.
+
+Nothing is thrown away for tripping a rule. [evaluate](../../evaluate) runs the rules
+over the rows it scores, so it can report what the rules catch and what a model adds
+over them, on the rules as they are then.
 
 `inject_frames` does the injection and yields each log's frames before and after the
 attack, so anything that needs the attacked frames gets the same attacks from the same
