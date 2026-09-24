@@ -138,7 +138,12 @@ J1939's own terms, frame, PGN and SPN, are described in
   under the rules and the instant model.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
   reconstruct.
-- Restate [can_data/measurements.md](can_data/measurements.md) over every log.
+- Give gear_ratio and speed_agreement the row before, as change_limit has. On the
+  moving grid rows of every log gear_ratio fires 317 times, most just after a shift
+  while the engine still turns at the old gear's ratio. Waiting 2 s after the reported
+  gear changes leaves 77. speed_agreement fires 587 times, at a median of 12 km/h/s
+  against 1.0 for all moving rows, and 91 remain below 5 km/h/s. Both catch attacks no
+  other rule does, so measure what each change loses on the test set.
 - Settle whether the rules are a floor the models build on.
 - A script that compares scores.
 - Rerun the linear autoencoder checks in the runs repo's `checks/` from a committed
