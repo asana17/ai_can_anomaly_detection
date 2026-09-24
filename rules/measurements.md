@@ -21,29 +21,36 @@ rule's own doc gives over the evaluations it applies to.
 | shaft_ratio | 342 | 0.0002% |
 | gear_ratio | 9,891 | 0.0045% |
 | steering_sign | 7,105 | 0.0033% |
-| engine_off | 141,110 | 0.0647% |
-| pedal_conflict | 88,830 | 0.0408% |
-| stopped_shaft | 2,600 | 0.0012% |
+| engine_off | 1,836 | 0.0008% |
+| pedal_conflict | 58,420 | 0.0268% |
+| stopped_shaft | 110 | 0.0001% |
 | reverse_speed | 297 | 0.0001% |
 | reserved_moving | 0 | 0% |
-| any of them | 282,896 | 0.1298% |
+| any of them | 113,201 | 0.0519% |
 
-5,003 evaluations trip two rules or more.
+2,579 evaluations trip two rules or more.
 
 ### On the rows the evaluation reads
 
 The evaluation reads the moving grid rows, 2,757,787 of them over every log. There
-the rules together fire on 2,090, 0.0758%, under the 0.1% the models' thresholds cut
-off. Two limits were set to get there.
+the rules together fire on 1,645, 0.0596%, under the 0.1% the models' thresholds cut
+off. Three limits were set to get there.
 
 | rule | before | after |
 |---|---|---|
 | steering_sign, MIN_YAW 0.02 to 0.05 | 2,545 | 191 |
 | shaft_ratio, from 5 km/h to 20 km/h | 1,176 | 15 |
-| any of them | 5,472 | 2,090 |
+| pedal_conflict, PRESSED 1% to 10% | 1,066 | 620 |
+| any of them | 5,472 | 1,645 |
 
-The rest fire on pedal_conflict 1,066, speed_agreement 587, gear_ratio 317,
-reverse_speed 9 and none of the others.
+The rest fire on speed_agreement 587, gear_ratio 317, reverse_speed 9 and none of the
+others. On test_sets/20260924-064408 the rules alone catch 483 of 1,089 attacks at a
+hold of 10 rows with 0.29 false alarms an hour, against 543 and 1.84 before the three
+changes.
+
+engine_off leaves out the input shaft and stopped_shaft needs the tachograph at zero
+too. Neither fires on a moving row, before or after. The change is to the stopped
+evaluations, 141,110 to 1,836 and 2,600 to 110.
 
 Besides range_check, four rules compare two readings of one quantity or a fixed ratio
 between two. Four more came from asking what else holds, and are the reason the layer
@@ -55,9 +62,9 @@ Over every log, one evaluation per decoded frame.
 | rule | what it asks | how often it fails on normal data |
 |---|---|---|
 | steering_sign | do the steering angle and the yaw rate point the same way | 85,134 of 28,095,820 above 5 km/h and 0.02 rad/s |
-| engine_off | with the engine at zero, are its six driven signals at zero | 141,110 of 36,041,922 |
-| pedal_conflict | are both pedals pressed at once | 88,830 of 216,709,675 |
-| stopped_shaft | with the wheels at zero, is the output shaft at zero | reads up to 551 rpm, limit at 50, 2,600 of 106,072,217 above it |
+| engine_off | with the engine at zero, are its five driven signals at zero | 1,836 of 36,041,922 |
+| pedal_conflict | are both pedals pressed at once, above 10% | 58,420 of 216,709,675 |
+| stopped_shaft | with both speeds at zero, is the output shaft at zero | limit at 50 rpm, 110 of the evaluations above it |
 
 steering_sign is the only check on VDC2. A size check on those signals does not work,
 as the table above shows, but the direction does.
