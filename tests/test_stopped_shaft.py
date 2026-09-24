@@ -26,3 +26,8 @@ def test_the_limit_itself_is_allowed():
 
 def test_a_moving_truck_is_left_to_shaft_ratio():
     assert not _hit({"wheel_speed": 0.1, "output_shaft_speed": 5000.0})
+
+
+def test_a_rolling_tachograph_leaves_it_to_speed_agreement():
+    assert not _hit({"wheel_speed": 0.0, "tachograph_speed": 3.0,
+                     "output_shaft_speed": 900.0})
