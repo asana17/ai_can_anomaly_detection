@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 /* PRESSED in rules/instant/pedal_conflict.py */
-#define PEDAL_CONFLICT_PRESSED 1.0f
+#define PEDAL_CONFLICT_PRESSED 10.0f
 
 /**
  * @brief Check whether the accelerator and the brake are pressed at once.
