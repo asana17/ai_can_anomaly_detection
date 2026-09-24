@@ -56,8 +56,7 @@ static inline bool rule_hits(const float row[], float min_speed)
 			row[RULE_WHEEL_SPEED], min_speed)
 		|| engine_off_hits(row[RULE_ENGINE_SPEED], row[RULE_FUEL_RATE],
 			row[RULE_ACTUAL_ENGINE_TORQUE], row[RULE_ENGINE_LOAD],
-			row[RULE_DRIVER_DEMAND_TORQUE], row[RULE_ACCEL_PEDAL],
-			row[RULE_INPUT_SHAFT_SPEED])
+			row[RULE_DRIVER_DEMAND_TORQUE], row[RULE_ACCEL_PEDAL])
 		|| pedal_conflict_hits(row[RULE_ACCEL_PEDAL], row[RULE_BRAKE_PEDAL])
 		|| stopped_shaft_hits(row[RULE_WHEEL_SPEED], row[RULE_OUTPUT_SHAFT_SPEED])
 		|| reverse_speed_hits(row[RULE_CURRENT_GEAR], row[RULE_WHEEL_SPEED])

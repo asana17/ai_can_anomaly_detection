@@ -9,7 +9,7 @@ ROWS = 100_000
 
 @pytest.fixture(scope="module")
 def engine_off_hits(board_rule):
-    return board_rule("engine_off", ["float"] * 7)
+    return board_rule("engine_off", ["float"] * 6)
 
 
 def _rows(rng):

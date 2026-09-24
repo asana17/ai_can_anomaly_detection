@@ -1,6 +1,6 @@
 """Flag the engine reading stopped while something it drives is still running.
 
-A stopped engine burns no fuel, makes no torque, and turns no input shaft. This holds
+A stopped engine burns no fuel and makes no torque. This holds
 where the ratio rules do not, since they all need the truck to be moving.
 """
 
@@ -10,11 +10,11 @@ import numpy as np
 
 from preprocess.features.signal_state import SIGNALS
 
-# Over every log the rule fires on 141,110 of 36,041,922 evaluations with the engine
-# at zero, 139,318 of them the input shaft still turning at 100 to 312 rpm. None of
-# them is a moving grid row. See rules/measurements.md.
+# The input shaft is left out. Over every log it still turns at 100 to 312 rpm on
+# 139,318 of 36,041,922 evaluations with the engine at zero. Without it the rule fires
+# on 1,836 of them. See rules/measurements.md.
 MUST_BE_ZERO = ["fuel_rate", "actual_engine_torque", "engine_load",
-                "driver_demand_torque", "accel_pedal", "input_shaft_speed"]
+                "driver_demand_torque", "accel_pedal"]
 
 
 def hits(raw: np.ndarray) -> np.ndarray:
