@@ -35,12 +35,6 @@ goes 0.1 s without a frame only when it or its senders stop.
 `rule_check_from_flash/raw_rows.h`, with the same replay attack in. It keeps the PGNs
 the board decodes, from 1 s before the first of those rows.
 
-```sh
-python3 -m board.replay_frames out data 2 80
-```
-
-`out` holds the attack set, `data` the CAN logs, 2 is the attack and 80 the rows.
-
 ## Prepare, build and flash
 
 ```sh
