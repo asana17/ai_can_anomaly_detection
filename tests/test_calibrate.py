@@ -18,11 +18,10 @@ def test_the_quantile_leaves_that_share_of_the_scores_above_it():
     assert (scores > calibrate.quantile(scores, 0.1)).mean() == pytest.approx(0.1, 0.01)
 
 
-def test_a_row_with_no_score_or_hit_by_a_rule_sets_no_threshold():
+def test_a_row_with_no_score_sets_no_threshold():
     scores = np.array([[np.nan], [1.0], [2.0]], np.float32)
-    rule_hit = np.array([False, False, True])
 
-    assert calibrate.calibration_rows(scores, rule_hit).tolist() == [False, True, False]
+    assert calibrate.calibration_rows(scores).tolist() == [False, True, True]
 
 
 SCORES = {"set": "calibration_sets/20260101-000000", "models": "models/20260101-000000",

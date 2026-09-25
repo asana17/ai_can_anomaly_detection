@@ -45,8 +45,7 @@ It writes these files into `runs_dir/thresholds/<time>/` and uploads that direct
 calibrate takes the thresholds from the rows of the
 [calibration set](../../assemble/docs/calibration_set.md) the models' train set names.
 A model has never seen them, and the calibration set says why they are held back.
-Only the moving rows no instant rule hits count, since a model is only asked about
-the rows the rules let through.
+Every moving row counts.
 
 ## The threshold
 

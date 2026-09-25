@@ -31,10 +31,9 @@ def quantile(scores, share: float):
     return float(np.percentile(scores, 100 * (1 - share)))
 
 
-def calibration_rows(scores, rule_hit):
-    """Which rows a threshold is taken from, the rows scored that no rule hits."""
-    # a row a rule already flags says nothing about where to put a model's threshold
-    return ~np.isnan(scores).any(axis=1) & ~rule_hit
+def calibration_rows(scores):
+    """Which rows a threshold is taken from, the rows scored."""
+    return ~np.isnan(scores).any(axis=1)
 
 
 def thresholds_for(models, scores, *, target):
@@ -57,8 +56,8 @@ def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_d
     scores_directory = score.main(at["repo"], at["revision"], at["path"], local_dir,
                                   runs_repo, revision, models_path, runs_dir,
                                   onnx_files=onnx_files, precision=precision)
-    scores, rule_hit, models, scored = score.fetch_scores(scores_directory, runs_dir)
-    kept = calibration_rows(scores, rule_hit)
+    scores, _, models, scored = score.fetch_scores(scores_directory, runs_dir)
+    kept = calibration_rows(scores)
     thresholds = thresholds_for(models, scores[kept], target=settings.TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
         json.dump(thresholds, f, indent=2)
