@@ -127,15 +127,16 @@ difference between the two, and the range is the p99 of the first one's size.
 | wheel_speed and tachograph_speed | 0.91 km/h | 85.51 | 1.1% |
 | engine_load and actual_engine_torque | 12.0 points | 87.01 | 13.8% |
 | lateral_accel and speed times yaw_rate | 0.85 m/s2 | 1.33 | 63.9% |
-| accel_pedal and driver_demand_torque | 30.4 points | 85.21 | 35.7% |
 
 The first drifts 0.91 km/h across an 86 km/h range, so a threshold just above the
 drift still catches nearly any tampering. That pair is
-[speed_agreement](instant/docs/speed_agreement.md). The other three drift 14% to 64%
-of their range, which leaves little for a threshold to catch, so no rule was written
-for them.
+[speed_agreement](instant/docs/speed_agreement.md).
 
-Do not screen a pair by correlation. The last pair correlates at 0.924.
+engine_load is a share of the most torque at the present speed, so it sits at or above
+actual_engine_torque. Torque above load stays within 2 points on 99% of moving grid rows.
+
+lateral_accel also carries gravity from a banked road and body roll, an offset that
+averaging keeps, still 47% of the range over 50 rows. No rule checks that pair.
 
 ### Other claims that did not hold
 
