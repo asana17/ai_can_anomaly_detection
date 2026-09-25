@@ -80,6 +80,28 @@ none of the values below `hidden`.
 `inputs` records the models after the lists are spread out, one entry each, so the run
 says what every model was fitted with.
 
+## The models this repository fits
+
+`models/models.json` asks for six models, PCA and a nonlinear autoencoder with
+`hidden` 128, each at `k` 4, 8 and 12. The set was chosen without looking at any
+attack.
+
+- No linear autoencoder. Trained on squared error, it learns the same subspace as PCA
+  (Baldi and Hornik, 1989). PCA is solved in closed form and is faster. In the runs so
+  far the two came within 2 caught attacks of each other at every `k`, as
+  [results](../../evaluate/results.md) reports.
+- `hidden` 128 only. The board runs the heaviest model, and that one also shows its
+  load best.
+- `k` 4, 8 and 12 compress the 17 signals in even steps of 4. At `k` 2 the model does
+  not rebuild normal rows well. Its threshold from the normal calibration rows was
+  about 4 times that at `k` 4, 2.25 against 0.54 for `hidden` 128 in run 1. At `k` 16
+  only one dimension is dropped, so a row can pass through almost unchanged.
+- PCA and the autoencoder use the same `k`, because each model is compared at the
+  same `k`, as [evaluate](../../evaluate/README.md) says.
+
+Earlier runs fitted 40 models. Their `models.json` still lists the linear autoencoder,
+so `fit` and the schema keep it.
+
 ## The autoencoder values
 
 How each value an autoencoder is fitted with was set. None of them was chosen by
@@ -93,7 +115,7 @@ looking at the test set.
 | `improvement` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |
 | `patience` | 10 | the default `patience` of the same |
 | `seed` | set per run | the torch rng an autoencoder is built and trained with. It is changed between runs to show how far it moves the numbers, as [results](../../evaluate/results.md) reports. |
-| `hidden` | 32, 64, 128 | a stated choice. All of them are at least `signals`, so `latent_dim` stays the narrowest layer at every `k`. Each is reported. |
+| `hidden` | 128 | a stated choice, as [above](#the-models-this-repository-fits). It is at least `signals`, so `latent_dim` stays the narrowest layer at every `k`. Earlier runs also fitted 32 and 64. |
 
 `batch` was compared at every `k`. Up to `k` 14 the two sizes came within 0.3% of each
 other and within 0.8% of PCA, and 1024 took less time at every `k`. At `k` 16 1024

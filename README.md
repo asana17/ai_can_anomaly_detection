@@ -7,7 +7,7 @@ Deterministic rules catch what can be written as an invariant, a value out of ra
 or two signals that must agree, like the engine and wheel speeds picking out the gear
 the transmission reports. They are in [rules/](rules).
 
-What no invariant covers is left to a model, [PCA](models/docs/pca.md) or a linear or
+What no invariant covers is left to a model, [PCA](models/docs/pca.md) or a
 nonlinear [autoencoder](models/docs/autoencoder.md). A model trains offline on a PC on
 normal data only, then runs on the device for inference, in float since the float model
 fits. Anomalies are synthesized from the normal data to test detection and never enter
@@ -172,8 +172,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 - engine_load against actual_engine_torque over ten rows was kept from six window rules
   by how many matched replays it caught. Decide it again on normal data alone.
 - A script that compares scores.
-- Rerun the linear autoencoder checks in the runs repo's `checks/` from a committed
-  script, on the current dataset.
 
 ## Tests
 

@@ -15,9 +15,9 @@ def test_the_models_beside_fit_spread_into_one_model_per_value():
     listed = json.load(open(MODELS))
     models = models_in(MODELS)
 
-    assert len(listed) == 3 and len(models) == 40
-    assert as_dict(models[0]) == {"model": "pca", "k": 2}, "pca is fitted, not trained"
-    assert as_dict(models[8])["rate"] == listed[1]["rate"]
+    assert len(listed) == 2 and len(models) == 6
+    assert as_dict(models[0]) == {"model": "pca", "k": 4}, "pca is fitted, not trained"
+    assert as_dict(models[3])["rate"] == listed[1]["rate"]
 
 
 def train_set(monkeypatch, rows=8):
