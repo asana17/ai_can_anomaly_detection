@@ -50,9 +50,8 @@ def z_distance_an_attack_moved(attack, attacked, std):
 
 
 def false_positive_rate(flag, rows):
-    """How often the model flags a row that has no attack on it."""
-    clean = rows.quiet & ~rows.rule_hit
-    return float((flag & clean).sum() / clean.sum())
+    """How often the model flags a moving row that has no attack on it."""
+    return float((flag & rows.quiet).sum() / rows.quiet.sum())
 
 
 def attacks_caught_by_alarms(alarmed, attacks):

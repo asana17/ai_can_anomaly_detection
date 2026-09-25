@@ -20,7 +20,7 @@
           "const": "rules"
         },
         "false_positive_rate": {
-          "description": "The share of rows with no attack and no rule on them that the detector flags. Read it against `TARGET`.",
+          "description": "The share of moving rows with no attack that the model's score alone flags. Read it against `TARGET`.",
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -45,7 +45,7 @@
           "type": "number"
         },
         "false_positive_rate": {
-          "description": "The share of rows with no attack and no rule on them that the detector flags. Read it against `TARGET`.",
+          "description": "The share of moving rows with no attack that the model's score alone flags. Read it against `TARGET`.",
           "type": "number",
           "minimum": 0,
           "maximum": 1
