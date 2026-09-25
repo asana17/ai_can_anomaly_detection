@@ -5,10 +5,10 @@ built.
 
 A detector is the instant rules, or the rules together with one model. The models are
 there to catch what the rules miss, so each one is compared with the rules alone. The
-component count `k` is how many numbers a row is compressed into. PCA keeps `k`
-components, and each autoencoder gets the same `k` as its `latent_dim`, so every model
-is compared at the same `k`. PCA is the linear baseline, so the gap between it and the
-nonlinear autoencoder is what the nonlinearity buys.
+component count `k` is how many numbers a row is compressed into, the autoencoder's
+`latent_dim`. PCA and the linear autoencoder were the linear baselines of the instant
+pair, which is finished, as [results](results.md) reports. The runs now fit the
+nonlinear autoencoder alone.
 
 ```
 python3 -m evaluate.run_test_set REPO REVISION TEST_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR

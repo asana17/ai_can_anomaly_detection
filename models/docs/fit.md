@@ -82,25 +82,22 @@ says what every model was fitted with.
 
 ## The models this repository fits
 
-`models/models.json` asks for six models, PCA and a nonlinear autoencoder with
-`hidden` 128, each at `k` 4, 8 and 12. The set was chosen without looking at any
-attack.
+`models/models.json` asks for three models, a nonlinear autoencoder with `hidden` 128
+at `k` 4, 8 and 12. The set was chosen without looking at any attack.
 
-- No linear autoencoder. Trained on squared error, it learns the same subspace as PCA
-  (Baldi and Hornik, 1989). PCA is solved in closed form and is faster. In the runs so
-  far the two came within 2 caught attacks of each other at every `k`, as
-  [results](../../evaluate/results.md) reports.
+- No PCA and no linear autoencoder. They were the linear baselines of the instant
+  pair, which is finished, as [results](../../evaluate/results.md) reports. Trained on
+  squared error, the linear autoencoder learns the same subspace as PCA (Baldi and
+  Hornik, 1989).
 - `hidden` 128 only. The board runs the heaviest model, and that one also shows its
   load best.
 - `k` 4, 8 and 12 compress the 17 signals in even steps of 4. At `k` 2 the model does
   not rebuild normal rows well. Its threshold from the normal calibration rows was
   about 4 times that at `k` 4, 2.25 against 0.54 for `hidden` 128 in run 1. At `k` 16
   only one dimension is dropped, so a row can pass through almost unchanged.
-- PCA and the autoencoder use the same `k`, because each model is compared at the
-  same `k`, as [evaluate](../../evaluate/README.md) says.
 
-Earlier runs fitted 40 models. Their `models.json` still lists the linear autoencoder,
-so `fit` and the schema keep it.
+Earlier runs fitted 40 models. Their `models.json` still lists PCA and the linear
+autoencoder, so `fit` and the schema keep them.
 
 ## The autoencoder values
 
