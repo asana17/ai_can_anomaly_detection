@@ -69,10 +69,10 @@ Over every log, one evaluation per decoded frame.
 steering_sign is the only check on VDC2. A size check on those signals does not work,
 as the table above shows, but the direction does.
 
-[change_limit](rate/docs/change_limit.md) is not in the table. It compares a
-signal with its own previous reading rather than a whole state, so its evaluations
-are not the same ones. Over every log and 85,944,337 comparisons it fires 236 times,
-149 on yaw_rate, 44 on tachograph_speed and 43 on wheel_speed.
+[change_limit](rate/docs/change_limit.md) is not in the table. It compares a row
+with the row before it rather than reading one row. On the moving rows it fires on
+55, 37 of them rows no instant rule fires on. With it the rules fire on 1,682,
+0.0610%.
 
 ### Nothing reads outside its range
 
@@ -83,28 +83,33 @@ this data.
 
 ### How fast each signal moves
 
-Between one frame of a PGN and the next of the same PGN, over every log.
+Between a moving grid row and the row before it, one tick earlier in the same
+segment and moving too. 2,749,873 steps over every log, per second.
 
-| signal | most per second | signal | most per second |
+| signal | 1e-4 | 1e-5 | most |
 |---|---|---|---|
-| yaw_rate | 5.6 rad/s2 | fuel_rate | 470.7 L/h |
-| steering_angle | 36.3 rad/s | actual_engine_torque | 2,731.3 points |
-| wheel_speed | 374.8 km/h | output_shaft_speed | 54,891 rpm |
-| tachograph_speed | 745.0 km/h | engine_speed | 7,843 rpm |
-| current_gear | 120 gears | clutch_slip | 25,980 points |
-| selected_gear | 122 gears | input_shaft_speed | 671,757 rpm |
+| engine_speed | 2,114 rpm | 2,509 | 2,825 |
+| driver_demand_torque | 350 % | 610 | 930 |
+| actual_engine_torque | 250 % | 360 | 490 |
+| accel_pedal | 340 % | 642 | 1,000 |
+| engine_load | 360 % | 530 | 730 |
+| wheel_speed | 21.0 km/h | 37.0 | 317 |
+| fuel_rate | 186 L/h | 305 | 471 |
+| output_shaft_speed | 320 rpm | 500 | 4,850 |
+| clutch_slip | 460 % | 980 | 1,000 |
+| input_shaft_speed | 8,120 rpm | 10,590 | 14,160 |
+| selected_gear | 120 gears | 120 | 120 |
+| current_gear | 80 gears | 100 | 110 |
+| tachograph_speed | 21.0 km/h | 33.0 | 317 |
+| brake_pedal | 144 % | 212 | 360 |
+| steering_angle | 7.38 rad/s | 9.39 | 11.1 |
+| yaw_rate | 0.283 rad/s2 | 0.364 | 0.488 |
+| lateral_accel | 20.4 m/s2 | 28.9 | 46.0 |
 
-The four on the left of the first three rows carry
-[change_limit](rate/docs/change_limit.md). Its limits came from 25 logs. Over every
-log all of them but steering_angle move faster than their limit, which is where its
-236 hits come from. The rest carry no limit. A shift
-frees the input shaft, the clutch slip follows it, and the gear number jumps several
-places at once.
-
-Sampling on the 100 ms grid gives lower figures for the fast signals, 3,464 rpm per
-second for the engine against 7,843 here. A grid row spans 100 ms whatever arrived
-inside it, so five engine updates fold into one difference. Limits measured one way
-do not carry to the other.
+[change_limit](rate/docs/change_limit.md) limits four of them, each just above its
+1e-5 figure. At 1e-4 the four would fire on 934 rows and take the rules to 2,365,
+0.0858%, leaving little room for other rules that read the row before. accel_pedal and clutch_slip move their whole range in one row and the gear
+number jumps several places. A shift frees the input shaft.
 
 ## What did not become a rule
 

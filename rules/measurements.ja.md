@@ -67,9 +67,9 @@ range_check 以外で、4本は同じ量の2つの読みか、2つの間の固�
 VDC2 を見るのは steering_sign だけである。あの信号は大きさでは検査できないが、
 向きなら検査できる。
 
-[change_limit](rate/docs/change_limit.md) は表に入っていない。状態全体では
-なく信号を自身の前の値と比べるので、評価の単位が違う。全ログ・85,944,337比較で
-236件発火。内訳は yaw_rate 149件、tachograph_speed 44件、wheel_speed 43件。
+[change_limit](rate/docs/change_limit.md) は表に入っていない。1行を読むのではなく、
+行を前の行と比べる。走行中の行では55行で発火し、うち37行は instant のルールが発火
+しない行。これを加えるとルール全体の発火は1,682行、0.0610%。
 
 ### 定義域を外れる値は無い
 
@@ -79,26 +79,34 @@ VDC2 を見るのは steering_sign だけである。あの信号は大きさで
 
 ### 各信号が動ける速さ
 
-同じメッセージの1フレームから次のフレームまでで測定。全ログ分。
+走行中のグリッド行と、その前の行との間で測定。前の行は同じセグメントで1 tick前、
+かつ走行中の行。全ログで2,749,873ステップ、秒あたり。
 
-| 信号 | 秒あたり最大 | 信号 | 秒あたり最大 |
+| 信号 | 1e-4 | 1e-5 | 最大 |
 |---|---|---|---|
-| yaw_rate | 5.6 rad/s2 | fuel_rate | 470.7 L/h |
-| steering_angle | 36.3 rad/s | actual_engine_torque | 2,731.3ポイント |
-| wheel_speed | 374.8 km/h | output_shaft_speed | 54,891 rpm |
-| tachograph_speed | 745.0 km/h | engine_speed | 7,843 rpm |
-| current_gear | 120段 | clutch_slip | 25,980ポイント |
-| selected_gear | 122段 | input_shaft_speed | 671,757 rpm |
+| engine_speed | 2,114 rpm | 2,509 | 2,825 |
+| driver_demand_torque | 350 % | 610 | 930 |
+| actual_engine_torque | 250 % | 360 | 490 |
+| accel_pedal | 340 % | 642 | 1,000 |
+| engine_load | 360 % | 530 | 730 |
+| wheel_speed | 21.0 km/h | 37.0 | 317 |
+| fuel_rate | 186 L/h | 305 | 471 |
+| output_shaft_speed | 320 rpm | 500 | 4,850 |
+| clutch_slip | 460 % | 980 | 1,000 |
+| input_shaft_speed | 8,120 rpm | 10,590 | 14,160 |
+| selected_gear | 120段 | 120 | 120 |
+| current_gear | 80段 | 100 | 110 |
+| tachograph_speed | 21.0 km/h | 33.0 | 317 |
+| brake_pedal | 144 % | 212 | 360 |
+| steering_angle | 7.38 rad/s | 9.39 | 11.1 |
+| yaw_rate | 0.283 rad/s2 | 0.364 | 0.488 |
+| lateral_accel | 20.4 m/s2 | 28.9 | 46.0 |
 
-左列上3行の4信号は [change_limit](rate/docs/change_limit.md) が見ている。その上限は
-25ログから決めたもので、全ログでは steering_angle 以外の3信号が上限を超えて動く。
-236件の発火はこれによる。残りの信号には上限を置いていない。
-変速で入力軸が解放され、クラッチスリップもそれに従い、ギア番号は数段飛ぶ。
-
-100msグリッド上で標本を取ると、速い信号の値は小さく出る。エンジン回転はここでは
-毎秒7,843 rpm だが、グリッド上では3,464 rpm になる。グリッドの1行は100msの間に
-届いたものをまとめるので、5回分の更新が1つの差に畳まれるためである。一方で測った
-上限をもう一方に流用することはできない。
+[change_limit](rate/docs/change_limit.md) はこのうち4信号に、1e-5の値の少し上で上限を
+置く。1e-4で置くと4信号で934行発火し、ルール全体は2,365行、0.0858%で、前の行を読む
+他のルールの余地がほとんど残らない。
+accel_pedal と clutch_slip は1行で定義域の端から端まで動き、ギア番号は数段飛ぶ。
+変速で入力軸が解放される。
 
 ## ルールにならなかったもの
 

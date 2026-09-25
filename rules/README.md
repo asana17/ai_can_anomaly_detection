@@ -38,7 +38,7 @@ Documented under [instant/docs/](instant/docs).
 
 ## rate
 
-Each reads the current mapping, the one before it, and the seconds between.
+Each reads a grid row and the row before it.
 Documented under [rate/docs/](rate/docs).
 
 - [change_limit](rate/docs/change_limit.md) flags a signal moving faster than the

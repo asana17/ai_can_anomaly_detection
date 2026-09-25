@@ -1,36 +1,48 @@
-from rules.rate.change_limit import LIMITS, violations
+import numpy as np
+
+from preprocess.features.signal_state import SIGNALS
+from rules.rate.change_limit import LIMITS, PERIOD, hits
+
+
+def _rows(values):
+    """One row carrying `values`, every other signal at 0."""
+    raw = np.zeros((1, len(SIGNALS)))
+    for name, value in values.items():
+        raw[0, SIGNALS.index(name)] = value
+    return raw
+
+
+def _hit(now, before):
+    return bool(hits(_rows(now), _rows(before))[0])
 
 
 def test_a_normal_move_passes():
-    assert violations({"wheel_speed": 80.0}, {"wheel_speed": 79.0}, 0.1) == []
+    assert not _hit({"wheel_speed": 80.0}, {"wheel_speed": 79.0})
 
 
-def test_a_jump_too_far_for_the_time_is_flagged():
-    assert violations({"wheel_speed": 80.0}, {"wheel_speed": 20.0}, 0.1) == ["wheel_speed"]
+def test_a_jump_too_far_for_a_tick_is_flagged():
+    assert _hit({"wheel_speed": 80.0}, {"wheel_speed": 70.0})
 
 
-def test_the_same_jump_over_enough_time_passes():
-    assert violations({"wheel_speed": 80.0}, {"wheel_speed": 20.0}, 10.0) == []
+def test_a_fall_is_flagged_as_a_rise_is():
+    assert _hit({"wheel_speed": 70.0}, {"wheel_speed": 80.0})
 
 
 def test_the_limit_itself_is_allowed():
-    limit = LIMITS["wheel_speed"]
-    assert violations({"wheel_speed": limit}, {"wheel_speed": 0.0}, 1.0) == []
-
-
-def test_several_signals_are_all_reported():
-    now = {"wheel_speed": 80.0, "yaw_rate": 1.0}
-    before = {"wheel_speed": 20.0, "yaw_rate": 0.0}
-    assert violations(now, before, 0.1) == ["yaw_rate", "wheel_speed"]
+    step = LIMITS["wheel_speed"] * PERIOD
+    assert not _hit({"wheel_speed": 80.0 + step}, {"wheel_speed": 80.0})
 
 
 def test_a_signal_with_no_limit_is_ignored():
-    assert violations({"engine_speed": 3000.0}, {"engine_speed": 600.0}, 0.02) == []
+    assert not _hit({"input_shaft_speed": 3000.0}, {"input_shaft_speed": 600.0})
 
 
-def test_it_says_nothing_without_a_previous_reading():
-    assert violations({"wheel_speed": 80.0}, {}, 0.1) == []
+def test_it_says_nothing_without_a_row_before():
+    before = np.full((1, len(SIGNALS)), np.nan)
+    assert not hits(_rows({"wheel_speed": 80.0}), before)[0]
 
 
-def test_it_says_nothing_when_no_time_has_passed():
-    assert violations({"wheel_speed": 80.0}, {"wheel_speed": 20.0}, 0.0) == []
+def test_each_row_is_judged_against_its_own_row_before():
+    raw = np.vstack([_rows({"yaw_rate": 0.02}), _rows({"yaw_rate": 0.02})])
+    before = np.vstack([_rows({"yaw_rate": 0.0}), _rows({"yaw_rate": -0.05})])
+    assert hits(raw, before).tolist() == [False, True]

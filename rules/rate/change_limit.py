@@ -1,31 +1,36 @@
-"""Flag a signal moving faster than the truck can move it.
+"""Flag a signal moving further in one tick than the truck can move it.
 
-Unlike the rules in instant, this one compares a reading with the one before it, so
-the caller has to keep the previous value and the time since.
+Unlike the rules in instant, this one compares a grid row with the row before it, so
+the caller has to find that row. See rules/rate/docs/change_limit.md.
 """
 
 from __future__ import annotations
 
-# The most each signal moved per second over 25 logs, rounded up and doubled to
-# leave room. Over every log all but steering_angle move faster than this, and the
-# rule fires on 236 of 85,944,337 comparisons. Signals not listed are unbounded in
-# practice, the input shaft because a shift lets it spin free and the gears because
-# they jump. See rules/measurements.md.
+import numpy as np
+
+from common.settings import GridSettings
+from preprocess.features.signal_state import SIGNALS
+
+PERIOD = GridSettings.PERIOD    # seconds from the row before, one tick
+
+# Per second, from the steps between two moving grid rows. See rules/measurements.md.
 LIMITS = {
-    "yaw_rate": 3.0,            # rad/s2, observed 1.1 over 25 logs, 5.6 over every log
-    "steering_angle": 40.0,     # rad/s, observed 16.4, 36.3
-    "wheel_speed": 50.0,        # km/h/s, observed 21.0, 374.8
-    "tachograph_speed": 100.0,  # km/h/s, observed 41.9, 745.0
+    "yaw_rate": 0.4,            # rad/s2
+    "steering_angle": 10.0,     # rad/s
+    "wheel_speed": 40.0,        # km/h/s
+    "tachograph_speed": 40.0,   # km/h/s
 }
 
 
-def violations(values: dict, previous: dict, seconds: float, limits: dict = LIMITS) -> list:
-    """The names that moved further than `seconds` allows, in LIMITS order."""
-    if seconds <= 0:
-        return []
-    out = []
-    for name, limit in limits.items():
-        now, before = values.get(name), previous.get(name)
-        if now is not None and before is not None and abs(now - before) / seconds > limit:
-            out.append(name)
-    return out
+def hits(raw: np.ndarray, previous: np.ndarray, limits: dict = LIMITS) -> np.ndarray:
+    """True where a signal of a row moved further from `previous` than a tick allows.
+
+    `previous` holds the row before each row of `raw`, all NaN where there is none.
+    A NaN compares false and never fires.
+    """
+    # A grid row holds float32, and the board computes in float32 too.
+    columns = [SIGNALS.index(name) for name in limits]
+    limit = np.array(list(limits.values()), dtype=np.float32)
+    step = np.abs(raw[:, columns].astype(np.float32)
+                  - previous[:, columns].astype(np.float32))
+    return (step / np.float32(PERIOD) > limit).any(axis=1)
