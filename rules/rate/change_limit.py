@@ -15,10 +15,10 @@ PERIOD = GridSettings.PERIOD    # seconds from the row before, one tick
 
 # Per second, from the steps between two moving grid rows. See rules/measurements.md.
 LIMITS = {
-    "yaw_rate": 0.4,            # rad/s2
     "steering_angle": 10.0,     # rad/s
-    "wheel_speed": 40.0,        # km/h/s
     "tachograph_speed": 40.0,   # km/h/s
+    "wheel_speed": 40.0,        # km/h/s
+    "yaw_rate": 0.4,            # rad/s2
 }
 
 

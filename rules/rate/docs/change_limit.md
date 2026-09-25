@@ -28,10 +28,10 @@ moving rows. Each limit is a round figure above the 1e-5 quantile.
 
 | signal | limit per second | 1e-5 | most |
 |---|---|---|---|
-| yaw_rate | 0.4 rad/s2 | 0.364 | 0.488 |
 | steering_angle | 10 rad/s | 9.39 | 11.1 |
-| wheel_speed | 40 km/h | 37.0 | 317 |
 | tachograph_speed | 40 km/h | 33.0 | 317 |
+| wheel_speed | 40 km/h | 37.0 | 317 |
+| yaw_rate | 0.4 rad/s2 | 0.364 | 0.488 |
 
 The rest are not limited. accel_pedal, clutch_slip and the gears move their whole
 range in one row. The input shaft is freed by a shift. The others were not tried. See
