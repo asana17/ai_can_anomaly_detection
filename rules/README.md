@@ -4,10 +4,8 @@ The deterministic layer. Each rule states an invariant the bus should hold and
 reports where it does not, so the autoencoder is left with what no rule can express.
 
 Rules sit in one of two directories by what they need to read.
-[instant/](instant) holds those that decide from a single moment.
-[sequence/](sequence) holds those that need the previous reading and the time since,
-because they cannot be called the same way and they belong to a different half of
-the evaluation.
+[instant/](instant) holds those that decide from a single moment. [sequence/](sequence)
+holds those that also read the rows before in the run.
 
 ## instant
 
@@ -39,11 +37,13 @@ Documented under [instant/docs/](instant/docs).
 
 ## sequence
 
-Each reads a grid row and the row before it.
+Each reads grid rows together with the rows before them in their run.
 Documented under [sequence/docs/](sequence/docs).
 
 - [change_limit](sequence/docs/change_limit.md) flags a signal moving faster than the
   truck can move it.
+- [torque_over_load](sequence/docs/torque_over_load.md) flags actual_engine_torque
+  sitting above engine_load over the last second.
 
 ## Measurements
 

@@ -70,6 +70,8 @@ VDC2 を見るのは steering_sign だけである。あの信号は大きさで
 [change_limit](sequence/docs/change_limit.md) は表に入っていない。1行を読むのではなく、
 行を前の行と比べる。走行中の行では87行で発火し、うち68行は instant のルールが発火
 しない行。これを加えるとルール全体の発火は1,713行、0.0621%。
+[torque_over_load](sequence/docs/torque_over_load.md) は直近10行で平均し、さらに232行で
+発火し、うち229行は新しい行。これを加えるとルール全体の発火は1,942行、0.0704%。
 
 ### 定義域を外れる値は無い
 
@@ -129,6 +131,7 @@ accel_pedal と clutch_slip は1行で定義域の端から端まで動き、ギ
 
 engine_load は今の回転数で出せる最大トルクに対する割合なので、actual_engine_torque 以上に
 なる。torque が load を上回る分は、moving な grid 行の99%で2ポイント以内である。
+[torque_over_load](sequence/docs/torque_over_load.md) がこれを10行の平均で検査する。
 
 lateral_accel には横断勾配と車体のロールによる重力も加わり、この片寄りは平均しても残る。
 50行で平均しても範囲の47%あるので、この組はルールで検査しない。

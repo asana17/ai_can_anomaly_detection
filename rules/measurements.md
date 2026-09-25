@@ -72,7 +72,9 @@ as the table above shows, but the direction does.
 [change_limit](sequence/docs/change_limit.md) is not in the table. It compares a row
 with the row before it rather than reading one row. On the moving rows it fires on
 87, 68 of them rows no instant rule fires on. With it the rules fire on 1,713,
-0.0621%.
+0.0621%. [torque_over_load](sequence/docs/torque_over_load.md) averages over the last
+ten rows and fires on 232 more, 229 of them new. With it the rules fire on 1,942,
+0.0704%.
 
 ### Nothing reads outside its range
 
@@ -134,6 +136,7 @@ drift still catches nearly any tampering. That pair is
 
 engine_load is a share of the most torque at the present speed, so it sits at or above
 actual_engine_torque. Torque above load stays within 2 points on 99% of moving grid rows.
+[torque_over_load](sequence/docs/torque_over_load.md) checks it averaged over ten rows.
 
 lateral_accel also carries gravity from a banked road and body roll, an offset that
 averaging keeps, still 47% of the range over 50 rows. No rule checks that pair.

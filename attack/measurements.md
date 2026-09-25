@@ -170,8 +170,13 @@ reach.
 | the brake down and the truck no slower | 5.9e-3 | 7/86 | 8/86 | 2/76 | 9/76 |
 | the engine climbing with the pedal untouched | 1.5e-2 | 6/86 | 21/86 | 1/76 | 21/76 |
 
-Only the first is worth keeping. It reads a matched replay as well as it reads a plain
-replay, 9 of 76 against 12 of 86, and never fires away from either.
+The first reads a matched replay as well as it reads a plain replay, 9 of 76 against
+12 of 86, and never fires away from either. It was kept for that at first, which chose
+a rule by the attack the windowed model is measured on. The first three were then
+decided again from normal data alone, in the
+[rule measurements](../rules/measurements.md). The first became
+[torque_over_load](../rules/sequence/docs/torque_over_load.md), one sided, and the other
+two were dropped.
 
 The last three hold in ordinary driving, on engine braking and at a steady speed, and
 fire away from the attack more often than on it.
