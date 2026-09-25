@@ -20,7 +20,7 @@ WHERE = {"repo": "u/d", "revision": REVISION}
 def a_test(worth_catching=np.array([True])):
     """Six rows, one attack over rows 1 and 2, four rows nothing flags."""
     rows = run_test_set.AttackedRows(
-        quiet=np.array([True, False, False, True, True, True]),
+        normal_moving=np.array([True, False, False, True, True, True]),
         rule_hit=np.zeros(6, bool), segment=np.zeros(6, np.int32), hours=2.0)
     attacks = run_test_set.InjectedAttacks(injected=[{"first": 1, "last": 2}],
                                            worth_catching=worth_catching)

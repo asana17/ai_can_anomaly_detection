@@ -51,7 +51,7 @@ def z_distance_an_attack_moved(attack, attacked, std):
 
 def false_positive_rate(flag, rows):
     """How often the model flags a moving row that has no attack on it."""
-    return float((flag & rows.quiet).sum() / rows.quiet.sum())
+    return float((flag & rows.normal_moving).sum() / rows.normal_moving.sum())
 
 
 def attacks_caught_by_alarms(alarmed, attacks):
@@ -64,18 +64,18 @@ def attacks_caught_by_alarms(alarmed, attacks):
 
 def false_alarms_per_hour(alarmed, rows):
     """The alarms raised on rows with no attack, over the hours they cover."""
-    return float(count_alarms(alarmed & rows.quiet) / rows.hours)
+    return float(count_alarms(alarmed & rows.normal_moving) / rows.hours)
 
 
 @dataclass
 class AttackedRows:
     """The rows of a test set, as a detector is judged over them.
 
-    `quiet` marks the rows above `MIN_SPEED` that carry no attack, `rule_hit` where an
-    instant rule fires, `segment` the segment ids, and `hours` how long the quiet rows
-    run for.
+    `normal_moving` marks the rows above `MIN_SPEED` that carry no attack, `rule_hit`
+    where an instant rule fires, `segment` the segment ids, and `hours` how long the
+    `normal_moving` rows run for.
     """
-    quiet: np.ndarray
+    normal_moving: np.ndarray
     rule_hit: np.ndarray
     segment: np.ndarray
     hours: float
@@ -95,10 +95,12 @@ class InjectedAttacks:
 
 
 def attacked_rows_of(attacked, rule_hit):
-    """The test set's rows, with the quiet ones marked and their hours worked out."""
-    quiet = (attacked["wheel"] > attacked["min_speed"]) & ~attacked["label"]
-    return AttackedRows(quiet=quiet, rule_hit=rule_hit, segment=attacked["seg"],
-                        hours=float(quiet.sum() * attacked["period"] / 3600))
+    """The test set's rows, with the normal moving ones marked and their hours worked
+    out."""
+    normal_moving = (attacked["wheel"] > attacked["min_speed"]) & ~attacked["label"]
+    return AttackedRows(normal_moving=normal_moving, rule_hit=rule_hit,
+                        segment=attacked["seg"],
+                        hours=float(normal_moving.sum() * attacked["period"] / 3600))
 
 
 def injected_attacks_of(attacked, settings):
