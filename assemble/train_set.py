@@ -1,7 +1,7 @@
 """Pick the rows of the non-test logs a model is fitted on.
 
 They are the moving rows more than `GAP` from the test span and from every calibration
-block, less the rows a rule hits.
+block.
 
     python3 -m assemble.train_set repo revision calibration_sets/<time> local_dir [--rebuild]
 """
@@ -20,7 +20,6 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import TrainSettings
 from preprocess.features.moving import moving
-from rules.hits import rule_hits
 
 
 def read_train_set(folder):
@@ -69,17 +68,13 @@ def write_train_set(folder, repo, revision, calibration_path, local_dir, setting
                      > settings.GAP)
                   & (seconds_from(times, read_calibration_blocks(calibration_dir))
                      > settings.GAP))
-    # the model is only asked about the rows no rule hits, so it fits on those alone
-    hit = rule_hits(raw[train_rows], min_speed)
-    train_rows[train_rows] = ~hit
-    print(f"{int(train_rows.sum())} train rows from {len(cut['non_test'])} logs, "
-          f"{int(hit.sum())} of {len(hit)} a rule hits dropped", flush=True)
+    print(f"{int(train_rows.sum())} train rows from {len(cut['non_test'])} logs",
+          flush=True)
 
     np.save(os.path.join(folder, "train_rows.npy"), train_rows)
     return {"calibration_set": {"repo": repo, "revision": revision,
                                 "path": calibration_path},
-            "log_split": log_split, "grid": grid,
-            "rule_hits": {"rows": len(hit), "hit": int(hit.sum())}}
+            "log_split": log_split, "grid": grid}
 
 
 def main(repo, revision, calibration_path, local_dir, rebuild=False, dry_run=False,

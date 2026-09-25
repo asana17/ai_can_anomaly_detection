@@ -42,7 +42,7 @@ A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
 
 `fit` reads the train rows and drops none of them. The
 [train set](../../assemble/docs/train_set.md) already chose them, the rows above
-`MIN_SPEED` that no rule hits.
+`MIN_SPEED`.
 
 `MIN_SPEED` is the value the [log split](../../assemble/docs/split_test_logs.md) was cut
 with. It comes from the log split's `meta.json`, and `fit` records it in its own.
@@ -55,11 +55,11 @@ that never changes keeps a std of 1, so it stays at 0 instead of dividing by zer
 scale goes into `weights.safetensors`, and whatever scores rows for these models reads
 it from there.
 
-The mean and std are taken only over the train rows, the moving rows no rule hits,
-because those are the rows the models are fitted on and asked about. Stopped rows
-spread some signals far wider than moving ones do, such as `clutch_slip` and
-`input_shaft_speed`. With them in the std, those signals would count for less in the
-residual than the others.
+The mean and std are taken only over the train rows, the moving rows, because those
+are the rows the models are fitted on and asked about. Stopped rows spread some
+signals far wider than moving ones do, such as `clutch_slip` and `input_shaft_speed`.
+With them in the std, those signals would count for less in the residual than the
+others.
 
 ## The models it fits
 

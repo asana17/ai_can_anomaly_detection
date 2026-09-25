@@ -5,7 +5,6 @@
 
 - A train row is from a non-test log and above `min_speed`.
 - It is more than `gap` seconds from the test span and from every calibration block.
-- No instant [rule](../../rules) hits it.
 
 It writes only which rows those are. The rows stay in the [grid](grid.md).
 
@@ -31,18 +30,13 @@ It writes these files into `local_dir/train_sets/<time>/` and uploads that direc
 | file | holds |
 |---|---|
 | `train_rows.npy` | a True or False for every row of the grid, True where the row trains |
-| `meta.json` | where the train set came from and how many train rows a rule hit, as [meta.train_sets.schema.json](../../common/schemas/meta.train_sets.schema.json) describes |
+| `meta.json` | where the train set came from, as [meta.train_sets.schema.json](../../common/schemas/meta.train_sets.schema.json) describes |
 
 ## Stopped rows stay in the grid
 
 The grid keeps stopped rows. `HOLD` in [detect](../../detect) counts rows that are
 next to each other in a `seg`, and two rows are only next to each other when they are
 `period` apart. Dropping a stopped row would put two rows side by side that are not.
-
-## Rows a rule hits are not fitted on
-
-A model is only asked about the rows no instant rule hits, so it is fitted on those
-alone. `rule_hits` is given the log split's `min_speed`.
 
 ## The gap
 

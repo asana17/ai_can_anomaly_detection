@@ -79,23 +79,12 @@ def _rows(speeds):
 
 
 LOGS = ["part_1/a.csv", "part_1/b.csv"]
-ENGINE = SIGNALS.index("engine_speed")
 
 
-@pytest.fixture(autouse=True)
-def _rules_hit_the_rows_with_an_engine_speed(monkeypatch):
-    """The rows `_rows` makes carry only a wheel speed, which the real rules would hit."""
-    monkeypatch.setattr(train_set, "rule_hits", lambda raw, settings: raw[:, ENGINE] > 0)
-
-
-def _grid_and_calibration_set(hub, speeds, test_start, hit=slice(0),
-                              blocks=((100.0, 119.9),)):
-    """A grid of two logs carrying `speeds`, the first non-test, and a calibration set.
-
-    The rows in `hit` are the ones a rule hits, and `blocks` the calibration blocks.
-    """
+def _grid_and_calibration_set(hub, speeds, test_start, blocks=((100.0, 119.9),)):
+    """A grid of two logs carrying `speeds`, the first non-test, and a calibration set
+    with `blocks`."""
     raw, t = _rows(speeds)
-    raw[hit, ENGINE] = 1000.0
     half = len(t) // 2
     where = {"repo": "u/d", "revision": REVISION}
     hub.files = {
@@ -161,18 +150,6 @@ def test_the_stage_keeps_the_slow_rows_out_of_train(tmp_path, hub):
     made = _train_set(tmp_path)
     train_rows = np.load(tmp_path / made["path"] / "train_rows.npy")
     assert not train_rows[1000:2000].any() and train_rows[:1000].any()
-
-
-def test_the_stage_keeps_the_rows_a_rule_hits_out_of_train(tmp_path, hub):
-    raw, t, half = _grid_and_calibration_set(hub, np.full(10000, 50.0), 600.0,
-                                             hit=slice(1000, 2000), blocks=())
-    made = _train_set(tmp_path)
-    folder = tmp_path / made["path"]
-    train_rows = np.load(folder / "train_rows.npy")
-    assert not train_rows[1000:2000].any() and train_rows[:1000].any()
-    rule_hits = json.loads((folder / "meta.json").read_text())["rule_hits"]
-    assert rule_hits["hit"] > 0
-    assert rule_hits["rows"] - rule_hits["hit"] == train_rows.sum()
 
 
 def test_the_stage_names_a_train_set_of_the_same_calibration_set(tmp_path, hub):

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "train_sets/<time>/meta.json",
-  "description": "Where a train set came from, and how many train rows a rule hit.",
+  "description": "Where a train set came from.",
   "allOf": [
     {
       "$ref": "meta.schema.json"
@@ -39,32 +39,12 @@
     "grid": {
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The grid the split was cut from."
-    },
-    "rule_hits": {
-      "description": "The moving train rows an instant rule was run on, and how many of them it hit and were dropped.",
-      "type": "object",
-      "properties": {
-        "rows": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "hit": {
-          "type": "integer",
-          "minimum": 0
-        }
-      },
-      "required": [
-        "rows",
-        "hit"
-      ],
-      "additionalProperties": false
     }
   },
   "required": [
     "calibration_set",
     "log_split",
-    "grid",
-    "rule_hits"
+    "grid"
   ],
   "unevaluatedProperties": false
 }
