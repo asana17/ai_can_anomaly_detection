@@ -129,22 +129,48 @@ J1939's own terms, frame, PGN and SPN, are described in
   task on a 0.1 s cyclic handler, scoring and detect, and report. Next is the docs for
   the CAN side, how to connect the receive callback, the FDCAN interrupt priority `DI`
   must mask, and what the CAN side builds. Then steps 2, 5 and 6.
-- Add kinds of anomaly beyond replay to the attacked test set, designed against the
-  rules and the instant models. The instant models catch replay, so the next attack
-  keeps every row inside the training distribution. A donor matched on speed and gear
-  leaves only the disagreement over time.
+- Decide whether the matched replay is the attack the windowed pair is measured on.
+  `assemble.test_set --attack matched_replay` replays a PGN from a donor that held this
+  log's speed and gear over the whole stretch. Measured on 300 test logs against the fit
+  of 2026-09-22, at `HOLD` 10: the rules and change_limit together catch 2 of 76 against
+  39 of 86 plain replays, and the nonlinear autoencoder k=8 takes that to 15 of 76
+  against 64 of 86. A PCA over ten rows, fitted for the measurement alone, adds 9 of 76,
+  but it reads only 48 of 86 plain replays, so it says nothing about what a window is
+  worth yet. What no detector reads is a matched replay of TCO1, ETC1 or VDC2, whose
+  values the matched speed and gear already fix or which no other PGN reads. The numbers
+  are in [attack/measurements.md](attack/measurements.md).
 - Then widen to a stretch of time, VAR against a windowed autoencoder. It is what the
-  new attack is built against. The board wants one as well, as the best-effort layer
-  under the rules and the instant model.
+  new attack is built against. The window model is an aid to alarm A, the rules and the
+  instant model on every tick. On the board it runs in a lower priority task, late and
+  skipping windows when time is short. It is judged by what it adds over alarm A and how
+  many rows later. Its floor is the instant rules OR the instant model, flagged on k of
+  the window's W rows. Report what it adds in catches and in false alarms. Also compare
+  it with the instant model's threshold lowered to the same false alarms. Report W at
+  several values. The four items below come first.
+  - On the board, put the rows in one ring in place of the row queue. preprocess writes
+    it, and scoring and detect and a window scoring task read it under one mutex. Row
+    flags go in an array beside it. Window scoring only copies windows for now. W and S
+    belong in the window model's config header.
+  - Raise an alarm when k of the last N rows are flagged, in place of `HOLD` rows in a
+    row. One row that looks normal then no longer restarts the count. Report N and k at
+    several values, with alarms per hour on normal data.
+  - Fit and threshold each model on every normal row, rule hits included. The rules and
+    the model meet in `detect` alone. `train_set` and `calibrate` still drop rule hits.
+    The finished runs stay as a record.
+  - Send alarms to CAN and record them to Flash, in two tasks, alarm A before B. UART
+    output masks interrupts while it waits on each character.
 - Add Isolation Forest beside the autoencoders, as a baseline that does not
   reconstruct.
+- Rules that read the past go into alarm A. change_limit runs on rows and in C. Wire it
+  into scoring and detect once the ring is in.
 - Give gear_ratio and speed_agreement the row before, as change_limit has. On the
   moving grid rows of every log gear_ratio fires 317 times, most just after a shift
   while the engine still turns at the old gear's ratio. Waiting 2 s after the reported
   gear changes leaves 77. speed_agreement fires 587 times, at a median of 12 km/h/s
   against 1.0 for all moving rows, and 91 remain below 5 km/h/s. Both catch attacks no
   other rule does, so measure what each change loses on the test set.
-- Settle whether the rules are a floor the models build on.
+- engine_load against actual_engine_torque over ten rows was kept from six window rules
+  by how many matched replays it caught. Decide it again on normal data alone.
 - A script that compares scores.
 - Rerun the linear autoencoder checks in the runs repo's `checks/` from a committed
   script, on the current dataset.
