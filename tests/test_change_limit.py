@@ -1,7 +1,7 @@
 import numpy as np
 
 from preprocess.features.signal_state import SIGNALS
-from rules.rate.change_limit import LIMITS, PERIOD, hits
+from rules.sequence.change_limit import LIMITS, PERIOD, hits
 
 
 def _rows(values):

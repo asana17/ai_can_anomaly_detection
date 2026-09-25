@@ -1,6 +1,6 @@
 # ルールの測定
 
-[instant](instant) と [rate](rate) のルールが依拠する測定と、測って採用しなかった
+[instant](instant) と [sequence](sequence) のルールが依拠する測定と、測って採用しなかった
 候補の記録。データセット自体の測定は
 [can_data/measurements.ja.md](../can_data/measurements.ja.md) にある。
 
@@ -67,7 +67,7 @@ range_check 以外で、4本は同じ量の2つの読みか、2つの間の固�
 VDC2 を見るのは steering_sign だけである。あの信号は大きさでは検査できないが、
 向きなら検査できる。
 
-[change_limit](rate/docs/change_limit.md) は表に入っていない。1行を読むのではなく、
+[change_limit](sequence/docs/change_limit.md) は表に入っていない。1行を読むのではなく、
 行を前の行と比べる。走行中の行では87行で発火し、うち68行は instant のルールが発火
 しない行。これを加えるとルール全体の発火は1,713行、0.0621%。
 
@@ -102,7 +102,7 @@ VDC2 を見るのは steering_sign だけである。あの信号は大きさで
 | yaw_rate | 0.283 rad/s2 | 0.364 | 0.488 |
 | lateral_accel | 20.4 m/s2 | 28.9 | 46.0 |
 
-[change_limit](rate/docs/change_limit.md) はこのうち7信号に、1e-5の値の少し上で上限を
+[change_limit](sequence/docs/change_limit.md) はこのうち7信号に、1e-5の値の少し上で上限を
 置く。1e-4で置くと7信号で1,693行発火し、ルール全体は3,118行で0.1%を超える。
 accel_pedal と clutch_slip は1行で定義域の端から端まで動き、ギア番号は数段飛ぶ。
 変速で入力軸が解放される。

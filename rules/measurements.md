@@ -1,7 +1,7 @@
 # Rule measurements
 
-What the rules in [instant](instant) and [rate](rate) were built on, and what was
-measured and rejected. The dataset itself is in
+What the rules in [instant](instant) and [sequence](sequence) were built on, and what
+was measured and rejected. The dataset itself is in
 [can_data/measurements.md](../can_data/measurements.md).
 
 日本語版: [`measurements.ja.md`](measurements.ja.md)
@@ -69,7 +69,7 @@ Over every log, one evaluation per decoded frame.
 steering_sign is the only check on VDC2. A size check on those signals does not work,
 as the table above shows, but the direction does.
 
-[change_limit](rate/docs/change_limit.md) is not in the table. It compares a row
+[change_limit](sequence/docs/change_limit.md) is not in the table. It compares a row
 with the row before it rather than reading one row. On the moving rows it fires on
 87, 68 of them rows no instant rule fires on. With it the rules fire on 1,713,
 0.0621%.
@@ -106,7 +106,7 @@ segment and moving too. 2,749,873 steps over every log, per second.
 | yaw_rate | 0.283 rad/s2 | 0.364 | 0.488 |
 | lateral_accel | 20.4 m/s2 | 28.9 | 46.0 |
 
-[change_limit](rate/docs/change_limit.md) limits seven of them, each just above its
+[change_limit](sequence/docs/change_limit.md) limits seven of them, each just above its
 1e-5 figure. At 1e-4 the seven would fire on 1,693 rows and take the rules to 3,118,
 over 0.1%. accel_pedal and clutch_slip move their whole range in one row and the gear
 number jumps several places. A shift frees the input shaft.

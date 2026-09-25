@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/* PERIOD in rules/rate/change_limit.py, seconds from the row before */
+/* PERIOD in rules/sequence/change_limit.py, seconds from the row before */
 #define CHANGE_LIMIT_PERIOD 0.1f
 
 typedef struct {
@@ -12,7 +12,7 @@ typedef struct {
 	float limit; /* most a signal may move per second */
 } ChangeLimit;
 
-/* LIMITS in rules/rate/change_limit.py */
+/* LIMITS in rules/sequence/change_limit.py */
 static const ChangeLimit CHANGE_LIMITS[] = {
 	{2, 400.0f}, /* actual_engine_torque */
 	{13, 250.0f}, /* brake_pedal */
@@ -27,7 +27,7 @@ static const ChangeLimit CHANGE_LIMITS[] = {
 /**
  * @brief Check whether a signal moved further from the row before than a tick allows.
  *
- * The C port of rules/rate/change_limit.py.
+ * The C port of rules/sequence/change_limit.py.
  *
  * @param[in] row Physical values in the order of SIGNALS.
  * @param[in] previous The row one tick before, all NaN when there is none.

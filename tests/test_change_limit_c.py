@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from preprocess.features.signal_state import SIGNALS
-from rules.rate.change_limit import LIMITS, PERIOD, hits
+from rules.sequence.change_limit import LIMITS, PERIOD, hits
 
 ROWS = 100_000
 

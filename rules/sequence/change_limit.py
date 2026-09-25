@@ -1,7 +1,7 @@
 """Flag a signal moving further in one tick than the truck can move it.
 
 Unlike the rules in instant, this one compares a grid row with the row before it, so
-the caller has to find that row. See rules/rate/docs/change_limit.md.
+the caller has to find that row. See rules/sequence/docs/change_limit.md.
 """
 
 from __future__ import annotations

@@ -4,9 +4,10 @@ The deterministic layer. Each rule states an invariant the bus should hold and
 reports where it does not, so the autoencoder is left with what no rule can express.
 
 Rules sit in one of two directories by what they need to read.
-[instant/](instant) holds those that decide from a single moment. [rate/](rate) holds
-those that need the previous reading and the time since, because they cannot be
-called the same way and they belong to a different half of the evaluation.
+[instant/](instant) holds those that decide from a single moment.
+[sequence/](sequence) holds those that need the previous reading and the time since,
+because they cannot be called the same way and they belong to a different half of
+the evaluation.
 
 ## instant
 
@@ -36,12 +37,12 @@ Documented under [instant/docs/](instant/docs).
 - [reserved_moving](instant/docs/reserved_moving.md) flags a reserved value while the
   truck moves. The other rules do not judge one.
 
-## rate
+## sequence
 
 Each reads a grid row and the row before it.
-Documented under [rate/docs/](rate/docs).
+Documented under [sequence/docs/](sequence/docs).
 
-- [change_limit](rate/docs/change_limit.md) flags a signal moving faster than the
+- [change_limit](sequence/docs/change_limit.md) flags a signal moving faster than the
   truck can move it.
 
 ## Measurements
