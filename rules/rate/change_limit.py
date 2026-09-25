@@ -15,6 +15,9 @@ PERIOD = GridSettings.PERIOD    # seconds from the row before, one tick
 
 # Per second, from the steps between two moving grid rows. See rules/measurements.md.
 LIMITS = {
+    "actual_engine_torque": 400.0,  # %/s
+    "brake_pedal": 250.0,       # %/s
+    "engine_speed": 2600.0,     # rpm/s
     "steering_angle": 10.0,     # rad/s
     "tachograph_speed": 40.0,   # km/h/s
     "wheel_speed": 40.0,        # km/h/s

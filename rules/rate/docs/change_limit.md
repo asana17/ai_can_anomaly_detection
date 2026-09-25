@@ -28,6 +28,9 @@ moving rows. Each limit is a round figure above the 1e-5 quantile.
 
 | signal | limit per second | 1e-5 | most |
 |---|---|---|---|
+| actual_engine_torque | 400 % | 360 | 490 |
+| brake_pedal | 250 % | 212 | 360 |
+| engine_speed | 2600 rpm | 2,509 | 2,825 |
 | steering_angle | 10 rad/s | 9.39 | 11.1 |
 | tachograph_speed | 40 km/h | 33.0 | 317 |
 | wheel_speed | 40 km/h | 37.0 | 317 |
@@ -37,5 +40,5 @@ The rest are not limited. accel_pedal, clutch_slip and the gears move their whol
 range in one row. The input shaft is freed by a shift. The others were not tried. See
 [measurements](../../measurements.md).
 
-It fires on 55 steps. With the instant rules the rules fire on 1,682 of 2,757,787
-moving rows, 0.0610%, under the 0.1% the rules are held to.
+It fires on 87 steps. With the instant rules the rules fire on 1,713 of 2,757,787
+moving rows, 0.0621%, under the 0.1% the rules are held to.

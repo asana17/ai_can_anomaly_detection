@@ -71,8 +71,8 @@ as the table above shows, but the direction does.
 
 [change_limit](rate/docs/change_limit.md) is not in the table. It compares a row
 with the row before it rather than reading one row. On the moving rows it fires on
-55, 37 of them rows no instant rule fires on. With it the rules fire on 1,682,
-0.0610%.
+87, 68 of them rows no instant rule fires on. With it the rules fire on 1,713,
+0.0621%.
 
 ### Nothing reads outside its range
 
@@ -106,9 +106,9 @@ segment and moving too. 2,749,873 steps over every log, per second.
 | yaw_rate | 0.283 rad/s2 | 0.364 | 0.488 |
 | lateral_accel | 20.4 m/s2 | 28.9 | 46.0 |
 
-[change_limit](rate/docs/change_limit.md) limits four of them, each just above its
-1e-5 figure. At 1e-4 the four would fire on 934 rows and take the rules to 2,365,
-0.0858%, leaving little room for other rules that read the row before. accel_pedal and clutch_slip move their whole range in one row and the gear
+[change_limit](rate/docs/change_limit.md) limits seven of them, each just above its
+1e-5 figure. At 1e-4 the seven would fire on 1,693 rows and take the rules to 3,118,
+over 0.1%. accel_pedal and clutch_slip move their whole range in one row and the gear
 number jumps several places. A shift frees the input shaft.
 
 ## What did not become a rule
