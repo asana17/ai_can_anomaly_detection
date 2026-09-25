@@ -1,9 +1,10 @@
 # Board goal with a windowed model
 
-How the board application grows from the instant model to a windowed one. The
-windowed model reads a stretch of rows and costs more time than the board can promise
-every tick, so it runs below the tasks that raise the instant alarm, at a lower rate
-than the instant model, and lower still when the CPU is short. Nothing here is built yet.
+How the board application grows from the instant model to a windowed one. Alarm A,
+the rules and the instant model, is the detector and runs on time every tick. The
+windowed model is an aid to it. So it runs below the tasks that raise alarm A, at a
+lower rate than the instant model, and lower still when the CPU is short. Its outputs
+come after alarm A's. Nothing here is built yet.
 
 ## Frames and rows
 
@@ -18,8 +19,7 @@ the gap between two frames, so a burst of frames cannot shrink it. Its limits ar
 measured on rows, since a row folds several frames into one step and moves slower
 than a frame does.
 
-Whether rules that read over time run on rows or on frames is not settled. Rows are
-the plan above. The two compare as follows.
+Rules that read over time run on rows. The two were compared as follows.
 
 | | on frames | on rows |
 |---|---|---|
@@ -56,17 +56,18 @@ rpm/s, actual_engine_torque at 490 and brake_pedal at 360. input_shaft_speed,
 clutch_slip and the gears still move their whole range in one row, so no limit fits
 them either way.
 
-What the move does not buy is detection. On an attacked test set the rule fires as
-often somewhere else in the log as on the attack itself, at every limit, so it belongs
-below the models as a floor and not as a detector of its own.
+Such a rule is cheap, so scoring and detect runs it every tick and it goes into
+alarm A. It reads the row before from the ring.
 
 ## Windows
 
-A window is the last W rows. The ring that holds them is emptied whenever a row
-number is not one more than the one before, which happens on a quiet tick, a tick
-before every PGN has arrived, a tick below the moving speed, and a row dropped from
-the queue. A window therefore never spans a gap, and the PC cuts its windows by the
-same rule, over moving rows one tick apart inside a grid segment.
+A window is the last W rows of a run. Each row in the ring carries its position, the
+rows before it in the run. The run starts again whenever a row number is not one more
+than the one before, which happens on a quiet tick, a tick before every PGN has
+arrived, a tick below the moving speed, and a row the ring overwrote before it was
+read. A flagged row does not end a run. A window therefore never spans a gap, and the
+PC cuts its windows by the same rule, over moving rows one tick apart inside a grid
+segment.
 
 The first W − 1 rows of every run get no window, and neither does a run shorter than
 W. Those rows are left to the rules and the instant model. Over grid
@@ -87,71 +88,62 @@ flowchart LR
     irq["FDCAN1 receive callback"] -- slots_store --> slots[(slots)]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots"]
-    pre -- row queue --> sd["scoring and detect 8<br/>rules, instant model, alarm A<br/>fills the window ring"]
-    sd -- latest window --> win["window 11<br/>windowed model every S rows, alarm B"]
+    pre -- writes --> ring[(row ring<br/>and row flags)]
+    ring --> sd["scoring and detect 8<br/>rules, instant model, alarm A<br/>writes the row flag"]
+    ring --> win["window scoring 11<br/>windowed model every S rows, alarm B"]
+    sd -. wakes on a step row .-> win
     sd -- report queue --> report["report 10<br/>UART"]
-    win -- report queue --> report
+    win --> report
 ```
 
 The numbers are task priorities, smaller runs first.
 
 | task | what it does | when it falls behind |
 |---|---|---|
-| preprocess | builds a row every tick and numbers it | the row queue drops its oldest row |
-| scoring and detect | runs the rules and the instant model on every row, raises alarm A, adds the row to the ring, hands the latest window over | must not happen, it is sized to finish inside a tick |
+| preprocess | builds a row every tick, numbers it and writes it into the ring | must not happen |
+| scoring and detect | reads each new row, runs the rules and the instant model, raises alarm A, writes the row flag | the ring overwrites the oldest rows, which are counted as dropped |
 | report | prints over UART | lines wait, nothing is lost |
-| window | runs the windowed model on the window it was handed, raises alarm B | windows in between are skipped |
+| window scoring | copies the latest window and its row flags, runs the windowed model, raises alarm B | windows in between are skipped |
 
-Scoring and detect fills the ring rather than the window task, because a row the
-window task misses would leave a gap inside the window and the model would score a
-stretch of time that never happened.
+preprocess writes the ring because it makes the rows and numbers them, so it never
+misses one. The rows sit in one ring, and the row flags in an array beside it. Each has
+one writer, preprocess for the rows and scoring and detect for the flags. Both readers
+take a mutex (`TA_INHERIT`) while they copy. A message buffer would mask interrupts for
+the copy, and the mutex does not. How long preprocess waits on it is not measured.
 
-Report sits above the window task so that alarm A is printed without waiting for an
-inference.
+scoring and detect wakes window scoring on a step row, after it has written that row's
+flag, so a window's flags are all there when it is copied.
+
+W and S are the windowed model's parameters. They sit in its config header, not in the
+application.
 
 ## The window task
 
 The windowed model runs at a lower rate than the instant model. The instant model
 scores every row, once every 0.1 s. The windowed model scores one window every S
-rows, once every S × 0.1 s. A window already holds W rows of history, so scoring it
-on every row repeats most of the work of the row before. With S no larger than W every
-row still falls in some window, and alarm B comes up to S rows late.
+rows. A step row is one whose position is at least W − 1 and whose position minus
+W − 1 is a multiple of S. The rule is fixed, so the PC picks the same windows and the
+board's alarm B can be compared with the PC's.
 
-The CPU runs at 32 MHz from HSI, and the interrupt handlers run on it at that clock.
-The 86 MHz from PLL1Q drives only the FDCAN peripheral. The instant model took 28,796
-cycles for about 3,200 multiply accumulates at `-O0`, about 9 cycles each. Scaling
-that to a windowed autoencoder with 128 hidden units and a code of 16 gives the times
-below, an estimate and not a measurement.
+S is taken from the model's time measured on the board. W is reported at several
+values and the one the board runs is chosen by Flash and time. Neither is chosen by
+the attacks.
 
-| W | multiply accumulates | time at 32 MHz |
-|---|---|---|
-| 10 | about 48k | about 13 ms |
-| 50 | about 223k | about 63 ms |
-
-At W = 50 one inference takes more than half the tick, so the model cannot run on
-every row at this clock.
-
-S is taken from the model's time measured on the board, as the smallest S whose
-average load leaves room in the tick. It is counted from the W-th row after the ring
-was emptied. The rule is fixed, so the PC picks the same rows and the board's alarm B
-can be compared with the PC's.
-
-Under heavier load the rate drops further on its own. When the window task is still
-busy as a new window is handed over, the new one replaces the waiting one, so the task
-never runs more than one inference behind and the windows in between go unscored.
-
-The handover buffer is written by scoring and detect while the window task may be
-copying it. Either dispatch is disabled for the copy with `tk_dis_dsp`, or two buffers
-are swapped.
+Under heavier load the rate drops further on its own. When window scoring is still
+busy at a new step row, it takes only the latest window when it is free, so it never
+runs more than one inference behind and the windows in between go unscored.
 
 ## Two alarms
 
-Alarm A is the rules OR the instant model, row by row, then `HOLD`. It is raised on
-time every tick.
+Alarm A is the rules, including those that read the past, OR the instant model, row by
+row, then the alarm rule in `detect`. It is raised on time every tick.
 
-Alarm B is the rules and instant flag of the row the window ends on, OR the windowed
-model's flag, then a hold counted over the windows the task ran. It comes late and may
-skip windows under load.
+Alarm B is the window floor OR the windowed model, per window. The window floor is
+the row flags of alarm A, set on k of the window's W rows. Alarm B is not raised where
+alarm A is ringing. It comes late and may skip windows under load.
+
+Alarm outputs come as two tasks, CAN send and a Flash recorder, alarm A before B. UART
+stands in for both now. Its print masks interrupts while it waits on each character.
 
 ## Load to show the priorities working
 
@@ -171,5 +163,5 @@ load.
 
 - The windowed model's time per window on the board at 32 MHz, which sets S.
 - How alarm B holds across skipped windows.
-- Whether the handover uses `tk_dis_dsp` or two buffers, and how long the copy takes.
+- How long preprocess waits on the mutex.
 - Which load the entry carries.
