@@ -2,8 +2,7 @@
 #define BOARD_MODEL_H
 
 #include <stdint.h>
-
-#define MODEL_SIGNALS 17
+#include "signals.h"
 
 /** @brief Result of model initialization or inference. */
 typedef enum {
@@ -19,7 +18,7 @@ typedef enum {
  * @brief Initialize the generated st-ai model linked into the application.
  *
  * The build must provide `active_model.h`, `active_model.c` and its generated data
- * files. The model has one float32 input and output of MODEL_SIGNALS values.
+ * files. The model has one float32 input and output of SIGNAL_COUNT values.
  *
  * @retval MODEL_OK Initialization completed.
  * @retval MODEL_ERROR_INIT Context initialization failed.
@@ -39,7 +38,7 @@ ModelStatus model_init(void);
  * @retval MODEL_ERROR_RUN st-ai rejected the run.
  * @pre model_init() returned MODEL_OK.
  */
-ModelStatus model_run(const float input[MODEL_SIGNALS],
-	float output[MODEL_SIGNALS], uint32_t *cycles);
+ModelStatus model_run(const float input[SIGNAL_COUNT],
+	float output[SIGNAL_COUNT], uint32_t *cycles);
 
 #endif

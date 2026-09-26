@@ -52,7 +52,7 @@ def test_model_application_requires_the_fixed_model_inputs(tmp_path, monkeypatch
     for name in MODEL_FILES:
         (model / name).touch()
     selected = application_for(str(app))
-    assert selected.libraries == ("mbf", "scale", "model", "scoring", MODEL)
+    assert selected.libraries == ("mbf", "signals", "scale", "model", "scoring", MODEL)
 
 
 def test_the_project_ioc_is_kept_in_the_repository(tmp_path, monkeypatch):

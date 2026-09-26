@@ -20,8 +20,8 @@ void run(const float *raw, size_t signals, const uint32_t *no, const uint32_t *p
 
 \ttorque_over_load_clear(&state);
 \tfor(i = 0; i < rows; i++) {
-\t\ttorque_over_load_put(&state, raw[i * signals + RULE_ACTUAL_ENGINE_TORQUE],
-\t\t\t\t     raw[i * signals + RULE_ENGINE_LOAD], no[i], position[i]);
+\t\ttorque_over_load_put(&state, raw[i * signals + SIGNAL_ACTUAL_ENGINE_TORQUE],
+\t\t\t\t     raw[i * signals + SIGNAL_ENGINE_LOAD], no[i], position[i]);
 \t\tout[i] = torque_over_load_hits(&state);
 \t}
 }
@@ -30,7 +30,7 @@ void run(const float *raw, size_t signals, const uint32_t *no, const uint32_t *p
 
 @pytest.fixture(scope="module")
 def run(board_lib):
-    function = board_lib(["rules", "float_ring"], WRAP).run
+    function = board_lib(["rules", "float_ring", "signals"], WRAP).run
     function.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p,
                          ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p]
     function.restype = None

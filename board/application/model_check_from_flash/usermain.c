@@ -9,7 +9,7 @@
 #include "threshold.h"
 #include "../rule_check_from_flash/raw_rows.h"
 
-#if RULE_SIGNALS != MODEL_SIGNALS
+#if RULE_SIGNALS != SIGNAL_COUNT
 #error "Flash rows and the selected model use different signal counts"
 #endif
 
@@ -72,18 +72,18 @@ LOCAL void source_task(INT stacd, void *exinf)
 }
 
 /* Score a row with the autoencoder alone and compare the score with the threshold. */
-LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Scored *scored)
+LOCAL ModelStatus score_row(const float physical[SIGNAL_COUNT], Scored *scored)
 {
-	float scaled[MODEL_SIGNALS];
-	float reconstructed[MODEL_SIGNALS];
+	float scaled[SIGNAL_COUNT];
+	float reconstructed[SIGNAL_COUNT];
 	ModelStatus error;
 
-	scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
+	scale_row(physical, active_model_mean, active_model_std, scaled, SIGNAL_COUNT);
 	error = model_run(scaled, reconstructed, &scored->cycles);
 	if (error != MODEL_OK) {
 		return error;
 	}
-	scored->score = scoring_error(scaled, reconstructed, MODEL_SIGNALS);
+	scored->score = scoring_error(scaled, reconstructed, SIGNAL_COUNT);
 	scored->flagged = scored->score > THRESHOLD_SCORE;
 	return MODEL_OK;
 }

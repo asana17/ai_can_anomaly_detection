@@ -13,7 +13,7 @@ def c_window(board_lib):
     `push` adds the row numbered `no` with its `row_count_since_gap`, holding `no` in
     every signal.
     """
-    library = board_lib(["window_model", "model"],
+    library = board_lib(["window_model", "model", "signals"],
                         "#include <stddef.h>\n"
                         '#include "row_ring_as_window.h"\n'
                         "size_t window_size(void)\n"
@@ -24,7 +24,7 @@ def c_window(board_lib):
                         " uint32_t row_count_since_gap)\n"
                         "{\n\tRowRingEntry entry = {.flag = false,"
                         " .row_count_since_gap = row_count_since_gap};\n\tuint32_t index;\n\n"
-                        "\tfor (index = 0u; index < MODEL_SIGNALS; index++) {\n"
+                        "\tfor (index = 0u; index < SIGNAL_COUNT; index++) {\n"
                         "\t\tentry.physical[index] = (float)no;\n\t}\n"
                         "\trow_ring_as_window_push(window, &entry);\n"
                         "\treturn row_ring_as_window_is_complete(window);\n}\n"

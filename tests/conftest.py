@@ -112,7 +112,7 @@ def board_rule(board_lib):
     def build(name, parameters):
         names = [f"a{i}" for i in range(len(parameters))]
         declared = ", ".join(f"{kind} {a}" for kind, a in zip(parameters, names))
-        function = board_lib(["rules"],
+        function = board_lib(["rules", "signals"],
                              f'#include "{name}.h"\n'
                              f"bool hits({declared})\n"
                              f"{{\n\treturn {name}_hits({', '.join(names)});\n}}\n").hits

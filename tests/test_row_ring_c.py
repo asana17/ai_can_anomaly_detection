@@ -11,7 +11,7 @@ def c_ring(board_lib):
 
     A row pushed as `value` holds `value` in every signal, so a read shows it is whole.
     """
-    library = board_lib(["window_model", "model"],
+    library = board_lib(["window_model", "model", "signals"],
                         "#include <stddef.h>\n"
                         '#include "row_ring.h"\n'
                         "size_t ring_size(void)\n"
@@ -20,7 +20,7 @@ def c_ring(board_lib):
                         "{\n\trow_ring_clear(ring);\n}\n"
                         "void push(RowRing *ring, float value, bool flag)\n"
                         "{\n\tRowRingEntry entry = {.flag = flag};\n\tuint32_t i;\n\n"
-                        "\tfor(i = 0u; i < MODEL_SIGNALS; i++) {\n"
+                        "\tfor(i = 0u; i < SIGNAL_COUNT; i++) {\n"
                         "\t\tentry.physical[i] = value;\n\t}\n"
                         "\trow_ring_push(ring, &entry);\n}\n"
                         "uint32_t read(const RowRing *ring, float *values, uint8_t *flags)\n"
@@ -29,7 +29,7 @@ def c_ring(board_lib):
                         "\t\tentry = row_ring_entry(ring, i);\n"
                         "\t\tvalues[i] = entry->physical[0];\n"
                         "\t\tflags[i] = entry->flag;\n"
-                        "\t\tif(entry->physical[MODEL_SIGNALS - 1u] != entry->physical[0]) {\n"
+                        "\t\tif(entry->physical[SIGNAL_COUNT - 1u] != entry->physical[0]) {\n"
                         "\t\t\treturn 0u;\n\t\t}\n\t}\n"
                         "\treturn row_ring_count(ring);\n}\n")
     library.ring_size.restype = ctypes.c_size_t

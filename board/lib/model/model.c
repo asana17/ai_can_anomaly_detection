@@ -7,9 +7,9 @@ _Static_assert(STAI_ACTIVE_MODEL_IN_NUM == 1, "model needs one input");
 _Static_assert(STAI_ACTIVE_MODEL_OUT_NUM == 1, "model needs one output");
 _Static_assert(STAI_ACTIVE_MODEL_ACTIVATIONS_NUM == 1,
 	"model needs one activation buffer");
-_Static_assert(STAI_ACTIVE_MODEL_IN_1_SIZE == MODEL_SIGNALS,
+_Static_assert(STAI_ACTIVE_MODEL_IN_1_SIZE == SIGNAL_COUNT,
 	"model input must contain 17 signals");
-_Static_assert(STAI_ACTIVE_MODEL_OUT_1_SIZE == MODEL_SIGNALS,
+_Static_assert(STAI_ACTIVE_MODEL_OUT_1_SIZE == SIGNAL_COUNT,
 	"model output must contain 17 signals");
 _Static_assert(STAI_ACTIVE_MODEL_IN_1_FORMAT == STAI_FORMAT_FLOAT32,
 	"model input must be float32");
@@ -57,18 +57,18 @@ ModelStatus model_init(void)
 	return MODEL_OK;
 }
 
-ModelStatus model_run(const float input[MODEL_SIGNALS],
-	float output[MODEL_SIGNALS], uint32_t *cycles)
+ModelStatus model_run(const float input[SIGNAL_COUNT],
+	float output[SIGNAL_COUNT], uint32_t *cycles)
 {
 	uint32_t started;
 
-	memcpy(runtime.inputs[0], input, MODEL_SIGNALS * sizeof(float));
+	memcpy(runtime.inputs[0], input, SIGNAL_COUNT * sizeof(float));
 	/* Measure synchronous inference only. */
 	started = DWT->CYCCNT;
 	if (stai_active_model_run(runtime.context, STAI_MODE_SYNC) != STAI_SUCCESS) {
 		return MODEL_ERROR_RUN;
 	}
 	*cycles = DWT->CYCCNT - started;
-	memcpy(output, runtime.outputs[0], MODEL_SIGNALS * sizeof(float));
+	memcpy(output, runtime.outputs[0], SIGNAL_COUNT * sizeof(float));
 	return MODEL_OK;
 }

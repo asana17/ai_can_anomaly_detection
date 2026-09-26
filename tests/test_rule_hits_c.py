@@ -16,7 +16,7 @@ UNTOUCHED = 15  # draws that leave a row consistent, beside one per breaker
 @pytest.fixture(scope="module")
 def c_rule_hits(board_lib):
     """Build board/lib/rules for this machine and give its `rule_hits`."""
-    function = board_lib(["rules"],
+    function = board_lib(["rules", "signals"],
                          '#include "rule_hits.h"\n'
                          "bool hits(const float *row, float min_speed)\n"
                          "{\n\treturn rule_hits(row, min_speed);\n}\n").hits

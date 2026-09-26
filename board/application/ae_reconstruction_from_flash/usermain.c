@@ -7,7 +7,7 @@
 #include "model_config.h"
 #include "../rule_check_from_flash/raw_rows.h"
 
-#if RULE_SIGNALS != MODEL_SIGNALS
+#if RULE_SIGNALS != SIGNAL_COUNT
 #error "Flash rows and the selected model use different signal counts"
 #endif
 
@@ -15,9 +15,9 @@
  * its inference cycles. */
 EXPORT INT usermain(void)
 {
-	float physical[MODEL_SIGNALS];
-	float scaled[MODEL_SIGNALS];
-	float reconstructed[MODEL_SIGNALS];
+	float physical[SIGNAL_COUNT];
+	float scaled[SIGNAL_COUNT];
+	float reconstructed[SIGNAL_COUNT];
 	float error;
 	UW bits, cycles, i, j;
 	ModelStatus status;
@@ -31,19 +31,19 @@ EXPORT INT usermain(void)
 		FIRST_ROW);
 	for (i = 0; i < RULE_ROWS; i++) {
 		memcpy(physical, physical_rows[i], sizeof(physical));
-		scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
+		scale_row(physical, active_model_mean, active_model_std, scaled, SIGNAL_COUNT);
 		status = model_run(scaled, reconstructed, &cycles);
 		if (status != MODEL_OK) {
 			tm_printf((UB*)"row %d model error %d\n", FIRST_ROW + i, status);
 			return status;
 		}
 		tm_printf((UB*)"row %d reconstruction", FIRST_ROW + i);
-		for (j = 0; j < MODEL_SIGNALS; j++) {
+		for (j = 0; j < SIGNAL_COUNT; j++) {
 			memcpy(&bits, &reconstructed[j], sizeof(bits));
 			tm_printf((UB*)" 0x%08x", bits);
 		}
 		tm_printf((UB*)"\n");
-		error = scoring_error(scaled, reconstructed, MODEL_SIGNALS);
+		error = scoring_error(scaled, reconstructed, SIGNAL_COUNT);
 		memcpy(&bits, &error, sizeof(bits));
 		tm_printf((UB*)"row %d reconstruction_error 0x%08x cycles %u\n",
 			FIRST_ROW + i, bits, cycles);

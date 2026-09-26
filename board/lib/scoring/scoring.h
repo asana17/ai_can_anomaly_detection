@@ -30,21 +30,21 @@ typedef struct {
  * @return The error model_run() returned, with only the rule flag set.
  * @pre model_init() returned MODEL_OK.
  */
-static inline ModelStatus scoring_row(const float physical[MODEL_SIGNALS],
-	const float mean[MODEL_SIGNALS], const float std[MODEL_SIGNALS], float min_speed,
+static inline ModelStatus scoring_row(const float physical[SIGNAL_COUNT],
+	const float mean[SIGNAL_COUNT], const float std[SIGNAL_COUNT], float min_speed,
 	ScoringRow *scored)
 {
-	float scaled[MODEL_SIGNALS];
-	float reconstructed[MODEL_SIGNALS];
+	float scaled[SIGNAL_COUNT];
+	float reconstructed[SIGNAL_COUNT];
 	ModelStatus error;
 
 	scored->rule_hit = rule_hits(physical, min_speed);
-	scale_row(physical, mean, std, scaled, MODEL_SIGNALS);
+	scale_row(physical, mean, std, scaled, SIGNAL_COUNT);
 	error = model_run(scaled, reconstructed, &scored->cycles);
 	if (error != MODEL_OK) {
 		return error;
 	}
-	scored->score = scoring_error(scaled, reconstructed, MODEL_SIGNALS);
+	scored->score = scoring_error(scaled, reconstructed, SIGNAL_COUNT);
 	return MODEL_OK;
 }
 

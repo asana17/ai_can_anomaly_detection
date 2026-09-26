@@ -7,7 +7,7 @@
 /* A row preprocess built. */
 typedef struct {
 	UW no; /* the tick it was built on */
-	float physical[MODEL_SIGNALS];
+	float physical[SIGNAL_COUNT];
 } Row;
 
 /*
