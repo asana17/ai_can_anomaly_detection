@@ -89,7 +89,8 @@ class Var:
     def fit(self, windows):
         """Its tensors, how it scores windows, and no losses, since it is solved."""
         fitted = var.autoregression(windows)
-        return ({f"{self.prefix}coefficients": torch.from_numpy(fitted.coefficients),
+        return ({f"{self.prefix}coefficients":
+                 torch.from_numpy(fitted.coefficients).contiguous(),
                  f"{self.prefix}intercept": torch.from_numpy(fitted.intercept)},
                 lambda scored: var.residuals(scored, fitted), None)
 
