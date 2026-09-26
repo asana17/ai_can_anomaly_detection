@@ -19,14 +19,13 @@ LOAD = SIGNALS.index("engine_load")
 def hits(raw: np.ndarray, position: np.ndarray) -> np.ndarray:
     """True where torque minus load, averaged over `ROWS` rows, is above `LIMIT`.
 
-    `position` holds the rows before each row in its run.
+    `position` is each row's index, from 0, in its unbroken span of moving rows.
     """
-    # A grid row holds float32, and the board computes in float32 too.
+    # A grid row holds float32.
     step = (raw[:, TORQUE].astype(np.float32) - raw[:, LOAD].astype(np.float32))
     total = np.full(len(raw), np.nan, dtype=np.float32)
     ends = np.flatnonzero(np.asarray(position) >= ROWS - 1)
     if len(ends):
-        # Oldest first, one add at a time, the order the board adds in.
         total[ends] = step[ends - (ROWS - 1)]
         for back in range(ROWS - 2, -1, -1):
             total[ends] += step[ends - back]

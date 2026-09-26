@@ -5,7 +5,7 @@ reports where it does not, so the autoencoder is left with what no rule can expr
 
 Rules sit in one of two directories by what they need to read.
 [instant/](instant) holds those that decide from a single moment. [sequence/](sequence)
-holds those that also read the rows before in the run.
+holds those that also read earlier rows.
 
 ## instant
 
@@ -37,13 +37,13 @@ Documented under [instant/docs/](instant/docs).
 
 ## sequence
 
-Each reads grid rows together with the rows before them in their run.
+Each reads a grid row and the rows before it.
 Documented under [sequence/docs/](sequence/docs).
 
 - [change_limit](sequence/docs/change_limit.md) flags a signal moving faster than the
   truck can move it.
 - [torque_over_load](sequence/docs/torque_over_load.md) flags actual_engine_torque
-  sitting above engine_load over the last second.
+  sitting above engine_load over the last ten rows.
 
 ## Measurements
 

@@ -1,6 +1,6 @@
 # torque_over_load
 
-Flags actual_engine_torque sitting above engine_load over the last second.
+Flags actual_engine_torque sitting above engine_load over the last ten rows.
 
 ```python
 hits(raw, position)   # -> True where torque minus load, averaged, is above LIMIT
@@ -15,15 +15,9 @@ still rises up to 47 points above load, and averaging over ten rows brings that 
 5.3. Why single rows cross is not measured. EEC1 and EEC2 arriving at different times
 while torque changes is a guess.
 
-The caller gives each row its place in its run, which is what separates this from the
-rules in [instant](../../instant). It is kept out of `rule_hits`, the floor of the
-instant pair, since the instant models do not see the rows before.
+## The last ten rows
 
-## The rows it reads
-
-A run is the moving rows of one grid segment, one tick apart. A hit does not end it.
-This is the run the board's row ring keeps. The first nine rows of a run are not judged,
-and neither is a window with a NaN in it.
+It averages torque minus load over ten rows. The ten are consecutive moving rows.
 
 ## How it was picked
 
@@ -60,7 +54,7 @@ the ten rows and the threshold all come from that.
 ## On the test set
 
 Measured after the choice and not used for it. Test set `20260925-120833`, 1,240 plain
-replays, a replay caught when a row it changed is flagged, with no `HOLD`.
+replays, a replay caught when a row it changed is flagged.
 
 | | rules before | with torque_over_load |
 |---|---|---|

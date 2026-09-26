@@ -8,15 +8,13 @@ LIMITS                # -> {name: most it may move per second}
 ```
 
 The caller finds the row before, which is what separates this from the rules in
-[instant](../../instant). It is kept out of `rule_hits`, the floor of the instant
-pair, since the instant models do not see the row before.
+[instant](../../instant).
 
 ## The row before
 
 The row before is the row one tick earlier in the same grid segment, when that row
 is moving too. Otherwise there is none, `previous` holds NaN, and the rule stays
-silent. A hit does not end the run. This is the rule the board's row ring keeps, so
-the PC and the board compare the same rows.
+silent.
 
 The time between the two is the tick, 0.1 s. A PGN sent every 100 ms can update 0 or
 2 times between ticks, and the limits below are measured with that in.

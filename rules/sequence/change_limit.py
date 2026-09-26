@@ -31,7 +31,7 @@ def hits(raw: np.ndarray, previous: np.ndarray, limits: dict = LIMITS) -> np.nda
     `previous` holds the row before each row of `raw`, all NaN where there is none.
     A NaN compares false and never fires.
     """
-    # A grid row holds float32, and the board computes in float32 too.
+    # A grid row holds float32.
     columns = [SIGNALS.index(name) for name in limits]
     limit = np.array(list(limits.values()), dtype=np.float32)
     step = np.abs(raw[:, columns].astype(np.float32)
