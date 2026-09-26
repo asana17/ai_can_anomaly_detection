@@ -7,27 +7,13 @@ from Flash in place of the bus.
 flowchart LR
     frames[(Flash frames)] --> replay["replay 1<br/>each frame at its own time"]
     replay -- slots_store --> slots[(slots)]
-    tick[cyclic handler 0.1 s] -. wakes .-> pre
-    slots --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
-    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, k of the last N"]
-    sd -- report queue --> report["report 10<br/>UART"]
+    slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
 ```
 
-The numbers are task priorities, smaller runs first. The replay task stands in for the
-CAN receive interrupt and is the only part that changes when the bus is connected, as
-[connecting_can_bus.md](../../docs/connecting_can_bus.md) describes.
-
-## Preprocessing
-
-On each tick preprocessing copies the slots into a row. It sends the row on when a
-frame has arrived since the last tick, every PGN has arrived, and the wheel speed is
-above `MIN_SPEED`. The row number counts ticks, so a row it does not send leaves a gap
-and the alarm count restarts there. After 1 s with no frame it clears the slots, as
-`grid_sample` does across a gap.
-
-A tick with no new frame sends no row, since the row would hold only old values. The
-PC holds them across a gap up to 1 s, so there the board sends fewer rows. A J1939 bus
-goes 0.1 s without a frame only when it or its senders stop.
+The replay task stands in for the CAN receive interrupt and is the only part that
+changes when the bus is connected, as
+[connecting_can_bus.md](../../docs/connecting_can_bus.md) describes. The tasks after the
+slots are described in [their README](../../lib/ai_can_anomaly_detection_tasks/README.md).
 
 ## Frames
 
