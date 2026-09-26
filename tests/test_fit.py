@@ -17,7 +17,7 @@ def test_the_models_beside_fit_spread_into_one_model_per_value():
     listed = json.load(open(MODELS))
     models = models_in(MODELS)
 
-    assert len(listed) == 1 and len(models) == 3
+    assert len(listed) == 1 and len(models) == len(listed[0]["k"])
     assert [as_dict(model)["k"] for model in models] == listed[0]["k"]
     assert as_dict(models[0])["rate"] == listed[0]["rate"]
 

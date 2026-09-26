@@ -84,8 +84,8 @@ says what every model was fitted with.
 
 ## The models this repository fits
 
-`models/models.json` asks for three models, a nonlinear autoencoder with `hidden` 128
-at `k` 4, 8 and 12. The set was chosen without looking at any attack.
+`models/models.json` asks for one model, a nonlinear autoencoder with `hidden` 128 and
+`k` 8. It was chosen without looking at any attack.
 
 - No PCA and no linear autoencoder. They were the linear baselines of the instant
   pair, which is finished. Trained on
@@ -93,10 +93,10 @@ at `k` 4, 8 and 12. The set was chosen without looking at any attack.
   Hornik, 1989).
 - `hidden` 128 only. The board runs the heaviest model, and that one also shows its
   load best.
-- `k` 4, 8 and 12 compress the 17 signals in even steps of 4. At `k` 2 the model does
-  not rebuild normal rows well. Its threshold from the normal calibration rows was
-  about 4 times that at `k` 4, 2.25 against 0.54 for `hidden` 128 in run 1. At `k` 16
-  only one dimension is dropped, so a row can pass through almost unchanged.
+- `k` 8. At `k` 2 the model does not rebuild normal rows well. Its threshold from the
+  normal calibration rows was about 4 times that at `k` 4, 2.25 against 0.54 for
+  `hidden` 128 in run 1. At `k` 16 only one dimension is dropped, so a row can pass
+  through almost unchanged.
 
 Earlier runs fitted 40 models. Their `models.json` still lists PCA and the linear
 autoencoder, so `fit` and the schema keep them.
