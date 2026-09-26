@@ -7,6 +7,9 @@
       "$ref": "#/$defs/pca"
     },
     {
+      "$ref": "#/$defs/var"
+    },
+    {
       "$ref": "#/$defs/linear_ae"
     },
     {
@@ -18,6 +21,11 @@
       "description": "How many numbers a row is compressed into, the directions PCA keeps or the autoencoder's `latent_dim`. Fewer leave more of a normal row out of the reconstruction.",
       "type": "integer",
       "minimum": 1
+    },
+    "rows": {
+      "description": "How many rows a window holds. The last row is predicted from all the rows before it.",
+      "type": "integer",
+      "minimum": 2
     },
     "hidden": {
       "description": "How many units the hidden layer has. Below `k` the hidden layer is the narrowest point, so a larger `k` changes nothing.",
@@ -66,6 +74,21 @@
       "required": [
         "model",
         "k"
+      ]
+    },
+    "var": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "var"
+        },
+        "rows": {
+          "$ref": "#/$defs/rows"
+        }
+      },
+      "required": [
+        "model",
+        "rows"
       ]
     },
     "linear_ae": {

@@ -12,7 +12,7 @@ from dataclasses import asdict, dataclass, fields
 
 import torch
 
-from models import autoencoder, pca
+from models import autoencoder, pca, var
 
 
 @dataclass(frozen=True)
@@ -68,6 +68,38 @@ class Pca:
         tensors = _under(self.prefix, weights, self.name)
         space = pca.Subspace(tensors["centre"].numpy(), tensors["basis"].numpy())
         return lambda scored: pca.residuals(scored, space)
+
+
+@dataclass(frozen=True)
+class Var:
+    """A vector autoregression of a window's last row on the `rows` - 1 rows before it,
+    solved rather than trained."""
+
+    MODEL = "var"
+    rows: int
+
+    @property
+    def prefix(self):
+        return f"var.r{self.rows}."
+
+    @property
+    def name(self):
+        return f"var r={self.rows}"
+
+    def fit(self, windows):
+        """Its tensors, how it scores windows, and no losses, since it is solved."""
+        fitted = var.autoregression(windows)
+        return ({f"{self.prefix}coefficients": torch.from_numpy(fitted.coefficients),
+                 f"{self.prefix}intercept": torch.from_numpy(fitted.intercept)},
+                lambda scored: var.residuals(scored, fitted), None)
+
+    def scorer(self, weights, signals):
+        """Take this model's `coefficients` and `intercept` out of `weights`, and score
+        windows with them."""
+        tensors = _under(self.prefix, weights, self.name)
+        fitted = var.Autoregression(tensors["coefficients"].numpy(),
+                                    tensors["intercept"].numpy())
+        return lambda scored: var.residuals(scored, fitted)
 
 
 class _Autoencoder:
@@ -139,7 +171,7 @@ class NonlinearAe(_Autoencoder):
                                                 hidden=self.hidden)
 
 
-MODELS = {model.MODEL: model for model in (Pca, LinearAe, NonlinearAe)}
+MODELS = {model.MODEL: model for model in (Pca, Var, LinearAe, NonlinearAe)}
 ARGUMENTS = tuple(field.name for field in fields(FitArguments))
 
 
@@ -155,8 +187,8 @@ def model_from(kept):
     kept = dict(kept)
     model = MODELS[kept.pop("model")]
     arguments = {name: kept.pop(name) for name in ARGUMENTS if name in kept}
-    if model is Pca:
-        return Pca(**kept)
+    if model in (Pca, Var):
+        return model(**kept)
     return model(**kept, arguments=FitArguments(**arguments))
 
 
