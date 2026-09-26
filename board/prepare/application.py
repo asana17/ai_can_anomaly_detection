@@ -26,6 +26,7 @@ class Application:
 
 APPLICATIONS = {
     "alive": Application(),
+    "can_bus_debug": Application(),
     "mbf_test": Application(("mbf",)),
     "rule_check_from_flash": Application(("mbf",)),
     "model_check_from_flash": Application(("mbf", "scale", "model", "scoring", MODEL), True),
