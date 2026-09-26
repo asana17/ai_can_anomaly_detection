@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_scores/<time>/meta.json",
+  "description": "Where the window scores of a set's rows came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "set": {
+          "description": "The `calibration_sets/<time>` or `test_sets/<time>` directory.",
+          "type": "string",
+          "pattern": "^(calibration_sets|test_sets)/[0-9]{8}-[0-9]{6}$"
+        },
+        "models": {
+          "description": "The `window_models/<time>` directory.",
+          "type": "string",
+          "pattern": "^window_models/[0-9]{8}-[0-9]{6}$"
+        }
+      },
+      "required": [
+        "set",
+        "models"
+      ],
+      "additionalProperties": false
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The directory the weights came from."
+    },
+    "calibration_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The calibration set the rows came from, when they came from one."
+    },
+    "test_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The test set the rows came from, when they came from one."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split the set was drawn on."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid the split was cut from."
+    },
+    "min_speed": {
+      "$ref": "meta.schema.json#/$defs/min_speed",
+      "description": "The speed a row had to exceed to be in a window."
+    },
+    "rows": {
+      "description": "How many rows the set holds, one row of `scores.npy` each. They are the rows `scoring.score` scores for the same set.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "windows": {
+      "description": "How many windows each model scored, in the order of `models.json`. A window's score sits at its last row.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy, torch and the platform."
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "calibration_set"
+      ]
+    },
+    {
+      "required": [
+        "test_set"
+      ]
+    }
+  ],
+  "required": [
+    "models",
+    "log_split",
+    "grid",
+    "min_speed",
+    "rows",
+    "windows",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}

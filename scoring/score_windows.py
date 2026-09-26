@@ -1,4 +1,5 @@
-"""Score every window of a calibration set or a test set with each window model.
+"""Score every window of a calibration set or a test set with each window model, and
+flag the rows a rule hits.
 
     python3 -m scoring.score_windows repo revision <set> local_dir runs_repo revision window_models/<time> runs_dir [--rebuild]
 
@@ -9,11 +10,23 @@ at its last row. `scores.npy` has the same rows, in the same order, as the score
 
 from __future__ import annotations
 
+import json
+import os
+import platform
+
 import numpy as np
+import torch
 
 from assemble.calibration_set import fetch_calibration_set
 from assemble.test_set import fetch_test_set
+from common.cli import arguments
+from common.hub_dirs import reuse_or_make
+from models.fit import fetch_fitted_models
+from models.fits import as_dict, models_from
+from models.torch_files import scale_of, torch_scorer
+from preprocess.features.moving import moving
 from preprocess.features.windows import positions, window_ends, window_rows
+from rules.hits import rule_hits
 
 
 def fetch_set_rows(directory, local_dir):
@@ -44,3 +57,47 @@ def scores_of(models, scorer_of, rows, moving, segments):
         windows.append(len(ends))
         print(f"{model.name}, {len(ends)} windows scored", flush=True)
     return scores, windows
+
+
+def write_scores(folder, set_directory, models_directory, local_dir, runs_dir):
+    """Write each row's window scores and rule hits into `folder`, and return what
+    `meta.json` adds.
+
+    Windows are cut from the moving rows, z-scored on the scale of the fit. The models
+    score in torch.
+    """
+    weights, fitted = fetch_fitted_models(models_directory["repo"],
+                                          models_directory["revision"],
+                                          models_directory["path"], runs_dir)
+    raw, segments, min_speed, dataset = fetch_set_rows(set_directory, local_dir)
+    mv = moving(raw, min_speed=min_speed)
+    hits = rule_hits(raw, min_speed) & mv
+    models = models_from(fitted["inputs"]["models"])
+    scores, windows = scores_of(models, torch_scorer(weights),
+                                scale_of(weights).apply(raw), mv, segments)
+
+    np.save(os.path.join(folder, "scores.npy"), scores)
+    np.save(os.path.join(folder, "rule_hits.npy"), hits)
+    with open(os.path.join(folder, "models.json"), "w") as f:
+        json.dump([as_dict(model) for model in models], f, indent=2)
+    return {"models": models_directory, **dataset, "min_speed": min_speed,
+            "rows": len(raw), "windows": windows,
+            "versions": {"python": platform.python_version(), "numpy": np.__version__,
+                         "torch": torch.__version__, "platform": platform.platform()}}
+
+
+def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
+         runs_dir, rebuild=False, dry_run=False):
+    set_directory = {"repo": repo, "revision": revision, "path": set_path}
+    models_directory = {"repo": runs_repo, "revision": runs_revision, "path": models_path}
+    return reuse_or_make(runs_repo, "window_scores",
+                         {"set": set_path, "models": models_path}, {}, runs_dir,
+                         lambda folder: write_scores(folder, set_directory,
+                                                     models_directory, local_dir,
+                                                     runs_dir),
+                         rebuild, dry_run=dry_run)
+
+
+if __name__ == "__main__":
+    main(**arguments(("repo", "revision", "set_path", "local_dir", "runs_repo",
+                     "runs_revision", "models_path", "runs_dir"), rebuild=False))
