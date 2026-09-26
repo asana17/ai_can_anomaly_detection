@@ -3,73 +3,44 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "float_ring.h"
+#include "recent_rows.h"
+#include "signals.h"
 
 /* ROWS and LIMIT in rules/sequence/torque_over_load.py */
 #define TORQUE_OVER_LOAD_ROWS 10u
 #define TORQUE_OVER_LOAD_LIMIT 3.5f /* % */
 
-/* Torque minus load of the last rows of the run. */
-typedef struct {
-	float steps[TORQUE_OVER_LOAD_ROWS];
-	FloatRing ring; /* points into steps, so a copy of the struct breaks it */
-	uint32_t no; /* the number of the last row given */
-} TorqueOverLoad;
+#if RECENT_ROWS_ROWS < TORQUE_OVER_LOAD_ROWS - 1u
+#error "RecentRows holds fewer rows than torque_over_load reads"
+#endif
 
 /**
- * @brief Forget every row, as before the first.
- *
- * @param[out] state The rows kept.
- */
-static inline void torque_over_load_clear(TorqueOverLoad *state)
-{
-	float_ring_init(&state->ring, state->steps, TORQUE_OVER_LOAD_ROWS);
-	state->no = 0u;
-}
-
-/**
- * @brief Keep a row's torque minus load.
- *
- * @param[in,out] state The rows kept.
- * @param[in] actual_engine_torque The row's actual engine torque in %.
- * @param[in] engine_load The row's engine load in %.
- * @param[in] no The row's number, the tick it was built on.
- * @param[in] position The rows before the row in its run.
- */
-static inline void torque_over_load_put(TorqueOverLoad *state,
-					float actual_engine_torque, float engine_load,
-					uint32_t no, uint32_t position)
-{
-	/* A new run, or a row after a missed one, starts over. A window never spans either. */
-	if(position == 0u || no != state->no + 1u) {
-		float_ring_clear(&state->ring);
-	}
-	state->no = no;
-	float_ring_put(&state->ring, actual_engine_torque - engine_load);
-}
-
-/**
- * @brief Check whether torque sits above load over the last ROWS rows kept.
+ * @brief Check whether torque sits above load over the row and the rows before it.
  *
  * The C port of rules/sequence/torque_over_load.py.
  *
- * @param[in] state The rows kept.
- * @retval true The mean of torque minus load is above the limit.
- * @retval false It is not, a NaN is in the window, or fewer than ROWS rows of the run
- *               have been kept one number after another.
+ * @param[in] recent The rows before @p row since a gap.
+ * @param[in] row Physical values in the order of SIGNALS.
+ * @retval true The mean of torque minus load over ROWS rows is above the limit.
+ * @retval false It is not, a NaN is among the rows, or @p recent holds fewer than
+ *               ROWS - 1 rows.
  */
-static inline bool torque_over_load_hits(const TorqueOverLoad *state)
+static inline bool torque_over_load_hits(const RecentRows *recent, const float row[])
 {
-	uint32_t i;
+	uint32_t held = recent_rows_count(recent);
+	uint32_t index;
+	const float *before;
 	float total = 0.0f;
 
-	if(!float_ring_full(&state->ring)) {
+	if (held < TORQUE_OVER_LOAD_ROWS - 1u) {
 		return false;
 	}
 	/* Oldest first, the order the Python rule adds in. */
-	for(i = 0u; i < TORQUE_OVER_LOAD_ROWS; i++) {
-		total += float_ring_get(&state->ring, i);
+	for (index = held - (TORQUE_OVER_LOAD_ROWS - 1u); index < held; index++) {
+		before = recent_rows_row(recent, index);
+		total += before[SIGNAL_ACTUAL_ENGINE_TORQUE] - before[SIGNAL_ENGINE_LOAD];
 	}
+	total += row[SIGNAL_ACTUAL_ENGINE_TORQUE] - row[SIGNAL_ENGINE_LOAD];
 	return total / (float)TORQUE_OVER_LOAD_ROWS > TORQUE_OVER_LOAD_LIMIT;
 }
 
