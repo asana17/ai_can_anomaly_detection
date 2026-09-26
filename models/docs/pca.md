@@ -50,15 +50,3 @@ fit the attacks too.
 
 The threshold is set so that `TARGET`, 0.1%, of the calibration rows have a residual
 above it. PCA is not fitted on those rows. See [calibrate](calibrate.md).
-
-## A warning you can ignore
-
-On numpy 2.0.2 against Apple Accelerate, plain matrix multiplication raises
-`RuntimeWarning` for divide by zero, overflow and invalid value on ordinary finite
-input. It comes from the backend rather than from anything here. The same three
-appear in float64. Every residual stays finite. float32 and float64 agree to 2.8e-6
-relative, measured over an attacked test set on 2026-09-09. `python3 -W ignore`
-silences it.
-
-The warning is left in place. Suppressing it with `np.errstate` would hide a real
-numerical fault as well.
