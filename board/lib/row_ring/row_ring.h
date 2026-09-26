@@ -45,9 +45,10 @@ static inline uint32_t row_ring_index(const RowRing *ring, uint32_t i)
  * @param[in,out] ring The ring.
  * @param[in] physical The row.
  * @param[in] flag Its flag.
+ * @return The slot the row went into.
  */
-static inline void row_ring_push(RowRing *ring, const float physical[MODEL_SIGNALS],
-				 bool flag)
+static inline uint32_t row_ring_push(RowRing *ring, const float physical[MODEL_SIGNALS],
+				     bool flag)
 {
 	uint32_t at = row_ring_index(ring, ring->count);
 	uint32_t i;
@@ -61,6 +62,7 @@ static inline void row_ring_push(RowRing *ring, const float physical[MODEL_SIGNA
 	} else {
 		ring->start = (ring->start + 1u) % ROW_RING_ROWS;
 	}
+	return at;
 }
 
 /**
