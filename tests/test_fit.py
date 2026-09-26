@@ -2,6 +2,8 @@ import json
 import os
 
 import numpy as np
+import torch
+from safetensors.torch import load_file
 
 from models import fit
 from models.fit import MODELS, models_in
@@ -54,3 +56,15 @@ def test_a_run_keeps_the_weights_the_losses_and_what_it_was_fitted_on(tmp_path, 
     assert meta["rows"] == len(raw) and meta["train_set"]["revision"] == REVISION
     assert json.load(open(folder / "losses.json")) == [], "pca is solved, not trained"
     assert hub.uploaded[0]["path_in_repo"] == made["path"]
+
+
+def test_a_row_holding_a_nan_is_not_fitted_on(tmp_path, hub, monkeypatch):
+    raw = train_set(monkeypatch)
+    raw[3, 1] = np.nan
+    made = fit.main("u/d", REVISION, "train_sets/20260101-000000", str(tmp_path),
+                    "u/runs", str(tmp_path))
+
+    meta = json.load(open(tmp_path / made["path"] / "meta.json"))
+    assert meta["rows"] == len(raw) - 1
+    weights = load_file(tmp_path / made["path"] / "weights.safetensors")
+    assert all(torch.isfinite(tensor).all() for tensor in weights.values())

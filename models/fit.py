@@ -51,8 +51,10 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
     min_speed = train_set["min_speed"]
-    scale = scale_for(train_set["train"])
-    rows = scale.apply(train_set["train"])
+    # a NaN is a value J1939 reserves. No model can fit it, and a rule flags the row
+    train = train_set["train"][~np.isnan(train_set["train"]).any(axis=1)]
+    scale = scale_for(train)
+    rows = scale.apply(train)
     print(f"{len(rows)} rows to fit on", flush=True)
 
     weights = {"scale.mean": torch.from_numpy(scale.mean),

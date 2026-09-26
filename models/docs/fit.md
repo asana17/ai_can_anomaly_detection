@@ -40,9 +40,11 @@ A tensor carries the name of the model it belongs to, `pca.k{k}.centre` and
 
 ## The rows it fits on
 
-`fit` reads the train rows and drops none of them. The
-[train set](../../assemble/docs/train_set.md) already chose them, the rows above
-`MIN_SPEED`.
+`fit` reads the train rows. The [train set](../../assemble/docs/train_set.md) already
+chose them, the rows above `MIN_SPEED`. `fit` drops only a row that holds a NaN. A NaN
+is a value J1939 reserves, see [signal_state](../../preprocess/docs/signal_state.md).
+No model can fit it, and the rule
+[reserved_moving](../../rules/instant/docs/reserved_moving.md) flags the row.
 
 `MIN_SPEED` is the value the [log split](../../assemble/docs/split_test_logs.md) was cut
 with. It comes from the log split's `meta.json`, and `fit` records it in its own.
