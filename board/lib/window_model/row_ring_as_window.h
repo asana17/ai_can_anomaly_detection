@@ -84,14 +84,29 @@ static inline bool row_ring_as_window_is_on_stride(uint32_t row_count_since_gap)
  *
  * @param[in,out] window The window.
  * @param[in] entry The row.
- * @return True when the window holds WINDOW_MODEL_ROWS rows and the model should score it.
  */
-static inline bool row_ring_as_window_push(RowRingAsWindow *window, const RowRingEntry *entry)
+static inline void row_ring_as_window_push(RowRingAsWindow *window, const RowRingEntry *entry)
 {
 	row_ring_as_window_restart_on_gap(window, entry->row_count_since_gap);
 	row_ring_push(&window->row_ring, entry);
-	return row_ring_as_window_count(window) == WINDOW_MODEL_ROWS
-		&& row_ring_as_window_is_on_stride(entry->row_count_since_gap);
+}
+
+/**
+ * @brief Check whether the window is complete.
+ *
+ * @param[in] window The window.
+ * @retval true It holds WINDOW_MODEL_ROWS rows, and a window ends at the newest.
+ * @retval false It does not.
+ */
+static inline bool row_ring_as_window_is_complete(const RowRingAsWindow *window)
+{
+	uint32_t held = row_ring_as_window_count(window);
+
+	if (held != WINDOW_MODEL_ROWS) {
+		return false;
+	}
+	return row_ring_as_window_is_on_stride(
+		row_ring_as_window_entry(window, held - 1u)->row_count_since_gap);
 }
 
 #endif

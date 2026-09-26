@@ -12,8 +12,9 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 		score_and_detect_by_window_input_read(task->score_and_detect_by_window_input,
 			&task->row_ring);
 		for (index = 0; index < row_ring_count(&task->row_ring); index++) {
-			if (row_ring_as_window_push(&task->row_ring_as_window,
-				row_ring_entry(&task->row_ring, index))) {
+			row_ring_as_window_push(&task->row_ring_as_window,
+				row_ring_entry(&task->row_ring, index));
+			if (row_ring_as_window_is_complete(&task->row_ring_as_window)) {
 				/* TODO: score the window with the windowed model */
 			}
 		}
