@@ -36,6 +36,7 @@ It uses the QDQ format with per-channel int8 weights and int8 activations, and t
 the activation ranges by MinMax.
 
 The rows those ranges are measured on are the train rows the models were fitted on.
+Like [fit](../../models/docs/fit.md), it leaves out a row that holds a NaN.
 The quantizer reads those rows in batches, `BATCH` rows or a few more each. `BATCH`
 is the batch the autoencoders were fitted at, but
 [fit](../../models/docs/fit.md) reads its own from the `--models` file. Quantize

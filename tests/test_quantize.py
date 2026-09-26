@@ -78,6 +78,7 @@ def exported(monkeypatch, tmp_path):
     raw[:, SIGNALS.index("wheel_speed")] = 10.0
     monkeypatch.setattr(quantize, "fetch_train_set", lambda *args: {
         "train": raw, "calibration": raw, "min_speed": 5.0})
+    return raw
 
 
 def test_every_float_file_of_the_export_is_quantized(tmp_path, hub, monkeypatch):
@@ -104,3 +105,15 @@ def test_a_model_fitted_at_another_batch_stops_it():
 def test_pca_alone_leaves_the_batch_to_settings():
     settings = QuantizeSettings()
     assert batch_for([{"model": "pca", "k": 4}], settings) == settings.BATCH
+
+
+def test_a_row_holding_a_nan_is_left_out_of_the_ranges(tmp_path, hub, monkeypatch):
+    raw = exported(monkeypatch, tmp_path)
+    raw[3, 1] = np.nan
+    given = []
+    monkeypatch.setattr(quantize, "write_int8_files", lambda names, source, rows,
+                        folder, batch: given.append(rows))
+    quantize.main("u/runs", COMMIT, "onnx/20260101-000000", str(tmp_path),
+                  str(tmp_path))
+
+    assert len(given[0]) == len(raw) - 1 and not np.isnan(given[0]).any()

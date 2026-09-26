@@ -77,7 +77,9 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     models = exported["models"]
     weights, fitted = fetch_fitted_models(runs_repo, models["revision"],
                                           models["path"], runs_dir)
-    rows = scale_of(weights).apply(train_set["train"])
+    # fit drops a row that holds a NaN, a value J1939 reserves
+    train = train_set["train"][~np.isnan(train_set["train"]).any(axis=1)]
+    rows = scale_of(weights).apply(train)
 
     write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
                      source, rows, folder,
