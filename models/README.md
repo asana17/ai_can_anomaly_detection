@@ -10,6 +10,7 @@ directory of the runs repository.
 python3 -m models.fit REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
 python3 -m models.fit_windows REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
 python3 -m models.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
+python3 -m models.calibrate_windows RUNS_REPO REVISION WINDOW_MODELS RUNS_DIR LOCAL_DIR
 ```
 
 Documented under [docs/](docs).
@@ -24,6 +25,8 @@ Documented under [docs/](docs).
   rows and uploads them.
 - [calibrate](docs/calibrate.md) gives each model the score above which a row counts
   as an anomaly.
+- [calibrate_windows](docs/calibrate_windows.md) gives each window model the score
+  above which a window counts as an anomaly.
 
 Each is fit on normal rows only, from [assemble](../assemble). Attacks come from
 [attack](../attack) and are never seen during fitting.
