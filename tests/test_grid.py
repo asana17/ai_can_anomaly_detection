@@ -84,3 +84,11 @@ def test_the_digest_changes_with_a_log_s_size(tmp_path):
 def test_no_matching_log_stops_it_before_the_hub(tmp_path):
     with pytest.raises(SystemExit):
         grid.main(str(tmp_path), "part_*/*.csv", str(tmp_path / "out"), "u/d")
+
+
+def test_the_segment_id_changes_where_a_row_was_removed():
+    # rows 4 and 6 are removed, and row 8 starts a new segment
+    chosen = np.array([True] * 4 + [False, True, False] + [True] * 3)
+    segments = np.array([0] * 8 + [1] * 2)
+    # the chosen rows are 0, 1, 2, 3, 5, 7, 8 and 9
+    assert grid.segments_of_chosen_rows(chosen, segments).tolist() == [0, 0, 0, 0, 1, 2, 3, 3]

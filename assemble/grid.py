@@ -95,6 +95,20 @@ def rows_of_logs(logs, counts, chosen):
     return from_chosen
 
 
+def segments_of_chosen_rows(chosen, segments):
+    """The segment id of each row `chosen` marks, once the other rows are removed.
+
+    `segments` is the segment id of every row. Returns an int array as long as the
+    number of chosen rows, counting up from 0. Two chosen rows get the same id only if
+    they were next to each other in the same segment. Where a row was removed between
+    them, the next id starts.
+    """
+    at = np.flatnonzero(chosen)
+    starts = np.ones(len(at), bool)
+    starts[1:] = (np.diff(at) != 1) | (segments[at][1:] != segments[at][:-1])
+    return np.cumsum(starts) - 1
+
+
 def logs_digest(data_dir, logs):
     """One SHA-256 over each log's path under `data_dir` and its size in bytes."""
     digest = hashlib.sha256()
