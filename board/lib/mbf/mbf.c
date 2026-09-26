@@ -12,15 +12,15 @@ EXPORT ER mbf_send_drop_oldest(ID mbfid, CONST void *msg, INT msgsize, void *old
 
 	*dropped = 0;
 
-	for(;;) {			/* another sender can take the freed room */
+	for (;;) {			/* another sender can take the freed room */
 		er = tk_snd_mbf(mbfid, msg, msgsize, TMO_POL);
-		if(er != E_TMOUT) {	/* sent, or an error other than full */
+		if (er != E_TMOUT) {	/* sent, or an error other than full */
 			return er;
 		}
 		size = tk_rcv_mbf(mbfid, old, TMO_POL);	/* full: receive the oldest and discard it to make room */
-		if(size > 0) {
+		if (size > 0) {
 			(*dropped)++;
-		} else if(size != E_TMOUT) {	/* E_TMOUT: a receiver emptied it, send again */
+		} else if (size != E_TMOUT) {	/* E_TMOUT: a receiver emptied it, send again */
 			return size;
 		}
 	}

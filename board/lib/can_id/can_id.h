@@ -31,7 +31,7 @@ static inline CanId can_id_decompose(uint32_t arb_id)
 	out.priority = (uint8_t)((ident >> 26) & 0x7u);
 	out.source_address = (uint8_t)(ident & 0xFFu);
 	out.pgn = (data_page << 16) | (pdu_format << 8);
-	if(pdu_format >= CAN_ID_PDU1_FORMAT_LIMIT) {
+	if (pdu_format >= CAN_ID_PDU1_FORMAT_LIMIT) {
 		/* PDU2: PDU Specific is part of the PGN. In PDU1 it is a destination address. */
 		out.pgn |= pdu_specific;
 	}

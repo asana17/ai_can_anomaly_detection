@@ -28,7 +28,7 @@ static inline uint32_t window_rows_count(const WindowRows *window_rows)
 /* Start the rows again when position does not follow the last row's. */
 static inline void window_rows_restart_on_gap(WindowRows *window_rows, uint32_t position)
 {
-	if(window_rows_count(window_rows) > 0u
+	if (window_rows_count(window_rows) > 0u
 		&& position != window_rows->last_position + 1u) {
 		window_rows_clear(window_rows);
 	}
@@ -42,7 +42,7 @@ static inline void window_rows_restart_on_gap(WindowRows *window_rows, uint32_t 
 static inline bool window_rows_is_on_stride(uint32_t position)
 {
 	/* keeps the unsigned subtraction below from wrapping */
-	if(position + 1u < WINDOW_MODEL_ROWS) {
+	if (position + 1u < WINDOW_MODEL_ROWS) {
 		return false;
 	}
 	return (position + 1u - WINDOW_MODEL_ROWS) % WINDOW_MODEL_STRIDE == 0u;

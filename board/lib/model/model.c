@@ -33,20 +33,20 @@ ModelStatus model_init(void)
 {
 	stai_size count;
 
-	if(stai_active_model_init(runtime.context) != STAI_SUCCESS) {
+	if (stai_active_model_init(runtime.context) != STAI_SUCCESS) {
 		return MODEL_ERROR_INIT;
 	}
 	runtime.activation_buffers[0] = (stai_ptr)runtime.activations;
-	if(stai_active_model_set_activations(runtime.context, runtime.activation_buffers,
+	if (stai_active_model_set_activations(runtime.context, runtime.activation_buffers,
 		STAI_ACTIVE_MODEL_ACTIVATIONS_NUM) != STAI_SUCCESS) {
 		return MODEL_ERROR_ACTIVATIONS;
 	}
 	/* Input and output buffers are allocated inside the activation storage. */
-	if(stai_active_model_get_inputs(runtime.context, runtime.inputs, &count) != STAI_SUCCESS ||
+	if (stai_active_model_get_inputs(runtime.context, runtime.inputs, &count) != STAI_SUCCESS ||
 		count != STAI_ACTIVE_MODEL_IN_NUM) {
 		return MODEL_ERROR_INPUTS;
 	}
-	if(stai_active_model_get_outputs(runtime.context, runtime.outputs, &count) != STAI_SUCCESS ||
+	if (stai_active_model_get_outputs(runtime.context, runtime.outputs, &count) != STAI_SUCCESS ||
 		count != STAI_ACTIVE_MODEL_OUT_NUM) {
 		return MODEL_ERROR_OUTPUTS;
 	}
@@ -65,7 +65,7 @@ ModelStatus model_run(const float input[MODEL_SIGNALS],
 	memcpy(runtime.inputs[0], input, MODEL_SIGNALS * sizeof(float));
 	/* Measure synchronous inference only. */
 	started = DWT->CYCCNT;
-	if(stai_active_model_run(runtime.context, STAI_MODE_SYNC) != STAI_SUCCESS) {
+	if (stai_active_model_run(runtime.context, STAI_MODE_SYNC) != STAI_SUCCESS) {
 		return MODEL_ERROR_RUN;
 	}
 	*cycles = DWT->CYCCNT - started;

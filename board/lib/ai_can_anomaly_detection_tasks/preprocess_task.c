@@ -21,41 +21,41 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	UW number = 0, seen = 0, quiet = 0, frames, intsts, i;
 	INT dropped;
 
-	while(tk_slp_tsk(TMO_FEVR) == E_OK) {
+	while (tk_slp_tsk(TMO_FEVR) == E_OK) {
 		number++;
 		DI(intsts);
 		frames = task->slots->frames;
 		EI(intsts);
-		if(frames == seen) {
+		if (frames == seen) {
 			quiet++;
 		} else {
 			seen = frames;
 			quiet = 0;
 		}
-		if(quiet == MAX_HOLD_ROWS) {
+		if (quiet == MAX_HOLD_ROWS) {
 			/* what the slots hold predates the gap, as grid_sample drops it */
 			DI(intsts);
 			signal_state_clear(&task->slots->state);
 			EI(intsts);
 		}
-		if(quiet > 0) {
+		if (quiet > 0) {
 			/* no frame since the last tick, so the row would hold only old values */
 			continue;
 		}
-		for(i = 0; i < SIGNAL_STATE_SLOTS; i++) {
+		for (i = 0; i < SIGNAL_STATE_SLOTS; i++) {
 			DI(intsts);
 			held.slots[i] = task->slots->state.slots[i];
 			EI(intsts);
 		}
-		if(!signal_state_ready(&held)) {
+		if (!signal_state_ready(&held)) {
 			continue;
 		}
 		signal_state_row(&held, row.physical);
-		if(!moving(row.physical, MIN_SPEED)) {
+		if (!moving(row.physical, MIN_SPEED)) {
 			continue;
 		}
 		row.no = number;
-		if(mbf_send_drop_oldest(task->row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
+		if (mbf_send_drop_oldest(task->row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
 			break;
 		}
 	}
@@ -75,11 +75,11 @@ EXPORT ER preprocess_task_create(PreprocessTask *task, PRI priority, ID row_mbf)
 
 	task->row_mbf = row_mbf;
 	task->task_id = tk_cre_tsk(&ctsk);
-	if(task->task_id < E_OK) {
+	if (task->task_id < E_OK) {
 		return task->task_id;
 	}
 	task->tick_id = tk_cre_cyc(&ccyc);
-	if(task->tick_id < E_OK) {
+	if (task->tick_id < E_OK) {
 		return task->tick_id;
 	}
 	return E_OK;
@@ -90,7 +90,7 @@ EXPORT ER preprocess_task_start(PreprocessTask *task)
 	ER error;
 
 	error = tk_sta_tsk(task->task_id, 0);
-	if(error < E_OK) {
+	if (error < E_OK) {
 		return error;
 	}
 	return tk_sta_cyc(task->tick_id);

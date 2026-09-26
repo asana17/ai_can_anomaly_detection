@@ -39,10 +39,10 @@ LOCAL void source_task(INT stacd, void *exinf)
 	INT dropped;
 	UW i;
 
-	for(i = 0; i < RULE_ROWS; i++) {
+	for (i = 0; i < RULE_ROWS; i++) {
 		row.no = i;
 		memcpy(row.physical, physical_rows[i], sizeof(row.physical));
-		if(mbf_send_drop_oldest(row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
+		if (mbf_send_drop_oldest(row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
 			break;
 		}
 		source_dropped += dropped;
@@ -68,8 +68,8 @@ LOCAL void rules_task(INT stacd, void *exinf)
 	Row row;
 	Report report = {0};
 
-	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
-		if(row.no == RULE_ROWS) {
+	while (tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
+		if (row.no == RULE_ROWS) {
 			break;
 		}
 		report.no = row.no;
@@ -89,13 +89,13 @@ LOCAL void report_task(INT stacd, void *exinf)
 
 	tm_printf((UB*)"reverse rule: starting %d rows at row %d\n", RULE_ROWS, FIRST_ROW);
 
-	while(tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
-		if(report.no == RULE_ROWS) {
+	while (tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
+		if (report.no == RULE_ROWS) {
 			break;
 		}
 		processed++;
 		flagged_rows += report.hit;
-		if(processed % PROGRESS_EVERY == 0) {
+		if (processed % PROGRESS_EVERY == 0) {
 			tm_printf((UB*)"progress %d/%d at row %d, flagged_rows %d\n",
 				processed, RULE_ROWS, FIRST_ROW + report.no, flagged_rows);
 		}
@@ -124,13 +124,13 @@ EXPORT INT usermain(void)
 
 	row_mbf = tk_cre_mbf(&row_cmbf);
 	report_mbf = tk_cre_mbf(&report_cmbf);
-	if(row_mbf < E_OK || report_mbf < E_OK) {
+	if (row_mbf < E_OK || report_mbf < E_OK) {
 		return -1;
 	}
 	source = tk_cre_tsk(&source_ctsk);
 	rules = tk_cre_tsk(&rules_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
-	if(source < E_OK || rules < E_OK || report < E_OK) {
+	if (source < E_OK || rules < E_OK || report < E_OK) {
 		return -1;
 	}
 	tk_sta_tsk(report, 0);

@@ -23,22 +23,22 @@ EXPORT INT usermain(void)
 	ModelStatus status;
 
 	status = model_init();
-	if(status != MODEL_OK) {
+	if (status != MODEL_OK) {
 		tm_printf((UB*)"model init error %d\n", status);
 		return status;
 	}
 	tm_printf((UB*)"model %s: %d rows from row %d\n", ACTIVE_MODEL_ID, RULE_ROWS,
 		FIRST_ROW);
-	for(i = 0; i < RULE_ROWS; i++) {
+	for (i = 0; i < RULE_ROWS; i++) {
 		memcpy(physical, physical_rows[i], sizeof(physical));
 		scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
 		status = model_run(scaled, reconstructed, &cycles);
-		if(status != MODEL_OK) {
+		if (status != MODEL_OK) {
 			tm_printf((UB*)"row %d model error %d\n", FIRST_ROW + i, status);
 			return status;
 		}
 		tm_printf((UB*)"row %d reconstruction", FIRST_ROW + i);
-		for(j = 0; j < MODEL_SIGNALS; j++) {
+		for (j = 0; j < MODEL_SIGNALS; j++) {
 			memcpy(&bits, &reconstructed[j], sizeof(bits));
 			tm_printf((UB*)" 0x%08x", bits);
 		}

@@ -52,7 +52,7 @@ static inline void detect_instant_init(DetectInstant *state, float threshold,
  */
 static inline void detect_instant_drop_oldest_flag(DetectInstant *state)
 {
-	if(state->ring_flags[state->ring_start]) {
+	if (state->ring_flags[state->ring_start]) {
 		state->flagged_count_in_ring--;
 	}
 	state->ring_start = (state->ring_start + 1u) % DETECT_INSTANT_ROWS;
@@ -71,7 +71,7 @@ static inline void detect_instant_append_flag(DetectInstant *state, bool flag)
 
 	state->ring_flags[end] = flag;
 	state->ring_count++;
-	if(flag) {
+	if (flag) {
 		state->flagged_count_in_ring++;
 	}
 }
@@ -93,10 +93,10 @@ static inline void detect_instant_add_row(DetectInstant *state, uint32_t number,
 {
 	bool flag = score > state->threshold || rule_hit;
 
-	if(number != state->number + 1u) {
+	if (number != state->number + 1u) {
 		detect_instant_clear_ring(state);
 	}
-	if(state->ring_count == DETECT_INSTANT_ROWS) {
+	if (state->ring_count == DETECT_INSTANT_ROWS) {
 		detect_instant_drop_oldest_flag(state);
 	}
 	detect_instant_append_flag(state, flag);
@@ -114,7 +114,7 @@ static inline bool detect_instant_last_row_flagged(const DetectInstant *state)
 {
 	uint32_t last;
 
-	if(state->ring_count == 0u) {
+	if (state->ring_count == 0u) {
 		return false;
 	}
 	last = (state->ring_start + state->ring_count - 1u) % DETECT_INSTANT_ROWS;

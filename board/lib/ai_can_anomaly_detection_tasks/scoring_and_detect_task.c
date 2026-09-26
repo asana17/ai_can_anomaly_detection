@@ -21,17 +21,17 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 	INT ringing = 0, alarmed;
 
 	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
-	while(tk_rcv_mbf(task->row_mbf, &row, TMO_FEVR) == sizeof(row)) {
+	while (tk_rcv_mbf(task->row_mbf, &row, TMO_FEVR) == sizeof(row)) {
 		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
 			MIN_SPEED, &scored);
-		if(report.error != MODEL_OK) {
+		if (report.error != MODEL_OK) {
 			report.no = row.no;
 			tk_snd_mbf(task->report_mbf, &report, sizeof(report), TMO_FEVR);
 			break;
 		}
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
 		alarmed = detect_instant_alarmed(&state);
-		if(alarmed != ringing) {
+		if (alarmed != ringing) {
 			report.no = row.no;
 			memcpy(&report.score_bits, &scored.score, sizeof(scored.score));
 			report.rule = scored.rule_hit;

@@ -57,10 +57,10 @@ LOCAL void source_task(INT stacd, void *exinf)
 	INT dropped;
 	UW i;
 
-	for(i = 0; i < RULE_ROWS; i++) {
+	for (i = 0; i < RULE_ROWS; i++) {
 		row.no = i;
 		memcpy(row.physical, physical_rows[i], sizeof(row.physical));
-		if(mbf_send_drop_oldest(row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
+		if (mbf_send_drop_oldest(row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
 			break;
 		}
 		source_dropped += dropped;
@@ -80,7 +80,7 @@ LOCAL ModelStatus score_row(const float physical[MODEL_SIGNALS], Scored *scored)
 
 	scale_row(physical, active_model_mean, active_model_std, scaled, MODEL_SIGNALS);
 	error = model_run(scaled, reconstructed, &scored->cycles);
-	if(error != MODEL_OK) {
+	if (error != MODEL_OK) {
 		return error;
 	}
 	scored->score = scoring_error(scaled, reconstructed, MODEL_SIGNALS);
@@ -95,8 +95,8 @@ LOCAL void scoring_task(INT stacd, void *exinf)
 	Report report = {0};
 	Scored scored;
 
-	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
-		if(row.no == RULE_ROWS) {
+	while (tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
+		if (row.no == RULE_ROWS) {
 			break;
 		}
 		report.no = row.no;
@@ -104,14 +104,14 @@ LOCAL void scoring_task(INT stacd, void *exinf)
 		report.cycles = 0;
 		report.flagged = 0;
 		report.error = score_row(row.physical, &scored);
-		if(report.error == MODEL_OK) {
+		if (report.error == MODEL_OK) {
 			memcpy(&report.score_bits, &scored.score,
 				sizeof(scored.score));
 			report.cycles = scored.cycles;
 			report.flagged = scored.flagged;
 		}
 		tk_snd_mbf(report_mbf, &report, sizeof(report), TMO_FEVR);
-		if(report.error != MODEL_OK) {
+		if (report.error != MODEL_OK) {
 			break;
 		}
 	}
@@ -129,17 +129,17 @@ LOCAL void report_task(INT stacd, void *exinf)
 
 	tm_printf((UB*)"model %s: starting %d physical rows at row %d\n",
 		ACTIVE_MODEL_ID, RULE_ROWS, FIRST_ROW);
-	while(tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
-		if(report.no == RULE_ROWS) {
+	while (tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
+		if (report.no == RULE_ROWS) {
 			break;
 		}
 		processed++;
 		flagged_rows += report.flagged;
 		errors += report.error != MODEL_OK;
-		if(report.cycles > maximum_cycles) {
+		if (report.cycles > maximum_cycles) {
 			maximum_cycles = report.cycles;
 		}
-		if(processed % PROGRESS_EVERY == 0 || report.error != MODEL_OK) {
+		if (processed % PROGRESS_EVERY == 0 || report.error != MODEL_OK) {
 			tm_printf((UB*)"row %d score 0x%08x flagged %d cycles %u error %d\n",
 				report.no, report.score_bits, report.flagged, report.cycles,
 				report.error);
@@ -169,19 +169,19 @@ EXPORT INT usermain(void)
 	ModelStatus error;
 
 	error = model_init();
-	if(error != MODEL_OK) {
+	if (error != MODEL_OK) {
 		tm_printf((UB*)"model init error %d\n", error);
 		return error;
 	}
 	row_mbf = tk_cre_mbf(&row_cmbf);
 	report_mbf = tk_cre_mbf(&report_cmbf);
-	if(row_mbf < E_OK || report_mbf < E_OK) {
+	if (row_mbf < E_OK || report_mbf < E_OK) {
 		return -10;
 	}
 	source = tk_cre_tsk(&source_ctsk);
 	scoring = tk_cre_tsk(&scoring_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
-	if(source < E_OK || scoring < E_OK || report < E_OK) {
+	if (source < E_OK || scoring < E_OK || report < E_OK) {
 		return -11;
 	}
 	tk_sta_tsk(report, 0);

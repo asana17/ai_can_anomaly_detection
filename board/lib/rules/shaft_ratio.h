@@ -25,7 +25,7 @@ static inline bool shaft_ratio_hits(float output_shaft_speed, float wheel_speed,
 {
 	float ratio;
 
-	if(!(wheel_speed >= min_speed)) {
+	if (!(wheel_speed >= min_speed)) {
 		return false;
 	}
 	ratio = output_shaft_speed / wheel_speed;

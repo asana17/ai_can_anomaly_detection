@@ -30,8 +30,8 @@ static inline size_t frame_decode(uint32_t pgn, const uint8_t data[], size_t siz
 	size_t count = 0;
 	size_t i;
 
-	for(i = 0; i < SPN_SPEC_SIGNALS; i++) {
-		if(SPN_SPEC[i].pgn == pgn && spn_decode(data, size, &SPN_SPEC[i].field,
+	for (i = 0; i < SPN_SPEC_SIGNALS; i++) {
+		if (SPN_SPEC[i].pgn == pgn && spn_decode(data, size, &SPN_SPEC[i].field,
 							&out[count].value)) {
 			out[count].signal = i;
 			count++;

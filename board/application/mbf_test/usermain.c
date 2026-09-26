@@ -28,7 +28,7 @@ LOCAL void send_rows(UW count)
 	UW	no, old;
 	INT	dropped;
 
-	for(no = 0; no < count; no++) {
+	for (no = 0; no < count; no++) {
 		mbf_send_drop_oldest(mbfid, &no, sizeof(no), &old, &dropped);
 	}
 }
@@ -42,7 +42,7 @@ LOCAL void test_room_left(void)
 	UW	no, old;
 	INT	dropped;
 
-	for(no = 0; no < DEPTH; no++) {
+	for (no = 0; no < DEPTH; no++) {
 		TEST_ASSERT_EQUAL_INT(E_OK, mbf_send_drop_oldest(mbfid, &no, sizeof(no), &old, &dropped));
 		TEST_ASSERT_EQUAL_INT(0, dropped);
 	}
@@ -58,7 +58,7 @@ LOCAL void test_full_drops_oldest(void)
 	INT	dropped;
 
 	send_rows(DEPTH);
-	for(no = DEPTH; no < SENT; no++) {
+	for (no = DEPTH; no < SENT; no++) {
 		TEST_ASSERT_EQUAL_INT(E_OK, mbf_send_drop_oldest(mbfid, &no, sizeof(no), &old, &dropped));
 		TEST_ASSERT_EQUAL_INT(1, dropped);
 		TEST_ASSERT_EQUAL_UINT32(no - DEPTH, old);
@@ -74,7 +74,7 @@ LOCAL void test_newest_left_in_order(void)
 	UW	no, want;
 
 	send_rows(SENT);
-	for(want = SENT - DEPTH; want < SENT; want++) {
+	for (want = SENT - DEPTH; want < SENT; want++) {
 		TEST_ASSERT_EQUAL_INT(sizeof(no), tk_rcv_mbf(mbfid, &no, TMO_POL));
 		TEST_ASSERT_EQUAL_UINT32(want, no);
 	}

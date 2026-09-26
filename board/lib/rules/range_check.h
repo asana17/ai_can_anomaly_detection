@@ -45,8 +45,8 @@ static inline bool range_check_hits(const float row[])
 {
 	size_t i;
 
-	for(i = 0; i < RANGE_CHECK_SIGNALS; i++) {
-		if(row[i] < RANGE_CHECK_LIMITS[i].low || row[i] > RANGE_CHECK_LIMITS[i].high) {
+	for (i = 0; i < RANGE_CHECK_SIGNALS; i++) {
+		if (row[i] < RANGE_CHECK_LIMITS[i].low || row[i] > RANGE_CHECK_LIMITS[i].high) {
 			return true;
 		}
 	}

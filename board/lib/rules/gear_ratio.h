@@ -21,8 +21,8 @@ static inline bool gear_ratio_in_table(float gear)
 {
 	size_t i;
 
-	for(i = 0; i < GEAR_RATIO_GEARS; i++) {
-		if(GEAR_RATIOS[i].gear == gear) {
+	for (i = 0; i < GEAR_RATIO_GEARS; i++) {
+		if (GEAR_RATIOS[i].gear == gear) {
 			return true;
 		}
 	}
@@ -35,12 +35,12 @@ static inline float gear_ratio_nearest_gear(float ratio)
 	size_t i, best = 0;
 	float distance, best_distance = 0.0f;
 
-	for(i = 0; i < GEAR_RATIO_GEARS; i++) {
+	for (i = 0; i < GEAR_RATIO_GEARS; i++) {
 		distance = GEAR_RATIOS[i].ratio / ratio;
-		if(ratio / GEAR_RATIOS[i].ratio > distance) {
+		if (ratio / GEAR_RATIOS[i].ratio > distance) {
 			distance = ratio / GEAR_RATIOS[i].ratio;
 		}
-		if(i == 0 || distance < best_distance) {
+		if (i == 0 || distance < best_distance) {
 			best = i;
 			best_distance = distance;
 		}
@@ -66,16 +66,16 @@ static inline bool gear_ratio_hits(float engine_speed, float wheel_speed,
 	float current_gear, float selected_gear, float clutch_slip, float min_speed)
 {
 	/* mid shift or with the clutch open there is no fixed ratio */
-	if(!(wheel_speed >= min_speed) || !gear_ratio_in_table(current_gear)
+	if (!(wheel_speed >= min_speed) || !gear_ratio_in_table(current_gear)
 		|| current_gear != selected_gear || clutch_slip != 0.0f) {
 		return false;
 	}
 	/* the closed clutch turns the engine with the wheels, so a stopped engine
 	 * contradicts the speed above */
-	if(engine_speed <= 0.0f) {
+	if (engine_speed <= 0.0f) {
 		return true;
 	}
-	if(!(engine_speed > 0.0f)) {
+	if (!(engine_speed > 0.0f)) {
 		return false;
 	}
 	return gear_ratio_nearest_gear(engine_speed / wheel_speed) != current_gear;

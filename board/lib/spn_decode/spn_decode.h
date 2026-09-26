@@ -30,10 +30,10 @@ static inline uint32_t spn_decode_extract_le(const uint8_t data[], size_t size,
 	uint32_t value = 0;
 	unsigned i;
 
-	for(i = 0; i < length; i++) {
+	for (i = 0; i < length; i++) {
 		unsigned bit = start_bit + i;
 
-		if((bit >> 3) < size && (data[bit >> 3] >> (bit & 7u)) & 1u) {
+		if ((bit >> 3) < size && (data[bit >> 3] >> (bit & 7u)) & 1u) {
 			value |= (uint32_t)1 << i;
 		}
 	}
@@ -59,10 +59,10 @@ static inline bool spn_decode(const uint8_t data[], size_t size, const SpnField 
 	uint32_t raw = spn_decode_extract_le(data, size, field->start_bit, field->length);
 	unsigned shift = 0;
 
-	if(field->length > 8) {
+	if (field->length > 8) {
 		shift = field->length - 8u;
 	}
-	if((raw >> shift) >= 0xFEu) {
+	if ((raw >> shift) >= 0xFEu) {
 		return false;
 	}
 	*value = (float)raw * field->scale + field->offset;

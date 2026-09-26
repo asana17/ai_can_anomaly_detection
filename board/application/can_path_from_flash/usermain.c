@@ -14,11 +14,11 @@ LOCAL void replay_task(INT stacd, void *exinf)
 	UW i, due, elapsed;
 
 	tk_get_otm(&start);
-	for(i = 0; i < REPLAY_FRAMES; i++) {
+	for (i = 0; i < REPLAY_FRAMES; i++) {
 		due = replay_frames[i].time_us / 1000u;
 		tk_get_otm(&now);
 		elapsed = now.lo - start.lo;
-		if(due > elapsed) {
+		if (due > elapsed) {
 			tk_dly_tsk(due - elapsed);
 		}
 		slots_store(&slots, replay_frames[i].arb_id, replay_frames[i].data,
@@ -39,15 +39,15 @@ EXPORT INT usermain(void)
 
 	tm_printf((UB*)"replaying %d frames\n", REPLAY_FRAMES);
 	error = ai_can_anomaly_detection_tasks_create(&slots);
-	if(error < E_OK) {
+	if (error < E_OK) {
 		return error;
 	}
 	replay = tk_cre_tsk(&replay_ctsk);
-	if(replay < E_OK) {
+	if (replay < E_OK) {
 		return replay;
 	}
 	error = ai_can_anomaly_detection_tasks_start();
-	if(error < E_OK) {
+	if (error < E_OK) {
 		return error;
 	}
 	tk_sta_tsk(replay, 0);

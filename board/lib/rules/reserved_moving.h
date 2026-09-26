@@ -26,12 +26,12 @@ static inline bool reserved_moving_hits(const float row[], float wheel_speed,
 {
 	size_t i;
 
-	if(!(wheel_speed > 0.0f || tachograph_speed > 0.0f
+	if (!(wheel_speed > 0.0f || tachograph_speed > 0.0f
 		|| output_shaft_speed > 0.0f)) {
 		return false;
 	}
-	for(i = 0; i < RESERVED_MOVING_SIGNALS; i++) {
-		if(isnan(row[i])) {
+	for (i = 0; i < RESERVED_MOVING_SIGNALS; i++) {
+		if (isnan(row[i])) {
 			return true;
 		}
 	}

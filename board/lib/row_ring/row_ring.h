@@ -53,11 +53,11 @@ static inline uint32_t row_ring_push(RowRing *ring, const float physical[MODEL_S
 	uint32_t at = row_ring_index(ring, ring->count);
 	uint32_t i;
 
-	for(i = 0u; i < MODEL_SIGNALS; i++) {
+	for (i = 0u; i < MODEL_SIGNALS; i++) {
 		ring->physical[at][i] = physical[i];
 	}
 	ring->flags[at] = flag;
-	if(ring->count < ROW_RING_ROWS) {
+	if (ring->count < ROW_RING_ROWS) {
 		ring->count = ring->count + 1u;
 	} else {
 		ring->start = (ring->start + 1u) % ROW_RING_ROWS;

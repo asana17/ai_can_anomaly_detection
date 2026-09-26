@@ -5,7 +5,7 @@ void scale_row(const float physical[], const float mean[], const float std[],
 {
 	size_t i;
 
-	for(i = 0; i < signals; i++) {
+	for (i = 0; i < signals; i++) {
 		scaled[i] = (physical[i] - mean[i]) / std[i];
 	}
 }

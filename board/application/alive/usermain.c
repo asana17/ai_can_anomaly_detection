@@ -16,7 +16,7 @@ LOCAL void alive_task(INT stacd, void *exinf)
 {
 	INT	count = 0;
 
-	while(1) {
+	while (1) {
 		BSP_LED_Toggle(LED_GREEN);
 		tm_printf((UB*)"usermain %d\n", ++count);
 		tk_dly_tsk(500);

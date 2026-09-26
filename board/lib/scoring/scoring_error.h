@@ -20,7 +20,7 @@ static inline float scoring_error(const float scaled[], const float reconstructe
 	float total = 0.0f;
 	size_t i;
 
-	for(i = 0; i < signals; i++) {
+	for (i = 0; i < signals; i++) {
 		const float difference = scaled[i] - reconstructed[i];
 		total += difference * difference;
 	}

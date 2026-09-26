@@ -11,12 +11,12 @@ LOCAL void report_task(INT stacd, void *exinf)
 	Report report;
 
 	tm_printf((UB*)"%s: k %u of %u\n", task->model_id, ALARM_K, DETECT_INSTANT_ROWS);
-	while(tk_rcv_mbf(task->report_mbf, &report, TMO_FEVR) == sizeof(report)) {
-		if(report.error != MODEL_OK) {
+	while (tk_rcv_mbf(task->report_mbf, &report, TMO_FEVR) == sizeof(report)) {
+		if (report.error != MODEL_OK) {
 			tm_printf((UB*)"row %u error %d\n", report.no, report.error);
 			continue;
 		}
-		if(report.alarm) {
+		if (report.alarm) {
 			tm_printf((UB*)"alarm start at row %u score 0x%08x rule %d\n",
 				report.no, report.score_bits, report.rule);
 		} else {

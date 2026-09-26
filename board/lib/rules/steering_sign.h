@@ -22,7 +22,7 @@ static inline bool steering_sign_hits(float steering_angle, float yaw_rate,
 	float wheel_speed, float min_speed)
 {
 	/* below MIN_YAW the truck is going straight and the sign is noise */
-	if(!(wheel_speed >= min_speed) || !(yaw_rate >= STEERING_SIGN_MIN_YAW
+	if (!(wheel_speed >= min_speed) || !(yaw_rate >= STEERING_SIGN_MIN_YAW
 		|| -yaw_rate >= STEERING_SIGN_MIN_YAW)) {
 		return false;
 	}

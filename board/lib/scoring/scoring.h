@@ -41,7 +41,7 @@ static inline ModelStatus scoring_row(const float physical[MODEL_SIGNALS],
 	scored->rule_hit = rule_hits(physical, min_speed);
 	scale_row(physical, mean, std, scaled, MODEL_SIGNALS);
 	error = model_run(scaled, reconstructed, &scored->cycles);
-	if(error != MODEL_OK) {
+	if (error != MODEL_OK) {
 		return error;
 	}
 	scored->score = scoring_error(scaled, reconstructed, MODEL_SIGNALS);

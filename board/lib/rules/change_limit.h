@@ -40,12 +40,12 @@ static inline bool change_limit_hits(const float row[], const float previous[])
 	size_t i;
 	float step;
 
-	for(i = 0; i < CHANGE_LIMIT_SIGNALS; i++) {
+	for (i = 0; i < CHANGE_LIMIT_SIGNALS; i++) {
 		step = row[CHANGE_LIMITS[i].signal] - previous[CHANGE_LIMITS[i].signal];
-		if(step < 0.0f) {
+		if (step < 0.0f) {
 			step = -step;
 		}
-		if(step / CHANGE_LIMIT_PERIOD > CHANGE_LIMITS[i].limit) {
+		if (step / CHANGE_LIMIT_PERIOD > CHANGE_LIMITS[i].limit) {
 			return true;
 		}
 	}

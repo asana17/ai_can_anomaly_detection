@@ -20,7 +20,7 @@ static inline bool speed_agreement_hits(float wheel_speed, float tachograph_spee
 {
 	float difference = wheel_speed - tachograph_speed;
 
-	if(difference < 0.0f) {
+	if (difference < 0.0f) {
 		difference = -difference;
 	}
 	return difference > SPEED_AGREEMENT_LIMIT;

@@ -36,8 +36,8 @@ static inline size_t signal_state_slot(uint32_t pgn)
 {
 	size_t i;
 
-	for(i = 0; i < SPN_SPEC_SIGNALS; i++) {
-		if(SPN_SPEC[i].pgn == pgn) {
+	for (i = 0; i < SPN_SPEC_SIGNALS; i++) {
+		if (SPN_SPEC[i].pgn == pgn) {
 			return i;
 		}
 	}
@@ -69,10 +69,10 @@ static inline void signal_state_update(SignalState *state, uint32_t pgn, const u
 {
 	size_t slot = signal_state_slot(pgn);
 
-	if(slot == SIGNAL_STATE_SLOTS) {
+	if (slot == SIGNAL_STATE_SLOTS) {
 		return;
 	}
-	if(size > SIGNAL_STATE_PAYLOAD) {
+	if (size > SIGNAL_STATE_PAYLOAD) {
 		size = SIGNAL_STATE_PAYLOAD;
 	}
 	memcpy(state->slots[slot].data, data, size);
@@ -94,10 +94,10 @@ static inline void signal_state_row(const SignalState *state, float row[])
 {
 	size_t i;
 
-	for(i = 0; i < SPN_SPEC_SIGNALS; i++) {
+	for (i = 0; i < SPN_SPEC_SIGNALS; i++) {
 		size_t at = signal_state_slot(SPN_SPEC[i].pgn);
 
-		if(at == SIGNAL_STATE_SLOTS || !state->slots[at].arrived
+		if (at == SIGNAL_STATE_SLOTS || !state->slots[at].arrived
 		   || !spn_decode(state->slots[at].data, state->slots[at].size,
 				  &SPN_SPEC[i].field, &row[i])) {
 			row[i] = NAN;
@@ -118,8 +118,8 @@ static inline bool signal_state_ready(const SignalState *state)
 {
 	size_t i;
 
-	for(i = 0; i < SPN_SPEC_SIGNALS; i++) {
-		if(!state->slots[signal_state_slot(SPN_SPEC[i].pgn)].arrived) {
+	for (i = 0; i < SPN_SPEC_SIGNALS; i++) {
+		if (!state->slots[signal_state_slot(SPN_SPEC[i].pgn)].arrived) {
 			return false;
 		}
 	}

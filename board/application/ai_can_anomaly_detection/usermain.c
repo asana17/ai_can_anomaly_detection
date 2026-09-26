@@ -18,12 +18,12 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 	uint8_t data[CAN_BYTES];
 	uint32_t size;
 
-	while(HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
-		if(header.IdType != FDCAN_EXTENDED_ID) {
+	while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
+		if (header.IdType != FDCAN_EXTENDED_ID) {
 			continue; /* J1939 uses 29-bit IDs only */
 		}
 		size = header.DataLength;
-		if(size > CAN_BYTES) {
+		if (size > CAN_BYTES) {
 			size = CAN_BYTES;
 		}
 		/* DWT counts cycles once model_init has run, which is before reception starts */
@@ -34,15 +34,15 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 /* Accept every frame into RX FIFO 0, interrupt on each, and start the bus. */
 LOCAL INT can_start(void)
 {
-	if(HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0,
+	if (HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0,
 		FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK) {
 		return -1;
 	}
-	if(HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0)
+	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0)
 		!= HAL_OK) {
 		return -2;
 	}
-	if(HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
+	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
 		return -3;
 	}
 	return 0;
@@ -54,14 +54,14 @@ EXPORT INT usermain(void)
 
 	tm_printf((UB*)"reading FDCAN1\n");
 	error = ai_can_anomaly_detection_tasks_create(&slots);
-	if(error < E_OK) {
+	if (error < E_OK) {
 		return error;
 	}
 	error = ai_can_anomaly_detection_tasks_start();
-	if(error < E_OK) {
+	if (error < E_OK) {
 		return error;
 	}
-	if(can_start() != 0) {
+	if (can_start() != 0) {
 		tm_printf((UB*)"FDCAN start error\n");
 		return -13;
 	}
