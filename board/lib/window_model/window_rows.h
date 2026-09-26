@@ -7,38 +7,59 @@
 #include "row_ring.h"
 #include "window_model_config.h"
 
-/* The last rows of an unbroken stretch of row numbers, and when they make a window. */
+/* The last rows with no gap among them, and when they make a window. */
 typedef struct {
-	RowRing ring;     /* the rows and their flags */
-	uint32_t last_no; /* number of the last row */
-	uint32_t count;   /* rows since the numbers last broke */
+	RowRing row_ring;       /* the rows and their flags */
+	uint32_t last_position; /* the position of the last row */
 } WindowRows;
 
 /* Start empty. */
-static inline void window_rows_clear(WindowRows *rows)
+static inline void window_rows_clear(WindowRows *window_rows)
 {
-	row_ring_clear(&rows->ring);
-	rows->count = 0u;
+	row_ring_clear(&window_rows->row_ring);
 }
 
-/* Take the next row number. Empty the rows when it does not follow the last. */
-static inline void window_rows_restart_on_gap(WindowRows *rows, uint32_t no)
+/* The rows held, at most WINDOW_MODEL_ROWS. */
+static inline uint32_t window_rows_count(const WindowRows *window_rows)
 {
-	if(rows->count > 0u && no != rows->last_no + 1u) {
-		window_rows_clear(rows);
+	return row_ring_count(&window_rows->row_ring);
+}
+
+/* Start the rows again when position does not follow the last row's. */
+static inline void window_rows_restart_on_gap(WindowRows *window_rows, uint32_t position)
+{
+	if(window_rows_count(window_rows) > 0u
+		&& position != window_rows->last_position + 1u) {
+		window_rows_clear(window_rows);
 	}
-	rows->last_no = no;
+	window_rows->last_position = position;
 }
 
-/* Add the row and its flag. True when a new window is ready. */
-static inline bool window_rows_push(WindowRows *rows, const float physical[MODEL_SIGNALS],
-				    bool flag)
+/*
+ * True for the WINDOW_MODEL_ROWS-th row after a gap, and for every WINDOW_MODEL_STRIDE-th
+ * row after that. position + 1 is the row's number counted from the gap.
+ */
+static inline bool window_rows_is_on_stride(uint32_t position)
 {
-	row_ring_push(&rows->ring, physical, flag);
-	rows->count = rows->count + 1u;
-	/* first window at WINDOW_MODEL_ROWS rows, then every WINDOW_MODEL_STRIDE rows */
-	return rows->count >= WINDOW_MODEL_ROWS
-		&& (rows->count - WINDOW_MODEL_ROWS) % WINDOW_MODEL_STRIDE == 0u;
+	/* keeps the unsigned subtraction below from wrapping */
+	if(position + 1u < WINDOW_MODEL_ROWS) {
+		return false;
+	}
+	return (position + 1u - WINDOW_MODEL_ROWS) % WINDOW_MODEL_STRIDE == 0u;
+}
+
+/*
+ * Add the row, its flag and its position, how many rows came right before it with no
+ * gap. True when the rows now hold a whole window and the windowed model should score it.
+ */
+static inline bool window_rows_push(WindowRows *window_rows,
+				    const float physical[MODEL_SIGNALS], bool flag,
+				    uint32_t position)
+{
+	window_rows_restart_on_gap(window_rows, position);
+	row_ring_push(&window_rows->row_ring, physical, flag);
+	return window_rows_count(window_rows) == WINDOW_MODEL_ROWS
+		&& window_rows_is_on_stride(position);
 }
 
 #endif
