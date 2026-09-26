@@ -31,8 +31,6 @@ APPLICATIONS = {
     "rule_check_from_flash": Application(("mbf",)),
     "model_check_from_flash": Application(("mbf", "scale", "model", "scoring", MODEL), True),
     "ae_reconstruction_from_flash": Application(("scale", "model", "scoring", MODEL), True),
-    "scoring_and_detect_from_flash": Application(
-        ("mbf", "moving", "rules", "scale", "model", "scoring", "detect", MODEL), True),
     "ai_can_anomaly_detection": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
          "model", "scoring", "detect", DEPLOYED_MODEL), True),
