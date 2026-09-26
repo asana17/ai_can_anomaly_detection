@@ -31,7 +31,7 @@ One log takes at most one attack.
 | | replay | matched replay |
 |---|---|---|
 | logs with an attack in | 86 of 300 | 76 of 300 |
-| moving rows the false alarm rate is over | 38,455 | 33,079 |
+| moving rows the false positive rate is over | 38,455 | 33,079 |
 
 An attack fails to land for three reasons. No moving stretch is long enough. No donor
 moment matches. The replay wrote the bytes the PGN already had.

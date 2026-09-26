@@ -11,8 +11,8 @@ import numpy as np
 from preprocess.features.signal_state import SIGNALS
 
 # A pedal resting on its stop reports a little above zero, and drivers rest a foot on
-# both lightly. At 1% the rule raised 0.57 false alarms an hour on the test set at a
-# hold of 10 rows, at 10% 0.29, losing 7 of 490 attacks caught.
+# both lightly. At 1% the rule raised 0.57 false positive alarms an hour on the test
+# set at a hold of 10 rows, at 10% 0.29, losing 7 of 490 attacks caught.
 PRESSED = 10.0
 
 def hits(raw: np.ndarray, pressed: float = PRESSED) -> np.ndarray:

@@ -51,4 +51,4 @@ Every moving row counts.
 
 A model's threshold is the score that `TARGET` of those rows sit above. At `TARGET`
 0.001, one calibration row in a thousand is over it, and a detector that flags rows
-above it raises about that many false alarms on traffic like the calibration rows.
+above it raises about that many false positives on traffic like the calibration rows.

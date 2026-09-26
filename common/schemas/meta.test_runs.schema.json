@@ -83,7 +83,7 @@
       "minimum": 0
     },
     "hours": {
-      "description": "Hours of rows above `min_speed` with no attack in them, what the false alarms are counted over.",
+      "description": "Hours of rows above `min_speed` with no attack in them, what the false positive alarms are counted over.",
       "type": "number",
       "minimum": 0
     },
