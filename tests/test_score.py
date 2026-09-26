@@ -28,9 +28,12 @@ def rows_at(speeds):
     return raw
 
 
-def stand_in(monkeypatch, hub, raw, flagged, models=({"model": "pca", "k": 2},)):
-    """A fit holding `models`, and a calibration set holding `raw` with `flagged` hit
-    by a rule."""
+def stand_in(monkeypatch, hub, raw, flagged, models=({"model": "pca", "k": 2},),
+             segments=None):
+    """A fit holding `models`, and a calibration set holding `raw` in `segments`, one
+    segment when None, with `flagged` hit by an instant rule."""
+    if segments is None:
+        segments = np.zeros(len(raw), np.int64)
     weights = {"scale.mean": torch.zeros(len(SIGNALS)),
                "scale.std": torch.ones(len(SIGNALS)),
                "pca.k2.centre": torch.zeros(len(SIGNALS)),
@@ -38,7 +41,7 @@ def stand_in(monkeypatch, hub, raw, flagged, models=({"model": "pca", "k": 2},))
     monkeypatch.setattr(score, "fetch_fitted_models", lambda *args: (
         weights, {"inputs": {"models": list(models)}}))
     monkeypatch.setattr(score, "fetch_calibration_set", lambda *args: {
-        "calibration": raw, "min_speed": 5.0, "dataset": DATASET})
+        "calibration": raw, "seg": segments, "min_speed": 5.0, "dataset": DATASET})
     monkeypatch.setattr(score, "rule_hits", lambda raw, settings: flagged)
     hub.files = {}
 
@@ -53,7 +56,7 @@ def scored(tmp_path, **options):
 
 def test_a_row_at_or_below_the_speed_has_no_score(tmp_path, hub,
                                                                     monkeypatch):
-    raw = rows_at([1.0, 5.0, 9.0, 20.0])
+    raw = rows_at([1.0, 5.0, 9.0, 12.0])
     stand_in(monkeypatch, hub, raw, np.array([True, False, True, False]))
     folder = scored(tmp_path)
 
@@ -72,6 +75,18 @@ def test_a_row_at_or_below_the_speed_has_no_score(tmp_path, hub,
                               "precision": None}
     assert meta["rows"] == 4 and meta["scored"] == 2
     assert meta["calibration_set"] == DATASET["calibration_set"]
+
+
+def test_a_rule_reading_the_row_before_stops_at_a_gap(tmp_path, hub, monkeypatch):
+    # every step from 10 to 30 km/h is too far for change_limit
+    raw = rows_at([10.0, 30.0, 10.0, 1.0, 30.0])
+    stand_in(monkeypatch, hub, raw, np.zeros(5, bool),
+             segments=np.array([0, 0, 1, 1, 1]))
+    folder = scored(tmp_path)
+
+    assert np.load(folder / "rule_hits.npy").tolist() == [False, True, False, False,
+                                                          False], \
+        "a new segment and a standing row both start the rows before again"
 
 
 def int8_fit(monkeypatch, tmp_path, hub, raw):

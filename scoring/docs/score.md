@@ -11,6 +11,10 @@ each other. A model scores only the moving rows, z-scored on the same
 [scale](../../preprocess/docs/scale.md) the models were fitted on. Every other row
 gets NaN. [moving](../../preprocess/docs/moving.md) says why only moving rows are used.
 
+The rules flag the moving rows too. Those in [sequence](../../rules/README.md#sequence)
+read the rows before a row, back to a row that is not moving or a new segment of the
+grid, as the board does.
+
 It writes one directory of the runs repository, `scores/<time>/`.
 
 ## Running it
@@ -42,6 +46,6 @@ It writes these files into `runs_dir/scores/<time>/` and uploads that directory 
 | file | holds |
 |---|---|
 | `scores.npy` | float32, one row per row of the set and one column per model, NaN where the model did not score |
-| `rule_hits.npy` | bool, one per row of the set, whether an instant rule hits it on a moving row |
+| `rule_hits.npy` | bool, one per row of the set, whether a rule hits it on a moving row, instant or in sequence |
 | `models.json` | the models of the columns in order, as [models.schema.json](../../common/schemas/models.schema.json) describes |
 | `meta.json` | where the rows and the models came from, as [meta.scores.schema.json](../../common/schemas/meta.scores.schema.json) describes |

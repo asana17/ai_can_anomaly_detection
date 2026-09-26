@@ -25,17 +25,20 @@ from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import scale_of, torch_scorer
 from preprocess.features.moving import moving
+from preprocess.features.windows import positions
 from rules.hits import rule_hits
+from rules.sequence import change_limit, torque_over_load
 
 
 def fetch_set_rows(directory, local_dir):
-    """The rows of the set `directory` names, its `min_speed`, and where they came from."""
+    """The rows of the set `directory` names, the segment id of each, its `min_speed`,
+    and where they came from."""
     at = (directory["repo"], directory["revision"], directory["path"], local_dir)
     if directory["path"].startswith("test_sets/"):
         got = fetch_test_set(*at)
-        return got["raw"], got["min_speed"], got["dataset"]
+        return got["raw"], got["seg"], got["min_speed"], got["dataset"]
     got = fetch_calibration_set(*at)
-    return got["calibration"], got["min_speed"], got["dataset"]
+    return got["calibration"], got["seg"], got["min_speed"], got["dataset"]
 
 
 def scores_of(models, scorer_of, rows, scored):
@@ -54,7 +57,8 @@ def write_scores(folder, set_directory, models_directory, onnx_directory, onnx_f
 
     A model scores the moving rows. Each model scores in torch, or with its
     ONNX file when `onnx_directory` names the directory and the precision of them, the
-    directory downloaded into `onnx_folder`.
+    directory downloaded into `onnx_folder`. The rules flag the moving rows, and those
+    in rules/sequence/ read the rows before in the same unbroken span of moving rows.
     """
     weights, fitted = fetch_fitted_models(models_directory["repo"],
                                           models_directory["revision"],
@@ -65,9 +69,11 @@ def write_scores(folder, set_directory, models_directory, onnx_directory, onnx_f
     else:
         scorer_of = onnx_scorer(onnx_folder, onnx_directory["precision"])
         runtime = {"onnxruntime": onnxruntime.__version__}
-    raw, min_speed, dataset = fetch_set_rows(set_directory, local_dir)
+    raw, segments, min_speed, dataset = fetch_set_rows(set_directory, local_dir)
     mv = moving(raw, min_speed=min_speed)
-    hits = rule_hits(raw, min_speed) & mv
+    position = positions(mv, segments)
+    hits = (rule_hits(raw, min_speed) | change_limit.hits(raw, position)
+            | torque_over_load.hits(raw, position)) & mv
     models = models_from(fitted["inputs"]["models"])
     scores = scores_of(models, scorer_of, scale_of(weights).apply(raw), mv)
 
