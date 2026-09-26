@@ -75,13 +75,28 @@ def test_a_window_scores_at_its_last_row_and_other_rows_get_nan():
         return score
 
     scores, windows = score_windows.scores_of([StandIn(3), StandIn(2)], scorer_of,
-                                              rows, moving, segments)
+                                              rows, moving, segments, at_once=100)
 
     assert got[3][:, :, 0].tolist() == [[0, 1, 2], [1, 2, 3], [5, 6, 7]], "oldest first"
     assert np.flatnonzero(~np.isnan(scores[:, 0])).tolist() == [2, 3, 7]
     assert scores[[2, 3, 7], 0].tolist() == [2, 3, 7]
     assert np.flatnonzero(~np.isnan(scores[:, 1])).tolist() == [1, 2, 3, 6, 7, 9]
     assert windows == [3, 6]
+
+
+def test_windows_scored_a_few_at_a_time_score_as_all_at_once():
+    rows = np.random.default_rng(0).normal(size=(20, 2)).astype(np.float32)
+    moving = np.ones(20, dtype=bool)
+    segments = np.array([0] * 12 + [1] * 8)
+
+    def scorer_of(model):
+        return lambda windows: windows.sum(axis=(1, 2))
+
+    at_once, _ = score_windows.scores_of([StandIn(3)], scorer_of, rows, moving,
+                                         segments, at_once=100)
+    in_parts, _ = score_windows.scores_of([StandIn(3)], scorer_of, rows, moving,
+                                          segments, at_once=4)
+    assert np.array_equal(in_parts, at_once, equal_nan=True)
 
 
 def moving_rows(count):

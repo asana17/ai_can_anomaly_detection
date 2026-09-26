@@ -26,6 +26,9 @@ from models.torch_files import scale_of, torch_scorer
 from preprocess.features.moving import moving
 from preprocess.features.windows import positions, window_ends, window_rows
 
+# windows a model scores at once. It bounds the memory, not the scores
+WINDOWS = 100_000
+
 
 def fetch_set_rows(directory, local_dir):
     """The rows of the calibration set or test set `directory` names, the segment id
@@ -38,20 +41,23 @@ def fetch_set_rows(directory, local_dir):
     return got["calibration"], got["seg"], got["min_speed"], got["dataset"]
 
 
-def scores_of(models, scorer_of, rows, moving, segments):
+def scores_of(models, scorer_of, rows, moving, segments, *, at_once):
     """One column per model of its score on each window of `moving` rows, at the
     window's last row, and how many windows each model scored.
 
     A window is `model.rows` rows next to each other in one segment, oldest first. A
-    row where no window ends gets NaN.
+    row where no window ends gets NaN. The windows are cut and scored `at_once` at a
+    time.
     """
     position = positions(moving, segments)
     scores = np.full((len(rows), len(models)), np.nan, np.float32)
     windows = []
     for column, model in enumerate(models):
         ends = window_ends(position, rows=model.rows)
-        windows_of_model = window_rows(rows, ends, rows=model.rows)
-        scores[ends, column] = scorer_of(model)(windows_of_model)
+        score = scorer_of(model)
+        for start in range(0, len(ends), at_once):
+            part = ends[start:start + at_once]
+            scores[part, column] = score(window_rows(rows, part, rows=model.rows))
         windows.append(len(ends))
         print(f"{model.name}, {len(ends)} windows scored", flush=True)
     return scores, windows
@@ -70,7 +76,8 @@ def write_scores(folder, set_directory, models_directory, local_dir, runs_dir):
     models = models_from(fitted["inputs"]["models"])
     scores, windows = scores_of(models, torch_scorer(weights),
                                 scale_of(weights).apply(raw),
-                                moving(raw, min_speed=min_speed), segments)
+                                moving(raw, min_speed=min_speed), segments,
+                                at_once=WINDOWS)
 
     np.save(os.path.join(folder, "scores.npy"), scores)
     with open(os.path.join(folder, "models.json"), "w") as f:
@@ -94,7 +101,8 @@ def fetch_scores(directory, runs_dir):
 def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
          runs_dir, rebuild=False, dry_run=False):
     set_directory = {"repo": repo, "revision": revision, "path": set_path}
-    models_directory = {"repo": runs_repo, "revision": runs_revision, "path": models_path}
+    models_directory = {"repo": runs_repo, "revision": runs_revision,
+                        "path": models_path}
     return reuse_or_make(runs_repo, "window_scores",
                          {"set": set_path, "models": models_path}, {}, runs_dir,
                          lambda folder: write_scores(folder, set_directory,

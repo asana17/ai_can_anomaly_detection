@@ -46,6 +46,9 @@ differ there, so no window joins them.
 The rows are z-scored on the scale of the fit before the cut. The models run in
 torch.
 
+The windows are cut and scored `WINDOWS` at a time, a constant in `score_windows.py`,
+so the memory scoring takes does not grow with the calibration set or test set.
+
 ```python
 position = positions(moving(rows_of_set), segments)
 ends = window_ends(position, rows=model.rows)
