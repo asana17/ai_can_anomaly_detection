@@ -50,6 +50,17 @@ def z_distance_an_attack_moved(attack, attacked, std):
                                     / std) for i in changed))
 
 
+def z_distances_attacks_moved(attacked, models_directory, runs_dir):
+    """The z distance each attack of `attacked` moved a row by, in the units of the
+    models in `models_directory`."""
+    weights, _ = fetch_fitted_models(models_directory["repo"],
+                                     models_directory["revision"],
+                                     models_directory["path"], runs_dir)
+    std = scale_of(weights).std
+    return [z_distance_an_attack_moved(attack, attacked, std)
+            for attack in attacked["attacks"]]
+
+
 def false_positive_rate(flag, rows):
     """How often the model flags a moving row that has no attack on it."""
     return float((flag & rows.normal_moving).sum() / rows.normal_moving.sum())
@@ -174,13 +185,12 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
         onnx_files=onnx_files and onnx_files["path"],
         precision=onnx_files and onnx_files["precision"])
     scores, rule_hit, models, _ = score.fetch_scores(scores_directory, runs_dir)
-    weights, _ = fetch_fitted_models(at["repo"], at["revision"], at["path"], runs_dir)
-    std = scale_of(weights).std
     attacked = fetch_test_set(
         test_set_directory["repo"], test_set_directory["revision"],
         test_set_directory["path"], local_dir)
-    for attack in attacked["attacks"]:
-        attack["moved"] = z_distance_an_attack_moved(attack, attacked, std)
+    for attack, moved in zip(attacked["attacks"],
+                             z_distances_attacks_moved(attacked, at, runs_dir)):
+        attack["moved"] = moved
 
     rows = attacked_rows_of(attacked, rule_hit)
     attacks = injected_attacks_of(attacked, settings)
