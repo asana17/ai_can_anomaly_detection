@@ -40,7 +40,6 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots)
 		return error;
 	}
 	preprocess_task.slots = slots;
-	report_task.model_id = score_and_detect_by_row_model_id;
 	/* report sits below the tasks that raise the alarm */
 	error = report_task_create(&report_task, 10, &report_input);
 	if (error < E_OK) {

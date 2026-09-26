@@ -9,8 +9,6 @@
 #include "ai_can_anomaly_detection_tasks.h"
 #include "threshold.h"
 
-EXPORT CONST char *CONST score_and_detect_by_row_model_id = ACTIVE_MODEL_ID;
-
 /* Hand report the row an alarm starts or ends on. */
 LOCAL void report_alarm_change(ReportInput *report_input, UW no, INT alarm)
 {

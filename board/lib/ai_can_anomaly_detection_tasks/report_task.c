@@ -1,8 +1,6 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
-#include "detect_instant.h"
 #include "report_task.h"
-#include "ai_can_anomaly_detection_tasks.h"
 
 /* Print each alarm over UART. */
 LOCAL void report_task(INT stacd, void *exinf)
@@ -11,7 +9,6 @@ LOCAL void report_task(INT stacd, void *exinf)
 	Report report;
 	INT shown = 0; /* the alarm state printed last, not ringing at first */
 
-	tm_printf((UB*)"%s: k %u of %u\n", task->model_id, ALARM_K, DETECT_INSTANT_ROWS);
 	for (;;) {
 		report_input_read(task->report_input, &report);
 		/* a write just before the last read wakes report again with the same state */

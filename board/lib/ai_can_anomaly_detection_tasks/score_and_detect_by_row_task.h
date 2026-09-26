@@ -17,9 +17,6 @@ typedef struct {
 	ID task_id;
 } ScoreAndDetectByRowTask;
 
-/* The name of the model it scores with. */
-IMPORT CONST char *CONST score_and_detect_by_row_model_id;
-
 /*
  * Create score and detect by row. Rows come from its input, alarms go to report_input,
  * and each row goes on to score_and_detect_by_window_input.

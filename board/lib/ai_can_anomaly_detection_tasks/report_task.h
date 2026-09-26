@@ -9,7 +9,6 @@
 typedef struct {
 	ReportInput *report_input; /* where the alarms come from */
 	ID task_id;
-	CONST char *model_id;   /* the model score and detect by row runs */
 } ReportTask;
 
 /* Create report at priority, taking alarms from report_input. */
