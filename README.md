@@ -104,9 +104,9 @@ J1939's own terms, frame, PGN and SPN, are described in
   | `detect` | threshold, OR the rule flags, k of the last N | `detect`, run by `evaluate.run_test_set` | in C |
 
   What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
-  train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the
-  scale in the models, `detect` holds step 4, and `split_test_logs`, `calibration_set`,
-  `train_set` and `test_set` build the sets, and `score`, `calibrate` and
+  rules run over columns with numpy, and `fit` keeps the scale in the models, `detect`
+  holds step 4, and `split_test_logs`, `calibration_set`, `train_set` and `test_set`
+  build the sets, and `score`, `calibrate` and
   `run_test_set` are split as drawn, with their schemas and tests, and the stage docs
   follow them, and the `evaluate` box is broken up, `fit` and `calibrate` into
   `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
@@ -141,9 +141,6 @@ J1939's own terms, frame, PGN and SPN, are described in
     it, and scoring and detect and a window scoring task read it under one mutex. Row
     flags go in an array beside it. Window scoring only copies windows for now. W and S
     belong in the window model's config header.
-  - Fit and threshold each model on every normal row, rule hits included. The rules and
-    the model meet in `detect` alone. `train_set` and `calibrate` still drop rule hits.
-    The finished runs stay as a record.
   - Send alarms to CAN and record them to Flash, in two tasks, alarm A before B. UART
     output masks interrupts while it waits on each character.
 - Rules that read the past go into alarm A. change_limit runs on rows and in C. Wire it
