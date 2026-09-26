@@ -12,7 +12,7 @@ import os
 
 import numpy as np
 
-from assemble.grid import read_grid, rows_of_logs
+from assemble.grid import read_grid, rows_of_logs, segments_of_chosen_rows
 from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
@@ -67,8 +67,8 @@ def fetch_calibration_set(repo, revision, calibration_path, local_dir):
     """The rows a calibration set names, and the directories they came from.
 
     The calibration set is read at `revision` of `repo`, and the log split and grid it
-    names at the commits it names them at. `raw` and `seg` are the whole grid's rows
-    and segment ids. `calibration_rows` marks the calibration rows in them.
+    names at the commits it names them at. `seg` is the segment id of each calibration
+    row, once the other rows are removed.
     """
     folder, meta = read_dir(repo, calibration_path, local_dir, revision,
                             repo_type="dataset")
@@ -79,8 +79,8 @@ def fetch_calibration_set(repo, revision, calibration_path, local_dir):
                            repo_type="dataset")
     raw, _, segments, _, _ = read_grid(grid_dir)
     calibration_rows = read_calibration_set(folder)
-    return {"calibration": raw[calibration_rows], "raw": raw, "seg": segments,
-            "calibration_rows": calibration_rows,
+    return {"calibration": raw[calibration_rows],
+            "seg": segments_of_chosen_rows(calibration_rows, segments),
             "min_speed": log_split_meta["inputs"]["min_speed"],
             "dataset": {"calibration_set": {"repo": repo, "revision": revision,
                                             "path": calibration_path},
