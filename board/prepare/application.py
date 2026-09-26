@@ -33,8 +33,8 @@ APPLICATIONS = {
     "scoring_and_detect_from_flash": Application(
         ("mbf", "moving", "rules", "scale", "model", "scoring", "detect", MODEL), True),
     "ai_can_anomaly_detection": Application(
-        ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
-         "model", "scoring", "detect", DEPLOYED_MODEL), True),
+        ("mbf", "event_recorder", "can_id", "spn_decode", "signal_state", "slots", "moving",
+         "rules", "scale", "model", "scoring", "detect", DEPLOYED_MODEL), True),
     "can_path_from_flash": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
          "model", "scoring", "detect", MODEL), True),

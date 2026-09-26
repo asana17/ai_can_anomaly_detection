@@ -4,6 +4,7 @@
 #include "stm32h5xx_hal.h"
 #include "stm32h5xx_nucleo.h"
 #include "detect.h"
+#include "event_recorder.h"
 #include "mbf.h"
 #include "model.h"
 #include "model_config.h"
@@ -39,9 +40,10 @@ EXPORT Slots bus;
 
 IMPORT FDCAN_HandleTypeDef hfdcan1; /* set up by MX_FDCAN1_Init in the CubeMX main.c */
 
-LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id, alive_id, can_debug_id;
+LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id, alive_id, can_debug_id, flash_writer_id;
 LOCAL volatile UW rows_sent, rows_quiet, rows_not_ready, rows_skipped, rows_dropped, resets;
 LOCAL volatile UW scored_rows, flagged_rows, maximum_cycles;
+LOCAL volatile UW events_sent, events_dropped;
 
 /* A lock-free ring the RX interrupt fills and the debug task drains to print.
  * Single writer (ISR) / single reader (task), so head and tail need no lock. */
@@ -237,6 +239,11 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	tk_ext_tsk();
 }
 
+/* Ring buffer for keeping recent rows for event recording */
+#define ROW_HISTORY_SIZE 60  /* Keep 60 rows (EVENT_WINDOW_ROWS=50 + margin) */
+LOCAL float row_history[ROW_HISTORY_SIZE][MODEL_SIGNALS];
+LOCAL UW row_history_head = 0;
+
 /* Report the row that completes HOLD flagged rows, and the row the run ends on. */
 LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 {
@@ -245,9 +252,15 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 	Row row;
 	Report report = {0};
 	INT ringing = 0, alarmed;
+	EventRecord event;
+	ER err;
 
 	detect_clear(&state);
 	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
+		/* Store row in history ring for event recording */
+		memcpy(row_history[row_history_head], row.physical, MODEL_SIGNALS * sizeof(float));
+		row_history_head = (row_history_head + 1) % ROW_HISTORY_SIZE;
+
 		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
 			MIN_SPEED, &scored);
 		if(report.error != MODEL_OK) {
@@ -262,39 +275,137 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 		}
 		alarmed = detect_alarmed(&state, row.no, scored.score, THRESHOLD_SCORE,
 			scored.rule_hit, HOLD);
+		
+		// alarmed = 1;
 		if(alarmed != ringing) {
+			tm_printf((UB*)"DBG: alarm state change detected\n");
 			report.no = row.no;
 			memcpy(&report.score_bits, &scored.score, sizeof(scored.score));
 			report.rule = scored.rule_hit;
 			report.alarm = alarmed;
+			tm_printf((UB*)"DBG: sending report to report_mbf\n");
 			tk_snd_mbf(report_mbf, &report, sizeof(report), TMO_FEVR);
+			tm_printf((UB*)"DBG: report sent\n");
 			ringing = alarmed;
+
+			/* Send event to flash writer when alarm starts */
+			if(alarmed) {
+				tm_printf((UB*)"DBG: alarm started, preparing event\n");
+				event.row_number = row.no;
+				tm_printf((UB*)"DBG: copying rows to event\n");
+				event_recorder_copy_rows(event.data, row_history,
+					ROW_HISTORY_SIZE, row_history_head, EVENT_WINDOW_ROWS);
+				tm_printf((UB*)"DBG: sending event to flash writer\n");
+				err = event_recorder_send(&event);
+				tm_printf((UB*)"DBG: event send result: %d\n", err);
+				if(err == E_OK) {
+					events_sent++;
+				} else {
+					events_dropped++;
+				}
+			}
 		}
 	}
 	tk_slp_tsk(TMO_FEVR);
+}
+
+/* Dump stored events to UART (summary only). */
+LOCAL void dump_events_to_uart(void)
+{
+	uint32_t count, i;
+	const EventRecord *event;
+
+	count = event_recorder_get_count();
+	tm_printf((UB*)"Events stored: %u\n", count);
+
+	for(i = 0; i < count; i++) {
+		event = event_recorder_get_event_ptr(i);
+		if(event == NULL) {
+			tm_printf((UB*)"Error reading event %u\n", i);
+			continue;
+		}
+
+		tm_printf((UB*)"Event %u: row %u, first value 0x%08x\n",
+			i, event->row_number, *(const UW*)&event->data[0]);
+	}
+}
+
+/* Non-blocking UART receive check using direct register access */
+LOCAL INT uart_getchar_poll(void)
+{
+	/* UART2 register addresses (same as tm_com.c) */
+	#define UART_ISR	(*(_UW*)(0x50004400UL + 0x001C))
+	#define UART_RDR	(*(_UW*)(0x50004400UL + 0x0024))
+	#define ISR_RXNE	(0x00000020)
+
+	if ((UART_ISR & ISR_RXNE) != 0) {
+		return UART_RDR & 0xff;
+	}
+	return -1;  /* No data available */
 }
 
 /* Print each alarm over UART. */
 LOCAL void report_task(INT stacd, void *exinf)
 {
 	Report report;
+	INT received;
 
 	tm_printf((UB*)"ai_can_anomaly_detection %s: hold %u, reading FDCAN1\n",
 		ACTIVE_MODEL_ID, HOLD);
-	while(tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
-		if(report.error != MODEL_OK) {
-			tm_printf((UB*)"row %u error %d\n", report.no, report.error);
-			continue;
+	tm_printf((UB*)"Commands: 'd' = dump stored events\n");
+	tm_printf((UB*)"report_task: ready, waiting for CAN frames and commands\n");
+
+	while(1) {
+		/* Check for UART command (non-blocking, direct register access) */
+		INT c = uart_getchar_poll();
+		if(c == 'd' || c == 'D') {
+			dump_events_to_uart();
 		}
-		if(report.alarm) {
-			tm_printf((UB*)"alarm start at row %u score 0x%08x rule %d\n",
-				report.no, report.score_bits, report.rule);
-		} else {
-			tm_printf((UB*)"alarm end at row %u score 0x%08x rule %d\n",
-				report.no, report.score_bits, report.rule);
+
+		/* Check for reports with timeout so we can poll UART */
+		received = tk_rcv_mbf(report_mbf, &report, 100);
+		if(received == sizeof(report)) {
+			if(report.error != MODEL_OK) {
+				tm_printf((UB*)"row %u error %d\n", report.no, report.error);
+				continue;
+			}
+			if(report.alarm) {
+				tm_printf((UB*)"alarm start at row %u score 0x%08x rule %d\n",
+					report.no, report.score_bits, report.rule);
+			} else {
+				tm_printf((UB*)"alarm end at row %u score 0x%08x rule %d\n",
+					report.no, report.score_bits, report.rule);
+			}
+		}
+
+		/* Yield to lower priority tasks (can_debug_task, etc) */
+		tk_dly_tsk(100);
+	}
+}
+
+/* Flash writer task - receives events and writes to Flash */
+LOCAL void flash_writer_task(INT stacd, void *exinf)
+{
+	EventRecord event;
+	ER err;
+
+	tm_printf((UB*)"DBG: flash_writer_task started\n");
+	while(1) {
+		tm_printf((UB*)"DBG: flash_writer waiting for event\n");
+		err = event_recorder_receive(&event);
+		tm_printf((UB*)"DBG: event_recorder_receive returned: %d\n", err);
+		if(err == E_OK) {
+			/* Store event in memory (TODO: Flash erase & write) */
+			err = event_recorder_store(&event);
+			if(err == E_OK) {
+				tm_printf((UB*)"Flash: stored event for row %u (%u floats)\n",
+					event.row_number, EVENT_WINDOW_ROWS * EVENT_SIGNALS);
+			} else {
+				tm_printf((UB*)"Flash: storage full, event dropped\n");
+			}
+			tm_printf((UB*)"DBG: flash_writer processed event\n");
 		}
 	}
-	tk_slp_tsk(TMO_FEVR);
 }
 
 LOCAL void alive_task(INT stacd, void *exinf)
@@ -312,7 +423,7 @@ LOCAL T_CTSK preprocess_ctsk = {
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CTSK scoring_and_detect_ctsk = {
-	.itskpri = 8, .stksz = 1024, .task = scoring_and_detect_task,
+	.itskpri = 8, .stksz = 4096, .task = scoring_and_detect_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
 LOCAL T_CTSK report_ctsk = {
@@ -327,6 +438,10 @@ LOCAL T_CTSK can_debug_ctsk = {
 	.itskpri = 11, .stksz = 1024, .task = can_debug_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
+LOCAL T_CTSK flash_writer_ctsk = {
+	.itskpri = 13, .stksz = 4096, .task = flash_writer_task,
+	.tskatr = TA_HLNG | TA_RNG3,
+};
 LOCAL T_CCYC tick_ccyc = {
 	.cycatr = TA_HLNG | TA_STA, .cychdr = (FP)tick,
 	.cyctim = PERIOD, .cycphs = PERIOD,
@@ -336,6 +451,7 @@ EXPORT INT usermain(void)
 {
 	ID scoring_and_detect, report;
 	ModelStatus error;
+	ER err;
 
 	error = model_init();
 	if(error != MODEL_OK) {
@@ -347,19 +463,26 @@ EXPORT INT usermain(void)
 	if(row_mbf < E_OK || report_mbf < E_OK) {
 		return -10;
 	}
+	err = event_recorder_init();
+	if(err != E_OK) {
+		tm_printf((UB*)"event recorder init error %d\n", err);
+		return -14;
+	}
 	preprocess_id = tk_cre_tsk(&preprocess_ctsk);
 	scoring_and_detect = tk_cre_tsk(&scoring_and_detect_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
 	alive_id = tk_cre_tsk(&alive_ctsk);
 	can_debug_id = tk_cre_tsk(&can_debug_ctsk);
+	flash_writer_id = tk_cre_tsk(&flash_writer_ctsk);
 	if(preprocess_id < E_OK || scoring_and_detect < E_OK || report < E_OK
-		|| alive_id < E_OK || can_debug_id < E_OK) {
+		|| alive_id < E_OK || can_debug_id < E_OK || flash_writer_id < E_OK) {
 		return -11;
 	}
 	tk_sta_tsk(alive_id, 0);
 	tk_sta_tsk(report, 0);
 	tk_sta_tsk(scoring_and_detect, 0);
 	tk_sta_tsk(preprocess_id, 0);
+	tk_sta_tsk(flash_writer_id, 0);
 	tick_id = tk_cre_cyc(&tick_ccyc);
 	if(tick_id < E_OK) {
 		return -12;
