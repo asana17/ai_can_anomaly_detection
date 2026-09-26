@@ -155,8 +155,6 @@ J1939's own terms, frame, PGN and SPN, are described in
     The finished runs stay as a record.
   - Send alarms to CAN and record them to Flash, in two tasks, alarm A before B. UART
     output masks interrupts while it waits on each character.
-- Add Isolation Forest beside the autoencoders, as a baseline that does not
-  reconstruct.
 - Rules that read the past go into alarm A. change_limit runs on rows and in C. Wire it
   into scoring and detect once the ring is in.
 - Give gear_ratio and speed_agreement the row before, as change_limit has. On the
