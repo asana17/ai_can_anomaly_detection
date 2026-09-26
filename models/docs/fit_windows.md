@@ -1,0 +1,66 @@
+# fit_windows
+
+`fit_windows` reads a [train set](../../assemble/docs/train_set.md) and cuts its train
+rows into windows. It fits every window model listed in a JSON file on them. It then
+uploads the fitted models as `window_models/<time>/` of the runs repository.
+
+It is apart from [fit](fit.md), so the models of `fit` are neither fitted again nor
+changed. `--rebuild` of one leaves the other alone.
+
+## Running it
+
+```
+python3 -m models.fit_windows repo revision train_sets/<time> local_dir runs_repo runs_dir [--models window_models.json] [--rebuild]
+```
+
+The arguments are those of [fit](fit.md#running-it). Without `--models` the list is
+`models/window_models.json`.
+
+| file | holds |
+|---|---|
+| `weights.safetensors` | every fitted model's tensors, and `scale.mean` and `scale.std` |
+| `losses.json` | one entry per trained model. A var is solved, so it has none |
+| `meta.json` | what was fitted, and on what, as [meta.window_models.schema.json](../../common/schemas/meta.window_models.schema.json) describes |
+
+A var's tensors are `var.r{rows}.coefficients` and `var.r{rows}.intercept`.
+
+## The windows it fits on
+
+A window is `rows` train rows in a row, all in one segment, oldest first. The cut is
+[windows](../../preprocess/features/windows.py), the same rule the board uses.
+
+```python
+position = positions(train_rows, segment)
+ends = window_ends(position, rows=W)
+windows = window_rows(scaled_grid_rows, ends, rows=W)
+```
+
+Every window is fitted on, one ending at each train row that has `W - 1` train rows of
+its segment before it. Windows that hold a rule hit are kept. Rules and models meet in
+detect alone.
+
+The train rows are all moving rows, so a window holds no stopped row. Nothing drops a
+window that holds a NaN. `LinearRegression` refuses a NaN, so a var fit stops on one.
+
+The windows are cut again on every run and not stored. On the train set
+`train_sets/20260926-152733`, with 1,759,645 train rows, the cut took under a second
+for each W, measured on 2026-09-27.
+
+| W | windows | size as float32 |
+|---|---|---|
+| 5 | 1,735,855 | 0.59 GB |
+| 10 | 1,707,931 | 1.16 GB |
+| 20 | 1,654,339 | 2.25 GB |
+
+The memory a fit takes on top of the windows was not measured.
+
+## The scale
+
+The scale is that of [fit](fit.md#the-scale), taken from the train rows. It is applied
+to the whole grid before the cut. Each value is scaled on its own, so this gives the
+same windows as scaling each window.
+
+## The models this repository fits
+
+`models/window_models.json` asks for a [var](var.md) at W 5, 10 and 20. They were
+chosen without looking at any attack.

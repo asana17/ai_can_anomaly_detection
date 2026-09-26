@@ -8,6 +8,7 @@ directory of the runs repository.
 
 ```
 python3 -m models.fit REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
+python3 -m models.fit_windows REPO REVISION TRAIN_SET LOCAL_DIR RUNS_REPO RUNS_DIR
 python3 -m models.calibrate RUNS_REPO REVISION MODELS RUNS_DIR LOCAL_DIR
 ```
 
@@ -16,7 +17,11 @@ Documented under [docs/](docs).
 - [pca](docs/pca.md) scores a row by how far it sits off the subspace normal traffic
   occupies.
 - [autoencoder](docs/autoencoder.md) scores a row by its reconstruction error.
+- [var](docs/var.md) scores a window by how far its last row sits from what the rows
+  before it predict.
 - [fit](docs/fit.md) trains the models on the train rows and uploads them.
+- [fit_windows](docs/fit_windows.md) fits the window models on windows of the train
+  rows and uploads them.
 - [calibrate](docs/calibrate.md) gives each model the score above which a row counts
   as an anomaly.
 
