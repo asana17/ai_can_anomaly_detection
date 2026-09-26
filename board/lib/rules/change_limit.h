@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+#include "recent_rows.h"
 
 /* PERIOD in rules/sequence/change_limit.py, seconds from the row before */
 #define CHANGE_LIMIT_PERIOD 0.1f
@@ -29,17 +31,22 @@ static const ChangeLimit CHANGE_LIMITS[] = {
  *
  * The C port of rules/sequence/change_limit.py.
  *
+ * @param[in] recent The rows before @p row since a gap.
  * @param[in] row Physical values in the order of SIGNALS.
- * @param[in] previous The row one tick before, all NaN when there is none.
  * @retval true A signal moved faster than its limit. NaN compares false and never does.
- * @retval false Every signal stayed within its limit.
- * @pre @p row and @p previous contain every signal of SIGNALS.
+ * @retval false Every signal stayed within its limit, or @p recent holds no row.
  */
-static inline bool change_limit_hits(const float row[], const float previous[])
+static inline bool change_limit_hits(const RecentRows *recent, const float row[])
 {
+	uint32_t held = recent_rows_count(recent);
+	const float *previous;
 	size_t i;
 	float step;
 
+	if (held == 0u) {
+		return false;
+	}
+	previous = recent_rows_row(recent, held - 1u);
 	for (i = 0; i < CHANGE_LIMIT_SIGNALS; i++) {
 		step = row[CHANGE_LIMITS[i].signal] - previous[CHANGE_LIMITS[i].signal];
 		if (step < 0.0f) {
