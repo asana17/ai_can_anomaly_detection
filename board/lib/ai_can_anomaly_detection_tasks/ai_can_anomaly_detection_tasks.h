@@ -8,21 +8,6 @@
 #define MIN_SPEED 5.0f /* Settings.MIN_SPEED in common/settings.py */
 #define ALARM_K 10u /* flagged rows among the last DETECT_INSTANT_ROWS an alarm needs */
 
-/* What preprocess sends score and detect by row. */
-typedef struct {
-	UW no;
-	float physical[MODEL_SIGNALS];
-} Row;
-
-/* What score and detect by row sends report. */
-typedef struct {
-	UW no;
-	UW score_bits; /* float32 score bits; avoids UART float formatting. */
-	INT alarm; /* the row starts an alarm, or ends the one that was ringing */
-	INT rule;
-	ModelStatus error;
-} Report;
-
 /* Create preprocess, score and detect by row, and report on the slots. */
 IMPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots);
 

@@ -11,7 +11,7 @@ LOCAL void report_task(INT stacd, void *exinf)
 	Report report;
 
 	tm_printf((UB*)"%s: k %u of %u\n", task->model_id, ALARM_K, DETECT_INSTANT_ROWS);
-	while (tk_rcv_mbf(task->report_mbf, &report, TMO_FEVR) == sizeof(report)) {
+	while (report_input_read(task->report_input, &report) == E_OK) {
 		if (report.error != MODEL_OK) {
 			tm_printf((UB*)"row %u error %d\n", report.no, report.error);
 			continue;
@@ -27,14 +27,14 @@ LOCAL void report_task(INT stacd, void *exinf)
 	tk_ext_tsk();
 }
 
-EXPORT ER report_task_create(ReportTask *task, PRI priority, ID report_mbf)
+EXPORT ER report_task_create(ReportTask *task, PRI priority, ReportInput *report_input)
 {
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 1024, .task = report_task, .exinf = task,
 		.tskatr = TA_HLNG | TA_RNG3,
 	};
 
-	task->report_mbf = report_mbf;
+	task->report_input = report_input;
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }

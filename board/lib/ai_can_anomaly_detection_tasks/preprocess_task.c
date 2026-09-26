@@ -1,5 +1,4 @@
 #include <tk/tkernel.h>
-#include "mbf.h"
 #include "moving.h"
 #include "preprocess_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
@@ -17,9 +16,8 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 {
 	PreprocessTask *task = exinf;
 	SignalState held;
-	Row row, old;
+	Row row;
 	UW number = 0, seen = 0, quiet = 0, frames, intsts, i;
-	INT dropped;
 
 	while (tk_slp_tsk(TMO_FEVR) == E_OK) {
 		number++;
@@ -55,14 +53,16 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 			continue;
 		}
 		row.no = number;
-		if (mbf_send_drop_oldest(task->row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
+		if (score_and_detect_by_row_input_write(task->score_and_detect_by_row_input,
+			&row) != E_OK) {
 			break;
 		}
 	}
 	tk_ext_tsk();
 }
 
-EXPORT ER preprocess_task_create(PreprocessTask *task, PRI priority, ID row_mbf)
+EXPORT ER preprocess_task_create(PreprocessTask *task, PRI priority,
+	ScoreAndDetectByRowInput *score_and_detect_by_row_input)
 {
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 1024, .task = preprocess_task, .exinf = task,
@@ -73,7 +73,7 @@ EXPORT ER preprocess_task_create(PreprocessTask *task, PRI priority, ID row_mbf)
 		.cyctim = PERIOD, .cycphs = PERIOD,
 	};
 
-	task->row_mbf = row_mbf;
+	task->score_and_detect_by_row_input = score_and_detect_by_row_input;
 	task->task_id = tk_cre_tsk(&ctsk);
 	if (task->task_id < E_OK) {
 		return task->task_id;

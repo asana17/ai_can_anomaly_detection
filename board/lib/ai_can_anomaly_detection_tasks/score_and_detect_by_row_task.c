@@ -21,12 +21,13 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	INT ringing = 0, alarmed;
 
 	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
-	while (tk_rcv_mbf(task->row_mbf, &row, TMO_FEVR) == sizeof(row)) {
+	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
+		== E_OK) {
 		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
 			MIN_SPEED, &scored);
 		if (report.error != MODEL_OK) {
 			report.no = row.no;
-			tk_snd_mbf(task->report_mbf, &report, sizeof(report), TMO_FEVR);
+			report_input_write(task->report_input, &report);
 			break;
 		}
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
@@ -36,7 +37,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			memcpy(&report.score_bits, &scored.score, sizeof(scored.score));
 			report.rule = scored.rule_hit;
 			report.alarm = alarmed;
-			tk_snd_mbf(task->report_mbf, &report, sizeof(report), TMO_FEVR);
+			report_input_write(task->report_input, &report);
 			ringing = alarmed;
 		}
 	}
@@ -44,15 +45,16 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 }
 
 EXPORT ER score_and_detect_by_row_task_create(ScoreAndDetectByRowTask *task,
-	PRI priority, ID row_mbf, ID report_mbf)
+	PRI priority, ScoreAndDetectByRowInput *score_and_detect_by_row_input,
+	ReportInput *report_input)
 {
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 1024, .task = score_and_detect_by_row_task,
 		.exinf = task, .tskatr = TA_HLNG | TA_RNG3,
 	};
 
-	task->row_mbf = row_mbf;
-	task->report_mbf = report_mbf;
+	task->score_and_detect_by_row_input = score_and_detect_by_row_input;
+	task->report_input = report_input;
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }
