@@ -129,3 +129,21 @@ def test_a_run_keeps_the_window_scores_of_every_row_of_the_set(tmp_path, hub,
                               "models": "window_models/20260101-000000"}
     assert meta["rows"] == 6 and meta["windows"] == [1]
     assert meta["test_set"] == DATASET["test_set"]
+
+
+def test_the_scores_read_back_as_they_were_written(tmp_path, hub, monkeypatch):
+    fitted_var(monkeypatch, Var(3))
+    rows = moving_rows(6)
+    monkeypatch.setattr(score_windows, "fetch_test_set", lambda *args: {
+        "raw": rows, "seg": np.zeros(6), "min_speed": 5.0,
+        "dataset": {name: DATASET[name] for name in ("test_set", "log_split", "grid")}})
+    hub.files = {}
+    made = score_windows.main("u/d", REVISION, "test_sets/20260101-000000",
+                              str(tmp_path), "u/runs", COMMIT,
+                              "window_models/20260101-000000", str(tmp_path))
+    written = np.load(tmp_path / made["path"] / "scores.npy")
+
+    scores, models, meta = score_windows.fetch_scores(made, str(tmp_path))
+    assert np.array_equal(scores, written, equal_nan=True)
+    assert models == [{"model": "var", "rows": 3}]
+    assert meta["windows"] == [4]

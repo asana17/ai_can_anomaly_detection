@@ -19,7 +19,7 @@ import torch
 from assemble.calibration_set import fetch_calibration_set
 from assemble.test_set import fetch_test_set
 from common.cli import arguments
-from common.hub_dirs import reuse_or_make
+from common.hub_dirs import read_dir, reuse_or_make
 from models.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
 from models.torch_files import scale_of, torch_scorer
@@ -79,6 +79,16 @@ def write_scores(folder, set_directory, models_directory, local_dir, runs_dir):
             "rows": len(raw), "windows": windows,
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "platform": platform.platform()}}
+
+
+def fetch_scores(directory, runs_dir):
+    """The window scores in `directory`, the models of their columns, and its
+    `meta.json`."""
+    folder, meta = read_dir(directory["repo"], directory["path"], runs_dir,
+                            directory["revision"])
+    with open(os.path.join(folder, "models.json")) as f:
+        models = json.load(f)
+    return np.load(os.path.join(folder, "scores.npy")), models, meta
 
 
 def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
