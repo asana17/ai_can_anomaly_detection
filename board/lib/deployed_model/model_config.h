@@ -1,9 +1,9 @@
 #ifndef ACTIVE_MODEL_CONFIG_H
 #define ACTIVE_MODEL_CONFIG_H
 
-/* nonlinear_ae_k16_h128_float from board/20260916-232708, the largest model of
- * that export, with the scale of the fit it came from. */
-#define ACTIVE_MODEL_ID "nonlinear-ae-k16-h128-float"
+/* nonlinear_ae_k8_h128_float from board/20260916-232708, with the scale of the fit
+ * it came from. */
+#define ACTIVE_MODEL_ID "nonlinear-ae-k8-h128-float"
 
 static const float active_model_mean[SIGNAL_COUNT] = {
 		0x1.0037300000000p+10f, 0x1.1d63200000000p+4f,

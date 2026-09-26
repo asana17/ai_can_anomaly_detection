@@ -21,12 +21,12 @@ until the board is reset.
 
 ## The model
 
-It runs `nonlinear_ae_k16_h128`, the largest model of the export in
+It runs `nonlinear_ae_k8_h128` from
 [`board/lib/deployed_model/`](../../lib/deployed_model), with the scale of the fit it
 came from and the threshold `calibrate` took for it. The sample applications run a
 smaller one from `board/lib/active_model/`, so changing one leaves the other alone.
 
-The files come from the runs repository, `board/20260916-232708/nonlinear_ae_k16_h128/`
+The files come from the runs repository, `board/20260916-232708/nonlinear_ae_k8_h128/`
 and `results/20260916-001002`. They are kept here so that the application builds from a
 clone with nothing fetched.
 
@@ -39,8 +39,8 @@ python3 board/flash.py CUBEIDE_PROJECT_DIR
 
 ## Size
 
-`arm-none-eabi-size` of the image, built on 2026-09-22 in the Debug configuration,
-which compiles at `-O0`.
+`arm-none-eabi-size` of the image, built on 2026-09-22 with `nonlinear_ae_k16_h128` in the
+Debug configuration, which compiles at `-O0`.
 
 | what | bytes |
 |---|---|

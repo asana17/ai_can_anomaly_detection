@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    active_model.h
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-16T23:33:46+0900
+  * @date    2026-09-16T23:30:19+0900
   * @brief   ST.AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * @attention
@@ -23,12 +23,12 @@
 
 /*****************************************************************************/
 /*  Original model name and signature  */
-#define STAI_ACTIVE_MODEL_ORIGIN_MODEL_NAME         "nonlinear_ae_k16_h128_float"
-#define STAI_ACTIVE_MODEL_ORIGIN_MODEL_SIGNATURE    "0xfb7f2bc86d83e525d2bdcbbe3e877909"
+#define STAI_ACTIVE_MODEL_ORIGIN_MODEL_NAME         "nonlinear_ae_k8_h128_float"
+#define STAI_ACTIVE_MODEL_ORIGIN_MODEL_SIGNATURE    "0xed4c77a1bc389dd0b1438f1fa8bc09bb"
 
 /*  Generated model name and signature  */
 #define STAI_ACTIVE_MODEL_MODEL_NAME                "active_model"
-#define STAI_ACTIVE_MODEL_MODEL_SIGNATURE           (0xe28ef90b6beb91a4)
+#define STAI_ACTIVE_MODEL_MODEL_SIGNATURE           (0x6e735859278cd798)
 
 
 /*****************************************************************************/
@@ -43,7 +43,7 @@
 #define STAI_ACTIVE_MODEL_NODES_NUM           (6)
 
 /*  Macro to declare number macc for generated active_model model  */
-#define STAI_ACTIVE_MODEL_MACC_NUM            (8993)
+#define STAI_ACTIVE_MODEL_MACC_NUM            (6937)
 
 /*  Macros to declare input buffers characteristics  */
 #define STAI_ACTIVE_MODEL_IN_NUM              (1)
@@ -114,16 +114,16 @@
 /*  Macros to declare weights buffers characteristics  */
 
 #define STAI_ACTIVE_MODEL_WEIGHTS_NUM                  (1)
-#define STAI_ACTIVE_MODEL_WEIGHTS_SIZE                  (34948)
-#define STAI_ACTIVE_MODEL_WEIGHTS_SIZE_BYTES            (34948)
+#define STAI_ACTIVE_MODEL_WEIGHTS_SIZE                  (26724)
+#define STAI_ACTIVE_MODEL_WEIGHTS_SIZE_BYTES            (26724)
 #define STAI_ACTIVE_MODEL_WEIGHTS_ALIGNMENTS \
   { 4}
 #define STAI_ACTIVE_MODEL_WEIGHTS_SIZES \
-  { 34948}
+  { 26724}
 #define STAI_ACTIVE_MODEL_WEIGHTS_NUM        (1)
 #define STAI_ACTIVE_MODEL_WEIGHT_1_FLAGS       ((STAI_FLAG_PREALLOCATED))
-#define STAI_ACTIVE_MODEL_WEIGHT_1_SIZE        (34948)
-#define STAI_ACTIVE_MODEL_WEIGHT_1_SIZE_BYTES  (34948)
+#define STAI_ACTIVE_MODEL_WEIGHT_1_SIZE        (26724)
+#define STAI_ACTIVE_MODEL_WEIGHT_1_SIZE_BYTES  (26724)
 
 
 /*****************************************************************************/

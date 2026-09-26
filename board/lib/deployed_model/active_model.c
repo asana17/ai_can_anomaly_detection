@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    active_model.c
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-16T23:33:46+0900
+  * @date    2026-09-16T23:30:19+0900
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * @attention
@@ -152,8 +152,8 @@
 
 
 /*****************************************************************************/
-#define _STAI_ACTIVE_MODEL_MODEL_SIGNATURE     "0xfb7f2bc86d83e525d2bdcbbe3e877909"
-#define _STAI_ACTIVE_MODEL_DATETIME            "2026-09-16T23:33:46+0900"
+#define _STAI_ACTIVE_MODEL_MODEL_SIGNATURE     "0xed4c77a1bc389dd0b1438f1fa8bc09bb"
+#define _STAI_ACTIVE_MODEL_DATETIME            "2026-09-16T23:30:19+0900"
 #define _STAI_ACTIVE_MODEL_COMPILE_DATETIME    __DATE__ " " __TIME__
 
 #define _STAI_CONTEXT_ALIGNMENT        STAI_ACTIVE_MODEL_CONTEXT_ALIGNMENT
@@ -219,7 +219,7 @@ static const stai_network_info g_active_model_info = {
       STAI_ACTIVE_MODEL_WEIGHT_1_FLAGS,
       STAI_FORMAT_U8,
       STAI_ACTIVE_MODEL_WEIGHT_1_SIZE_BYTES,
-      STAI_DECLARE_ARRAY(int32_t, 1, 34948),
+      STAI_DECLARE_ARRAY(int32_t, 1, 26724),
       STAI_EMPTY_ARRAY(),
       STAI_EMPTY_ARRAY()),
     },
@@ -398,9 +398,9 @@ stai_return_code stai_active_model_run(
       .output = (float*)(net_ctx->_activations[0] + 0),
       .input = (float*)(net_ctx->_activations[0] + 68),
       .weights = (float*)(net_ctx->_weights[0] + 9216),
-      .bias = (float*)(net_ctx->_weights[0] + 17408),
+      .bias = (float*)(net_ctx->_weights[0] + 13312),
       .n_channel_in = 128,
-      .n_channel_out = 16,
+      .n_channel_out = 8,
       .n_elements = 1,
     };
   
@@ -416,9 +416,9 @@ stai_return_code stai_active_model_run(
       forward_lite_dense_if32of32wf32_args arg_30f51e = {
       .output = (float*)(net_ctx->_activations[0] + 68),
       .input = (float*)(net_ctx->_activations[0] + 0),
-      .weights = (float*)(net_ctx->_weights[0] + 17472),
-      .bias = (float*)(net_ctx->_weights[0] + 25664),
-      .n_channel_in = 16,
+      .weights = (float*)(net_ctx->_weights[0] + 13344),
+      .bias = (float*)(net_ctx->_weights[0] + 17440),
+      .n_channel_in = 8,
       .n_channel_out = 128,
       .n_elements = 1,
     };
@@ -447,8 +447,8 @@ stai_return_code stai_active_model_run(
       forward_lite_dense_if32of32wf32_args arg_30f51e = {
       .output = (float*)(net_ctx->_outputs[0] + 0),
       .input = (float*)(net_ctx->_activations[0] + 68),
-      .weights = (float*)(net_ctx->_weights[0] + 26176),
-      .bias = (float*)(net_ctx->_weights[0] + 34880),
+      .weights = (float*)(net_ctx->_weights[0] + 17952),
+      .bias = (float*)(net_ctx->_weights[0] + 26656),
       .n_channel_in = 128,
       .n_channel_out = 17,
       .n_elements = 1,

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    active_model.h
-  * @date    2026-09-16T23:33:46+0900
+  * @date    2026-09-16T23:30:19+0900
   * @brief   ST.AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * @attention
@@ -25,7 +25,7 @@ const stai_network_details g_active_model_details = {
    { .size_bytes = 68, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 17}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "row_output" },
    { .size_bytes = 512, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 128}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "_encoder_encoder_0_Gemm_output_0_output" },
    { .size_bytes = 512, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 128}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "_encoder_encoder_1_Relu_output_0_output" },
-   { .size_bytes = 64, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 16}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "_encoder_encoder_2_Gemm_output_0_output" },
+   { .size_bytes = 32, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 8}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "_encoder_encoder_2_Gemm_output_0_output" },
    { .size_bytes = 512, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 128}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "_decoder_decoder_0_Gemm_output_0_output" },
    { .size_bytes = 512, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 128}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "_decoder_decoder_1_Relu_output_0_output" },
    { .size_bytes = 68, .flags = (STAI_FLAG_HAS_BATCH|STAI_FLAG_CHANNEL_LAST), .format = STAI_FORMAT_FLOAT32, .shape = {2, (const int32_t[2]){1, 17}}, .scale = {0, NULL}, .zeropoint = {0, NULL}, .name = "out_output" }

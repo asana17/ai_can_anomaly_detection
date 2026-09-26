@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    active_model_data.h
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-16T23:33:46+0900
+  * @date    2026-09-16T23:30:19+0900
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * Copyright (c) 2026 STMicroelectronics.
@@ -18,6 +18,6 @@
 #define STAI_ACTIVE_MODEL_DATA_H
 #include "stai.h"
 STAI_ALIGNED(8)
-extern const uint64_t g_active_model_weights_array[4369];
+extern const uint64_t g_active_model_weights_array[3341];
 #endif  /* STAI_ACTIVE_MODEL_DATA_H */
 
