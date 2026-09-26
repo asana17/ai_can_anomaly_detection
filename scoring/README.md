@@ -6,6 +6,7 @@ Scores a set of rows. [preprocess](../preprocess) marks the moving rows,
 
 ```
 python3 -m scoring.score REPO REVISION SET LOCAL_DIR RUNS_REPO REVISION MODELS RUNS_DIR
+python3 -m scoring.score_windows REPO REVISION SET LOCAL_DIR RUNS_REPO REVISION WINDOW_MODELS RUNS_DIR
 ```
 
 Documented under [docs/](docs).
@@ -13,6 +14,8 @@ Documented under [docs/](docs).
 - [score](docs/score.md) scores each row of a set with every model, and marks the rows
   a rule hits. [calibrate](../models/docs/calibrate.md) and
   [run_test_set](../evaluate/docs/run_test_set.md) run it.
+- [score_windows](docs/score_windows.md) scores each window of a calibration set or a
+  test set with every window model, at the window's last row.
 
 ## Tests
 
