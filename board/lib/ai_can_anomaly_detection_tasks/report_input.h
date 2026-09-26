@@ -3,43 +3,44 @@
 
 #include <tk/tkernel.h>
 
-/* An alarm starting or ending, for report to print. */
+/* The alarm state after its last start or end, for report to print. */
 typedef struct {
-	UW no;
-	UW score_bits; /* float32 score bits; avoids UART float formatting. */
-	INT alarm; /* the row starts an alarm, or ends the one that was ringing */
-	INT rule;
+	UW no; /* the row of the last change */
+	INT alarm; /* the alarm is ringing */
 } Report;
 
-/* The reports score and detect by row passes to report, in a message buffer. */
+/*
+ * The latest report score and detect by row passes to report, under a lock. A new report
+ * goes over the one before, so writing never waits for report.
+ */
 typedef struct {
-	ID mbf;
+	ID mutex;            /* locks report */
+	ID wake_reader_flag; /* event flag that wakes the reader */
+	Report report;       /* the latest report */
 } ReportInput;
 
 /**
- * @brief Make the input, with no report in it.
+ * @brief Make the input, with the alarm not ringing.
  *
  * @param[out] report_input The input.
- * @return E_OK, or the error T-Kernel gave while making its message buffer.
+ * @return E_OK, or the error T-Kernel gave while making its mutex or event flag.
  */
 IMPORT ER report_input_create(ReportInput *report_input);
 
 /**
- * @brief Add a report, waiting for room when the input is full.
+ * @brief Put a change over the report before, and wake the reader.
  *
  * @param[in,out] report_input The input.
- * @param[in] report The report.
- * @return E_OK, or the error T-Kernel gave.
+ * @param[in] report The change.
  */
-IMPORT ER report_input_write(ReportInput *report_input, CONST Report *report);
+IMPORT void report_input_write(ReportInput *report_input, CONST Report *report);
 
 /**
- * @brief Wait for a report and take it out.
+ * @brief Wait for a write, then copy the latest report.
  *
  * @param[in,out] report_input The input.
- * @param[out] report The report.
- * @return E_OK, or the error T-Kernel gave.
+ * @param[out] report The latest report.
  */
-IMPORT ER report_input_read(ReportInput *report_input, Report *report);
+IMPORT void report_input_read(ReportInput *report_input, Report *report);
 
 #endif

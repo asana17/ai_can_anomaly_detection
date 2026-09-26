@@ -47,8 +47,6 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		alarmed = detect_instant_alarmed(&state);
 		if (alarmed != ringing) {
 			report.no = row.no;
-			memcpy(&report.score_bits, &scored.score, sizeof(scored.score));
-			report.rule = scored.rule_hit;
 			report.alarm = alarmed;
 			report_input_write(task->report_input, &report);
 			ringing = alarmed;

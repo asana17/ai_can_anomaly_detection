@@ -8,7 +8,7 @@ flowchart LR
     slots[(slots)] --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     pre -- row queue --> sd["score and detect by row 8<br/>rules, autoencoder, k of the last N"]
-    sd -- report queue --> report["report 10<br/>UART"]
+    sd -- latest report --> report["report 10<br/>UART"]
     sd -- shared ring --> win["score and detect by window 11<br/>windows of the last rows"]
 ```
 
@@ -44,6 +44,10 @@ buffer leaves a gap, and the model then scores a stretch of time that never happ
 
 Report is best effort by the same rule, since a late line loses nothing. It sits below
 both guaranteed tasks.
+
+Score and detect by row hands report only the latest alarm state, as the CAN receive
+interrupt hands preprocessing the slots. A new state goes over the one before. So
+writing never waits for report, and report always gets the current state.
 
 ## Passing rows
 

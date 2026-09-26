@@ -9,18 +9,22 @@ LOCAL void report_task(INT stacd, void *exinf)
 {
 	ReportTask *task = exinf;
 	Report report;
+	INT shown = 0; /* the alarm state printed last, not ringing at first */
 
 	tm_printf((UB*)"%s: k %u of %u\n", task->model_id, ALARM_K, DETECT_INSTANT_ROWS);
-	while (report_input_read(task->report_input, &report) == E_OK) {
+	for (;;) {
+		report_input_read(task->report_input, &report);
+		/* a write just before the last read wakes report again with the same state */
+		if (report.alarm == shown) {
+			continue;
+		}
+		shown = report.alarm;
 		if (report.alarm) {
-			tm_printf((UB*)"alarm start at row %u score 0x%08x rule %d\n",
-				report.no, report.score_bits, report.rule);
+			tm_printf((UB*)"alarm start at row %u\n", report.no);
 		} else {
-			tm_printf((UB*)"alarm end at row %u score 0x%08x rule %d\n",
-				report.no, report.score_bits, report.rule);
+			tm_printf((UB*)"alarm end at row %u\n", report.no);
 		}
 	}
-	tk_ext_tsk();
 }
 
 EXPORT ER report_task_create(ReportTask *task, PRI priority, ReportInput *report_input)
