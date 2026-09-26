@@ -151,8 +151,6 @@ J1939's own terms, frame, PGN and SPN, are described in
   gear changes leaves 77. speed_agreement fires 587 times, at a median of 12 km/h/s
   against 1.0 for all moving rows, and 91 remain below 5 km/h/s. Both catch attacks no
   other rule does, so measure what each change loses on the test set.
-- engine_load against actual_engine_torque over ten rows was kept from six window rules
-  by how many matched replays it caught. Decide it again on normal data alone.
 - A script that compares scores.
 
 ## Tests
