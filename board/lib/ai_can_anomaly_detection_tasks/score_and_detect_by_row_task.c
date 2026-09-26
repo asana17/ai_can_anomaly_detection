@@ -1,14 +1,23 @@
 #include <string.h>
 #include <tk/tkernel.h>
+#include "change_limit.h"
 #include "detect_instant.h"
 #include "model.h"
 #include "model_config.h"
+#include "recent_rows.h"
 #include "scoring.h"
 #include "score_and_detect_by_row_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 #include "threshold.h"
+#include "torque_over_load.h"
 
 EXPORT CONST char *CONST score_and_detect_by_row_model_id = ACTIVE_MODEL_ID;
+
+/* Whether change_limit or torque_over_load hits row, given the rows before it. */
+LOCAL bool rules_on_rows_before_hit(const RecentRows *rows_before, const float row[])
+{
+	return change_limit_hits(rows_before, row) || torque_over_load_hits(rows_before, row);
+}
 
 /* Score each row and report where alarms start and end. */
 LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
@@ -17,6 +26,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	DetectInstant state;
 	ScoringRow scored;
 	Row row;
+	RecentRows rows_before; /* the rows before row, back to the last gap */
 	Report report = {0};
 	INT ringing = 0, alarmed;
 	RowRingEntry entry;
@@ -35,6 +45,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			row_count_since_gap++;
 		} else {
 			row_count_since_gap = 0;
+			recent_rows_clear(&rows_before);
 		}
 		started = TRUE;
 		last_no = row.no;
@@ -43,6 +54,8 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		if (error != MODEL_OK) {
 			break;
 		}
+		scored.rule_hit = scored.rule_hit
+			|| rules_on_rows_before_hit(&rows_before, row.physical);
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
 		alarmed = detect_instant_alarmed(&state);
 		if (alarmed != ringing) {
@@ -56,6 +69,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		entry.row_count_since_gap = row_count_since_gap;
 		score_and_detect_by_window_input_write(task->score_and_detect_by_window_input,
 			&entry);
+		recent_rows_push(&rows_before, row.physical);
 	}
 	tk_ext_tsk();
 }
