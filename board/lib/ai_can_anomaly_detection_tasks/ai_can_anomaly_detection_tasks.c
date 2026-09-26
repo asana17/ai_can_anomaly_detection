@@ -9,9 +9,9 @@
 #define ROW_DEPTH 4
 #define REPORT_DEPTH 8
 
-LOCAL PreprocessTask preprocess;
-LOCAL ScoringAndDetectTask scoring_and_detect;
-LOCAL ReportTask report;
+LOCAL PreprocessTask preprocess_task;
+LOCAL ScoringAndDetectTask scoring_and_detect_task;
+LOCAL ReportTask report_task;
 
 /* The queue from preprocess to scoring and detect, a Row each. */
 LOCAL T_CMBF row_cmbf = {
@@ -44,18 +44,19 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots)
 	if(report_mbf < E_OK) {
 		return report_mbf;
 	}
-	preprocess.slots = slots;
-	report.model_id = scoring_and_detect_model_id;
+	preprocess_task.slots = slots;
+	report_task.model_id = scoring_and_detect_model_id;
 	/* report sits below the tasks that raise the alarm */
-	error = report_task_create(&report, 10, report_mbf);
+	error = report_task_create(&report_task, 10, report_mbf);
 	if(error < E_OK) {
 		return error;
 	}
-	error = scoring_and_detect_task_create(&scoring_and_detect, 8, row_mbf, report_mbf);
+	error = scoring_and_detect_task_create(&scoring_and_detect_task, 8, row_mbf,
+		report_mbf);
 	if(error < E_OK) {
 		return error;
 	}
-	return preprocess_task_create(&preprocess, 6, row_mbf);
+	return preprocess_task_create(&preprocess_task, 6, row_mbf);
 }
 
 EXPORT ER ai_can_anomaly_detection_tasks_start(void)
@@ -63,13 +64,13 @@ EXPORT ER ai_can_anomaly_detection_tasks_start(void)
 	ER error;
 
 	/* each task waits on its queue before the one that sends to it runs */
-	error = report_task_start(&report);
+	error = report_task_start(&report_task);
 	if(error < E_OK) {
 		return error;
 	}
-	error = scoring_and_detect_task_start(&scoring_and_detect);
+	error = scoring_and_detect_task_start(&scoring_and_detect_task);
 	if(error < E_OK) {
 		return error;
 	}
-	return preprocess_task_start(&preprocess);
+	return preprocess_task_start(&preprocess_task);
 }
