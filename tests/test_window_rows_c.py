@@ -10,26 +10,26 @@ STRIDE = 10  # WINDOW_MODEL_STRIDE
 def c_rows(board_lib):
     """Build board/lib/window_model/window_rows.h for this machine and give its functions.
 
-    `push` adds a row with `position` rows right before it and no gap, holding `no` in
+    `push` adds the row numbered `no` with its `row_count_since_gap`, holding `no` in
     every signal.
     """
     library = board_lib(["window_model", "row_ring", "model"],
                         "#include <stddef.h>\n"
                         '#include "window_rows.h"\n'
                         "size_t rows_size(void)\n"
-                        "{\n\treturn sizeof(WindowRows);\n}\n"
-                        "void clear(WindowRows *rows)\n"
-                        "{\n\twindow_rows_clear(rows);\n}\n"
-                        "bool push(WindowRows *rows, uint32_t no, uint32_t position)\n"
-                        "{\n\tfloat physical[MODEL_SIGNALS];\n\tuint32_t i;\n\n"
+                        "{\n\treturn sizeof(RowRing);\n}\n"
+                        "void clear(RowRing *rows)\n"
+                        "{\n\trow_ring_clear(rows);\n}\n"
+                        "bool push(RowRing *rows, uint32_t no, uint32_t row_count_since_gap)\n"
+                        "{\n\tRowRingEntry entry = {.flag = false,"
+                        " .row_count_since_gap = row_count_since_gap};\n\tuint32_t i;\n\n"
                         "\tfor(i = 0u; i < MODEL_SIGNALS; i++) {\n"
-                        "\t\tphysical[i] = (float)no;\n\t}\n"
-                        
-                        "\treturn window_rows_push(rows, physical, false, position);\n}\n"
-                        "float oldest(const WindowRows *rows)\n"
-                        "{\n\treturn row_ring_physical(&rows->row_ring, 0u)[0];\n}\n"
-                        "uint32_t held(const WindowRows *rows)\n"
-                        "{\n\treturn row_ring_count(&rows->row_ring);\n}\n")
+                        "\t\tentry.physical[i] = (float)no;\n\t}\n"
+                        "\treturn window_rows_push(rows, &entry);\n}\n"
+                        "float oldest(const RowRing *rows)\n"
+                        "{\n\treturn row_ring_entry(rows, 0u)->physical[0];\n}\n"
+                        "uint32_t held(const RowRing *rows)\n"
+                        "{\n\treturn row_ring_count(rows);\n}\n")
     library.rows_size.restype = ctypes.c_size_t
     library.clear.argtypes = [ctypes.c_void_p]
     library.push.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
@@ -49,9 +49,9 @@ def rows(c_rows):
     return rows
 
 
-def _ready(c_rows, rows, numbers, positions):
+def _ready(c_rows, rows, numbers, row_count_since_gap):
     """The row numbers a window ends at."""
-    return [no for no, position in zip(numbers, positions) if c_rows.push(rows, no, position)]
+    return [no for no, since in zip(numbers, row_count_since_gap) if c_rows.push(rows, no, since)]
 
 
 def test_windows_come_at_rows_then_every_stride(c_rows, rows):

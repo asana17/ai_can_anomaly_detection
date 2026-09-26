@@ -8,10 +8,16 @@
 
 #define ROW_RING_ROWS WINDOW_MODEL_ROWS
 
-/* A ring of the last ROW_RING_ROWS rows and their flags. */
+/* One row in a RowRing, with what the windowed model needs about it. */
 typedef struct {
-	float physical[ROW_RING_ROWS][MODEL_SIGNALS];
-	uint8_t flags[ROW_RING_ROWS];
+	float physical[MODEL_SIGNALS];
+	bool flag; /* a rule or the instant model flagged the row */
+	uint32_t row_count_since_gap; /* this row's place since the last gap, from 0 */
+} RowRingEntry;
+
+/* A ring of the last ROW_RING_ROWS rows. */
+typedef struct {
+	RowRingEntry entries[ROW_RING_ROWS];
 	uint32_t start; /* the slot of the oldest row */
 	uint32_t count; /* rows held, from start on, wrapping at ROW_RING_ROWS */
 } RowRing;
@@ -28,41 +34,31 @@ static inline void row_ring_clear(RowRing *ring)
 }
 
 /**
- * @brief Give the slot of the i-th oldest row.
+ * @brief Give the slot of the row at index, counted from the oldest.
  *
  * @param[in] ring The ring.
- * @param[in] i 0 for the oldest, the one at start.
+ * @param[in] index 0 for the oldest, the one at start.
  * @return The slot.
  */
-static inline uint32_t row_ring_index(const RowRing *ring, uint32_t i)
+static inline uint32_t row_ring_index(const RowRing *ring, uint32_t index)
 {
-	return (ring->start + i) % ROW_RING_ROWS;
+	return (ring->start + index) % ROW_RING_ROWS;
 }
 
 /**
- * @brief Add a row and its flag, over the oldest when the ring is full.
+ * @brief Add a row, over the oldest when the ring is full.
  *
  * @param[in,out] ring The ring.
- * @param[in] physical The row.
- * @param[in] flag Its flag.
- * @return The slot the row went into.
+ * @param[in] entry The row.
  */
-static inline uint32_t row_ring_push(RowRing *ring, const float physical[MODEL_SIGNALS],
-				     bool flag)
+static inline void row_ring_push(RowRing *ring, const RowRingEntry *entry)
 {
-	uint32_t at = row_ring_index(ring, ring->count);
-	uint32_t i;
-
-	for (i = 0u; i < MODEL_SIGNALS; i++) {
-		ring->physical[at][i] = physical[i];
-	}
-	ring->flags[at] = flag;
+	ring->entries[row_ring_index(ring, ring->count)] = *entry;
 	if (ring->count < ROW_RING_ROWS) {
 		ring->count = ring->count + 1u;
 	} else {
 		ring->start = (ring->start + 1u) % ROW_RING_ROWS;
 	}
-	return at;
 }
 
 /**
@@ -77,27 +73,15 @@ static inline uint32_t row_ring_count(const RowRing *ring)
 }
 
 /**
- * @brief Give the i-th oldest row.
+ * @brief Give the row at index, counted from the oldest.
  *
  * @param[in] ring The ring.
- * @param[in] i 0 for the oldest, below row_ring_count().
- * @return The row's MODEL_SIGNALS values.
+ * @param[in] index 0 for the oldest, below row_ring_count().
+ * @return The row.
  */
-static inline const float *row_ring_physical(const RowRing *ring, uint32_t i)
+static inline const RowRingEntry *row_ring_entry(const RowRing *ring, uint32_t index)
 {
-	return ring->physical[row_ring_index(ring, i)];
-}
-
-/**
- * @brief Give the flag of the i-th oldest row.
- *
- * @param[in] ring The ring.
- * @param[in] i 0 for the oldest, below row_ring_count().
- * @return The row's flag.
- */
-static inline bool row_ring_flag(const RowRing *ring, uint32_t i)
-{
-	return ring->flags[row_ring_index(ring, i)];
+	return &ring->entries[row_ring_index(ring, index)];
 }
 
 #endif
