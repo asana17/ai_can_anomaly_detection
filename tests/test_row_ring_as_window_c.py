@@ -13,7 +13,7 @@ def c_window(board_lib):
     `push` adds the row numbered `no` with its `row_count_since_gap`, holding `no` in
     every signal.
     """
-    library = board_lib(["window_model", "row_ring", "model"],
+    library = board_lib(["window_model", "model"],
                         "#include <stddef.h>\n"
                         '#include "row_ring_as_window.h"\n'
                         "size_t window_size(void)\n"

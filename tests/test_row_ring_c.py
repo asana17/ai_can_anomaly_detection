@@ -7,11 +7,11 @@ ROWS = 20  # WINDOW_MODEL_ROWS in board/lib/window_model/window_model_config.h
 
 @pytest.fixture(scope="module")
 def c_ring(board_lib):
-    """Build board/lib/row_ring for this machine and give its functions.
+    """Build board/lib/window_model/row_ring.h for this machine and give its functions.
 
     A row pushed as `value` holds `value` in every signal, so a read shows it is whole.
     """
-    library = board_lib(["row_ring", "window_model", "model"],
+    library = board_lib(["window_model", "model"],
                         "#include <stddef.h>\n"
                         '#include "row_ring.h"\n'
                         "size_t ring_size(void)\n"
