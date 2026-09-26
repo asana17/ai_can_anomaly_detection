@@ -85,8 +85,11 @@ Whether an attack reaches a row above `MIN_SPEED` is read off the row's speed be
 the attack. An attack that fakes a stop is still worth catching. The detectors read the
 attacked speed, so one that skips the row misses the attack.
 
-False alarms are the alarms raised on rows with no attack, over the hours those rows
-cover.
+A false positive alarm is an alarm with no attacked row in it. An alarm that starts in
+an attack and goes on after the attack ends is not a false positive.
+
+The false positive alarm rate is false positive alarms per hour of moving rows with no
+attack.
 
 [settings](../../common/docs/settings.md) says how `MIN_SPEED` and the rest were set.
 

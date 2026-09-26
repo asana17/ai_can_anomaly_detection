@@ -72,7 +72,7 @@
           "minimum": 0
         },
         "alarms_per_hour": {
-          "description": "False alarms an hour.",
+          "description": "False positive alarms per hour. An alarm is a false positive when none of its rows is attacked.",
           "type": "number",
           "minimum": 0
         },

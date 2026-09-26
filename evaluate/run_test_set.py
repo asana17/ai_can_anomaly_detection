@@ -20,7 +20,8 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
-from evaluate.count_alarms import attacks_with_a_flagged_row, count_alarms
+from evaluate.count_alarms import (attacks_with_a_flagged_row,
+                                   count_false_positive_alarms)
 from models.fit import fetch_fitted_models
 from scoring import score
 from models.torch_files import scale_of
@@ -62,9 +63,9 @@ def attacks_caught_by_alarms(alarmed, attacks):
             "caught": [int(at) for at in np.flatnonzero(caught)]}
 
 
-def false_alarms_per_hour(alarmed, rows):
-    """The alarms raised on rows with no attack, over the hours they cover."""
-    return float(count_alarms(alarmed & rows.normal_moving) / rows.hours)
+def false_positive_alarms_per_hour(alarmed, rows, attacks):
+    """False positive alarms per hour of moving rows with no attack."""
+    return float(count_false_positive_alarms(alarmed, attacks.injected) / rows.hours)
 
 
 @dataclass
@@ -119,8 +120,9 @@ def detection_of_one_detector(scores, threshold, rows, attacks, settings):
     kept = {"false_positive_rate": false_positive_rate(scores > threshold, rows)}
     for need in settings.HOLD:
         alarmed = alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, need)
-        kept[str(need)] = {**attacks_caught_by_alarms(alarmed, attacks),
-                           "alarms_per_hour": false_alarms_per_hour(alarmed, rows)}
+        kept[str(need)] = {
+            **attacks_caught_by_alarms(alarmed, attacks),
+            "alarms_per_hour": false_positive_alarms_per_hour(alarmed, rows, attacks)}
     return kept
 
 

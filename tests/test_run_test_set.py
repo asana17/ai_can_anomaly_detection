@@ -31,7 +31,8 @@ def caught(flag, rows, attacks, need=1):
     """What `flag` catches, as `detection_of_each_model` counts it."""
     alarmed = alarmed_rows(flag.astype(float), 0.5, rows.rule_hit, rows.segment, need)
     return {**run_test_set.attacks_caught_by_alarms(alarmed, attacks),
-            "alarms_per_hour": run_test_set.false_alarms_per_hour(alarmed, rows)}
+            "alarms_per_hour":
+                run_test_set.false_positive_alarms_per_hour(alarmed, rows, attacks)}
 
 
 def test_what_a_flag_catches_and_what_it_costs():
@@ -42,6 +43,12 @@ def test_what_a_flag_catches_and_what_it_costs():
     assert got["caught"] == [0], "and it is the first attack"
     assert got["alarms_per_hour"] == 0.5, "one alarm outside an attack, 2 hours"
     assert run_test_set.false_positive_rate(flag, a_test()[0]) == 0.25
+
+
+def test_an_alarm_that_runs_on_after_an_attack_is_not_a_false_positive():
+    flag = np.array([False, True, True, True, False, False])
+
+    assert caught(flag, *a_test())["alarms_per_hour"] == 0.0
 
 
 def test_an_attack_that_moved_no_row_is_counted_apart():
