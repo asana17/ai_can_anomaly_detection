@@ -11,6 +11,28 @@
 
 EXPORT CONST char *CONST score_and_detect_by_row_model_id = ACTIVE_MODEL_ID;
 
+/* Hand report the row an alarm starts or ends on. */
+LOCAL void report_alarm_change(ReportInput *report_input, UW no, INT alarm)
+{
+	Report report = {0};
+
+	report.no = no;
+	report.alarm = alarm;
+	report_input_write(report_input, &report);
+}
+
+/* Hand score and detect by window the row, its flag and its count since the last gap. */
+LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST Row *row,
+	bool flag, UW row_count_since_gap)
+{
+	RowRingEntry entry;
+
+	memcpy(entry.physical, row->physical, sizeof(entry.physical));
+	entry.flag = flag;
+	entry.row_count_since_gap = row_count_since_gap;
+	score_and_detect_by_window_input_write(window_input, &entry);
+}
+
 /* Score each row and report where alarms start and end. */
 LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 {
@@ -19,46 +41,36 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	ScoringRow scored;
 	Row row;
 	RecentRows rows_before; /* the rows before row, back to the last gap */
-	Report report = {0};
 	INT ringing = 0, alarmed;
-	RowRingEntry entry;
-	BOOL started = FALSE;
 	UW last_no = 0, row_count_since_gap = 0;
-	ModelStatus error;
 
 	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
+	recent_rows_clear(&rows_before);
 	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
 		== E_OK) {
 		/*
 		 * A row whose number is not one more than the last row's starts again from 0.
 		 * Score and detect by window places its windows by this, as the PC does.
 		 */
-		if (started && row.no == last_no + 1u) {
+		if (recent_rows_count(&rows_before) > 0u && row.no == last_no + 1u) {
 			row_count_since_gap++;
 		} else {
 			row_count_since_gap = 0;
 			recent_rows_clear(&rows_before);
 		}
-		started = TRUE;
 		last_no = row.no;
-		error = scoring_row(row.physical, &rows_before, active_model_mean,
-			active_model_std, MIN_SPEED, &scored);
-		if (error != MODEL_OK) {
+		if (scoring_row(row.physical, &rows_before, active_model_mean,
+			active_model_std, MIN_SPEED, &scored) != MODEL_OK) {
 			break;
 		}
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
 		alarmed = detect_instant_alarmed(&state);
 		if (alarmed != ringing) {
-			report.no = row.no;
-			report.alarm = alarmed;
-			report_input_write(task->report_input, &report);
+			report_alarm_change(task->report_input, row.no, alarmed);
 			ringing = alarmed;
 		}
-		memcpy(entry.physical, row.physical, sizeof(entry.physical));
-		entry.flag = detect_instant_last_row_flagged(&state);
-		entry.row_count_since_gap = row_count_since_gap;
-		score_and_detect_by_window_input_write(task->score_and_detect_by_window_input,
-			&entry);
+		pass_row_to_window(task->score_and_detect_by_window_input, &row,
+			detect_instant_last_row_flagged(&state), row_count_since_gap);
 		recent_rows_push(&rows_before, row.physical);
 	}
 	tk_ext_tsk();
