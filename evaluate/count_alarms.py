@@ -5,11 +5,6 @@ from __future__ import annotations
 import numpy as np
 
 
-def count_alarms(alarmed):
-    """How many separate stretches of alarmed rows there are."""
-    return int((alarmed & ~np.concatenate([[False], alarmed[:-1]])).sum())
-
-
 def count_false_positive_alarms(alarmed, attacks):
     """How many alarms have no row of an attack in them.
 
