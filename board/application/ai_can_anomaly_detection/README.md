@@ -14,7 +14,7 @@ flowchart LR
     irq["FDCAN1 receive callback"] -- slots_store --> slots[(slots)]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
-    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, HOLD"]
+    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, k of the last N"]
     sd -- report queue --> report["report 10<br/>UART"]
 ```
 

@@ -1,7 +1,7 @@
 #include <string.h>
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
-#include "detect.h"
+#include "detect_instant.h"
 #include "mbf.h"
 #include "model.h"
 #include "model_config.h"
@@ -17,7 +17,7 @@
 #define ROW_DEPTH 4
 #define REPORT_DEPTH 8
 #define MIN_SPEED 5.0f /* Settings.MIN_SPEED in common/settings.py */
-#define HOLD 10u /* the value of Settings.HOLD the board runs */
+#define ALARM_K 10u /* flagged rows among the last DETECT_INSTANT_ROWS an alarm needs */
 
 typedef struct {
 	UW no;
@@ -73,16 +73,16 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	tk_slp_tsk(TMO_FEVR);
 }
 
-/* Report the row that completes HOLD flagged rows, and the row the run ends on. */
+/* Report the row an alarm starts on and the row it ends on. */
 LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 {
-	DetectState state;
+	DetectInstant state;
 	ScoringRow scored;
 	Row row;
 	Report report = {0};
 	INT ringing = 0, alarmed;
 
-	detect_clear(&state);
+	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
 	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
 		if(row.no == RULE_ROWS) {
 			break;
@@ -95,13 +95,14 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 			break;
 		}
 		scored_rows++;
-		flagged_rows += detect_flagged(scored.score, THRESHOLD_SCORE,
-			scored.rule_hit);
 		if(scored.cycles > maximum_cycles) {
 			maximum_cycles = scored.cycles;
 		}
-		alarmed = detect_alarmed(&state, row.no, scored.score, THRESHOLD_SCORE,
-			scored.rule_hit, HOLD);
+		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
+		if(detect_instant_last_row_flagged(&state)) {
+			flagged_rows++;
+		}
+		alarmed = detect_instant_alarmed(&state);
 		if(alarmed != ringing) {
 			report.no = row.no;
 			memcpy(&report.score_bits, &scored.score, sizeof(scored.score));
@@ -122,8 +123,8 @@ LOCAL void report_task(INT stacd, void *exinf)
 	Report report;
 	INT alarms = 0, errors = 0;
 
-	tm_printf((UB*)"scoring_and_detect %s: starting %d rows at row %d, hold %u\n",
-		ACTIVE_MODEL_ID, RULE_ROWS, FIRST_ROW, HOLD);
+	tm_printf((UB*)"scoring_and_detect %s: starting %d rows at row %d, k %u of %u\n",
+		ACTIVE_MODEL_ID, RULE_ROWS, FIRST_ROW, ALARM_K, DETECT_INSTANT_ROWS);
 	while(tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
 		if(report.no == RULE_ROWS) {
 			break;

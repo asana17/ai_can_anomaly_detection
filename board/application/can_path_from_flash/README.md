@@ -9,7 +9,7 @@ flowchart LR
     replay -- slots_store --> slots[(slots)]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
-    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, HOLD"]
+    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, k of the last N"]
     sd -- report queue --> report["report 5<br/>UART"]
 ```
 
@@ -22,7 +22,7 @@ CAN receive interrupt and is the only part that changes when the bus is connecte
 On each tick preprocessing copies the slots into a row. It sends the row on when a
 frame has arrived since the last tick, every PGN has arrived, and the wheel speed is
 above `MIN_SPEED`. The row number counts ticks, so a row it does not send leaves a gap
-and `HOLD` restarts there. After 1 s with no frame it clears the slots, as
+and the alarm count restarts there. After 1 s with no frame it clears the slots, as
 `grid_sample` does across a gap.
 
 A tick with no new frame sends no row, since the row would hold only old values. The

@@ -6,18 +6,17 @@ detects on them.
 ```mermaid
 flowchart LR
     rows[(Flash rows)] --> pre["preprocess 6<br/>rows above MIN_SPEED, one every 100 ms"]
-    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, HOLD"]
+    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, k of the last N"]
     sd -- report queue --> report["report 5<br/>UART"]
 ```
 
 The numbers are task priorities, smaller runs first. The scoring and detect task flags a
-row a rule hits or whose score is above `THRESHOLD_SCORE`, and reports the row that
-completes `HOLD` flagged rows in a row and the row the run ends on.
+row a rule hits or whose score is above `THRESHOLD_SCORE`. An alarm is raised while
+`ALARM_K` of the last `DETECT_INSTANT_ROWS` rows are flagged, and the task reports the
+row an alarm starts on and the row it ends on.
 
-A row below `MIN_SPEED` is never sent, so the row numbers have gaps in them and the run
-of flagged rows restarts there, as a new segment does on the PC.
-
-`HOLD` is 10 rows, one of the two values the PC reports every detector at.
+A row below `MIN_SPEED` is never sent, so the row numbers have gaps in them and the
+count of flagged rows restarts there, as a new segment does on the PC.
 
 ## Threshold
 
