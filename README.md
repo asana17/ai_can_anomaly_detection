@@ -122,9 +122,9 @@ J1939's own terms, frame, PGN and SPN, are described in
   waits for `score`, and more rows wait for fetching them from the dataset. Step 4
   runs on the board. `scoring_and_detect_from_flash` scores Flash rows and raises the
   alarm, and `can_path_from_flash` replays CAN frames through the slots, a preprocess
-  task on a 0.1 s cyclic handler, scoring and detect, and report. Next is the docs for
-  the CAN side, how to connect the receive callback, the FDCAN interrupt priority `DI`
-  must mask, and what the CAN side builds. Then steps 2, 5 and 6.
+  task on a 0.1 s cyclic handler, scoring and detect, and report. FDCAN1 is on PB7 and
+  PB8, and `can_bus_debug` prints what the bus receives and sends a frame every second.
+  Neither has run on the board yet. Then steps 2, 5 and 6.
 - Decide whether the matched replay is the attack the windowed pair is measured on.
   `assemble.test_set --attack matched_replay` replays a PGN from a donor that held this
   log's speed and gear over the whole stretch. Measured on 300 test logs against the fit
