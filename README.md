@@ -142,9 +142,6 @@ J1939's own terms, frame, PGN and SPN, are described in
     it, and scoring and detect and a window scoring task read it under one mutex. Row
     flags go in an array beside it. Window scoring only copies windows for now. W and S
     belong in the window model's config header.
-  - Raise an alarm when k of the last N rows are flagged, in place of `HOLD` rows in a
-    row. One row that looks normal then no longer restarts the count. Report N and k at
-    several values, with alarms per hour on normal data.
   - Fit and threshold each model on every normal row, rule hits included. The rules and
     the model meet in `detect` alone. `train_set` and `calibrate` still drop rule hits.
     The finished runs stay as a record.
