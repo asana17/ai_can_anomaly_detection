@@ -1,6 +1,5 @@
 #include <string.h>
 #include <tk/tkernel.h>
-#include "change_limit.h"
 #include "detect_instant.h"
 #include "model.h"
 #include "model_config.h"
@@ -9,15 +8,8 @@
 #include "score_and_detect_by_row_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 #include "threshold.h"
-#include "torque_over_load.h"
 
 EXPORT CONST char *CONST score_and_detect_by_row_model_id = ACTIVE_MODEL_ID;
-
-/* Whether change_limit or torque_over_load hits row, given the rows before it. */
-LOCAL bool rules_on_rows_before_hit(const RecentRows *rows_before, const float row[])
-{
-	return change_limit_hits(rows_before, row) || torque_over_load_hits(rows_before, row);
-}
 
 /* Score each row and report where alarms start and end. */
 LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
@@ -49,13 +41,11 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		}
 		started = TRUE;
 		last_no = row.no;
-		error = scoring_row(row.physical, active_model_mean, active_model_std,
-			MIN_SPEED, &scored);
+		error = scoring_row(row.physical, &rows_before, active_model_mean,
+			active_model_std, MIN_SPEED, &scored);
 		if (error != MODEL_OK) {
 			break;
 		}
-		scored.rule_hit = scored.rule_hit
-			|| rules_on_rows_before_hit(&rows_before, row.physical);
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
 		alarmed = detect_instant_alarmed(&state);
 		if (alarmed != ringing) {
