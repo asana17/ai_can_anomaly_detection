@@ -119,11 +119,10 @@ J1939's own terms, frame, PGN and SPN, are described in
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
   waits for `score`, and more rows wait for fetching them from the dataset. Step 4
-  runs on the board. `scoring_and_detect_from_flash` scores Flash rows and raises the
-  alarm, and `can_path_from_flash` replays CAN frames through the slots, a preprocess
-  task on a 0.1 s cyclic handler, scoring and detect, and report. FDCAN1 is on PB7 and
-  PB8, and `can_bus_debug` prints what the bus receives and sends a frame every second.
-  Neither has run on the board yet. Then steps 2, 5 and 6.
+  runs on the board. `can_path_from_flash` replays CAN frames through the slots, a
+  preprocess task on a 0.1 s cyclic handler, scoring and detect, and report. FDCAN1 is
+  on PB7 and PB8, and `can_bus_debug` prints what the bus receives and sends a frame
+  every second. Neither has run on the board yet. Then steps 2, 5 and 6.
 - Decide whether the matched replay is the attack the windowed pair is measured on.
   `assemble.test_set --attack matched_replay` replays a PGN from a donor that held this
   log's speed and gear over the whole stretch. What no detector reads is a matched
