@@ -4,6 +4,7 @@
 #include "stm32h5xx_hal.h"
 #include "stm32h5xx_nucleo.h"
 #include "detect.h"
+#include "event_recorder.h"
 #include "mbf.h"
 #include "model.h"
 #include "model_config.h"
@@ -39,9 +40,10 @@ EXPORT Slots bus;
 
 IMPORT FDCAN_HandleTypeDef hfdcan1; /* set up by MX_FDCAN1_Init in the CubeMX main.c */
 
-LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id, alive_id, can_debug_id;
+LOCAL ID row_mbf, report_mbf, preprocess_id, tick_id, alive_id, can_debug_id, flash_writer_id;
 LOCAL volatile UW rows_sent, rows_quiet, rows_not_ready, rows_skipped, rows_dropped, resets;
 LOCAL volatile UW scored_rows, flagged_rows, maximum_cycles;
+LOCAL volatile UW events_sent, events_dropped;
 
 /* A lock-free ring the RX interrupt fills and the debug task drains to print.
  * Single writer (ISR) / single reader (task), so head and tail need no lock. */
@@ -237,6 +239,11 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	tk_ext_tsk();
 }
 
+/* Ring buffer for keeping recent rows for event recording */
+#define ROW_HISTORY_SIZE 60  /* Keep 60 rows (EVENT_WINDOW_ROWS=50 + margin) */
+LOCAL float row_history[ROW_HISTORY_SIZE][MODEL_SIGNALS];
+LOCAL UW row_history_head = 0;
+
 /* Report the row that completes HOLD flagged rows, and the row the run ends on. */
 LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 {
@@ -245,9 +252,15 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 	Row row;
 	Report report = {0};
 	INT ringing = 0, alarmed;
+	EventRecord event;
+	ER err;
 
 	detect_clear(&state);
 	while(tk_rcv_mbf(row_mbf, &row, TMO_FEVR) == sizeof(row)) {
+		/* Store row in history ring for event recording */
+		memcpy(row_history[row_history_head], row.physical, MODEL_SIGNALS * sizeof(float));
+		row_history_head = (row_history_head + 1) % ROW_HISTORY_SIZE;
+
 		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
 			MIN_SPEED, &scored);
 		if(report.error != MODEL_OK) {
@@ -269,6 +282,19 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 			report.alarm = alarmed;
 			tk_snd_mbf(report_mbf, &report, sizeof(report), TMO_FEVR);
 			ringing = alarmed;
+
+			/* Send event to flash writer when alarm starts */
+			if(alarmed) {
+				event.row_number = row.no;
+				event_recorder_copy_rows(event.data, row_history,
+					ROW_HISTORY_SIZE, row_history_head, EVENT_WINDOW_ROWS);
+				err = event_recorder_send(&event);
+				if(err == E_OK) {
+					events_sent++;
+				} else {
+					events_dropped++;
+				}
+			}
 		}
 	}
 	tk_slp_tsk(TMO_FEVR);
@@ -295,6 +321,23 @@ LOCAL void report_task(INT stacd, void *exinf)
 		}
 	}
 	tk_slp_tsk(TMO_FEVR);
+}
+
+/* Flash writer task - receives events and writes to Flash */
+LOCAL void flash_writer_task(INT stacd, void *exinf)
+{
+	EventRecord event;
+	ER err;
+
+	while(1) {
+		err = event_recorder_receive(&event);
+		if(err == E_OK) {
+			/* TODO: Flash erase & write implementation
+			 * For now, just log that we received an event */
+			tm_printf((UB*)"Flash: received event for row %u (%u floats)\n",
+				event.row_number, EVENT_WINDOW_ROWS * EVENT_SIGNALS);
+		}
+	}
 }
 
 LOCAL void alive_task(INT stacd, void *exinf)
@@ -327,6 +370,10 @@ LOCAL T_CTSK can_debug_ctsk = {
 	.itskpri = 11, .stksz = 1024, .task = can_debug_task,
 	.tskatr = TA_HLNG | TA_RNG3,
 };
+LOCAL T_CTSK flash_writer_ctsk = {
+	.itskpri = 13, .stksz = 1024, .task = flash_writer_task,
+	.tskatr = TA_HLNG | TA_RNG3,
+};
 LOCAL T_CCYC tick_ccyc = {
 	.cycatr = TA_HLNG | TA_STA, .cychdr = (FP)tick,
 	.cyctim = PERIOD, .cycphs = PERIOD,
@@ -336,6 +383,7 @@ EXPORT INT usermain(void)
 {
 	ID scoring_and_detect, report;
 	ModelStatus error;
+	ER err;
 
 	error = model_init();
 	if(error != MODEL_OK) {
@@ -347,19 +395,26 @@ EXPORT INT usermain(void)
 	if(row_mbf < E_OK || report_mbf < E_OK) {
 		return -10;
 	}
+	err = event_recorder_init();
+	if(err != E_OK) {
+		tm_printf((UB*)"event recorder init error %d\n", err);
+		return -14;
+	}
 	preprocess_id = tk_cre_tsk(&preprocess_ctsk);
 	scoring_and_detect = tk_cre_tsk(&scoring_and_detect_ctsk);
 	report = tk_cre_tsk(&report_ctsk);
 	alive_id = tk_cre_tsk(&alive_ctsk);
 	can_debug_id = tk_cre_tsk(&can_debug_ctsk);
+	flash_writer_id = tk_cre_tsk(&flash_writer_ctsk);
 	if(preprocess_id < E_OK || scoring_and_detect < E_OK || report < E_OK
-		|| alive_id < E_OK || can_debug_id < E_OK) {
+		|| alive_id < E_OK || can_debug_id < E_OK || flash_writer_id < E_OK) {
 		return -11;
 	}
 	tk_sta_tsk(alive_id, 0);
 	tk_sta_tsk(report, 0);
 	tk_sta_tsk(scoring_and_detect, 0);
 	tk_sta_tsk(preprocess_id, 0);
+	tk_sta_tsk(flash_writer_id, 0);
 	tick_id = tk_cre_cyc(&tick_ccyc);
 	if(tick_id < E_OK) {
 		return -12;
