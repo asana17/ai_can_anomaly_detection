@@ -113,10 +113,6 @@ J1939's own terms, frame, PGN and SPN, are described in
   `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
   `evaluate`, all done 2026-09-22.
 
-- Draw the attacks over the test span's time rather than one per log. One per log puts
-  four times as many per moving hour in the logs that move least. Measure first whether
-  that shifts a model's numbers, from `caught` in a score. The rules catch the same
-  share in every band of a log's moving seconds.
 - Run `fit` and the stages after it on every log, on `train_sets/20260922-100444` and
   `test_sets/20260922-110745`. They passed on one day of logs in the smoke repos. Then
   score one other split, the first 25% of the time as test.
