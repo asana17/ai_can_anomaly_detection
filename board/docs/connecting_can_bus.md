@@ -9,7 +9,7 @@ board, and no frame has reached it. The bus is not wired, and nothing on the PC 
 
 ```mermaid
 flowchart LR
-    pc[PC sender] --> usb[USB-CAN adapter] -- CANH, CANL --> tr[CAN transceiver] --> fd["FDCAN1<br/>PA11 RX, PA12 TX"]
+    pc[PC sender] --> usb[USB-CAN adapter] -- CANH, CANL --> tr[CAN transceiver] --> fd["FDCAN1<br/>PB8 RX, PB7 TX"]
     fd -- receive interrupt --> cb["HAL_FDCAN_RxFifo0Callback<br/>slots_store"]
     cb --> slots[(slots)]
     slots --> pre[preprocess, scoring and detect, report]
@@ -19,7 +19,7 @@ flowchart LR
 
 | part | what it is | state |
 |---|---|---|
-| wiring | PA11 and PA12 to a 3.3 V transceiver module, CANH and CANL to the USB-CAN adapter, 120 Ω at both ends of the bus, a common ground | not built |
+| wiring | PB8 and PB7 to a 3.3 V transceiver module, CANH and CANL to the USB-CAN adapter, 120 Ω at both ends of the bus, a common ground | not built |
 | PC sender | sends frames through the USB-CAN adapter at their own timestamps | none in this repository |
 | first run | flash the application and see alarms while the PC sends | not done |
 
@@ -32,7 +32,7 @@ The settings are in [`board/cubemx/ai_can_detection.ioc`](../cubemx/ai_can_detec
 
 | setting | value |
 |---|---|
-| pins | PA11 RX, PA12 TX |
+| pins | PB8 RX, PB7 TX |
 | frame format | classic CAN, normal mode |
 | kernel clock | 86 MHz, PLL1Q from CSI. SYSCLK stays at 32 MHz from HSI |
 | bit timing | prescaler 4, seg1 74, seg2 11, SJW 11, which is 250 kbit/s with the sample point at 87.2% |
