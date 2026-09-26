@@ -14,16 +14,19 @@
     },
     {
       "$ref": "#/$defs/nonlinear_ae"
+    },
+    {
+      "$ref": "#/$defs/window_nonlinear_ae"
     }
   ],
   "$defs": {
     "k": {
-      "description": "How many numbers a row is compressed into, the directions PCA keeps or the autoencoder's `latent_dim`. Fewer leave more of a normal row out of the reconstruction.",
+      "description": "How many numbers a row, or a window for a window model, is compressed into, the directions PCA keeps or the autoencoder's `latent_dim`. Fewer leave more of a normal row or window out of the reconstruction.",
       "type": "integer",
       "minimum": 1
     },
     "rows": {
-      "description": "How many rows a window holds. The last row is predicted from all the rows before it.",
+      "description": "How many rows a window holds, oldest first.",
       "type": "integer",
       "minimum": 2
     },
@@ -163,6 +166,53 @@
       },
       "required": [
         "model",
+        "k",
+        "hidden",
+        "epochs",
+        "batch",
+        "rate",
+        "improvement",
+        "patience",
+        "seed"
+      ]
+    },
+    "window_nonlinear_ae": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "window nonlinear ae"
+        },
+        "rows": {
+          "$ref": "#/$defs/rows"
+        },
+        "k": {
+          "$ref": "#/$defs/k"
+        },
+        "hidden": {
+          "$ref": "#/$defs/hidden"
+        },
+        "epochs": {
+          "$ref": "#/$defs/epochs"
+        },
+        "batch": {
+          "$ref": "#/$defs/batch"
+        },
+        "rate": {
+          "$ref": "#/$defs/rate"
+        },
+        "improvement": {
+          "$ref": "#/$defs/improvement"
+        },
+        "patience": {
+          "$ref": "#/$defs/patience"
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        }
+      },
+      "required": [
+        "model",
+        "rows",
         "k",
         "hidden",
         "epochs",

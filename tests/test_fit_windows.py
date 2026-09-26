@@ -6,7 +6,7 @@ import numpy as np
 from models import fit_windows
 from models.fit import models_in, scale_for
 from models.fit_windows import MODELS
-from models.fits import Var
+from models.fits import FitArguments, Var, WindowNonlinearAe
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -47,7 +47,11 @@ class Kept:
 
 
 def test_the_models_beside_fit_windows_spread_into_one_model_per_value():
-    assert models_in(MODELS) == [Var(5), Var(10), Var(20)]
+    arguments = FitArguments(epochs=1000, batch=1024, rate=0.001, improvement=0.0001,
+                             patience=10, seed=3)
+    assert models_in(MODELS) == [Var(5), Var(10), Var(20)] + [
+        WindowNonlinearAe(rows, k, 128, arguments)
+        for rows, k in ((5, 12), (5, 24), (10, 16), (10, 32), (20, 24), (20, 48))]
 
 
 def test_windows_hold_train_rows_of_one_segment_oldest_first(tmp_path, monkeypatch):
@@ -76,6 +80,20 @@ def test_a_run_keeps_the_weights_and_what_it_was_fitted_on(tmp_path, hub, monkey
                               "models": [{"model": "var", "rows": 3}]}
     assert meta["windows"] == [3]
     assert json.load(open(folder / "losses.json")) == [], "var is solved, not trained"
+
+
+def test_a_run_keeps_the_losses_of_a_window_nonlinear_ae(tmp_path, hub, monkeypatch):
+    train_set(monkeypatch)
+    model = WindowNonlinearAe(3, 2, 8, FitArguments(epochs=2, batch=4, rate=1e-3,
+                                           improvement=1e-4, patience=2, seed=0))
+    monkeypatch.setattr(fit_windows, "models_in", lambda path: [Var(3), model])
+    made = fit_windows.main("u/d", REVISION, "train_sets/20260101-000000",
+                            str(tmp_path), "u/runs", str(tmp_path))
+
+    folder = tmp_path / made["path"]
+    losses = json.load(open(folder / "losses.json"))
+    assert [entry["model"] for entry in losses] == ["window nonlinear ae"]
+    assert len(losses[0]["losses"]) == 2
 
 
 def test_a_window_holding_a_nan_is_not_fitted_on(tmp_path, monkeypatch):

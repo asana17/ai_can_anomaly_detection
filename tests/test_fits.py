@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
 
-from models.fits import (FitArguments, LinearAe, NonlinearAe, Pca, Var, as_dict,
-                         model_from, models_from)
+from models import autoencoder
+from common.schema_validate import check
+from models.fits import (FitArguments, LinearAe, NonlinearAe, Pca, Var, WindowNonlinearAe,
+                         as_dict, model_from, models_from)
 
 ROWS = np.random.default_rng(0).normal(size=(64, 5)).astype(np.float32)
 WINDOWS = np.random.default_rng(1).normal(size=(64, 3, 5)).astype(np.float32)
@@ -23,6 +25,7 @@ def test_a_model_is_named_by_its_values():
     assert Pca(2).name == "pca k=2"
     assert Var(10).name == "var r=10"
     assert NonlinearAe(8, 128, ARGUMENTS).name == "nonlinear ae h=128 k=8"
+    assert WindowNonlinearAe(10, 8, 128, ARGUMENTS).name == "window nonlinear ae r=10 h=128 k=8"
 
 
 def test_the_tensors_keep_the_names_quantize_reads():
@@ -30,10 +33,12 @@ def test_the_tensors_keep_the_names_quantize_reads():
     assert Var(10).prefix == "var.r10."
     assert LinearAe(2, ARGUMENTS).prefix == "linear_ae.k2."
     assert NonlinearAe(8, 128, ARGUMENTS).prefix == "nonlinear_ae.h128.k8."
+    assert WindowNonlinearAe(10, 8, 128, ARGUMENTS).prefix == "window_nonlinear_ae.r10.h128.k8."
 
 
 @pytest.mark.parametrize("model", [Pca(2), Var(5), LinearAe(2, ARGUMENTS),
-                                   NonlinearAe(2, 8, ARGUMENTS)])
+                                   NonlinearAe(2, 8, ARGUMENTS),
+                                   WindowNonlinearAe(3, 2, 8, ARGUMENTS)])
 def test_a_written_model_reads_back_the_same(model):
     assert model_from(as_dict(model)) == model
 
@@ -55,6 +60,46 @@ def test_a_loaded_var_scores_windows_as_the_fitted_one_did():
     tensors, score, _ = Var(3).fit(WINDOWS)
     assert np.allclose(Var(3).scorer(tensors, WINDOWS.shape[2])(WINDOWS),
                        score(WINDOWS))
+
+
+def test_a_loaded_window_nonlinear_ae_scores_windows_as_the_fitted_one_did():
+    model = WindowNonlinearAe(3, 2, 8, ARGUMENTS)
+    tensors, score, _ = model.fit(WINDOWS)
+    assert np.allclose(model.scorer(tensors, WINDOWS.shape[2])(WINDOWS),
+                       score(WINDOWS))
+
+
+def test_a_window_goes_into_the_window_nonlinear_ae_flat_and_oldest_row_first():
+    model = WindowNonlinearAe(3, 2, 8, ARGUMENTS)
+    tensors, score, _ = model.fit(WINDOWS)
+
+    net = model.network_with_weights(tensors, WINDOWS.shape[2])
+    flat = np.concatenate([WINDOWS[:, 0], WINDOWS[:, 1], WINDOWS[:, 2]], axis=1)
+    assert np.allclose(autoencoder.residuals(flat, net), score(WINDOWS))
+
+
+def test_a_window_nonlinear_ae_listed_with_the_var_spreads_into_one_model_per_value():
+    listed = [{"model": "var", "rows": [5]},
+              {"model": "window nonlinear ae", "rows": [5, 10], "k": [2], "hidden": [32],
+               "epochs": 2, "batch": 16, "rate": 1e-3, "improvement": 1e-4,
+               "patience": 2, "seed": 0}]
+    assert models_from(listed) == [Var(5), WindowNonlinearAe(5, 2, 32, ARGUMENTS),
+                                   WindowNonlinearAe(10, 2, 32, ARGUMENTS)]
+
+
+def test_a_window_nonlinear_ae_written_down_meets_the_models_schema():
+    check([as_dict(Var(5)), as_dict(WindowNonlinearAe(5, 2, 32, ARGUMENTS))], "models.schema.json")
+
+
+def test_models_written_before_the_window_nonlinear_ae_still_read():
+    var_only = [{"model": "var", "rows": 5}, {"model": "var", "rows": 10}]
+    instant = [{"model": "nonlinear ae", "k": 8, "hidden": 128, "epochs": 2,
+                "batch": 16, "rate": 1e-3, "improvement": 1e-4, "patience": 2,
+                "seed": 0}]
+    check(var_only, "models.schema.json")
+    check(instant, "models.schema.json")
+    assert models_from(var_only) == [Var(5), Var(10)]
+    assert models_from(instant) == [NonlinearAe(8, 128, ARGUMENTS)]
 
 
 def test_loading_a_model_the_weights_lack_raises():

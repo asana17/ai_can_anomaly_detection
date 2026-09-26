@@ -172,7 +172,60 @@ class NonlinearAe(_Autoencoder):
                                                 hidden=self.hidden)
 
 
-MODELS = {model.MODEL: model for model in (Pca, Var, LinearAe, NonlinearAe)}
+@dataclass(frozen=True)
+class WindowNonlinearAe:
+    """The network of `NonlinearAe` on a window of `rows` rows, laid out oldest first as
+    one row of `rows` × signals values."""
+
+    MODEL = "window nonlinear ae"
+    rows: int
+    k: int
+    hidden: int
+    arguments: FitArguments
+
+    @property
+    def prefix(self):
+        return f"window_nonlinear_ae.r{self.rows}.h{self.hidden}.k{self.k}."
+
+    @property
+    def name(self):
+        return f"window nonlinear ae r={self.rows} h={self.hidden} k={self.k}"
+
+    def _network(self, signals):
+        return autoencoder.NonlinearAutoencoder(signals=self.rows * signals,
+                                                latent_dim=self.k, hidden=self.hidden)
+
+    def _flat(self, windows):
+        """Each window of shape (rows, signals) as one row, its oldest row first."""
+        return windows.reshape(len(windows), -1)
+
+    def fit(self, windows):
+        """Its tensors, how it scores windows, and its mean loss on them each epoch."""
+        torch.manual_seed(self.arguments.seed)
+        net = self._network(windows.shape[2])
+        losses = autoencoder.fit(self._flat(windows), net, epochs=self.arguments.epochs,
+                                 batch=self.arguments.batch, rate=self.arguments.rate,
+                                 threshold=self.arguments.improvement,
+                                 patience=self.arguments.patience)
+        return ({f"{self.prefix}{key}": tensor
+                 for key, tensor in net.state_dict().items()},
+                lambda scored: autoencoder.residuals(self._flat(scored), net), losses)
+
+    def network_with_weights(self, weights, signals):
+        """This model as a network, holding the tensors `weights` kept for it. `signals`
+        is how many values a row holds."""
+        net = self._network(signals)
+        net.load_state_dict(_under(self.prefix, weights, self.name))
+        return net
+
+    def scorer(self, weights, signals):
+        """Take this model's tensors out of `weights` and score windows with them."""
+        net = self.network_with_weights(weights, signals)
+        return lambda scored: autoencoder.residuals(self._flat(scored), net)
+
+
+MODELS = {model.MODEL: model
+          for model in (Pca, Var, LinearAe, NonlinearAe, WindowNonlinearAe)}
 ARGUMENTS = tuple(field.name for field in fields(FitArguments))
 
 

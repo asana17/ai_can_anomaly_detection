@@ -20,8 +20,16 @@
           "description": "Every window model with the values it was fitted with.",
           "type": "array",
           "items": {
-            "$ref": "model.schema.json#/$defs/var",
-            "unevaluatedProperties": false
+            "oneOf": [
+              {
+                "$ref": "model.schema.json#/$defs/var",
+                "unevaluatedProperties": false
+              },
+              {
+                "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
+                "unevaluatedProperties": false
+              }
+            ]
           },
           "minItems": 1
         }
