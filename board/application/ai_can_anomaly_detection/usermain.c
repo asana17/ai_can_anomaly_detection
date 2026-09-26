@@ -1,6 +1,7 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
 #include "stm32h5xx_hal.h"
+#include "event_recorder.h"
 #include "slots.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
@@ -51,8 +52,14 @@ LOCAL INT can_start(void)
 EXPORT INT usermain(void)
 {
 	INT error;
+	ER err;
 
 	tm_printf((UB*)"reading FDCAN1\n");
+	err = event_recorder_init();
+	if (err != E_OK) {
+		tm_printf((UB*)"event recorder init error %d\n", err);
+		return -14;
+	}
 	error = ai_can_anomaly_detection_tasks_create(&slots);
 	if (error < E_OK) {
 		return error;
