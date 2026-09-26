@@ -67,7 +67,8 @@ def fetch_calibration_set(repo, revision, calibration_path, local_dir):
     """The rows a calibration set names, and the directories they came from.
 
     The calibration set is read at `revision` of `repo`, and the log split and grid it
-    names at the commits it names them at.
+    names at the commits it names them at. `raw` and `seg` are the whole grid's rows
+    and segment ids. `calibration_rows` marks the calibration rows in them.
     """
     folder, meta = read_dir(repo, calibration_path, local_dir, revision,
                             repo_type="dataset")
@@ -76,8 +77,10 @@ def fetch_calibration_set(repo, revision, calibration_path, local_dir):
                                  log_split["revision"], repo_type="dataset")
     grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
                            repo_type="dataset")
-    raw, _, _, _, _ = read_grid(grid_dir)
-    return {"calibration": raw[read_calibration_set(folder)],
+    raw, _, segments, _, _ = read_grid(grid_dir)
+    calibration_rows = read_calibration_set(folder)
+    return {"calibration": raw[calibration_rows], "raw": raw, "seg": segments,
+            "calibration_rows": calibration_rows,
             "min_speed": log_split_meta["inputs"]["min_speed"],
             "dataset": {"calibration_set": {"repo": repo, "revision": revision,
                                             "path": calibration_path},
