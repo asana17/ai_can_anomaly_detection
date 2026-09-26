@@ -66,7 +66,7 @@ EXPORT ER score_and_detect_by_row_task_create(ScoreAndDetectByRowTask *task,
 	ScoreAndDetectByWindowInput *score_and_detect_by_window_input)
 {
 	T_CTSK ctsk = {
-		.itskpri = priority, .stksz = 1024, .task = score_and_detect_by_row_task,
+		.itskpri = priority, .stksz = 2048, .task = score_and_detect_by_row_task,
 		.exinf = task, .tskatr = TA_HLNG | TA_RNG3,
 	};
 
