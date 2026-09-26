@@ -3,18 +3,18 @@
 Flags a signal moving further in one tick than the truck can move it.
 
 ```python
-hits(raw, previous)   # -> True where a row moved too far from the row before
+hits(raw, position)   # -> True where a row moved too far from the row before
 LIMITS                # -> {name: most it may move per second}
 ```
 
-The caller finds the row before, which is what separates this from the rules in
+It reads the row before, which is what separates this from the rules in
 [instant](../../instant).
 
 ## The row before
 
-The row before is the row one tick earlier in the same grid segment, when that row
-is moving too. Otherwise there is none, `previous` holds NaN, and the rule stays
-silent.
+The row before is the row one tick earlier in the same unbroken span of moving rows.
+`position` gives each row's index in its span. A row at 0 has none, and the rule stays
+silent there.
 
 The time between the two is the tick, 0.1 s. A PGN sent every 100 ms can update 0 or
 2 times between ticks, and the limits below are measured with that in.

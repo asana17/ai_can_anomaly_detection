@@ -6,21 +6,22 @@ import pytest
 from preprocess.features.signal_state import SIGNALS
 from rules.sequence.change_limit import LIMITS, PERIOD, hits
 
-ROWS = 100_000
-
 WRAP = """#include "change_limit.h"
 
-void run(const float *raw, const float *previous, size_t rows, bool *out)
+void run(const float *raw, const uint32_t *position, size_t rows, bool *out)
 {
 \tRecentRows recent;
+\tconst float *row;
 \tsize_t i;
 
+\trecent_rows_clear(&recent);
 \tfor (i = 0; i < rows; i++) {
-\t\trecent_rows_clear(&recent);
-\t\tif (previous != NULL) {
-\t\t\trecent_rows_push(&recent, &previous[i * SIGNAL_COUNT]);
+\t\trow = &raw[i * SIGNAL_COUNT];
+\t\tif (position[i] == 0u) {
+\t\t\trecent_rows_clear(&recent);
 \t\t}
-\t\tout[i] = change_limit_hits(&recent, &raw[i * SIGNAL_COUNT]);
+\t\tout[i] = change_limit_hits(&recent, row);
+\t\trecent_rows_push(&recent, row);
 \t}
 }
 """
@@ -35,37 +36,32 @@ def run(board_lib):
     return function
 
 
-def _pairs(rng):
-    """Rows and the rows before them, each limited signal a step near its limit away.
+def _rows(rng):
+    """1 to 40 rows between gaps, each limited signal a step near its limit from the row
+    before.
 
     The steps fall either side of the limit, a few on it. NaN fills 0.1% of cells.
     """
-    previous = rng.uniform(-100.0, 100.0, (ROWS, len(SIGNALS)))
-    raw = previous.copy()
+    lengths = rng.integers(1, 41, 5_000)
+    position = np.concatenate([np.arange(n) for n in lengths]).astype(np.uint32)
+    start = rng.uniform(-100.0, 100.0, (1, len(SIGNALS)))
+    raw = np.repeat(start, len(position), axis=0)
     for name, limit in LIMITS.items():
-        factor = rng.choice([1.0, 1.0 - 1e-6, 1.0 + 1e-6, 0.5], ROWS,
+        factor = rng.choice([1.0, 1.0 - 1e-6, 1.0 + 1e-6, 0.5], len(position),
                             p=[0.1, 0.4, 0.001, 0.499])
-        sign = rng.choice([-1.0, 1.0], ROWS)
-        raw[:, SIGNALS.index(name)] += sign * factor * limit * PERIOD
-    raw, previous = raw.astype(np.float32), previous.astype(np.float32)
+        sign = rng.choice([-1.0, 1.0], len(position))
+        column = SIGNALS.index(name)
+        raw[:, column] += np.cumsum(sign * factor * limit * PERIOD)
+    raw = raw.astype(np.float32)
     raw[rng.random(raw.shape) < 0.001] = np.nan
-    previous[rng.random(previous.shape) < 0.001] = np.nan
-    return raw, previous
+    return raw, position
 
 
 def test_the_c_port_matches_the_python_rule(run):
-    raw, previous = (np.ascontiguousarray(a) for a in _pairs(np.random.default_rng(0)))
-    got = np.zeros(ROWS, dtype=np.bool_)
-    run(raw.ctypes.data, previous.ctypes.data, ROWS, got.ctypes.data)
-    expected = hits(raw, previous)
+    raw, position = _rows(np.random.default_rng(0))
+    raw = np.ascontiguousarray(raw)
+    got = np.zeros(len(raw), dtype=np.bool_)
+    run(raw.ctypes.data, position.ctypes.data, len(raw), got.ctypes.data)
+    expected = hits(raw, position)
     assert expected.any() and not expected.all()
     assert np.flatnonzero(got != expected).tolist() == []
-
-
-def test_a_row_with_no_row_before_matches_the_python_rule_on_nan(run):
-    raw = np.ascontiguousarray(_pairs(np.random.default_rng(0))[0])
-    got = np.ones(ROWS, dtype=np.bool_)
-    run(raw.ctypes.data, None, ROWS, got.ctypes.data)
-    expected = hits(raw, np.full_like(raw, np.nan))
-    assert np.flatnonzero(got != expected).tolist() == []
-
