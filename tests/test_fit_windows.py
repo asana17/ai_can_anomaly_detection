@@ -76,3 +76,17 @@ def test_a_run_keeps_the_weights_and_what_it_was_fitted_on(tmp_path, hub, monkey
                               "models": [{"model": "var", "rows": 3}]}
     assert meta["windows"] == [3]
     assert json.load(open(folder / "losses.json")) == [], "var is solved, not trained"
+
+
+def test_a_window_holding_a_nan_is_not_fitted_on(tmp_path, monkeypatch):
+    train = train_set(monkeypatch)
+    train[5, 1] = np.nan
+    model = Kept(3)
+    meta = fit_windows.write_models(str(tmp_path), [model], "u/d", REVISION,
+                                    "train_sets/20260101-000000", str(tmp_path))
+
+    complete = np.delete(train, 5, axis=0)
+    scaled = scale_for(complete).apply(train)
+    # row 5 is in the window 4 to 6 alone, so the other two are kept
+    assert np.array_equal(model.windows[0], scaled[[[0, 1, 2], [1, 2, 3]]])
+    assert meta["windows"] == [2]

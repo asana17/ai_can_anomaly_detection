@@ -41,8 +41,10 @@ Every window is fitted on, one ending at each train row that has `rows - 1` trai
 of its segment before it. Windows that hold a rule hit are kept. Rules and models meet in
 detect alone.
 
-The train rows are all moving rows, so a window holds no stopped row. Nothing drops a
-window that holds a NaN. `LinearRegression` refuses a NaN, so a var fit stops on one.
+The train rows are all moving rows, so a window holds no stopped row. A window that
+holds a NaN is left out. A NaN is a value J1939 reserves, as in [fit](fit.md). The
+window is left out, not cut short at the NaN, so the other windows stay where the
+board places them.
 
 The windows are cut again on every run and not stored. On the train set
 `train_sets/20260926-152733`, with 1,759,645 train rows, the cut took under a second
@@ -59,9 +61,9 @@ The memory a fit takes on top of the windows was not measured.
 
 ## The scale
 
-The scale is that of [fit](fit.md#the-scale), taken from the train rows. It is applied
-to the train rows before the cut. Each value is scaled on its own, so this gives the
-same windows as scaling each window.
+The scale is that of [fit](fit.md#the-scale), taken from the train rows that hold no
+NaN. It is applied to the train rows before the cut. Each value is scaled on its own,
+so this gives the same windows as scaling each window.
 
 ## The models this repository fits
 

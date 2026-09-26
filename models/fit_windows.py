@@ -32,7 +32,9 @@ MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "window_models
 def write_models(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
-    scale = scale_for(train_set["train"])
+    # a NaN is a value J1939 reserves. No model can fit it, and a rule flags the row
+    complete = ~np.isnan(train_set["train"]).any(axis=1)
+    scale = scale_for(train_set["train"][complete])
     rows = scale.apply(train_set["train"])
     position = positions(moving(train_set["train"], min_speed=train_set["min_speed"]),
                          train_set["seg"])
@@ -42,6 +44,9 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
     trained, windows = [], []
     for model in models:
         ends = window_ends(position, rows=model.rows)
+        # a window holding a NaN row is left out, not cut short, so the windows stay
+        # where the board places them
+        ends = ends[window_rows(complete, ends, rows=model.rows).all(axis=1)]
         tensors, _, losses = model.fit(window_rows(rows, ends, rows=model.rows))
         weights.update(tensors)
         windows.append(len(ends))
