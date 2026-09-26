@@ -6,7 +6,7 @@
 #include "slots.h"
 
 #define MIN_SPEED 5.0f /* Settings.MIN_SPEED in common/settings.py */
-#define ALARM_K 10u /* flagged rows among the last DETECT_INSTANT_ROWS an alarm needs */
+#define MIN_FLAGGED_FOR_ALARM 10u /* flagged rows among the last DETECT_BY_ROW_RECENT_FLAGS an alarm needs */
 
 /* Create preprocess, score and detect by row, and report on the slots. */
 IMPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots);

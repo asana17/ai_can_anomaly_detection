@@ -1,6 +1,6 @@
 #include <string.h>
 #include <tk/tkernel.h>
-#include "detect_instant.h"
+#include "detect_by_row.h"
 #include "model.h"
 #include "model_config.h"
 #include "recent_rows.h"
@@ -35,14 +35,14 @@ LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST R
 LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 {
 	ScoreAndDetectByRowTask *task = exinf;
-	DetectInstant state;
+	DetectByRow state;
 	ScoringRow scored;
 	Row row;
 	RecentRows rows_before; /* the rows before row, back to the last gap */
 	INT ringing = 0, alarmed;
 	UW last_no = 0, row_count_since_gap = 0;
 
-	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
+	detect_by_row_init(&state, THRESHOLD_SCORE, MIN_FLAGGED_FOR_ALARM);
 	recent_rows_clear(&rows_before);
 	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
 		== E_OK) {
@@ -61,14 +61,14 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			active_model_std, MIN_SPEED, &scored) != MODEL_OK) {
 			break;
 		}
-		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
-		alarmed = detect_instant_alarmed(&state);
+		detect_by_row_push_flag(&state, row.no, scored.score, scored.rule_hit);
+		alarmed = detect_by_row_alarmed(&state);
 		if (alarmed != ringing) {
 			report_alarm_change(task->report_input, row.no, alarmed);
 			ringing = alarmed;
 		}
 		pass_row_to_window(task->score_and_detect_by_window_input, &row,
-			detect_instant_last_row_flagged(&state), row_count_since_gap);
+			detect_by_row_last_flagged(&state), row_count_since_gap);
 		recent_rows_push(&rows_before, row.physical);
 	}
 	tk_ext_tsk();
