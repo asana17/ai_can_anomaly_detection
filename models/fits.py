@@ -49,7 +49,7 @@ class Pca:
 
     @property
     def name(self):
-        return f"rules + pca k={self.k}"
+        return f"pca k={self.k}"
 
     def fit(self, rows):
         """Its tensors, how it scores rows, and no losses, since it is solved."""
@@ -143,7 +143,7 @@ class LinearAe(_Autoencoder):
 
     @property
     def name(self):
-        return f"rules + linear ae k={self.k}"
+        return f"linear ae k={self.k}"
 
     def _network(self, signals):
         return autoencoder.LinearAutoencoder(signals=signals, latent_dim=self.k)
@@ -164,7 +164,7 @@ class NonlinearAe(_Autoencoder):
 
     @property
     def name(self):
-        return f"rules + nonlinear ae h={self.hidden} k={self.k}"
+        return f"nonlinear ae h={self.hidden} k={self.k}"
 
     def _network(self, signals):
         return autoencoder.NonlinearAutoencoder(signals=signals, latent_dim=self.k,

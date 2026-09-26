@@ -19,10 +19,10 @@ def test_a_listed_value_stands_for_one_model_per_value():
                                    NonlinearAe(2, 64, ARGUMENTS)]
 
 
-def test_a_model_is_named_as_the_tables_name_it():
-    assert Pca(2).name == "rules + pca k=2"
+def test_a_model_is_named_by_its_values():
+    assert Pca(2).name == "pca k=2"
     assert Var(10).name == "var r=10"
-    assert NonlinearAe(8, 128, ARGUMENTS).name == "rules + nonlinear ae h=128 k=8"
+    assert NonlinearAe(8, 128, ARGUMENTS).name == "nonlinear ae h=128 k=8"
 
 
 def test_the_tensors_keep_the_names_quantize_reads():
