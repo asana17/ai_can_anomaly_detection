@@ -73,6 +73,8 @@ def _grid(hub, rows_per_log=10):
                                                      "rows": [rows_per_log] * len(LOGS)},
                  "grids/20260101-000000/grid_raw.npy": raw,
                  "grids/20260101-000000/grid_t.npy": np.arange(len(raw)) * 0.1,
+                 "grids/20260101-000000/grid_seg.npy":
+                     np.repeat(np.arange(len(LOGS), dtype=np.int32), rows_per_log),
                  "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1,
                                                                 "max_hold": 1.0}}}
     return raw

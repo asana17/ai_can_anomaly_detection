@@ -76,7 +76,7 @@ def fetch_calibration_set(repo, revision, calibration_path, local_dir):
                                  log_split["revision"], repo_type="dataset")
     grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
                            repo_type="dataset")
-    raw, _, _, _ = read_grid(grid_dir)
+    raw, _, _, _, _ = read_grid(grid_dir)
     return {"calibration": raw[read_calibration_set(folder)],
             "min_speed": log_split_meta["inputs"]["min_speed"],
             "dataset": {"calibration_set": {"repo": repo, "revision": revision,
@@ -97,7 +97,7 @@ def write_calibration_set(folder, repo, revision, log_split_path, local_dir, set
     min_speed = log_split_meta["inputs"]["min_speed"]
 
     cut = read_log_split(log_split_dir)
-    raw, times, logs, counts = read_grid(grid_dir)
+    raw, times, _, logs, counts = read_grid(grid_dir)
     non_test = rows_of_logs(logs, counts, cut["non_test"])
     blocks = calibration_blocks(raw[non_test], times[non_test],
                                 share=settings.CALIBRATION, block=settings.BLOCK,

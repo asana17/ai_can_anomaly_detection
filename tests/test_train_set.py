@@ -92,6 +92,8 @@ def _grid_and_calibration_set(hub, speeds, test_start, blocks=((100.0, 119.9),))
         "grids/20260101-000000/logs.json": {"logs": LOGS, "rows": [half, len(t) - half]},
         "grids/20260101-000000/grid_raw.npy": raw,
         "grids/20260101-000000/grid_t.npy": t,
+        "grids/20260101-000000/grid_seg.npy":
+            np.repeat(np.arange(2, dtype=np.int32), [half, len(t) - half]),
         "log_splits/20260101-000000/meta.json": {
             "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
             "grid": dict(where, path="grids/20260101-000000")},
@@ -181,6 +183,7 @@ def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
         "grids/20260101-000000/grid_raw.npy":
             np.array([[10.0], [30.0], [50.0]], np.float32),
         "grids/20260101-000000/grid_t.npy": np.array([0.0, 0.1, 0.2]),
+        "grids/20260101-000000/grid_seg.npy": np.zeros(3, np.int32),
         "grids/20260101-000000/logs.json": {"logs": ["a.csv"], "rows": [3]},
     })
     got = train_set.fetch_train_set("user/data", REVISION, "train_sets/20260101-000000",

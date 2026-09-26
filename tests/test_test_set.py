@@ -202,7 +202,7 @@ def test_wheel_holds_the_speed_before_the_attack(tmp_path):
 
 def _hub_files(tmp_path, hub, logs):
     """A grid and a log split over `logs`, with the last log as the test log."""
-    raw, times, _ = grid_rows(logs, period=PERIOD, max_hold=MAX_HOLD)
+    raw, times, segments = grid_rows(logs, period=PERIOD, max_hold=MAX_HOLD)
     counts = [len(grid_rows([log], period=PERIOD, max_hold=MAX_HOLD)[0]) for log in logs]
     names = [os.path.relpath(log, tmp_path) for log in logs]
     hub.files = {
@@ -211,6 +211,7 @@ def _hub_files(tmp_path, hub, logs):
         "grids/20260101-000000/logs.json": {"logs": names, "rows": counts},
         "grids/20260101-000000/grid_raw.npy": raw,
         "grids/20260101-000000/grid_t.npy": times,
+        "grids/20260101-000000/grid_seg.npy": segments,
         "log_splits/20260101-000000/meta.json": {
             "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
             "grid": {"repo": "u/d", "revision": REVISION,

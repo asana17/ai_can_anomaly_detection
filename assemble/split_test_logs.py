@@ -73,7 +73,7 @@ def write_log_split(folder, repo, revision, grid_path, local_dir, settings):
     """Write `log_split.json` and `seconds.json` for `FOLD`, cut on the grid `grid_path`
     of `repo` at `revision`, and return the reference to it for `meta.json`."""
     got, grid_meta = read_dir(repo, grid_path, local_dir, revision, repo_type="dataset")
-    raw, times, logs, counts = read_grid(got)
+    raw, times, _, logs, counts = read_grid(got)
     seconds = seconds_of(raw, counts, logs, min_speed=settings.MIN_SPEED,
                          period=grid_meta["inputs"]["period"])
     non_test_logs, test_logs = split(seconds, settings.N_SPLITS, settings.FOLD)

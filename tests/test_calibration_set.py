@@ -78,6 +78,9 @@ def _grid_and_log_split(hub, speeds, non_test_rows):
             "logs": LOGS, "rows": [non_test_rows, len(t) - non_test_rows]},
         "grids/20260101-000000/grid_raw.npy": raw,
         "grids/20260101-000000/grid_t.npy": t,
+        "grids/20260101-000000/grid_seg.npy":
+            np.repeat(np.arange(2, dtype=np.int32),
+                      [non_test_rows, len(t) - non_test_rows]),
         "log_splits/20260101-000000/meta.json": {
             "inputs": {"grid": "grids/20260101-000000", "min_speed": 5.0},
             "grid": {"repo": "u/d", "revision": REVISION,
@@ -150,6 +153,7 @@ def test_the_rows_are_the_ones_the_calibration_set_names(tmp_path, hub):
         "grids/20260101-000000/grid_raw.npy":
             np.array([[10.0], [30.0], [50.0]], np.float32),
         "grids/20260101-000000/grid_t.npy": np.array([0.0, 0.1, 0.2]),
+        "grids/20260101-000000/grid_seg.npy": np.zeros(3, np.int32),
         "grids/20260101-000000/logs.json": {"logs": ["a.csv"], "rows": [3]},
     })
     got = calibration_set.fetch_calibration_set(

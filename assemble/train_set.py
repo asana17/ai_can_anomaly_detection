@@ -39,7 +39,7 @@ def fetch_train_set(repo, revision, train_path, local_dir):
                                  log_split["revision"], repo_type="dataset")
     grid_dir, _ = read_dir(grid["repo"], grid["path"], local_dir, grid["revision"],
                            repo_type="dataset")
-    raw, _, _, _ = read_grid(grid_dir)
+    raw, _, _, _, _ = read_grid(grid_dir)
     return {"train": raw[read_train_set(folder)],
             "min_speed": log_split_meta["inputs"]["min_speed"],
             "dataset": {"train_set": {"repo": repo, "revision": revision,
@@ -61,7 +61,7 @@ def write_train_set(folder, repo, revision, calibration_path, local_dir, setting
     min_speed = log_split_meta["inputs"]["min_speed"]
 
     cut = read_log_split(log_split_dir)
-    raw, times, logs, counts = read_grid(grid_dir)
+    raw, times, _, logs, counts = read_grid(grid_dir)
     train_rows = (rows_of_logs(logs, counts, cut["non_test"])
                   & moving(raw, min_speed=min_speed)
                   & (seconds_from(times, [[cut["test_start"], cut["test_end"]]])

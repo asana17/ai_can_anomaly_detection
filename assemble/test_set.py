@@ -137,7 +137,7 @@ def grid_rows_injected(injected):
 
 def rows_before_each(grid_dir):
     """`log -> its rows by time`, read off a grid, built one log at a time."""
-    raw, times, logs, counts = read_grid(grid_dir)
+    raw, times, _, logs, counts = read_grid(grid_dir)
     ends = dict(zip(logs, np.cumsum(counts)))
     sizes = dict(zip(logs, counts))
 
