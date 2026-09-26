@@ -2,15 +2,13 @@
 #define REPORT_INPUT_H
 
 #include <tk/tkernel.h>
-#include "model.h"
 
-/* An alarm starting or ending, or a scoring error, for report to print. */
+/* An alarm starting or ending, for report to print. */
 typedef struct {
 	UW no;
 	UW score_bits; /* float32 score bits; avoids UART float formatting. */
 	INT alarm; /* the row starts an alarm, or ends the one that was ringing */
 	INT rule;
-	ModelStatus error;
 } Report;
 
 /* The reports score and detect by row passes to report, in a message buffer. */

@@ -22,6 +22,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	RowRingEntry entry;
 	BOOL started = FALSE;
 	UW last_no = 0, row_count_since_gap = 0;
+	ModelStatus error;
 
 	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
 	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
@@ -37,11 +38,9 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		}
 		started = TRUE;
 		last_no = row.no;
-		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
+		error = scoring_row(row.physical, active_model_mean, active_model_std,
 			MIN_SPEED, &scored);
-		if (report.error != MODEL_OK) {
-			report.no = row.no;
-			report_input_write(task->report_input, &report);
+		if (error != MODEL_OK) {
 			break;
 		}
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);

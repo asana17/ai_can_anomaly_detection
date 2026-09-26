@@ -12,10 +12,6 @@ LOCAL void report_task(INT stacd, void *exinf)
 
 	tm_printf((UB*)"%s: k %u of %u\n", task->model_id, ALARM_K, DETECT_INSTANT_ROWS);
 	while (report_input_read(task->report_input, &report) == E_OK) {
-		if (report.error != MODEL_OK) {
-			tm_printf((UB*)"row %u error %d\n", report.no, report.error);
-			continue;
-		}
 		if (report.alarm) {
 			tm_printf((UB*)"alarm start at row %u score 0x%08x rule %d\n",
 				report.no, report.score_bits, report.rule);
