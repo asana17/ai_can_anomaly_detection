@@ -9,6 +9,7 @@ flowchart LR
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     pre -- row queue --> sd["score and detect by row 8<br/>rules, autoencoder, k of the last N"]
     sd -- report queue --> report["report 10<br/>UART"]
+    sd -- shared ring --> win["score and detect by window 11<br/>windows of the last rows"]
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -43,3 +44,13 @@ buffer leaves a gap, and the model then scores a stretch of time that never happ
 
 Report is best effort by the same rule, since a late line loses nothing. It sits below
 both guaranteed tasks.
+
+## Passing rows
+
+Score and detect by row puts each row in a shared ring, with whether the row was
+flagged and the row's place since the last gap, 0 for the first row after it.
+
+Score and detect by window first copies every row in the shared ring at once, and the
+shared ring is emptied. It may hold several rows, since score and detect by window has
+a lower priority. The task then adds the copied rows to its window one at a time. After
+each row, it checks whether the window is complete, and if so processes it.
