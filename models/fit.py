@@ -14,6 +14,7 @@ import os
 import platform
 
 import numpy as np
+import sklearn
 import torch
 from safetensors.torch import load_file, save_file
 
@@ -69,7 +70,8 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
         json.dump(trained, f)
     return {**train_set["dataset"], "min_speed": min_speed, "rows": len(rows),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
-                         "torch": torch.__version__, "platform": platform.platform()}}
+                         "torch": torch.__version__, "sklearn": sklearn.__version__,
+                         "platform": platform.platform()}}
 
 
 def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models=MODELS,

@@ -59,7 +59,7 @@
     },
     "versions": {
       "$ref": "meta.schema.json#/$defs/versions",
-      "description": "Python, NumPy, torch and the platform."
+      "description": "Python, NumPy, torch, scikit-learn and the platform."
     }
   },
   "required": [
