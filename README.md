@@ -143,14 +143,6 @@ J1939's own terms, frame, PGN and SPN, are described in
     belong in the window model's config header.
   - Send alarms to CAN and record them to Flash, in two tasks, alarm A before B. UART
     output masks interrupts while it waits on each character.
-- Rules that read the past go into alarm A. change_limit runs on rows and in C. Wire it
-  into scoring and detect once the ring is in.
-- Give gear_ratio and speed_agreement the row before, as change_limit has. On the
-  moving grid rows of every log gear_ratio fires 317 times, most just after a shift
-  while the engine still turns at the old gear's ratio. Waiting 2 s after the reported
-  gear changes leaves 77. speed_agreement fires 587 times, at a median of 12 km/h/s
-  against 1.0 for all moving rows, and 91 remain below 5 km/h/s. Both catch attacks no
-  other rule does, so measure what each change loses on the test set.
 - A script that compares scores.
 
 ## Tests
