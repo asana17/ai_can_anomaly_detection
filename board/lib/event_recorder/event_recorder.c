@@ -4,6 +4,11 @@
 
 LOCAL ID event_mbf = 0;
 
+/* In-memory storage for event records */
+#define MAX_STORED_EVENTS 10
+LOCAL EventRecord stored_events[MAX_STORED_EVENTS];
+LOCAL uint32_t stored_count = 0;
+
 LOCAL T_CMBF event_cmbf = {
 	.mbfatr = TA_TPRI,  /* priority-order queue */
 	.bufsz = EVENT_BUF_SIZE + EVENT_BUF_COUNT * sizeof(INT),
@@ -66,4 +71,29 @@ EXPORT void event_recorder_copy_rows(float *dest, const float (*history)[EVENT_S
 
 		memcpy(&dest[i * EVENT_SIGNALS], history[idx], EVENT_SIGNALS * sizeof(float));
 	}
+}
+
+EXPORT ER event_recorder_store(const EventRecord *event)
+{
+	if (stored_count >= MAX_STORED_EVENTS) {
+		return E_NOMEM;
+	}
+
+	memcpy(&stored_events[stored_count], event, sizeof(EventRecord));
+	stored_count++;
+	return E_OK;
+}
+
+EXPORT uint32_t event_recorder_get_count(void)
+{
+	return stored_count;
+}
+
+EXPORT const EventRecord* event_recorder_get_event_ptr(uint32_t index)
+{
+	if (index >= stored_count) {
+		return NULL;
+	}
+
+	return &stored_events[index];
 }

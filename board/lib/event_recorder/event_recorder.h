@@ -66,4 +66,30 @@ IMPORT void event_recorder_copy_rows(float *dest, const float (*history)[EVENT_S
                                      uint32_t history_size, uint32_t history_head,
                                      uint32_t count);
 
+/**
+ * @brief Store event record (called by flash writer task).
+ *
+ * @param[in] event Event record to store
+ * @retval E_OK Success
+ * @retval E_NOMEM Storage full
+ */
+IMPORT ER event_recorder_store(const EventRecord *event);
+
+/**
+ * @brief Get number of stored events.
+ *
+ * @return Number of stored events
+ */
+IMPORT uint32_t event_recorder_get_count(void);
+
+/**
+ * @brief Get pointer to stored event (read-only).
+ *
+ * Returns a direct pointer to the stored event, avoiding stack allocation.
+ *
+ * @param[in] index Event index (0 to count-1)
+ * @return Pointer to event, or NULL if index is invalid
+ */
+IMPORT const EventRecord* event_recorder_get_event_ptr(uint32_t index);
+
 #endif
