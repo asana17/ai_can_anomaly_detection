@@ -33,12 +33,12 @@ train rows was removed, so a window never joins rows that were apart. The cut is
 
 ```python
 position = positions(moving(train_rows), segments)
-ends = window_ends(position, rows=W)
-windows = window_rows(scaled_train_rows, ends, rows=W)
+ends = window_ends(position, rows=model.rows)
+windows = window_rows(scaled_train_rows, ends, rows=model.rows)
 ```
 
-Every window is fitted on, one ending at each train row that has `W - 1` train rows of
-its segment before it. Windows that hold a rule hit are kept. Rules and models meet in
+Every window is fitted on, one ending at each train row that has `rows - 1` train rows
+of its segment before it. Windows that hold a rule hit are kept. Rules and models meet in
 detect alone.
 
 The train rows are all moving rows, so a window holds no stopped row. Nothing drops a
@@ -46,10 +46,10 @@ window that holds a NaN. `LinearRegression` refuses a NaN, so a var fit stops on
 
 The windows are cut again on every run and not stored. On the train set
 `train_sets/20260926-152733`, with 1,759,645 train rows, the cut took under a second
-for each W, measured on 2026-09-27. That measurement cut the same windows out of the
+for each `rows`, measured on 2026-09-27. That measurement cut the same windows out of the
 whole grid with the train rows marked, not out of the train rows alone.
 
-| W | windows | size as float32 |
+| `rows` | windows | size as float32 |
 |---|---|---|
 | 5 | 1,735,855 | 0.59 GB |
 | 10 | 1,707,931 | 1.16 GB |
@@ -65,5 +65,5 @@ same windows as scaling each window.
 
 ## The models this repository fits
 
-`models/window_models.json` asks for a [var](var.md) at W 5, 10 and 20. They were
+`models/window_models.json` asks for a [var](var.md) at `rows` 5, 10 and 20. They were
 chosen without looking at any attack.

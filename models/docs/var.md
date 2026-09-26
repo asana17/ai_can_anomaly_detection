@@ -21,7 +21,7 @@ the order of the rows gives alone from what the autoencoder adds.
 
 ## How many rows
 
-`rows` is W, the rows in a window. Every row before the last is used, so W sets both
-the window and how far back the prediction reaches. There are `(rows - 1) * signals`
-coefficients per signal. [fit_windows](fit_windows.md) fits several W. None was chosen
-by looking at an attack.
+`rows` is how many rows a window holds. Every row before the last is used, so `rows`
+sets both the window and how far back the prediction reaches. There are
+`(rows - 1) * signals` coefficients per signal. [fit_windows](fit_windows.md) fits
+several values of `rows`. None was chosen by looking at an attack.
