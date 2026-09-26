@@ -24,7 +24,6 @@ LOCAL void replay_task(INT stacd, void *exinf)
 		slots_store(&slots, replay_frames[i].arb_id, replay_frames[i].data,
 			replay_frames[i].size, replay_frames[i].time_us);
 	}
-	ai_can_anomaly_detection_tasks_end();
 	tk_ext_tsk();
 }
 

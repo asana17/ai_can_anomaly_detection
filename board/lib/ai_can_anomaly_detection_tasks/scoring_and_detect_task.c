@@ -22,9 +22,6 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 
 	detect_instant_init(&state, THRESHOLD_SCORE, ALARM_K);
 	while(tk_rcv_mbf(task->row_mbf, &row, TMO_FEVR) == sizeof(row)) {
-		if(row.no == END_ROW) {
-			break;
-		}
 		report.error = scoring_row(row.physical, active_model_mean, active_model_std,
 			MIN_SPEED, &scored);
 		if(report.error != MODEL_OK) {
@@ -32,14 +29,7 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 			tk_snd_mbf(task->report_mbf, &report, sizeof(report), TMO_FEVR);
 			break;
 		}
-		task->counts->scored_rows++;
-		if(scored.cycles > task->counts->maximum_cycles) {
-			task->counts->maximum_cycles = scored.cycles;
-		}
 		detect_instant_add_row(&state, row.no, scored.score, scored.rule_hit);
-		if(detect_instant_last_row_flagged(&state)) {
-			task->counts->flagged_rows++;
-		}
 		alarmed = detect_instant_alarmed(&state);
 		if(alarmed != ringing) {
 			report.no = row.no;
@@ -50,9 +40,7 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 			ringing = alarmed;
 		}
 	}
-	report.no = END_ROW;
-	tk_snd_mbf(task->report_mbf, &report, sizeof(report), TMO_FEVR);
-	tk_slp_tsk(TMO_FEVR);
+	tk_ext_tsk();
 }
 
 EXPORT ER scoring_and_detect_task_create(ScoringAndDetectTask *task, PRI priority, ID row_mbf,

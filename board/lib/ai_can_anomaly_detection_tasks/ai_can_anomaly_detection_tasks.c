@@ -9,10 +9,9 @@
 #define ROW_DEPTH 4
 #define REPORT_DEPTH 8
 
-LOCAL TaskCounts counts;
-LOCAL PreprocessTask preprocess = {.counts = &counts};
-LOCAL ScoringAndDetectTask scoring_and_detect = {.counts = &counts};
-LOCAL ReportTask report = {.counts = &counts};
+LOCAL PreprocessTask preprocess;
+LOCAL ScoringAndDetectTask scoring_and_detect;
+LOCAL ReportTask report;
 
 /* The queue from preprocess to scoring and detect, a Row each. */
 LOCAL T_CMBF row_cmbf = {
@@ -46,7 +45,6 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots)
 		return report_mbf;
 	}
 	preprocess.slots = slots;
-	report.slots = slots;
 	report.model_id = scoring_and_detect_model_id;
 	/* report sits below the tasks that raise the alarm */
 	error = report_task_create(&report, 10, report_mbf);
@@ -74,9 +72,4 @@ EXPORT ER ai_can_anomaly_detection_tasks_start(void)
 		return error;
 	}
 	return preprocess_task_start(&preprocess);
-}
-
-EXPORT void ai_can_anomaly_detection_tasks_end(void)
-{
-	preprocess.frames_done = 1;
 }

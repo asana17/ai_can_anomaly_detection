@@ -4,12 +4,11 @@
 #include <tk/tkernel.h>
 #include "ai_can_anomaly_detection_tasks.h"
 
-/* Where scoring and detect gets rows and sends alarms, and what it counts. */
+/* Where scoring and detect gets rows and sends alarms. */
 typedef struct {
 	ID row_mbf;    /* where the rows come from */
 	ID report_mbf; /* where the alarms go */
 	ID task_id;
-	TaskCounts *counts; /* where it counts rows */
 } ScoringAndDetectTask;
 
 /* The name of the model it scores with. */

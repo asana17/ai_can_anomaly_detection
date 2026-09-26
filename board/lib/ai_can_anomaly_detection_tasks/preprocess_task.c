@@ -37,14 +37,9 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 			DI(intsts);
 			signal_state_clear(&task->slots->state);
 			EI(intsts);
-			task->counts->resets++;
 		}
 		if(quiet > 0) {
 			/* no frame since the last tick, so the row would hold only old values */
-			task->counts->rows_quiet++;
-			if(task->frames_done && quiet >= MAX_HOLD_ROWS) {
-				break;
-			}
 			continue;
 		}
 		for(i = 0; i < SIGNAL_STATE_SLOTS; i++) {
@@ -53,24 +48,17 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 			EI(intsts);
 		}
 		if(!signal_state_ready(&held)) {
-			task->counts->rows_not_ready++;
 			continue;
 		}
 		signal_state_row(&held, row.physical);
 		if(!moving(row.physical, MIN_SPEED)) {
-			task->counts->rows_skipped++;
 			continue;
 		}
 		row.no = number;
 		if(mbf_send_drop_oldest(task->row_mbf, &row, sizeof(row), &old, &dropped) != E_OK) {
 			break;
 		}
-		task->counts->rows_sent++;
-		task->counts->rows_dropped += dropped;
 	}
-	tk_stp_cyc(task->tick_id);
-	row.no = END_ROW;
-	tk_snd_mbf(task->row_mbf, &row, sizeof(row), TMO_FEVR);
 	tk_ext_tsk();
 }
 
