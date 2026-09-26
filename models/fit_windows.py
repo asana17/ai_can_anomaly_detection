@@ -3,8 +3,8 @@
     python3 -m models.fit_windows repo revision train_sets/<time> local_dir runs_repo runs_dir [--models window_models.json] [--rebuild]
 
 The models are the ones `window_models.json` beside this file lists, unless `--models`
-names another file. A window is `rows` train rows in a row of one segment, oldest
-first. Every such window is fitted on, one ending at each train row.
+names another file. A window is `rows` train rows next to each other in one segment,
+oldest first. Every such window is fitted on, one ending at each train row.
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from models.fit import models_in, scale_for
 from models.fits import as_dict
+from preprocess.features.moving import moving
 from preprocess.features.windows import positions, window_ends, window_rows
 
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "window_models.json")
@@ -32,8 +33,9 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
     """Fit every model into `folder`, and return what to add to its `meta.json`."""
     train_set = fetch_train_set(repo, revision, train_path, local_dir)
     scale = scale_for(train_set["train"])
-    rows = scale.apply(train_set["raw"])
-    position = positions(train_set["train_rows"], train_set["seg"])
+    rows = scale.apply(train_set["train"])
+    position = positions(moving(train_set["train"], min_speed=train_set["min_speed"]),
+                         train_set["seg"])
 
     weights = {"scale.mean": torch.from_numpy(scale.mean),
                "scale.std": torch.from_numpy(scale.std)}

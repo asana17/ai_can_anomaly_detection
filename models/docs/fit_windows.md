@@ -26,13 +26,15 @@ A var's tensors are `var.r{rows}.coefficients` and `var.r{rows}.intercept`.
 
 ## The windows it fits on
 
-A window is `rows` train rows in a row, all in one segment, oldest first. The cut is
+A window is `rows` train rows next to each other in one segment, oldest first. The
+train set gives each train row its segment, a new one wherever a row between two
+train rows was removed, so a window never joins rows that were apart. The cut is
 [windows](../../preprocess/features/windows.py), the same rule the board uses.
 
 ```python
-position = positions(train_rows, segment)
+position = positions(moving(train_rows), segments)
 ends = window_ends(position, rows=W)
-windows = window_rows(scaled_grid_rows, ends, rows=W)
+windows = window_rows(scaled_train_rows, ends, rows=W)
 ```
 
 Every window is fitted on, one ending at each train row that has `W - 1` train rows of
@@ -44,7 +46,8 @@ window that holds a NaN. `LinearRegression` refuses a NaN, so a var fit stops on
 
 The windows are cut again on every run and not stored. On the train set
 `train_sets/20260926-152733`, with 1,759,645 train rows, the cut took under a second
-for each W, measured on 2026-09-27.
+for each W, measured on 2026-09-27. That measurement cut the same windows out of the
+whole grid with the train rows marked, not out of the train rows alone.
 
 | W | windows | size as float32 |
 |---|---|---|
@@ -57,7 +60,7 @@ The memory a fit takes on top of the windows was not measured.
 ## The scale
 
 The scale is that of [fit](fit.md#the-scale), taken from the train rows. It is applied
-to the whole grid before the cut. Each value is scaled on its own, so this gives the
+to the train rows before the cut. Each value is scaled on its own, so this gives the
 same windows as scaling each window.
 
 ## The models this repository fits

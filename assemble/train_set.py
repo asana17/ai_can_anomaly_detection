@@ -14,7 +14,7 @@ import os
 import numpy as np
 
 from assemble.calibration_set import read_calibration_blocks, seconds_from
-from assemble.grid import read_grid, rows_of_logs
+from assemble.grid import read_grid, rows_of_logs, segments_of_chosen_rows
 from assemble.split_test_logs import read_log_split
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
@@ -31,8 +31,8 @@ def fetch_train_set(repo, revision, train_path, local_dir):
     """The rows a train set names, and the directories they came from.
 
     The train set is read at `revision` of `repo`, and the calibration set, log split
-    and grid it names at the commits it names them at. `raw` and `seg` are the whole
-    grid's rows and segment ids. `train_rows` marks the train rows in them.
+    and grid it names at the commits it names them at. `seg` is the segment id of
+    each train row, once the other rows are removed.
     """
     folder, meta = read_dir(repo, train_path, local_dir, revision, repo_type="dataset")
     log_split, grid = meta["log_split"], meta["grid"]
@@ -42,8 +42,8 @@ def fetch_train_set(repo, revision, train_path, local_dir):
                            repo_type="dataset")
     raw, _, segments, _, _ = read_grid(grid_dir)
     train_rows = read_train_set(folder)
-    return {"train": raw[train_rows], "raw": raw, "seg": segments,
-            "train_rows": train_rows,
+    return {"train": raw[train_rows],
+            "seg": segments_of_chosen_rows(train_rows, segments),
             "min_speed": log_split_meta["inputs"]["min_speed"],
             "dataset": {"train_set": {"repo": repo, "revision": revision,
                                       "path": train_path},

@@ -177,22 +177,22 @@ def test_the_rows_are_the_ones_the_train_set_names(tmp_path, hub):
                           "path": "log_splits/20260101-000000"},
             "grid": {"repo": "user/data", "revision": REVISION,
                      "path": "grids/20260101-000000"}},
-        "train_sets/20260101-000000/train_rows.npy": np.array([True, False, False]),
+        # row 2 is taken out, and row 4 starts a new segment
+        "train_sets/20260101-000000/train_rows.npy":
+            np.array([True, True, False, True, True]),
         "log_splits/20260101-000000/meta.json": {"inputs": {"min_speed": 5.0}},
         "grids/20260101-000000/meta.json": {"inputs": {"period": 0.1}},
         "grids/20260101-000000/grid_raw.npy":
-            np.array([[10.0], [30.0], [50.0]], np.float32),
-        "grids/20260101-000000/grid_t.npy": np.array([0.0, 0.1, 0.2]),
-        "grids/20260101-000000/grid_seg.npy": np.array([0, 0, 1], np.int32),
-        "grids/20260101-000000/logs.json": {"logs": ["a.csv"], "rows": [3]},
+            np.array([[10.0], [20.0], [30.0], [40.0], [50.0]], np.float32),
+        "grids/20260101-000000/grid_t.npy": np.arange(5) * 0.1,
+        "grids/20260101-000000/grid_seg.npy": np.array([0, 0, 0, 0, 1], np.int32),
+        "grids/20260101-000000/logs.json": {"logs": ["a.csv"], "rows": [5]},
     })
     got = train_set.fetch_train_set("user/data", REVISION, "train_sets/20260101-000000",
                                     str(tmp_path))
 
-    assert got["train"].tolist() == [[10.0]]
-    assert got["raw"].tolist() == [[10.0], [30.0], [50.0]]
-    assert got["seg"].tolist() == [0, 0, 1]
-    assert got["train_rows"].tolist() == [True, False, False]
+    assert got["train"].tolist() == [[10.0], [20.0], [40.0], [50.0]]
+    assert got["seg"].tolist() == [0, 0, 1, 2]
     assert got["min_speed"] == 5.0, "the log split decides the speed, not Settings"
     calibration = got["dataset"]["calibration_set"]
     assert calibration["path"] == "calibration_sets/20260101-000000"

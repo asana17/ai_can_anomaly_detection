@@ -18,20 +18,18 @@ DATASET = {"train_set": {"repo": "u/d", "revision": REVISION,
                          "path": "log_splits/20260101-000000"},
            "grid": {"repo": "u/d", "revision": REVISION,
                     "path": "grids/20260101-000000"}}
-# row 4 is not a train row, and row 8 starts a new segment
-TRAIN_ROWS = np.array([True] * 4 + [False] + [True] * 5)
-SEG = np.array([0] * 8 + [1] * 2, np.int32)
+# 9 train rows. A row was taken out after the 4th, and the 8th starts a new segment.
+SEG = np.array([0] * 4 + [1] * 3 + [2] * 2)
 
 
 def train_set(monkeypatch):
-    """A stand-in train set of 10 grid rows, each row's first signal its index."""
+    """A stand-in train set of moving rows."""
     rng = np.random.default_rng(0)
-    raw = rng.normal(size=(len(TRAIN_ROWS), len(SIGNALS))).astype(np.float32)
-    raw[:, 0] = np.arange(len(raw))
+    train = rng.normal(size=(len(SEG), len(SIGNALS))).astype(np.float32)
+    train[:, SIGNALS.index("wheel_speed")] = 10.0
     monkeypatch.setattr(fit_windows, "fetch_train_set", lambda *args: {
-        "train": raw[TRAIN_ROWS], "raw": raw, "seg": SEG, "train_rows": TRAIN_ROWS,
-        "min_speed": 5.0, "dataset": DATASET})
-    return raw
+        "train": train, "seg": SEG, "min_speed": 5.0, "dataset": DATASET})
+    return train
 
 
 class Kept:
@@ -53,13 +51,13 @@ def test_the_models_beside_fit_windows_spread_into_one_model_per_value():
 
 
 def test_windows_hold_train_rows_of_one_segment_oldest_first(tmp_path, monkeypatch):
-    raw = train_set(monkeypatch)
+    train = train_set(monkeypatch)
     model = Kept(3)
     meta = fit_windows.write_models(str(tmp_path), [model], "u/d", REVISION,
                                     "train_sets/20260101-000000", str(tmp_path))
 
-    scaled = scale_for(raw[TRAIN_ROWS]).apply(raw)
-    assert np.array_equal(model.windows[0], scaled[[[0, 1, 2], [1, 2, 3], [5, 6, 7]]])
+    scaled = scale_for(train).apply(train)
+    assert np.array_equal(model.windows[0], scaled[[[0, 1, 2], [1, 2, 3], [4, 5, 6]]])
     assert meta["windows"] == [3]
 
 
