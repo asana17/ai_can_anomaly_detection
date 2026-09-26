@@ -5,20 +5,24 @@ from __future__ import annotations
 import numpy as np
 
 
-def persistent(flag, segment, need):
-    """True where `need` rows in a row are flagged, without crossing a segment."""
-    if need <= 1:
+def k_of_last_n(flag, segment, n, k):
+    """True where `k` of the last `n` rows are flagged, without crossing a segment.
+
+    Near the start of a segment the rows it has so far are counted.
+    """
+    flag = np.asarray(flag, bool)
+    if not len(flag):
         return flag
-    out, run = np.zeros(len(flag), bool), 0
-    for i in range(len(flag)):
-        run = run + 1 if flag[i] and i and segment[i] == segment[i - 1] else int(flag[i])
-        out[i] = run >= need
-    return out
+    at = np.arange(len(flag))
+    starts = np.r_[True, segment[1:] != segment[:-1]]
+    start = np.maximum.accumulate(np.where(starts, at, 0))
+    total = np.r_[0, np.cumsum(flag)]
+    return total[at + 1] - total[np.maximum(at + 1 - n, start)] >= k
 
 
-def alarmed_rows(scores, threshold, rule_hit, segment, hold):
-    """True where `hold` rows in a row have a rule hit or a score above `threshold`.
+def alarmed_rows(scores, threshold, rule_hit, segment, n, k):
+    """True where `k` of the last `n` rows have a rule hit or a score above `threshold`.
 
     A row the model did not score has a NaN score, which is never above it.
     """
-    return persistent((scores > threshold) | rule_hit, segment, hold)
+    return k_of_last_n((scores > threshold) | rule_hit, segment, n, k)

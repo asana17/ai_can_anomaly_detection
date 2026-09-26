@@ -50,7 +50,8 @@ class CalibrateSettings:
 @dataclass(frozen=True)
 class TestRunSettings:
     MOVED: float = 1.0          # z distance a replay must push a row by to be an anomaly
-    HOLD: tuple = (1, 10)       # rows a flag must persist before it counts as an alarm
+    N: int = 10                 # rows an alarm looks back over
+    # k is not a setting. Every k from 1 to N is reported.
 
 
 @dataclass(frozen=True)

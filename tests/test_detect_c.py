@@ -43,11 +43,11 @@ def rows():
             scores, rng.random(ROWS) < 0.02)
 
 
-@pytest.mark.parametrize("hold", TestRunSettings().HOLD)
+@pytest.mark.parametrize("hold", (1, TestRunSettings().N))
 def test_the_c_port_matches_the_python(c_detect, rows, hold):
     """Rows a gap apart restart the run, as a new segment does on the PC."""
     numbers, segment, scores, rule_hit = rows
-    expected = alarmed_rows(scores, THRESHOLD, rule_hit, segment, hold)
+    expected = alarmed_rows(scores, THRESHOLD, rule_hit, segment, hold, hold)
     state = ctypes.create_string_buffer(c_detect.detect_size())
     c_detect.clear(state)
     got = np.array([c_detect.alarmed(state, numbers[i], scores[i], THRESHOLD,

@@ -27,9 +27,9 @@ def a_test(worth_catching=np.array([True])):
     return rows, attacks
 
 
-def caught(flag, rows, attacks, need=1):
-    """What `flag` catches, as `detection_of_each_model` counts it."""
-    alarmed = alarmed_rows(flag.astype(float), 0.5, rows.rule_hit, rows.segment, need)
+def caught(flag, rows, attacks):
+    """What `flag` catches when every flagged row raises an alarm."""
+    alarmed = alarmed_rows(flag.astype(float), 0.5, rows.rule_hit, rows.segment, 1, 1)
     return {**run_test_set.attacks_caught_by_alarms(alarmed, attacks),
             "alarms_per_hour":
                 run_test_set.false_positive_alarms_per_hour(alarmed, rows, attacks)}
@@ -128,7 +128,7 @@ def test_every_model_is_counted_beside_the_rules(tmp_path, hub, monkeypatch):
     assert meta["inputs"] == {"test_set": "test_sets/20260101-000000",
                               "thresholds": "thresholds/20260101-000000",
                               "moved": TestRunSettings().MOVED,
-                              "hold": list(TestRunSettings().HOLD)}
+                              "n": TestRunSettings().N}
     assert meta["attacks"] == 1 and meta["attacks_worth_catching"] == 1
     assert meta["rows"] == 6
 

@@ -26,21 +26,17 @@
           "type": "number",
           "minimum": 0
         },
-        "hold": {
-          "description": "Rows a flag must persist before it counts as an alarm, one count per value.",
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "minItems": 1
+        "n": {
+          "description": "Rows an alarm looks back over. Each k from 1 to `n` is counted.",
+          "type": "integer",
+          "minimum": 1
         }
       },
       "required": [
         "test_set",
         "thresholds",
         "moved",
-        "hold"
+        "n"
       ],
       "additionalProperties": false
     },

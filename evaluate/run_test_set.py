@@ -116,11 +116,13 @@ def injected_attacks_of(attacked, settings):
 
 
 def detection_of_one_detector(scores, threshold, rows, attacks, settings):
-    """What one detector caught, at each `HOLD`, and what it cost in false positives."""
+    """What one detector caught when k of the last `N` rows raise an alarm, at each k,
+    and what it cost in false positives."""
     kept = {"false_positive_rate": false_positive_rate(scores > threshold, rows)}
-    for need in settings.HOLD:
-        alarmed = alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, need)
-        kept[str(need)] = {
+    for k in range(1, settings.N + 1):
+        alarmed = alarmed_rows(scores, threshold, rows.rule_hit, rows.segment,
+                               settings.N, k)
+        kept[str(k)] = {
             **attacks_caught_by_alarms(alarmed, attacks),
             "alarms_per_hour": false_positive_alarms_per_hour(alarmed, rows, attacks)}
     return kept
@@ -158,9 +160,9 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
     """Score the test set, count what each detector caught on it, and write that.
 
     `detection.json` gets one entry per detector. It holds the threshold the detector
-    ran at, how often it flagged a row with no attack, and what it caught at each
-    `HOLD`. `attacks.json` lists the attacks that were actually injected, where each
-    one was and how far it moved a row. What comes back goes into `meta.json`.
+    ran at, how often it flagged a row with no attack, and what it caught at each k.
+    `attacks.json` lists the attacks that were actually injected, where each one was
+    and how far it moved a row. What comes back goes into `meta.json`.
     """
     thresholds, thresholds_meta = fetch_thresholds(thresholds_directory, runs_dir)
     onnx_files = thresholds_meta["onnx_files"]
@@ -213,7 +215,7 @@ def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
                             "path": thresholds_path}
     return reuse_or_make(runs_repo, "test_runs",
                          {"test_set": test_path, "thresholds": thresholds_path},
-                         {"moved": settings.MOVED, "hold": settings.HOLD}, runs_dir,
+                         {"moved": settings.MOVED, "n": settings.N}, runs_dir,
                          lambda folder: write_test_run(folder, test_set_directory,
                                                        thresholds_directory, local_dir,
                                                        runs_dir, settings),

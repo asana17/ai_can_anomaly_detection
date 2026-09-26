@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "detection.json",
-  "description": "One entry per detector, the rules first, then each model as the thresholds record it. Each holds what it caught at each `hold`, keyed by the `hold`.",
+  "description": "One entry per detector, the rules first, then each model as the thresholds record it. Each holds what it caught at each k, keyed by k, when k of the last `n` rows raise an alarm.",
   "type": "array",
   "prefixItems": [
     {
@@ -28,7 +28,7 @@
       },
       "patternProperties": {
         "^[0-9]+$": {
-          "$ref": "#/$defs/hold"
+          "$ref": "#/$defs/at_k"
         }
       },
       "required": [
@@ -53,7 +53,7 @@
       },
       "patternProperties": {
         "^[0-9]+$": {
-          "$ref": "#/$defs/hold"
+          "$ref": "#/$defs/at_k"
         }
       },
       "required": [
@@ -62,8 +62,8 @@
       ],
       "unevaluatedProperties": false
     },
-    "hold": {
-      "description": "What the detector caught at one `hold`.",
+    "at_k": {
+      "description": "What the detector caught at one k.",
       "type": "object",
       "properties": {
         "found": {
