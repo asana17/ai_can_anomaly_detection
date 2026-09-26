@@ -7,7 +7,7 @@ can_path_from_flash both run them, and differ only in what fills the slots.
 flowchart LR
     slots[(slots)] --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
-    pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, k of the last N"]
+    pre -- row queue --> sd["score and detect by row 8<br/>rules, autoencoder, k of the last N"]
     sd -- report queue --> report["report 10<br/>UART"]
 ```
 

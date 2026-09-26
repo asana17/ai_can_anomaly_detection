@@ -3,23 +3,23 @@
 #include "mbf.h"
 #include "preprocess_task.h"
 #include "report_task.h"
-#include "scoring_and_detect_task.h"
+#include "score_and_detect_by_row_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
 #define ROW_DEPTH 4
 #define REPORT_DEPTH 8
 
 LOCAL PreprocessTask preprocess_task;
-LOCAL ScoringAndDetectTask scoring_and_detect_task;
+LOCAL ScoreAndDetectByRowTask score_and_detect_by_row_task;
 LOCAL ReportTask report_task;
 
-/* The queue from preprocess to scoring and detect, a Row each. */
+/* The queue from preprocess to score and detect by row, a Row each. */
 LOCAL T_CMBF row_cmbf = {
 	.mbfatr = TA_TFIFO,
 	.bufsz = ROW_DEPTH * MBF_MESSAGE_STORAGE_SIZE(sizeof(Row)),
 	.maxmsz = sizeof(Row),
 };
-/* The queue from scoring and detect to report, a Report each. */
+/* The queue from score and detect by row to report, a Report each. */
 LOCAL T_CMBF report_cmbf = {
 	.mbfatr = TA_TFIFO,
 	.bufsz = REPORT_DEPTH * MBF_MESSAGE_STORAGE_SIZE(sizeof(Report)),
@@ -45,14 +45,14 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots)
 		return report_mbf;
 	}
 	preprocess_task.slots = slots;
-	report_task.model_id = scoring_and_detect_model_id;
+	report_task.model_id = score_and_detect_by_row_model_id;
 	/* report sits below the tasks that raise the alarm */
 	error = report_task_create(&report_task, 10, report_mbf);
 	if (error < E_OK) {
 		return error;
 	}
-	error = scoring_and_detect_task_create(&scoring_and_detect_task, 8, row_mbf,
-		report_mbf);
+	error = score_and_detect_by_row_task_create(&score_and_detect_by_row_task, 8,
+		row_mbf, report_mbf);
 	if (error < E_OK) {
 		return error;
 	}
@@ -68,7 +68,7 @@ EXPORT ER ai_can_anomaly_detection_tasks_start(void)
 	if (error < E_OK) {
 		return error;
 	}
-	error = scoring_and_detect_task_start(&scoring_and_detect_task);
+	error = score_and_detect_by_row_task_start(&score_and_detect_by_row_task);
 	if (error < E_OK) {
 		return error;
 	}

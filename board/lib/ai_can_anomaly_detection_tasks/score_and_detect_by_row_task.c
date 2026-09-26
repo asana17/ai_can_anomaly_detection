@@ -4,16 +4,16 @@
 #include "model.h"
 #include "model_config.h"
 #include "scoring.h"
-#include "scoring_and_detect_task.h"
+#include "score_and_detect_by_row_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 #include "threshold.h"
 
-EXPORT CONST char *CONST scoring_and_detect_model_id = ACTIVE_MODEL_ID;
+EXPORT CONST char *CONST score_and_detect_by_row_model_id = ACTIVE_MODEL_ID;
 
 /* Score each row and report where alarms start and end. */
-LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
+LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 {
-	ScoringAndDetectTask *task = exinf;
+	ScoreAndDetectByRowTask *task = exinf;
 	DetectInstant state;
 	ScoringRow scored;
 	Row row;
@@ -43,11 +43,11 @@ LOCAL void scoring_and_detect_task(INT stacd, void *exinf)
 	tk_ext_tsk();
 }
 
-EXPORT ER scoring_and_detect_task_create(ScoringAndDetectTask *task, PRI priority, ID row_mbf,
-	ID report_mbf)
+EXPORT ER score_and_detect_by_row_task_create(ScoreAndDetectByRowTask *task,
+	PRI priority, ID row_mbf, ID report_mbf)
 {
 	T_CTSK ctsk = {
-		.itskpri = priority, .stksz = 1024, .task = scoring_and_detect_task,
+		.itskpri = priority, .stksz = 1024, .task = score_and_detect_by_row_task,
 		.exinf = task, .tskatr = TA_HLNG | TA_RNG3,
 	};
 
@@ -57,7 +57,7 @@ EXPORT ER scoring_and_detect_task_create(ScoringAndDetectTask *task, PRI priorit
 	return task->task_id;
 }
 
-EXPORT ER scoring_and_detect_task_start(ScoringAndDetectTask *task)
+EXPORT ER score_and_detect_by_row_task_start(ScoreAndDetectByRowTask *task)
 {
 	return tk_sta_tsk(task->task_id, 0);
 }
