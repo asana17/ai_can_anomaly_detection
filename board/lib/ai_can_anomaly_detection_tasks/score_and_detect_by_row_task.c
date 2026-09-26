@@ -40,9 +40,10 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	Row row;
 	RecentRows rows_before; /* the rows before row, back to the last gap */
 	INT ringing = 0, alarmed;
+	bool flagged;
 	UW last_no = 0, row_count_since_gap = 0;
 
-	detect_by_row_init(&state, THRESHOLD_SCORE, MIN_FLAGGED_FOR_ALARM);
+	detect_by_row_init(&state, MIN_FLAGGED_FOR_ALARM);
 	recent_rows_clear(&rows_before);
 	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
 		== E_OK) {
@@ -61,14 +62,15 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			active_model_std, MIN_SPEED, &scored) != MODEL_OK) {
 			break;
 		}
-		detect_by_row_push_flag(&state, row.no, scored.score, scored.rule_hit);
+		flagged = detect_by_row_flagged(scored.score, THRESHOLD_SCORE, scored.rule_hit);
+		detect_by_row_push_flag(&state, row.no, flagged);
 		alarmed = detect_by_row_alarmed(&state);
 		if (alarmed != ringing) {
 			report_alarm_change(task->report_input, row.no, alarmed);
 			ringing = alarmed;
 		}
 		pass_row_to_window(task->score_and_detect_by_window_input, &row,
-			detect_by_row_last_flagged(&state), row_count_since_gap);
+			flagged, row_count_since_gap);
 		recent_rows_push(&rows_before, row.physical);
 	}
 	tk_ext_tsk();

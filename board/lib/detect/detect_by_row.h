@@ -8,7 +8,6 @@
 #define DETECT_BY_ROW_RECENT_FLAGS 10u
 
 typedef struct {
-	float threshold;                  /* the score above which a row is flagged */
 	uint32_t min_flagged_for_alarm;   /* flagged rows in the ring an alarm needs */
 	bool ring_flags[DETECT_BY_ROW_RECENT_FLAGS]; /* a ring of the last rows' flags */
 	uint32_t ring_start;              /* the slot of the oldest flag */
@@ -30,17 +29,14 @@ static inline void detect_by_row_clear_ring(DetectByRow *state)
 }
 
 /**
- * @brief Set the threshold and the flagged rows an alarm needs, and empty the ring.
+ * @brief Set the flagged rows an alarm needs, and empty the ring.
  *
  * @param[out] state The state.
- * @param[in] threshold The threshold calibrate took on the PC.
  * @param[in] min_flagged_for_alarm Flagged rows among the last
  *            DETECT_BY_ROW_RECENT_FLAGS an alarm needs.
  */
-static inline void detect_by_row_init(DetectByRow *state, float threshold,
-				      uint32_t min_flagged_for_alarm)
+static inline void detect_by_row_init(DetectByRow *state, uint32_t min_flagged_for_alarm)
 {
-	state->threshold = threshold;
 	state->min_flagged_for_alarm = min_flagged_for_alarm;
 	state->number = 0u;
 	detect_by_row_clear_ring(state);
@@ -78,22 +74,30 @@ static inline void detect_by_row_append_flag(DetectByRow *state, bool flag)
 }
 
 /**
- * @brief Flag a row and add its flag to the ring, over the oldest when it is full.
+ * @brief Check whether a row is flagged.
  *
- * A row is flagged when a rule hit it or its score is above the threshold. A NaN score
- * is never above it. A gap in the row numbers empties the ring first, as a new segment
- * does on the PC.
+ * @param[in] score The model's score for the row, NaN where it did not score it.
+ * @param[in] threshold The threshold calibrate took on the PC.
+ * @param[in] rule_hit Whether a rule hit the row.
+ * @retval true A rule hit the row or its score is above the threshold.
+ * @retval false Neither. A NaN score is never above the threshold.
+ */
+static inline bool detect_by_row_flagged(float score, float threshold, bool rule_hit)
+{
+	return score > threshold || rule_hit;
+}
+
+/**
+ * @brief Add a row's flag to the ring, over the oldest when it is full.
+ *
+ * A gap in the row numbers empties the ring first, as a new segment does on the PC.
  *
  * @param[in,out] state The state.
  * @param[in] number The row's number.
- * @param[in] score The model's score for the row, NaN where it did not score it.
- * @param[in] rule_hit Whether a rule hit the row.
+ * @param[in] flag The row's flag.
  */
-static inline void detect_by_row_push_flag(DetectByRow *state, uint32_t number,
-					  float score, bool rule_hit)
+static inline void detect_by_row_push_flag(DetectByRow *state, uint32_t number, bool flag)
 {
-	bool flag = score > state->threshold || rule_hit;
-
 	if (number != state->number + 1u) {
 		detect_by_row_clear_ring(state);
 	}
@@ -102,24 +106,6 @@ static inline void detect_by_row_push_flag(DetectByRow *state, uint32_t number,
 	}
 	detect_by_row_append_flag(state, flag);
 	state->number = number;
-}
-
-/**
- * @brief Check whether the row added last is flagged.
- *
- * @param[in] state The state.
- * @retval true It is flagged.
- * @retval false It is not, or no row has been added.
- */
-static inline bool detect_by_row_last_flagged(const DetectByRow *state)
-{
-	uint32_t last;
-
-	if (state->ring_count == 0u) {
-		return false;
-	}
-	last = (state->ring_start + state->ring_count - 1u) % DETECT_BY_ROW_RECENT_FLAGS;
-	return state->ring_flags[last];
 }
 
 /**
