@@ -3,10 +3,11 @@
 `score` gives each row of a set every fitted model's score, and marks the rows a rule
 hits. [calibrate](../../models/docs/calibrate.md) runs it on the calibration set and
 takes the thresholds from the scores. [run test set](../../evaluate/docs/run_test_set.md)
-runs it on a test set and counts what the detectors catch. A new threshold or `HOLD` then needs no rescoring.
+runs it on a test set and counts what the detectors catch. A new threshold or k then
+needs no rescoring.
 
-A row keeps its place in the set, scored or not, since `HOLD` counts rows in a row. A
-model scores only the moving rows, z-scored on the same
+A row keeps its place in the set, scored or not, since the alarm counts rows next to
+each other. A model scores only the moving rows, z-scored on the same
 [scale](../../preprocess/docs/scale.md) the models were fitted on. Every other row
 gets NaN. [moving](../../preprocess/docs/moving.md) says why only moving rows are used.
 

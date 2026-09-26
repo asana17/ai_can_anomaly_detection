@@ -84,16 +84,16 @@ J1939's own terms, frame, PGN and SPN, are described in
   1. `preprocess` marks the moving rows.
   2. `rules` flags the moving rows it hits.
   3. The model scores the moving rows.
-  4. `detect` compares the scores with the threshold, adds the rule flags, and holds
-     them over `HOLD`.
+  4. `detect` compares the scores with the threshold, adds the rule flags, and raises
+     an alarm when k of the last N rows are flagged.
 
   `scoring.score` runs the scoring pipeline over a set of rows and keeps each row's
   scores and rule flags. `models.calibrate` runs it over the calibration rows and takes
   the threshold from them, and `evaluate.run_test_set` runs it over the test set's rows
-  and counts what each detector caught, so a new threshold or `HOLD` needs no
+  and counts what each detector caught, so a new threshold or k needs no
   rescoring. About 33 MB and 430 MB for 40 models, reckoned from the grid's row counts.
-  Rows are selected by mask and never cut out, since `HOLD` counts rows in a row. No
-  function joins the steps.
+  Rows are selected by mask and never cut out, since the alarm counts rows next to each
+  other. No function joins the steps.
 
   The stages after it are drawn in [evaluate/README.md](evaluate/README.md).
 
@@ -102,7 +102,7 @@ J1939's own terms, frame, PGN and SPN, are described in
   | part | steps | on the PC | on the board |
   |---|---|---|---|
   | scoring pipeline | `preprocess`, `rules`, the model | `scoring.score` | in C |
-  | `detect` | threshold, OR the rule flags, `HOLD` | `detect`, run by `evaluate.run_test_set` | in C |
+  | `detect` | threshold, OR the rule flags, k of the last N | `detect`, run by `evaluate.run_test_set` | in C |
 
   What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
   train rows drop rule hits, the rules run over columns with numpy, and `fit` keeps the

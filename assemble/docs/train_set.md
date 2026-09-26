@@ -34,7 +34,7 @@ It writes these files into `local_dir/train_sets/<time>/` and uploads that direc
 
 ## Stopped rows stay in the grid
 
-The grid keeps stopped rows. `HOLD` in [detect](../../detect) counts rows that are
+The grid keeps stopped rows. The alarm in [detect](../../detect) counts rows that are
 next to each other in a `seg`, and two rows are only next to each other when they are
 `period` apart. Dropping a stopped row would put two rows side by side that are not.
 

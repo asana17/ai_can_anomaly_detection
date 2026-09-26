@@ -56,10 +56,8 @@ over the threshold.
 An alarm is raised once k of the last `N` rows are flagged, inside one segment.
 `detection.json` holds every k from 1 to `N`.
 
-`N` is 10 rows, one second. At k 10 the alarm is the one earlier runs counted at
-`HOLD` 10, so the results can be compared. `N` was not chosen from the test set. k is
-not a setting. The k the board runs is picked later from the false positive alarms on
-normal rows.
+`N` is 10 rows, one second. `N` was not chosen from the test set. k is not a setting.
+The k the board runs is picked later from the false positive alarms on normal rows.
 
 `alarmed_rows` in [alarm](../../detect/docs/alarm.md) raises the alarms. An attack is
 caught when one of its rows raises an alarm.
