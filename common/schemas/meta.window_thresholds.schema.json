@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_thresholds/<time>/meta.json",
+  "description": "Where the thresholds of window models came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "models": {
+          "description": "The `window_models/<time>` directory.",
+          "type": "string",
+          "pattern": "^window_models/[0-9]{8}-[0-9]{6}$"
+        },
+        "target": {
+          "$ref": "meta.schema.json#/$defs/target"
+        }
+      },
+      "required": [
+        "models",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "scores": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The window scores of the calibration set the thresholds were taken from."
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The directory the models came from."
+    },
+    "calibration_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The calibration set the rows came from, as the scores record it."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split, as the scores record it."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid, as the scores record it."
+    },
+    "min_speed": {
+      "$ref": "meta.schema.json#/$defs/min_speed",
+      "description": "The speed a row had to exceed to be in a window."
+    },
+    "windows": {
+      "description": "How many windows each threshold was taken from, in the order of `thresholds.json`.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy and the platform."
+    }
+  },
+  "required": [
+    "scores",
+    "models",
+    "calibration_set",
+    "log_split",
+    "grid",
+    "min_speed",
+    "windows",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}
