@@ -10,18 +10,18 @@ from __future__ import annotations
 from typing import NamedTuple
 
 import numpy as np
+from sklearn.decomposition import PCA
 
 
 class Subspace(NamedTuple):
-    centre: np.ndarray      # the mean the components were taken about
-    basis: np.ndarray       # (signals, k), the directions themselves
+    centre: np.ndarray      # the mean the components were taken about, mean_
+    basis: np.ndarray       # (signals, k), the directions themselves, components_.T
 
 
 def subspace(rows: np.ndarray, components: int) -> Subspace:
     """The `components` directions normal rows vary in most, about their mean."""
-    centre = rows.mean(axis=0)
-    _, _, vt = np.linalg.svd(rows - centre, full_matrices=False)
-    return Subspace(centre, vt[:components].T)
+    fitted = PCA(n_components=components, svd_solver="full").fit(rows)
+    return Subspace(fitted.mean_, fitted.components_.T)
 
 
 def residuals(rows: np.ndarray, space: Subspace) -> np.ndarray:
