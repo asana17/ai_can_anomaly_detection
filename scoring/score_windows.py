@@ -1,5 +1,4 @@
-"""Score every window of a calibration set or a test set with each window model, and
-flag the rows a rule hits.
+"""Score every window of a calibration set or a test set with each window model.
 
     python3 -m scoring.score_windows repo revision <set> local_dir runs_repo revision window_models/<time> runs_dir [--rebuild]
 
@@ -26,7 +25,6 @@ from models.fits import as_dict, models_from
 from models.torch_files import scale_of, torch_scorer
 from preprocess.features.moving import moving
 from preprocess.features.windows import positions, window_ends, window_rows
-from rules.hits import rule_hits
 
 
 def fetch_set_rows(directory, local_dir):
@@ -60,8 +58,7 @@ def scores_of(models, scorer_of, rows, moving, segments):
 
 
 def write_scores(folder, set_directory, models_directory, local_dir, runs_dir):
-    """Write each row's window scores and rule hits into `folder`, and return what
-    `meta.json` adds.
+    """Write each row's window scores into `folder`, and return what `meta.json` adds.
 
     Windows are cut from the moving rows, z-scored on the scale of the fit. The models
     score in torch.
@@ -70,14 +67,12 @@ def write_scores(folder, set_directory, models_directory, local_dir, runs_dir):
                                           models_directory["revision"],
                                           models_directory["path"], runs_dir)
     raw, segments, min_speed, dataset = fetch_set_rows(set_directory, local_dir)
-    mv = moving(raw, min_speed=min_speed)
-    hits = rule_hits(raw, min_speed) & mv
     models = models_from(fitted["inputs"]["models"])
     scores, windows = scores_of(models, torch_scorer(weights),
-                                scale_of(weights).apply(raw), mv, segments)
+                                scale_of(weights).apply(raw),
+                                moving(raw, min_speed=min_speed), segments)
 
     np.save(os.path.join(folder, "scores.npy"), scores)
-    np.save(os.path.join(folder, "rule_hits.npy"), hits)
     with open(os.path.join(folder, "models.json"), "w") as f:
         json.dump([as_dict(model) for model in models], f, indent=2)
     return {"models": models_directory, **dataset, "min_speed": min_speed,

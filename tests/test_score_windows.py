@@ -103,16 +103,14 @@ def fitted_var(monkeypatch, model):
     return score
 
 
-def test_a_run_keeps_the_window_scores_and_rule_hits_of_every_row_of_the_set(
-        tmp_path, hub, monkeypatch):
+def test_a_run_keeps_the_window_scores_of_every_row_of_the_set(tmp_path, hub,
+                                                               monkeypatch):
     score = fitted_var(monkeypatch, Var(3))
     rows = moving_rows(6)
     rows[3, SIGNALS.index("wheel_speed")] = 1.0      # row 3 is not moving
     monkeypatch.setattr(score_windows, "fetch_test_set", lambda *args: {
         "raw": rows, "seg": np.zeros(6), "min_speed": 5.0,
         "dataset": {name: DATASET[name] for name in ("test_set", "log_split", "grid")}})
-    monkeypatch.setattr(score_windows, "rule_hits", lambda raw, min_speed: np.array(
-        [False, True, False, True, False, False]))
     hub.files = {}
     made = score_windows.main("u/d", REVISION, "test_sets/20260101-000000",
                               str(tmp_path), "u/runs", COMMIT,
@@ -120,15 +118,11 @@ def test_a_run_keeps_the_window_scores_and_rule_hits_of_every_row_of_the_set(
 
     folder = tmp_path / made["path"]
     assert made["path"].startswith("window_scores/")
-    assert sorted(os.listdir(folder)) == ["meta.json", "models.json", "rule_hits.npy",
-                                          "scores.npy"]
+    assert sorted(os.listdir(folder)) == ["meta.json", "models.json", "scores.npy"]
     scores = np.load(folder / "scores.npy")
     assert scores.shape == (6, 1), "a row of the set each, a column of a model each"
     assert np.flatnonzero(~np.isnan(scores[:, 0])).tolist() == [2]
     assert np.allclose(scores[2, 0], score(rows[None, :3]))
-    hits = np.load(folder / "rule_hits.npy")
-    assert hits.tolist() == [False, True, False, False, False, False], \
-        "a rule hit on a standing row is no hit"
     assert json.load(open(folder / "models.json")) == [{"model": "var", "rows": 3}]
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"set": "test_sets/20260101-000000",
