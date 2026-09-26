@@ -10,7 +10,7 @@ flowchart LR
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
     pre -- row queue --> sd["scoring and detect 8<br/>rules, scale, autoencoder, threshold, k of the last N"]
-    sd -- report queue --> report["report 5<br/>UART"]
+    sd -- report queue --> report["report 10<br/>UART"]
 ```
 
 The numbers are task priorities, smaller runs first. The replay task stands in for the

@@ -33,10 +33,12 @@ APPLICATIONS = {
     "ae_reconstruction_from_flash": Application(("scale", "model", "scoring", MODEL), True),
     "ai_can_anomaly_detection": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
-         "model", "scoring", "detect", DEPLOYED_MODEL), True),
+         "model", "scoring", "detect",
+         "ai_can_anomaly_detection_tasks", DEPLOYED_MODEL), True),
     "can_path_from_flash": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "moving", "rules", "scale",
-         "model", "scoring", "detect", MODEL), True),
+         "model", "scoring", "detect",
+         "ai_can_anomaly_detection_tasks", MODEL), True),
 }
 
 
