@@ -8,15 +8,15 @@ from common.hub_dirs import print_header
 from common.settings import read_settings
 from deploy import export, quantize
 from evaluate import run_test_set
-from models import calibrate, fit
+from models import calibrate, calibrate_windows, fit, fit_windows
 
 
 STAGES = (grid, split_test_logs, calibration_set, train_set, test_set, fit, export,
-          quantize, calibrate, run_test_set)
+          quantize, calibrate, fit_windows, calibrate_windows, run_test_set)
 
 
 def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
-         local_runs_dir, settings, models, dry_run=False, rebuild=()):
+         local_runs_dir, settings, models, window_models, dry_run=False, rebuild=()):
     """Run every stage, building the ones `rebuild` names, such as `assemble.test_set`,
     again even when one made from the same inputs is there."""
     unknown = set(rebuild) - {stage.__name__ for stage in STAGES}
@@ -51,6 +51,14 @@ def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
     thresholds = calibrate.main(runs_repo, fitted["revision"], fitted["path"],
                                 local_runs_dir, local_data_dir, settings=each.calibrate,
                                 rebuild=again[calibrate], dry_run=dry_run)
+    fitted_windows = fit_windows.main(data_repo, train["revision"], train["path"],
+                                      local_data_dir, runs_repo, local_runs_dir,
+                                      models=window_models, rebuild=again[fit_windows],
+                                      dry_run=dry_run)
+    calibrate_windows.main(runs_repo, fitted_windows["revision"],
+                           fitted_windows["path"], local_runs_dir, local_data_dir,
+                           settings=each.calibrate, rebuild=again[calibrate_windows],
+                           dry_run=dry_run)
     return run_test_set.main(data_repo, test["revision"], test["path"], local_data_dir,
                              runs_repo, thresholds["revision"], thresholds["path"],
                              local_runs_dir, settings=each.run_test_set,
@@ -59,5 +67,6 @@ def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
 
 if __name__ == "__main__":
     main(**arguments(("data_repo", "can_data_dir", "can_data_pattern", "local_data_dir",
-                      "runs_repo", "local_runs_dir", "settings", "models"),
+                      "runs_repo", "local_runs_dir", "settings", "models",
+                      "window_models"),
                      dry_run=False, rebuild=[]))

@@ -1,8 +1,9 @@
 """Run `pipeline.stages` on HEAD's code, checked out into a git worktree of its own.
 
 The folders and repos come from the settings file's `pipeline`. A run gets
-`snapshot_dir/<time>/`, holding the worktree as `code/` and copies of the settings
-and models files, so editing this tree or those files while it runs changes nothing.
+`snapshot_dir/<time>/`, holding the worktree as `code/` and copies of the settings,
+models and window models files, so editing this tree or those files while it runs
+changes nothing.
 A dry run does the same in a temporary folder, removed after.
 """
 
@@ -21,13 +22,14 @@ from common.settings import read_settings
 from pipeline.stages import STAGES
 
 
-def check_out(run_dir, settings, models):
-    """Check HEAD out into `run_dir/code`, copy the two files beside it, and return
+def check_out(run_dir, settings, models, window_models):
+    """Check HEAD out into `run_dir/code`, copy the three files beside it, and return
     `code`."""
     code = os.path.join(run_dir, "code")
     git("worktree", "add", "--detach", code, "HEAD")
     shutil.copyfile(settings, os.path.join(run_dir, "settings.json"))
     shutil.copyfile(models, os.path.join(run_dir, "models.json"))
+    shutil.copyfile(window_models, os.path.join(run_dir, "window_models.json"))
     return code
 
 
@@ -40,12 +42,13 @@ def run_stages(code, run_dir, data_repo, can_data_dir, can_data_pattern, local_d
                     os.path.abspath(local_runs_dir),
                     os.path.join(run_dir, "settings.json"),
                     os.path.join(run_dir, "models.json"),
+                    os.path.join(run_dir, "window_models.json"),
                     *(["--dry-run"] if dry_run else []),
                     *[flag for name in rebuild for flag in ("--rebuild", name)]],
                    cwd=code, check=True)
 
 
-def main(settings, models, dry_run=False, rebuild=()):
+def main(settings, models, window_models, dry_run=False, rebuild=()):
     unknown = set(rebuild) - {stage.__name__ for stage in STAGES}
     if unknown:
         raise SystemExit(f"no stage is named {', '.join(sorted(unknown))}")
@@ -54,7 +57,7 @@ def main(settings, models, dry_run=False, rebuild=()):
               where.local_data_dir, where.runs_repo, where.local_runs_dir)
     if dry_run:
         with tempfile.TemporaryDirectory() as run_dir:
-            code = check_out(run_dir, settings, models)
+            code = check_out(run_dir, settings, models, window_models)
             try:
                 run_stages(code, run_dir, *stages, dry_run=True, rebuild=rebuild)
             finally:
@@ -63,9 +66,10 @@ def main(settings, models, dry_run=False, rebuild=()):
     run_dir = os.path.abspath(os.path.join(where.snapshot_dir,
                                            time.strftime("%Y%m%d-%H%M%S")))
     print(f"run in {run_dir}", flush=True)
-    run_stages(check_out(run_dir, settings, models), run_dir, *stages, dry_run=False,
-               rebuild=rebuild)
+    run_stages(check_out(run_dir, settings, models, window_models), run_dir, *stages,
+               dry_run=False, rebuild=rebuild)
 
 
 if __name__ == "__main__":
-    main(**arguments(("settings", "models"), dry_run=False, rebuild=[]))
+    main(**arguments(("settings", "models", "window_models"), dry_run=False,
+                     rebuild=[]))

@@ -25,6 +25,8 @@ def calls(monkeypatch):
                          (stages.fit, "models"), (stages.export, "onnx"),
                          (stages.quantize, "quantize"),
                          (stages.calibrate, "thresholds"),
+                         (stages.fit_windows, "window_models"),
+                         (stages.calibrate_windows, "window_thresholds"),
                          (stages.run_test_set, "test_runs")):
         monkeypatch.setattr(module, "main", stage(name))
     return called
@@ -33,7 +35,7 @@ def calls(monkeypatch):
 def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
     (tmp_path / "s.json").write_text(json.dumps({"split_test_logs": {"FOLD": 0}}))
     stages.main("u/d", "data", "part_*/*.csv", "out", "u/r", "runs",
-                str(tmp_path / "s.json"), "m.json")
+                str(tmp_path / "s.json"), "m.json", "w.json")
 
     def s(stage):
         return {"settings": getattr(RunSettings(), stage), "rebuild": False,
@@ -57,6 +59,13 @@ def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
                                  s("quantize"))
     assert calls["thresholds"] == (("u/r", "models-rev", "models/t", "runs", "out"),
                                    s("calibrate"))
+    assert calls["window_models"] == (("u/d", "train_sets-rev", "train_sets/t", "out",
+                                       "u/r", "runs"),
+                                      {"models": "w.json", "rebuild": False,
+                                       "dry_run": False})
+    assert calls["window_thresholds"] == (("u/r", "window_models-rev",
+                                           "window_models/t", "runs", "out"),
+                                          s("calibrate"))
     assert calls["test_runs"] == (("u/d", "test_sets-rev", "test_sets/t", "out", "u/r",
                                    "thresholds-rev", "thresholds/t", "runs"),
                                   s("run_test_set"))
@@ -65,16 +74,17 @@ def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
 def test_rebuild_builds_the_stages_it_names_alone(calls, tmp_path):
     (tmp_path / "s.json").write_text("{}")
     stages.main("u/d", "data", "*.csv", "out", "u/r", "runs", str(tmp_path / "s.json"),
-                "m.json", rebuild=["assemble.test_set", "models.fit"])
+                "m.json", "w.json", rebuild=["assemble.test_set", "models.fit_windows"])
     assert [name for name, (_, flags) in calls.items() if flags["rebuild"]] == [
-        "test_sets", "models"]
+        "test_sets", "window_models"]
 
 
 def test_rebuild_of_a_stage_there_is_not_stops_it(calls, tmp_path):
     (tmp_path / "s.json").write_text("{}")
     with pytest.raises(SystemExit):
         stages.main("u/d", "data", "*.csv", "out", "u/r", "runs",
-                    str(tmp_path / "s.json"), "m.json", rebuild=["assemble.test"])
+                    str(tmp_path / "s.json"), "m.json", "w.json",
+                    rebuild=["assemble.test"])
     assert calls == {}
 
 
@@ -84,6 +94,7 @@ def test_it_runs_the_stages_in_a_worktree_with_copies_of_the_files(monkeypatch,
                "split_test_logs": {"FOLD": 0}}
     (tmp_path / "s.json").write_text(json.dumps(written))
     (tmp_path / "m.json").write_text("[]")
+    (tmp_path / "w.json").write_text("[]")
     ran = []
 
     def git(*args):
@@ -93,7 +104,8 @@ def test_it_runs_the_stages_in_a_worktree_with_copies_of_the_files(monkeypatch,
     monkeypatch.setattr(worktree, "git", git)
     monkeypatch.setattr(worktree.subprocess, "run",
                         lambda args, **k: ran.append((args, k)))
-    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"))
+    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"),
+                  str(tmp_path / "w.json"))
 
     (run_dir,) = (tmp_path / "work").iterdir()
     assert ran[0] == ("worktree", "add", "--detach", str(run_dir / "code"), "HEAD")
@@ -101,7 +113,8 @@ def test_it_runs_the_stages_in_a_worktree_with_copies_of_the_files(monkeypatch,
     args, flags = ran[1]
     assert args[3:6] == ["asana17/ai_can_anomaly_detection_data",
                          os.path.abspath("data"), "part_*/*.csv"]
-    assert args[-2:] == [str(run_dir / "settings.json"), str(run_dir / "models.json")]
+    assert args[-3:] == [str(run_dir / "settings.json"), str(run_dir / "models.json"),
+                         str(run_dir / "window_models.json")]
     assert flags["cwd"] == str(run_dir / "code")
 
 
@@ -109,6 +122,7 @@ def test_a_dry_run_passes_it_on_and_removes_its_worktree(monkeypatch, tmp_path):
     (tmp_path / "s.json").write_text(json.dumps(
         {"pipeline": {"snapshot_dir": str(tmp_path / "work")}}))
     (tmp_path / "m.json").write_text("[]")
+    (tmp_path / "w.json").write_text("[]")
     ran = []
 
     def git(*args):
@@ -118,7 +132,8 @@ def test_a_dry_run_passes_it_on_and_removes_its_worktree(monkeypatch, tmp_path):
 
     monkeypatch.setattr(worktree, "git", git)
     monkeypatch.setattr(worktree.subprocess, "run", lambda args, **k: ran.append(args))
-    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"), dry_run=True)
+    worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"),
+                  str(tmp_path / "w.json"), dry_run=True)
 
     assert ran[1][-1] == "--dry-run"
     assert ran[2][:3] == ("worktree", "remove", "--force")
@@ -129,9 +144,10 @@ def test_rebuild_is_passed_on_to_the_stages(monkeypatch, tmp_path):
     (tmp_path / "s.json").write_text(json.dumps(
         {"pipeline": {"snapshot_dir": str(tmp_path / "work")}}))
     (tmp_path / "m.json").write_text("[]")
+    (tmp_path / "w.json").write_text("[]")
     ran = []
     monkeypatch.setattr(worktree, "git", lambda *args: os.makedirs(args[-2]))
     monkeypatch.setattr(worktree.subprocess, "run", lambda args, **k: ran.append(args))
     worktree.main(str(tmp_path / "s.json"), str(tmp_path / "m.json"),
-                  rebuild=["assemble.test_set", "models.fit"])
+                  str(tmp_path / "w.json"), rebuild=["assemble.test_set", "models.fit"])
     assert ran[0][-4:] == ["--rebuild", "assemble.test_set", "--rebuild", "models.fit"]
