@@ -108,6 +108,6 @@ there is more than one kind. `attacks.json` holds what to select on.
 
 Each test log gets one attack, so the logs that move least get about twice as many
 attacks per moving hour as the rest. Detectors catch the fewest attacks in those logs,
-so the share caught comes out 0.3 to 1.5 points lower than with attacks spread over the
-test span's time, at `HOLD` 10 in four runs. That is within the share's 95% interval and
-within what `TORCH_SEED` moves, so the attacks stay one per log.
+so the share caught comes out lower than with attacks spread over the test span's time.
+The difference is within the share's 95% interval and within what `TORCH_SEED` moves,
+so the attacks stay one per log.

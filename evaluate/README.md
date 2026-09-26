@@ -7,7 +7,7 @@ A detector is the instant rules, or the rules together with one model. The model
 there to catch what the rules miss, so each one is compared with the rules alone. The
 component count `k` is how many numbers a row is compressed into, the autoencoder's
 `latent_dim`. PCA and the linear autoencoder were the linear baselines of the instant
-pair, which is finished, as [results](results.md) reports. The runs now fit the
+pair, which is finished. The runs now fit the
 nonlinear autoencoder alone.
 
 ```
@@ -40,8 +40,6 @@ Documented under [docs/](docs).
 
 - [run_test_set](docs/run_test_set.md) counts what each detector catches on the
   attacked test rows.
-
-What the runs found is in [results](results.md).
 
 ## Tests
 

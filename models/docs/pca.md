@@ -51,10 +51,6 @@ fit the attacks too.
 The threshold is set so that `TARGET`, 0.1%, of the calibration rows have a residual
 above it. PCA is not fitted on those rows. See [calibrate](calibrate.md).
 
-## What it scores on this data
-
-See [evaluate/results.md](../../evaluate/results.md).
-
 ## A warning you can ignore
 
 On numpy 2.0.2 against Apple Accelerate, plain matrix multiplication raises

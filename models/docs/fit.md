@@ -86,7 +86,7 @@ says what every model was fitted with.
 at `k` 4, 8 and 12. The set was chosen without looking at any attack.
 
 - No PCA and no linear autoencoder. They were the linear baselines of the instant
-  pair, which is finished, as [results](../../evaluate/results.md) reports. Trained on
+  pair, which is finished. Trained on
   squared error, the linear autoencoder learns the same subspace as PCA (Baldi and
   Hornik, 1989).
 - `hidden` 128 only. The board runs the heaviest model, and that one also shows its
@@ -111,7 +111,7 @@ looking at the test set.
 | `rate` | 1e-3 | Adam's default in PyTorch |
 | `improvement` | 1e-4 | the default `threshold` of PyTorch's `ReduceLROnPlateau` |
 | `patience` | 10 | the default `patience` of the same |
-| `seed` | set per run | the torch rng an autoencoder is built and trained with. It is changed between runs to show how far it moves the numbers, as [results](../../evaluate/results.md) reports. |
+| `seed` | set per run | the torch rng an autoencoder is built and trained with. It is changed between runs to show how far it moves the numbers. |
 | `hidden` | 128 | a stated choice, as [above](#the-models-this-repository-fits). It is at least `signals`, so `latent_dim` stays the narrowest layer at every `k`. Earlier runs also fitted 32 and 64. |
 
 `batch` was compared at every `k`. Up to `k` 14 the two sizes came within 0.3% of each

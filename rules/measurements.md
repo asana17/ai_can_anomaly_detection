@@ -44,9 +44,7 @@ off. Three limits were set to get there.
 | any of them | 5,472 | 1,645 |
 
 The rest fire on speed_agreement 587, gear_ratio 317, reverse_speed 9 and none of the
-others. On test_sets/20260924-064408 the rules alone catch 483 of 1,089 attacks at a
-hold of 10 rows with 0.29 false positive alarms an hour, against 543 and 1.84 before
-the three changes.
+others.
 
 engine_off leaves out the input shaft and stopped_shaft needs the tachograph at zero
 too. Neither fires on a moving row, before or after. The change is to the stopped

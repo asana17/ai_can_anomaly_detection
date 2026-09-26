@@ -56,8 +56,7 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
   describes every JSON file a stage uploads, and the tests check each file a stage
   uploads against them.
 - [evaluate/](evaluate) measures what each detector catches on the attacked test rows.
-  What the runs found is in [evaluate/results.md](evaluate/results.md), and what
-  quantizing their models costs is in [deploy/results.md](deploy/results.md).
+  What quantizing their models costs is in [deploy/results.md](deploy/results.md).
 - [pipeline/](pipeline) runs every stage from the grid to the test run in one command,
   on HEAD's code in a worktree of its own, and says first what a run would build.
 - `data/` holds the raw logs and is not tracked in git.
@@ -127,14 +126,10 @@ J1939's own terms, frame, PGN and SPN, are described in
   Neither has run on the board yet. Then steps 2, 5 and 6.
 - Decide whether the matched replay is the attack the windowed pair is measured on.
   `assemble.test_set --attack matched_replay` replays a PGN from a donor that held this
-  log's speed and gear over the whole stretch. Measured on 300 test logs against the fit
-  of 2026-09-22, at `HOLD` 10: the rules and change_limit together catch 2 of 76 against
-  39 of 86 plain replays, and the nonlinear autoencoder k=8 takes that to 15 of 76
-  against 64 of 86. A PCA over ten rows, fitted for the measurement alone, adds 9 of 76,
-  but it reads only 48 of 86 plain replays, so it says nothing about what a window is
-  worth yet. What no detector reads is a matched replay of TCO1, ETC1 or VDC2, whose
-  values the matched speed and gear already fix or which no other PGN reads. The numbers
-  are in [attack/measurements.md](attack/measurements.md).
+  log's speed and gear over the whole stretch. What no detector reads is a matched
+  replay of TCO1, ETC1 or VDC2, whose values the matched speed and gear already fix or
+  which no other PGN reads. The numbers are in
+  [attack/measurements.md](attack/measurements.md).
 - Then widen to a stretch of time, VAR against a windowed autoencoder. It is what the
   new attack is built against. The window model is an aid to alarm A, the rules and the
   instant model on every tick. On the board it runs in a lower priority task, late and
