@@ -1,3 +1,6 @@
+# On macOS numpy multiplies matrices with Accelerate. A matmul of 64 rows or more can
+# warn about a divide by zero, an overflow or an invalid value. The results are finite
+# and match einsum exactly.
 numpy==2.0.2
 torch==2.8.0
 safetensors==0.7.0
