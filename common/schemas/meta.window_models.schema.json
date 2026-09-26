@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_models/<time>/meta.json",
+  "description": "Where fitted window models came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "train_set": {
+          "description": "The `train_sets/<time>` directory.",
+          "type": "string",
+          "pattern": "^train_sets/[0-9]{8}-[0-9]{6}$"
+        },
+        "models": {
+          "description": "Every window model with the values it was fitted with.",
+          "type": "array",
+          "items": {
+            "$ref": "model.schema.json#/$defs/var",
+            "unevaluatedProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "train_set",
+        "models"
+      ],
+      "additionalProperties": false
+    },
+    "train_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The train set the rows came from."
+    },
+    "calibration_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The calibration set the train set names."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split the train set was taken from."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid the split was cut from."
+    },
+    "min_speed": {
+      "$ref": "meta.schema.json#/$defs/min_speed",
+      "description": "The speed a row had to exceed to be in a window fitted on."
+    },
+    "windows": {
+      "description": "How many windows each model was fitted on, in the order of `inputs.models`.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy, torch, scikit-learn and the platform."
+    }
+  },
+  "required": [
+    "train_set",
+    "calibration_set",
+    "log_split",
+    "grid",
+    "min_speed",
+    "windows",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}
