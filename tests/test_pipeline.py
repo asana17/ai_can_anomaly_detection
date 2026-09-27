@@ -27,7 +27,8 @@ def calls(monkeypatch):
                          (stages.calibrate, "thresholds"),
                          (stages.fit_windows, "window_models"),
                          (stages.calibrate_windows, "window_thresholds"),
-                         (stages.run_test_set, "test_runs")):
+                         (stages.run_test_set, "test_runs"),
+                         (stages.run_window_test_set, "window_test_runs")):
         monkeypatch.setattr(module, "main", stage(name))
     return called
 
@@ -69,6 +70,9 @@ def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
     assert calls["test_runs"] == (("u/d", "test_sets-rev", "test_sets/t", "out", "u/r",
                                    "thresholds-rev", "thresholds/t", "runs"),
                                   s("run_test_set"))
+    assert calls["window_test_runs"] == (
+        ("u/r", "test_runs-rev", "test_runs/t", "window_thresholds-rev",
+         "window_thresholds/t", "out", "runs"), {"rebuild": False, "dry_run": False})
 
 
 def test_rebuild_builds_the_stages_it_names_alone(calls, tmp_path):
