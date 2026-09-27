@@ -135,8 +135,19 @@ J1939's own terms, frame, PGN and SPN, are described in
     it, and scoring and detect and a window scoring task read it under one mutex. Row
     flags go in an array beside it. Window scoring only copies windows for now. W and S
     belong in the window model's config header.
-  - Send alarms to CAN and record them to Flash, in two tasks, alarm A before B. UART
-    output masks interrupts while it waits on each character.
+  - Add three tasks, alarm A before B.
+    - A CAN task sends each start and end of alarm A as one frame on FDCAN1.
+    - A cut task sits above the window model. When alarm A starts, it cuts the frames
+      of the N rows before it out of a RAM ring and puts a MAC on them. The cut keeps
+      the latest frames up to 8 KB. This is work at the moment the window model is
+      needed, to show it late but not lost.
+    - The lowest task stores the cut, and sends it and the alarm lines over UART with
+      `tm_snd_dat`, which does not mask interrupts. `tm_printf` masks them.
+    - The receive interrupt copies each frame into the ring.
+    - The store is Flash bank 2 as 32 sectors of 8 KB. A cut goes to an erased sector
+      at once. Erasing the oldest sector waits for a gap, about 2.7 min for 5 years
+      at 8 h a day. [board/docs/h5_flash_memory.md](board/docs/h5_flash_memory.md) has
+      the Flash facts.
 - A script that compares scores.
 
 ## Tests
