@@ -1,7 +1,7 @@
 # pipeline
 
 Runs every stage from [assemble.grid](../assemble/docs/grid.md) to
-[evaluate.run_test_set](../evaluate/docs/run_test_set.md) in one command. It takes
+[evaluate.run_window_test_set](../evaluate/docs/run_window_test_set.md) in one command. It takes
 hours and uploads to both Hugging Face repos, so run it only when asked to.
 
 The window models are fitted by [fit_windows](../models/docs/fit_windows.md) and given
@@ -48,5 +48,5 @@ should use it. Editing anything once it runs changes nothing.
 | `--dry-run` | check what will run in a temporary worktree, removed after |
 | `--rebuild STAGE` | build the stage named as `python3 -m` names it, such as `assemble.test_set`, even when one made from the same inputs is there. The stages after it build too. Give it again for each stage to build |
 
-`LOG` starts with the run's folder and ends with the `test_runs/<time>` it wrote. When
-it is done, remove the worktree with `git worktree remove <snapshot_dir>/<time>/code`.
+`LOG` starts with the run's folder. When it is done, remove the worktree with
+`git worktree remove <snapshot_dir>/<time>/code`.

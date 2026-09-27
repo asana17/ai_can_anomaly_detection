@@ -129,14 +129,8 @@ J1939's own terms, frame, PGN and SPN, are described in
   replay of TCO1, ETC1 or VDC2, whose values the matched speed and gear already fix or
   which no other PGN reads. The numbers are in
   [attack/measurements.md](attack/measurements.md).
-- Then widen to a stretch of time, VAR against a windowed autoencoder. It is what the
-  new attack is built against. The window model is an aid to alarm A, the rules and the
-  instant model on every tick. On the board it runs in a lower priority task, late and
-  skipping windows when time is short. It is judged by what it adds over alarm A and how
-  many rows later. Its floor is the instant rules OR the instant model, flagged on k of
-  the window's W rows. Report what it adds in catches and in false positive alarms.
-  Also compare it with the instant model's threshold lowered to the same false positive
-  alarms. Report W at several values. The four items below come first.
+- Run the pipeline on every log, and decide from `window_test_runs` whether a window
+  model goes on the board. The two board items below come first.
   - On the board, put the rows in one ring in place of the row queue. preprocess writes
     it, and scoring and detect and a window scoring task read it under one mutex. Row
     flags go in an array beside it. Window scoring only copies windows for now. W and S
