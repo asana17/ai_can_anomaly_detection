@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_detection.json",
+  "description": "One entry per instant model and window model. Each holds what the alarm on every tick caught with the window model's alarm added, keyed by k, when k of the last `n` rows raise the alarm on every tick. The window model alarms on the last row of each window whose score is above its threshold. Compare each k with the same model's entry in the test run's `detection.json`.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "instant": {
+        "$ref": "thresholds.schema.json#/items",
+        "description": "The instant model, with the threshold calibrate gave it."
+      },
+      "window": {
+        "$ref": "thresholds.schema.json#/items",
+        "description": "The window model, with the threshold calibrate_windows gave it."
+      }
+    },
+    "patternProperties": {
+      "^[0-9]+$": {
+        "$ref": "detection.schema.json#/$defs/at_k"
+      }
+    },
+    "required": [
+      "instant",
+      "window"
+    ],
+    "additionalProperties": false
+  }
+}

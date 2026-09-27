@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_test_runs/<time>/meta.json",
+  "description": "Where a run of the window models over a test set came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "test_run": {
+          "description": "The `test_runs/<time>` directory.",
+          "type": "string",
+          "pattern": "^test_runs/[0-9]{8}-[0-9]{6}$"
+        },
+        "window_thresholds": {
+          "description": "The `window_thresholds/<time>` directory.",
+          "type": "string",
+          "pattern": "^window_thresholds/[0-9]{8}-[0-9]{6}$"
+        }
+      },
+      "required": [
+        "test_run",
+        "window_thresholds"
+      ],
+      "additionalProperties": false
+    },
+    "test_run": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The test run the instant scores, the rule hits and the attacks came from."
+    },
+    "window_thresholds": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The directory the window models' thresholds came from."
+    },
+    "window_scores": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The window scores of the test set, written as the test set was scored."
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The directory the instant models' weights came from, as the test run records it."
+    },
+    "onnx_files": {
+      "$ref": "meta.schema.json#/$defs/onnx_files",
+      "description": "The ONNX files the instant models scored as, as the test run records them. Null when they scored in torch."
+    },
+    "scores": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The instant scores of the test set, as the test run records them."
+    },
+    "window_models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The directory the window models came from."
+    },
+    "test_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The test set the rows came from."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split the test set was drawn on."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid the split was cut from."
+    },
+    "min_speed": {
+      "$ref": "meta.schema.json#/$defs/min_speed",
+      "description": "The speed a row had to exceed to be counted."
+    },
+    "rows": {
+      "description": "How many attacked rows were read.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "attacks": {
+      "description": "How many attacks were injected into the test logs.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "attacks_worth_catching": {
+      "description": "How many of them reach a row above `min_speed` and moved it by at least the test run's `moved`.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "hours": {
+      "description": "Hours of rows above `min_speed` with no attack in them, what the false positive alarms are counted over.",
+      "type": "number",
+      "minimum": 0
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy and the platform."
+    }
+  },
+  "required": [
+    "test_run",
+    "window_thresholds",
+    "window_scores",
+    "scores",
+    "window_models",
+    "test_set",
+    "log_split",
+    "grid",
+    "min_speed",
+    "rows",
+    "attacks",
+    "attacks_worth_catching",
+    "hours",
+    "versions",
+    "models",
+    "onnx_files"
+  ],
+  "unevaluatedProperties": false
+}
