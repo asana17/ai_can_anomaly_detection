@@ -2,7 +2,6 @@ import numpy as np
 
 from evaluate import run_window_test_set
 from evaluate.run_test_set_common import AttackedRows, InjectedAttacks
-from preprocess.features.windows import positions, window_ends
 
 
 def twenty_rows():
@@ -12,61 +11,62 @@ def twenty_rows():
                         segment=np.zeros(20, np.int32), hours=18 * 0.1 / 3600)
     attacks = InjectedAttacks(injected=[{"first": 10, "last": 11}],
                               worth_catching=np.array([True]))
-    return np.arange(20), rows, attacks
+    return rows, attacks
 
 
-def counted(flag, window_scores, strides):
-    """What the windows of 5 rows count, at a window threshold of 0.5."""
-    position, rows, attacks = twenty_rows()
-    return run_window_test_set.detection_with_one_window_model(
-        flag, window_scores, 0.5, 5, position, rows, attacks, strides)
+def score_on(*at):
+    """A score of 1 on the rows `at`, 0 elsewhere."""
+    scores = np.zeros(20)
+    scores[list(at)] = 1.0
+    return scores
 
 
-def flag_on_row_2_and_windows_on_11_and_16():
-    flag = np.zeros(20, bool)
-    flag[2] = True
-    window_scores = np.full(20, np.nan)
-    window_scores[4:] = 0.0
-    window_scores[[11, 16]] = 1.0
-    return flag, window_scores
+def counted(scores, window_scores, n=3):
+    """What the instant model caught with the window model, both at a threshold of
+    0.5."""
+    return run_window_test_set.detection_of_one_window_model(
+        scores, 0.5, window_scores, 0.5, *twenty_rows(), n)
 
 
-def test_the_window_model_adds_the_windows_it_alarms():
-    kept = counted(*flag_on_row_2_and_windows_on_11_and_16(), [1])
-    assert [k["k"] for k in kept] == [1, 2, 3, 4, 5]
-    first = kept[0]
-    assert first["every_tick"]["found"] == 0
-    assert first["every_tick"]["alarms_per_hour"] == 2000.0, \
-        "windows ending at rows 4, 5 and 6 hold row 2, one alarm in 18 rows of 0.1 s"
-    assert first["with_window_model"]["caught"] == [0], "the window ending at row 11"
-    assert first["with_window_model"]["alarms_per_hour"] == 4000.0, \
-        "the window ending at row 16 is one more alarm"
+def test_the_window_model_adds_the_rows_it_is_judged_at():
+    kept = counted(score_on(2), score_on(11, 16))
+    assert list(kept) == ["1", "2", "3"]
+    assert kept["1"]["caught"] == [0], "the window ending at row 11"
+    assert kept["1"]["alarms_per_hour"] == 4000.0, \
+        "rows 2 to 4 and row 16 are two alarms in 18 rows of 0.1 s"
 
 
-def test_k_counts_the_flagged_rows_of_a_window():
-    kept = counted(*flag_on_row_2_and_windows_on_11_and_16(), [1])
-    assert kept[1]["every_tick"]["alarms_per_hour"] == 0.0, "no window has 2 flags"
-
-
-def test_a_stride_keeps_only_the_windows_ending_on_it():
-    kept = counted(*flag_on_row_2_and_windows_on_11_and_16(), [5])
-    assert kept[0]["with_window_model"]["found"] == 0, \
-        "the windows end at rows 4, 9, 14 and 19, none of them at 11"
+def test_k_applies_to_the_instant_model_alone():
+    kept = counted(score_on(2), score_on(11))
+    assert kept["2"]["caught"] == [0], "the window model still alarms at row 11"
+    assert kept["2"]["alarms_per_hour"] == 0.0, "row 2 alone is under 2 of 3"
 
 
 def test_a_window_catches_an_attack_only_when_its_last_row_is_in_it():
-    window_scores = np.zeros(20)
-    window_scores[13] = 1.0                 # the window holds rows 9 to 13
-    kept = counted(np.zeros(20, bool), window_scores, [1])
-    assert kept[0]["with_window_model"]["found"] == 0, \
-        "it holds the attack's rows, but alarms after the attack ended"
+    kept = counted(score_on(), score_on(13))    # the window holds rows 9 to 13
+    assert kept["1"]["found"] == 0, \
+        "it holds the attack's rows, but is judged after the attack ended"
 
 
-def test_the_windows_at_a_stride_are_some_of_those_at_stride_one():
-    rng = np.random.default_rng(4)
-    position = positions(rng.random(500) < 0.9, np.cumsum(rng.random(500) < 0.02))
-    for rows in (5, 10, 20):
-        every = set(window_ends(position, rows=rows).tolist())
-        for stride in (5, 10):
-            at_stride = window_ends(position, rows=rows, stride=stride)
-            assert set(at_stride.tolist()) <= every
+def test_a_row_where_no_window_ends_does_not_alarm():
+    window_scores = np.full(20, np.nan)
+    assert counted(score_on(), window_scores)["1"]["found"] == 0
+
+
+def test_each_window_model_is_counted_at_its_own_threshold():
+    rows, attacks = twenty_rows()
+    instant = [{"model": "nonlinear ae", "k": 8}, {"model": "nonlinear ae", "k": 4}]
+    windows = [{"model": "var", "rows": 5}, {"model": "var", "rows": 10}]
+    window_scores = np.stack([score_on(11), 1.5 * score_on(11)], axis=1)
+    kept = run_window_test_set.detection_of_each_window_model(
+        [{**instant[1], "threshold": 2.0}, {**instant[0], "threshold": 0.5}],
+        instant, np.stack([score_on(10), score_on(10)], axis=1),
+        [{**windows[1], "threshold": 2.0}, {**windows[0], "threshold": 0.5}],
+        windows, window_scores, rows, attacks, 3)
+
+    assert [(k["instant"]["k"], k["window"]["rows"]) for k in kept] == [
+        (8, 5), (8, 10), (4, 5), (4, 10)]
+    assert [(k["instant"]["threshold"], k["window"]["threshold"]) for k in kept] == [
+        (0.5, 0.5), (0.5, 2.0), (2.0, 0.5), (2.0, 2.0)]
+    assert [k["1"]["found"] for k in kept] == [1, 1, 1, 0], \
+        "k 4 and the second window model are each under their own threshold"

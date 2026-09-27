@@ -32,7 +32,7 @@ def caught(flag, rows, attacks):
     alarmed = alarmed_rows(flag.astype(float), 0.5, rows.rule_hit, rows.segment, 1, 1)
     return {**run_test_set_common.attacks_caught_by_alarms(alarmed, attacks),
             "alarms_per_hour":
-                run_test_set.false_positive_alarms_per_hour(alarmed, rows, attacks)}
+                run_test_set_common.false_positive_alarms_per_hour(alarmed, rows, attacks)}
 
 
 def test_what_a_flag_catches_and_what_it_costs():

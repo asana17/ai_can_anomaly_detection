@@ -19,8 +19,8 @@ from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
-from evaluate.count_alarms import count_false_positive_alarms
 from evaluate.run_test_set_common import (attacked_rows_of, attacks_caught_by_alarms,
+                                          false_positive_alarms_per_hour,
                                           fetch_thresholds, injected_attacks_of,
                                           threshold_given_to, z_distances_attacks_moved)
 from scoring import score
@@ -29,11 +29,6 @@ from scoring import score
 def false_positive_rate(flag, rows):
     """How often the model flags a moving row that has no attack on it."""
     return float((flag & rows.normal_moving).sum() / rows.normal_moving.sum())
-
-
-def false_positive_alarms_per_hour(alarmed, rows, attacks):
-    """False positive alarms per hour of moving rows with no attack."""
-    return float(count_false_positive_alarms(alarmed, attacks.injected) / rows.hours)
 
 
 def detection_of_one_detector(scores, threshold, rows, attacks, settings):

@@ -10,7 +10,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from common.hub_dirs import read_dir
-from evaluate.count_alarms import attacks_with_a_flagged_row
+from evaluate.count_alarms import (attacks_with_a_flagged_row,
+                                   count_false_positive_alarms)
 from models.fit import fetch_fitted_models
 from models.torch_files import scale_of
 
@@ -55,6 +56,11 @@ def attacks_caught_by_alarms(alarmed, attacks):
     return {"found": int(caught.sum()),
             "found_worth_catching": int((caught & attacks.worth_catching).sum()),
             "caught": [int(at) for at in np.flatnonzero(caught)]}
+
+
+def false_positive_alarms_per_hour(alarmed, rows, attacks):
+    """False positive alarms per hour of moving rows with no attack."""
+    return float(count_false_positive_alarms(alarmed, attacks.injected) / rows.hours)
 
 
 @dataclass
