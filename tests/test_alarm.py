@@ -1,7 +1,6 @@
 import numpy as np
 
-from detect.alarm import (alarmed_rows, k_of_last_n, windows_above,
-                          windows_with_k_flagged)
+from detect.alarm import alarmed_rows, k_of_last_n
 
 ONE = np.zeros(8, dtype=np.int32)          # one segment, so nothing breaks a run
 
@@ -52,34 +51,3 @@ def test_a_rule_hit_or_a_score_above_the_threshold_flags_a_row():
     rule_hit = np.array([False, False, True, False])
     assert alarmed_rows(scores, 0.5, rule_hit, ONE[:4], 1, 1).tolist() == [
         False, True, True, False], "a row with no score is flagged only by a rule"
-
-
-def test_a_window_is_flagged_when_k_of_its_rows_are():
-    flag = np.array([True, False, True, True, False, False, True])
-    ends = np.array([2, 4, 6])
-    for k, want in ((1, [True, True, True]), (2, [True, True, False]),
-                    (3, [False, False, False])):
-        assert windows_with_k_flagged(flag, ends, 3, k).tolist() == want, k
-
-
-def test_a_window_counts_its_first_row():
-    flag = np.array([True, False, False, False])
-    assert windows_with_k_flagged(flag, np.array([2, 3]), 3, 1).tolist() == [
-        True, False], "the first window holds row 0, the second does not"
-
-
-def test_a_window_counts_the_same_flags_as_k_of_the_last_n():
-    rng = np.random.default_rng(1)
-    flag = rng.random(300) < 0.4
-    for rows in (1, 5, 10):
-        ends = np.arange(rows - 1, 300)
-        for k in range(1, rows + 1):
-            assert np.array_equal(windows_with_k_flagged(flag, ends, rows, k),
-                                  k_of_last_n(flag, ONE[:1].repeat(300), rows,
-                                              k)[ends]), (rows, k)
-
-
-def test_a_window_score_above_the_threshold_flags_the_window():
-    window_scores = np.array([np.nan, np.nan, 0.9, 0.1, np.nan])
-    assert windows_above(window_scores, 0.5, np.array([2, 3])).tolist() == [
-        True, False]
