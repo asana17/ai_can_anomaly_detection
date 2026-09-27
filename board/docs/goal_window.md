@@ -8,10 +8,11 @@ come after alarm A's. Nothing here is built yet.
 
 ## Frames and rows
 
-The FDCAN receive interrupt stays as it is. `slots_store` overwrites the slot of the
-frame's PGN and returns, so a frame is never lost to work done after it. Everything
-that reads more than one moment works on the 0.1 s rows the preprocess task builds
-from the slots, never on frames.
+The FDCAN receive interrupt keeps `slots_store`, which overwrites the slot of the
+frame's PGN and returns, so a frame is never lost to work done after it. The only thing
+it adds is a copy of the frame into a frame ring in RAM, for the cut task below.
+Everything that detects works on the 0.1 s rows the preprocess task builds from the
+slots, never on frames.
 
 A rule that compares a signal with its previous value, like `change_limit`, compares
 a row with the row before it. The time between them is the tick, 0.1 s, rather than
@@ -86,14 +87,19 @@ A window of 50 rows of 17 floats is 3.4 KB.
 ```mermaid
 flowchart LR
     irq["FDCAN1 receive callback"] -- slots_store --> slots[(slots)]
+    irq -- copies --> frames[(frame ring)]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots"]
     pre -- writes --> ring[(row ring<br/>and row flags)]
     ring --> sd["scoring and detect 8<br/>rules, instant model, alarm A<br/>writes the row flag"]
     ring --> win["window scoring 11<br/>windowed model every S rows, alarm B"]
     sd -. wakes on a step row .-> win
-    sd -- report queue --> report["report 10<br/>UART"]
-    win --> report
+    sd -- latest alarm A --> can["CAN send 9<br/>FDCAN1"]
+    sd -- alarm A start --> cut["cut 10<br/>frames before alarm A, MAC"]
+    frames --> cut
+    cut --> out["UART and Flash 12<br/>stores the cut, prints"]
+    sd --> out
+    win --> out
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -102,8 +108,10 @@ The numbers are task priorities, smaller runs first.
 |---|---|---|
 | preprocess | builds a row every tick, numbers it and writes it into the ring | must not happen |
 | scoring and detect | reads each new row, runs the rules and the instant model, raises alarm A, writes the row flag | the ring overwrites the oldest rows, which are counted as dropped |
-| report | prints over UART | lines wait, nothing is lost |
+| CAN send | sends each start and end of alarm A as one frame | only the latest state is sent |
+| cut | at the start of alarm A, cuts the frames of the N rows before it from the frame ring, up to 8 KB, and puts a MAC on them | the ring overwrites the frames it has not cut yet |
 | window scoring | copies the latest window and its row flags, runs the windowed model, raises alarm B | windows in between are skipped |
+| UART and Flash | writes the cut to Flash and prints the alarm lines and the cut over UART | lines and cuts wait |
 
 preprocess writes the ring because it makes the rows and numbers them, so it never
 misses one. The rows sit in one ring, and the row flags in an array beside it. Each has
@@ -142,8 +150,27 @@ Alarm B is the window floor OR the windowed model, per window. The window floor 
 the row flags of alarm A, set on k of the window's W rows. Alarm B is not raised where
 alarm A is ringing. It comes late and may skip windows under load.
 
-Alarm outputs come as two tasks, CAN send and a Flash recorder, alarm A before B. UART
-stands in for both now. Its print masks interrupts while it waits on each character.
+## Alarm outputs
+
+Alarm A goes out first. Alarm B's outputs never come before it.
+
+- CAN send puts alarm A on FDCAN1 as ID 0x0CFF0080, priority 3, PGN 0xFF00 and source
+  address 0x80. The data is the state in 1 byte, 1 for start and 0 for end, then the
+  row number in 4 bytes, then 0xFF. It is sent only when the state changes.
+- The cut keeps the frames of the N rows that raised alarm A, the latest first up to
+  8 KB. A frame is 16 bytes, one Flash word. At the replay's 330 frames a second the
+  N rows are about 5.3 KB. A flood of about 2000 frames a second leaves about the last
+  0.25 s. The MAC is HMAC-SHA256 with a key written in the code, for the demo.
+- The frame ring is 64 KB in RAM.
+- Flash bank 2 holds the cuts as 32 sectors of 8 KB. A cut goes to an erased sector at
+  once, so 32 cuts in a row are kept. Only erasing the oldest sector waits for a gap.
+  The only state it keeps is the time of the last erase. For 5 years at 8 h a day the
+  gap is about 2.7 min. The linker keeps the program in bank 1. The facts are in
+  [h5_flash_memory.md](h5_flash_memory.md).
+- UART output goes through `tm_snd_dat` from the lowest task. `tm_printf` masks
+  interrupts while it waits on each character, and is left only for init errors.
+
+These numbers are computed, not measured.
 
 ## Load to show the priorities working
 
@@ -159,9 +186,16 @@ load.
 | gateway | forwards filtered frames to FDCAN2 | has its own deadline, so it would sit above detection |
 | self check | computes a CRC over Flash on a period | heavy and periodic, and can wait |
 
+The entry carries the cut task. It has a reason to run above the window task, since
+the ring overwrites the frames it has not cut. Its work comes at the start of alarm A,
+when alarm B is wanted, and grows with the frames on the bus. The others fall short.
+The Flash write has no reason to hurry. Diagnostics run while the vehicle stands.
+SecOC is light. A gateway needs a second transceiver. Slots already absorb a flood.
+
 ## Open
 
 - The windowed model's time per window on the board at 32 MHz, which sets S.
 - How alarm B holds across skipped windows.
 - How long preprocess waits on the mutex.
-- Which load the entry carries.
+- Whether the cut and its MAC, about 1 ms by estimate, are enough to delay the window
+  task.
