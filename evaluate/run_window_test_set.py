@@ -7,7 +7,7 @@ import numpy as np
 
 from detect.alarm import windows_above, windows_with_k_flagged
 from evaluate.count_alarms import count_false_positive_window_alarms
-from evaluate.run_test_set import attacks_caught_by_alarms
+from evaluate.run_test_set_common import attacks_caught_by_alarms
 from preprocess.features.windows import window_ends
 
 

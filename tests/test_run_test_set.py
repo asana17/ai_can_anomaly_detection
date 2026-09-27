@@ -7,7 +7,7 @@ import torch
 
 from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
-from evaluate import run_test_set
+from evaluate import run_test_set, run_test_set_common
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -19,10 +19,10 @@ WHERE = {"repo": "u/d", "revision": REVISION}
 
 def a_test(worth_catching=np.array([True])):
     """Six rows, one attack over rows 1 and 2, four rows nothing flags."""
-    rows = run_test_set.AttackedRows(
+    rows = run_test_set_common.AttackedRows(
         normal_moving=np.array([True, False, False, True, True, True]),
         rule_hit=np.zeros(6, bool), segment=np.zeros(6, np.int32), hours=2.0)
-    attacks = run_test_set.InjectedAttacks(injected=[{"first": 1, "last": 2}],
+    attacks = run_test_set_common.InjectedAttacks(injected=[{"first": 1, "last": 2}],
                                            worth_catching=worth_catching)
     return rows, attacks
 
@@ -30,7 +30,7 @@ def a_test(worth_catching=np.array([True])):
 def caught(flag, rows, attacks):
     """What `flag` catches when every flagged row raises an alarm."""
     alarmed = alarmed_rows(flag.astype(float), 0.5, rows.rule_hit, rows.segment, 1, 1)
-    return {**run_test_set.attacks_caught_by_alarms(alarmed, attacks),
+    return {**run_test_set_common.attacks_caught_by_alarms(alarmed, attacks),
             "alarms_per_hour":
                 run_test_set.false_positive_alarms_per_hour(alarmed, rows, attacks)}
 
@@ -81,7 +81,7 @@ def stand_in(monkeypatch, hub, onnx_files=None):
     monkeypatch.setattr(run_test_set.score, "main", lambda *args, **options: (
         scored.append((args[2], args[6], options)) or
         {"repo": "u/runs", "revision": REVISION, "path": "scores/20260101-000000"}))
-    monkeypatch.setattr(run_test_set, "fetch_fitted_models", lambda *args: (
+    monkeypatch.setattr(run_test_set_common, "fetch_fitted_models", lambda *args: (
         {"scale.mean": torch.zeros(len(SIGNALS)), "scale.std": torch.ones(len(SIGNALS))},
         {}))
 
@@ -159,7 +159,7 @@ def test_an_attack_is_measured_by_the_largest_change_it_made():
                 "raw": np.array([[1.0, 0.0, 0.0], [0.0, 3.0, 0.0]], np.float32),
                 "t": np.array([0.0, 0.1]), "label": np.array([True, True])}
 
-    moved = run_test_set.z_distance_an_attack_moved({"log": "a.csv", "first": 0, "last": 1}, attacked,
+    moved = run_test_set_common.z_distance_an_attack_moved({"log": "a.csv", "first": 0, "last": 1}, attacked,
                            np.ones(3, np.float32))
     assert moved == 3.0, "the row it moved furthest is the one that counts"
 
@@ -170,6 +170,6 @@ def test_a_row_the_attack_left_alone_is_not_measured():
                 "raw": np.array([[9.0, 0.0], [0.0, 2.0]], np.float32),
                 "t": np.array([0.0, 0.1]), "label": np.array([False, True])}
 
-    moved = run_test_set.z_distance_an_attack_moved({"log": "a.csv", "first": 0, "last": 1}, attacked,
+    moved = run_test_set_common.z_distance_an_attack_moved({"log": "a.csv", "first": 0, "last": 1}, attacked,
                            np.ones(2, np.float32))
     assert moved == 2.0

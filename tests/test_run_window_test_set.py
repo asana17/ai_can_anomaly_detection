@@ -1,7 +1,7 @@
 import numpy as np
 
 from evaluate import run_window_test_set
-from evaluate.run_test_set import AttackedRows, InjectedAttacks
+from evaluate.run_test_set_common import AttackedRows, InjectedAttacks
 from preprocess.features.windows import positions, window_ends
 
 
