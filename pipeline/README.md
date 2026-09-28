@@ -4,8 +4,9 @@ Runs every stage from [assemble.grid](../assemble/docs/grid.md) to
 [evaluate.run_window_test_set](../evaluate/docs/run_window_test_set.md) in one command. It takes
 hours and uploads to both Hugging Face repos, so run it only when asked to.
 
-The window models are fitted by [fit_windows](../models/docs/fit_windows.md) and given
-thresholds by [calibrate_windows](../models/docs/calibrate_windows.md). They use the
+The window models are fitted by [fit_windows](../models/docs/fit_windows.md), exported
+by [export_windows](../deploy/docs/export_windows.md) and given thresholds by
+[calibrate_windows](../models/docs/calibrate_windows.md). They use the
 same train set and calibration set as the row models.
 
 A stage whose inputs the repo already holds is not run again, its directory is passed

@@ -26,6 +26,7 @@ def calls(monkeypatch):
                          (stages.quantize, "quantize"),
                          (stages.calibrate, "thresholds"),
                          (stages.fit_windows, "window_models"),
+                         (stages.export_windows, "window_onnx"),
                          (stages.calibrate_windows, "window_thresholds"),
                          (stages.run_test_set, "test_runs"),
                          (stages.run_window_test_set, "window_test_runs")):
@@ -64,6 +65,8 @@ def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
                                        "u/r", "runs"),
                                       {"models": "w.json", "rebuild": False,
                                        "dry_run": False})
+    assert calls["window_onnx"] == (("u/r", "window_models-rev", "window_models/t",
+                                     "runs"), {"rebuild": False, "dry_run": False})
     assert calls["window_thresholds"] == (("u/r", "window_models-rev",
                                            "window_models/t", "runs", "out"),
                                           s("calibrate"))

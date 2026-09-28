@@ -7,14 +7,14 @@ from assemble import calibration_set, grid, split_test_logs, test_set, train_set
 from common.cli import arguments
 from common.hub_dirs import print_header
 from common.settings import read_settings
-from deploy import export, quantize
+from deploy import export, export_windows, quantize
 from evaluate import run_test_set, run_window_test_set
 from models import calibrate, calibrate_windows, fit, fit_windows
 
 
 STAGES = (grid, split_test_logs, calibration_set, train_set, test_set, fit, export,
-          quantize, calibrate, fit_windows, calibrate_windows, run_test_set,
-          run_window_test_set)
+          quantize, calibrate, fit_windows, export_windows, calibrate_windows,
+          run_test_set, run_window_test_set)
 
 
 def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
@@ -57,6 +57,8 @@ def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
                                       local_data_dir, runs_repo, local_runs_dir,
                                       models=window_models, rebuild=again[fit_windows],
                                       dry_run=dry_run)
+    export_windows.main(runs_repo, fitted_windows["revision"], fitted_windows["path"],
+                        local_runs_dir, rebuild=again[export_windows], dry_run=dry_run)
     window_thresholds = calibrate_windows.main(
         runs_repo, fitted_windows["revision"], fitted_windows["path"], local_runs_dir,
         local_data_dir, settings=each.calibrate, rebuild=again[calibrate_windows],
