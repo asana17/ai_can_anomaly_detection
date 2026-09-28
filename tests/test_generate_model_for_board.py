@@ -94,3 +94,29 @@ def test_a_window_export_is_generated_as_the_window_model(tmp_path, hub):
         / "window_nonlinear_ae_r3_k4_h8_float.onnx")
     assert json.load(open(tmp_path / made["path"] / "meta.json"))["inputs"] == {
         "onnx": "window_onnx/20260101-000000", "target": TARGET}
+
+
+def test_int8_files_are_generated_as_the_models_their_export_lists(tmp_path, hub):
+    models = {"repo": "u/runs", "revision": REVISION,
+              "path": "window_models/20260101-000000"}
+    export = {"repo": "u/runs", "revision": REVISION,
+              "path": "window_onnx/20260101-000000"}
+    drift = {**_entry(4, 8), "model": "window drift ae", "rows": 3, "stride": 2}
+    hub.files = {"window_onnx/20260101-000000/meta.json": {
+                     "models": models, "exported": [drift]},
+                 "window_quantize/20260101-000000/meta.json": {
+                     "onnx": export, "models": models}}
+    made = generate_model_for_board.main(_stedgeai(tmp_path), "u/runs", COMMIT,
+                                         "window_quantize/20260101-000000",
+                                         str(tmp_path))
+    assert made["path"].startswith("window_board/")
+
+    generated = tmp_path / made["path"] / "window_drift_ae_r3_s2_k4_h8"
+    assert (generated / "window_model.c").read_text() == str(
+        tmp_path / "window_quantize" / "20260101-000000"
+        / "window_drift_ae_r3_s2_k4_h8_int8.onnx")
+    meta = json.load(open(tmp_path / made["path"] / "meta.json"))
+    assert meta["onnx"] == export
+    assert meta["quantize"] == {"repo": "u/runs", "revision": COMMIT,
+                                "path": "window_quantize/20260101-000000"}
+    assert meta["exported"] == [drift]

@@ -12,9 +12,9 @@
       "type": "object",
       "properties": {
         "onnx": {
-          "description": "The `onnx/<time>` directory.",
+          "description": "The `onnx/<time>` or `quantize/<time>` directory.",
           "type": "string",
-          "pattern": "^onnx/[0-9]{8}-[0-9]{6}$"
+          "pattern": "^(onnx|quantize)/[0-9]{8}-[0-9]{6}$"
         },
         "target": {
           "description": "The `--target` passed to the generator.",
@@ -29,7 +29,11 @@
     },
     "onnx": {
       "$ref": "meta.schema.json#/$defs/directory",
-      "description": "The export the float files came from."
+      "description": "The export the files came from."
+    },
+    "quantize": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The int8 files the code was generated from, when it was generated from them."
     },
     "models": {
       "$ref": "meta.schema.json#/$defs/directory",
