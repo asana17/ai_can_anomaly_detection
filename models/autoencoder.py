@@ -129,6 +129,11 @@ class Conv1dAutoencoder(nn.Module):
 PRINT_EVERY = 10       # epochs between two lines of how far a fit has gone
 
 
+def device() -> str:
+    """Where `fit` trains, Apple's GPU where PyTorch has it and the CPU elsewhere."""
+    return "mps" if torch.backends.mps.is_available() else "cpu"
+
+
 def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float,
         threshold: float, patience: int) -> list[float]:
     """Train `model` on `rows` with Adam, and return the mean loss of each epoch.
@@ -137,8 +142,13 @@ def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float
     `best * (1 - threshold)`, the test PyTorch's ReduceLROnPlateau makes with
     threshold_mode 'rel', or after `epochs`. Every `PRINT_EVERY` epochs it prints the
     epoch and its loss, so a long fit shows how far it has gone.
+
+    It trains on `device()`, each batch moved there as it is used, and leaves `model`
+    back on the CPU. The batches come in the same order on either.
     """
     data = torch.from_numpy(np.asarray(rows, dtype=np.float32))
+    on = device()
+    model.to(on)
     optimizer = torch.optim.Adam(model.parameters(), lr=rate)
     criterion = nn.MSELoss()
     loader = DataLoader(TensorDataset(data), batch_size=batch, shuffle=True)
@@ -147,6 +157,7 @@ def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float
     for _ in range(epochs):
         total = 0.0
         for (x,) in loader:
+            x = x.to(on)
             optimizer.zero_grad()
             loss = criterion(model(x), x)
             loss.backward()
@@ -164,6 +175,7 @@ def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float
             bad_epochs += 1
         if bad_epochs > patience:
             break
+    model.to("cpu")
     return losses
 
 

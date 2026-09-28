@@ -43,6 +43,12 @@ times `1 - threshold`, and only then does the best loss move. The share is relat
 because the loss spans orders of magnitude across `latent_dim`, so no one absolute
 amount fits every run.
 
+`fit` trains on Apple's GPU through PyTorch's MPS where the machine has it, and on the
+CPU elsewhere. The batches come in the same order on either, and the model is left on
+the CPU. The fit's `meta.json` records the device under `versions`, not in its inputs,
+so a fit made on either is reused for the same inputs. The GPU and the CPU round
+differently, so one seed gives a slightly different fit on each.
+
 `fit` trains the autoencoder in place and returns its mean loss on the training rows
 for each epoch it ran. The losses only say whether training converged. They are
 measured on the rows it trained on, so they say nothing about rows it has not seen.

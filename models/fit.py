@@ -21,6 +21,7 @@ from safetensors.torch import load_file, save_file
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from assemble.train_set import fetch_train_set
+from models import autoencoder
 from models.fits import as_dict, models_from
 from preprocess.features.scale import Scale
 
@@ -73,7 +74,8 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
     return {**train_set["dataset"], "min_speed": min_speed, "rows": len(rows),
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "torch": torch.__version__, "sklearn": sklearn.__version__,
-                         "platform": platform.platform()}}
+                         "platform": platform.platform(),
+                         "device": autoencoder.device()}}
 
 
 def main(repo, revision, train_path, local_dir, runs_repo, runs_dir, models=MODELS,

@@ -69,3 +69,8 @@ def test_it_prints_how_far_it_has_gone_every_ten_epochs(capsys):
     printed = capsys.readouterr().out.splitlines()
     assert [line.split(",")[0] for line in printed] == ["epoch 10", "epoch 20"]
     assert printed[-1] == f"epoch 20, loss {losses[-1]:.6g}"
+
+
+def test_a_fit_leaves_the_model_on_the_cpu():
+    model, _ = _trained(_rows(n=300))
+    assert all(p.device.type == "cpu" for p in model.parameters())
