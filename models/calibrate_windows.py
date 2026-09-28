@@ -1,10 +1,11 @@
 """Give every fitted window model the score above which a window counts as an anomaly.
 
-    python3 -m models.calibrate_windows runs_repo revision window_models/<time> runs_dir local_dir [--rebuild]
+    python3 -m models.calibrate_windows runs_repo revision window_models/<time> runs_dir local_dir [--rebuild] [--onnx-files window_onnx/<time>]
 
 The thresholds come from the scores `scoring.score_windows` gives the windows of the
 calibration set the models' train set names. No model was fitted on them. Each model
-takes its threshold from its own windows alone.
+takes its threshold from its own windows alone. With `--onnx-files` the models are the
+ones that window export holds, each its float ONNX file, made from the same fit.
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ def thresholds_for(models, scores, *, target):
 
 
 def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_dir,
-                     settings):
+                     onnx_files, settings):
     """Write `thresholds.json` into `folder`, and return what its `meta.json` adds.
 
     The calibration set is scored first, unless `runs_repo` holds its scores already.
@@ -42,29 +43,31 @@ def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_d
     at = fitted["calibration_set"]
     scores_directory = score_windows.main(at["repo"], at["revision"], at["path"],
                                           local_dir, runs_repo, revision, models_path,
-                                          runs_dir)
+                                          runs_dir, onnx_files=onnx_files)
     scores, models, scored = score_windows.fetch_scores(scores_directory, runs_dir)
     thresholds = thresholds_for(models, scores, target=settings.TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
         json.dump(thresholds, f, indent=2)
     return {"scores": scores_directory,
-            **{name: scored[name] for name in ("models", "calibration_set", "log_split",
-                                               "grid", "min_speed")},
+            **{name: scored[name] for name in ("models", "onnx_files", "calibration_set",
+                                               "log_split", "grid", "min_speed")},
             "windows": [int(count) for count in (~np.isnan(scores)).sum(axis=0)],
             "versions": {"python": platform.python_version(), "numpy": np.__version__,
                          "platform": platform.platform()}}
 
 
 def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
-         dry_run=False, settings=CalibrateSettings()):
-    return reuse_or_make(runs_repo, "window_thresholds", {"models": models_path},
+         dry_run=False, settings=CalibrateSettings(), onnx_files=None):
+    return reuse_or_make(runs_repo, "window_thresholds",
+                         {"models": models_path, "onnx_files": onnx_files},
                          {"target": settings.TARGET}, runs_dir,
                          lambda folder: write_thresholds(folder, runs_repo, revision,
                                                          models_path, runs_dir,
-                                                         local_dir, settings),
+                                                         local_dir, onnx_files,
+                                                         settings),
                          rebuild, dry_run=dry_run)
 
 
 if __name__ == "__main__":
     main(**arguments(("runs_repo", "revision", "models_path", "runs_dir", "local_dir"),
-                    rebuild=False))
+                    rebuild=False, onnx_files=None))

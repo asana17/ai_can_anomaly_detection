@@ -25,9 +25,10 @@ def test_a_threshold_is_taken_from_the_model_s_own_windows():
     assert (scores[500:, 1] > kept[1]["threshold"]).mean() == pytest.approx(0.1, 0.01)
 
 
-def fit_and_scores(hub, scores):
+def fit_and_scores(hub, scores, onnx_files=None):
     """A window fit on the calibration set `calibration_sets/20260101-000000`, and the
-    window scores of that set it already has."""
+    window scores of that set it already has, scored as `onnx_files`, in torch when
+    None."""
     models = {"repo": "u/runs", "revision": REVISION,
               "path": "window_models/20260101-000000"}
     calibration_set = dict(WHERE, path="calibration_sets/20260101-000000")
@@ -35,8 +36,12 @@ def fit_and_scores(hub, scores):
         "window_models/20260101-000000/meta.json": {"calibration_set": calibration_set},
         "window_scores/20260101-000000/meta.json": {
             "inputs": {"set": "calibration_sets/20260101-000000",
-                       "models": "window_models/20260101-000000", "onnx_files": None},
-            "models": models, "calibration_set": calibration_set,
+                       "models": "window_models/20260101-000000",
+                       "onnx_files": onnx_files},
+            "models": models,
+            "onnx_files": onnx_files and {"repo": "u/runs", "revision": REVISION,
+                                          "path": onnx_files, "precision": "float"},
+            "calibration_set": calibration_set,
             "log_split": dict(WHERE, path="log_splits/20260101-000000"),
             "grid": dict(WHERE, path="grids/20260101-000000"), "min_speed": 5.0,
             "windows": [0, 0]},
@@ -60,6 +65,23 @@ def test_a_threshold_is_kept_for_every_window_model(tmp_path, hub):
     assert all(k["threshold"] > 0 for k in kept)
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"models": "window_models/20260101-000000",
-                              "target": CalibrateSettings().TARGET}
+                              "target": CalibrateSettings().TARGET, "onnx_files": None}
     assert meta["scores"]["path"] == "window_scores/20260101-000000", "reused"
     assert meta["windows"] == [19, 17], "counted from the scores the thresholds used"
+
+
+def test_the_thresholds_of_a_window_export_come_from_its_scores(tmp_path, hub):
+    scores = np.full((21, 2), np.nan, np.float32)
+    scores[2:, 0] = np.arange(19)
+    scores[4:, 1] = np.arange(17)
+    fit_and_scores(hub, scores, onnx_files="window_onnx/20260101-000000")
+    hub.files["window_onnx/20260101-000000/meta.json"] = {
+        "models": {"path": "window_models/20260101-000000"}, "exported": MODELS}
+    made = calibrate_windows.main("u/runs", COMMIT, "window_models/20260101-000000",
+                                  str(tmp_path), str(tmp_path),
+                                  onnx_files="window_onnx/20260101-000000")
+
+    meta = json.load(open(tmp_path / made["path"] / "meta.json"))
+    assert meta["inputs"]["onnx_files"] == "window_onnx/20260101-000000"
+    assert meta["scores"]["path"] == "window_scores/20260101-000000", "reused"
+    assert meta["onnx_files"]["path"] == "window_onnx/20260101-000000"

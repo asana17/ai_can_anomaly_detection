@@ -18,11 +18,20 @@
         },
         "target": {
           "$ref": "meta.schema.json#/$defs/target"
+        },
+        "onnx_files": {
+          "description": "The `window_onnx/<time>` directory the models scored as, or null for torch.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^window_onnx/[0-9]{8}-[0-9]{6}$"
         }
       },
       "required": [
         "models",
-        "target"
+        "target",
+        "onnx_files"
       ],
       "additionalProperties": false
     },
@@ -33,6 +42,10 @@
     "models": {
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The directory the models came from."
+    },
+    "onnx_files": {
+      "$ref": "meta.schema.json#/$defs/onnx_files",
+      "description": "The ONNX files the models scored as, as the window scores record them. Null when the models scored in torch."
     },
     "calibration_set": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -66,6 +79,7 @@
   "required": [
     "scores",
     "models",
+    "onnx_files",
     "calibration_set",
     "log_split",
     "grid",
