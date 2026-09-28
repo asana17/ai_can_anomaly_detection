@@ -6,8 +6,8 @@ from board.prepare.application import (LIB, MODEL, MODEL_FILES, TEST_COMMON,
                                        application_dir, application_for)
 from board.prepare.cli import keep_ioc
 from board.prepare.cubeide import (C_COMPILER, C_FLAGS, COMPILE_TOOLS, DEFINES, LINKER_TOOL,
-                                   MARKER, configure, link_folder, link_folders,
-                                   start_kernel)
+                                   MARKER, configure, keep_program_in_bank_1, link_folder,
+                                   link_folders, start_kernel)
 from board.prepare.dependencies import stedgeai_runtime
 
 MAIN_C = ("  }\r\n"
@@ -94,6 +94,23 @@ def test_stedgeai_runtime_requires_header_and_cm33_archive(tmp_path):
 def test_no_marker_is_an_error():
     with pytest.raises(ValueError):
         start_kernel("int main(void)\r\n{\r\n}\r\n")
+
+
+LINKER_SCRIPT_MEMORY = ("MEMORY\n"
+                        "{\n"
+                        "  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 272K\n"
+                        "  FLASH    (rx)    : ORIGIN = 0x08000000,   LENGTH = 512K\n"
+                        "}\n")
+
+
+def test_the_program_is_kept_in_bank_1():
+    assert keep_program_in_bank_1(LINKER_SCRIPT_MEMORY) == LINKER_SCRIPT_MEMORY.replace(
+        "LENGTH = 512K", "LENGTH = 256K")
+
+
+def test_a_linker_script_without_the_flash_region_is_an_error():
+    with pytest.raises(ValueError):
+        keep_program_in_bank_1("MEMORY\n{\n}\n")
 
 
 CPROJECT = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>

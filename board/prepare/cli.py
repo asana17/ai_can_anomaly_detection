@@ -12,7 +12,8 @@ import os
 import shutil
 
 from .application import HERE, application_dir, application_for
-from .cubeide import configure, link_folders, rewrite, start_kernel
+from .cubeide import (LINKER_SCRIPT, configure, keep_program_in_bank_1, link_folders, rewrite,
+                      start_kernel)
 from .dependencies import DEFAULT_STEDGEAI, add_bsp, add_unity, stedgeai_runtime
 
 CUBEMX = os.path.join(HERE, "cubemx")
@@ -50,6 +51,7 @@ def main(project_dir, application, stedgeai_root=None):
     print(f"Unity: {add_unity(project_dir)}")
     changes = (
         ("main.c", main_c, start_kernel),
+        (LINKER_SCRIPT, os.path.join(project_dir, LINKER_SCRIPT), keep_program_in_bank_1),
         (".cproject", os.path.join(project_dir, ".cproject"),
          lambda text: configure(text, selected.libraries, runtime)),
         (".project", os.path.join(project_dir, ".project"),

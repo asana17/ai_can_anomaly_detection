@@ -1,6 +1,7 @@
 """Pure transformations of CubeMX/CubeIDE project files."""
 
 import random
+import re
 import xml.etree.ElementTree as ET
 
 from .application import LIB, TEST_COMMON
@@ -17,6 +18,10 @@ DEFINES = ("_STM32CUBE_NUCLEO_H533_", "UNITY_INCLUDE_CONFIG_H")
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
             "mtk3_bsp2/mtkernel/kernel/knlinc", "test_common", "Unity/src")
 SOURCES = ("mtk3_bsp2", "Unity/src", "application", "test_common")
+LINKER_SCRIPT = "STM32H533RETX_FLASH.ld"
+# bank 2 keeps the alarm cuts, so the program stays in bank 1
+FLASH_LENGTH = re.compile(r"(FLASH\s*\(rx\)\s*:\s*ORIGIN = 0x08000000,\s*LENGTH = )\d+K")
+BANK_1 = "256K"
 
 
 def start_kernel(main_c):
@@ -27,6 +32,12 @@ def start_kernel(main_c):
     newline = "\r\n" if "\r\n" in main_c else "\n"
     added = "".join(f"{newline}  {line}" for line in START)
     return main_c.replace(MARKER, MARKER + added, 1)
+
+
+def keep_program_in_bank_1(linker_script):
+    if not FLASH_LENGTH.search(linker_script):
+        raise ValueError(f"no FLASH region at 0x08000000 in {LINKER_SCRIPT}")
+    return FLASH_LENGTH.sub(rf"\g<1>{BANK_1}", linker_script, count=1)
 
 
 def _parse(text, root_tag):
