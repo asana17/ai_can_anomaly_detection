@@ -74,8 +74,8 @@ Read bank 2 with the programmer while the board runs:
 STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
 ```
 
-[read_alarm_frames](read_alarm_frames.py) prints the records in it, or with `--log` where
-each matches the frames sent.
+[read_alarm_frames](read_alarm_frames.py) prints the records in it and whether each MAC
+matches the key, or with `--log` where each matches the frames sent.
 
 ```sh
 python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204094457960567.csv

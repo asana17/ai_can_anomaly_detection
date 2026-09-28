@@ -334,6 +334,7 @@ STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
 | 0 から 3 | 警報が始まった行番号。警報のフレームと同じもの |
 | 4 から 7 | フレームの数 |
 | 8 から 15 | 0 |
+| 16 から 47 | MAC。0 から 15 と、その後のフレームの HMAC-SHA256。鍵は `board/lib/alarm_frames_mac/alarm_frames_mac_demo_key.h` |
 | その後 16 バイトずつ、古い順 | 前のフレームからのマイクロ秒 3 バイト、データの長さ 1 バイト、ID 4 バイト、データ 8 バイト。長さより後は 0 |
 
 記録のフレームが、送ったフレームの一続きの部分と ID、長さ、データで一致すれば、
@@ -343,4 +344,4 @@ STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
 python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204094457960567.csv
 ```
 
-記録ごとに、一致した送ったフレームの番号が出る。`--log` を付けなければ記録のフレームが出る。
+記録ごとに、MAC が鍵と合うかと、一致した送ったフレームの番号が出る。`--log` を付けなければ記録のフレームが出る。
