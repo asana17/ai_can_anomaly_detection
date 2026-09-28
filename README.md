@@ -114,9 +114,6 @@ J1939's own terms, frame, PGN and SPN, are described in
   `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
   `evaluate`, all done 2026-09-22.
 
-- Run `fit` and the stages after it on every log, on `train_sets/20260922-100444` and
-  `test_sets/20260922-110745`. They passed on one day of logs in the smoke repos. Then
-  score one other split, the first 25% of the time as test.
 - Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
   due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
   on 80 rows. Counting the calibration rows its difference moves across the threshold
@@ -124,33 +121,13 @@ J1939's own terms, frame, PGN and SPN, are described in
   runs on the board. `can_path_from_flash` replays CAN frames through the slots, a
   preprocess task on a 0.1 s cyclic handler, scoring and detect, and report. FDCAN1 is
   on PB7 and PB8, and `can_bus_debug` prints what the bus receives and sends a frame
-  every second. `can_bus_debug` sends and receives frames over the bus.
-  `can_path_from_flash` has not run on the board yet. Then steps 2, 5 and 6.
-- Decide whether the matched replay is the attack the windowed pair is measured on.
-  `assemble.test_set --attack matched_replay` replays a PGN from a donor that held this
-  log's speed and gear over the whole stretch. What no detector reads is a matched
-  replay of TCO1, ETC1 or VDC2, whose values the matched speed and gear already fix or
-  which no other PGN reads. The numbers are in
-  [attack/measurements.md](attack/measurements.md).
-- Run the pipeline on every log, and decide from `window_test_runs` whether a window
-  model goes on the board. The two board items below come first.
-  - On the board, put the rows in one ring in place of the row queue. preprocess writes
-    it, and scoring and detect and a window scoring task read it under one mutex. Row
-    flags go in an array beside it. Window scoring only copies windows for now. W and S
-    belong in the window model's config header.
-  - Add three tasks, alarm A before B.
-    - A CAN task sends each start and end of alarm A as one frame on FDCAN1.
-    - A cut task sits above the window model. When alarm A starts, it cuts the frames
-      of the N rows before it out of a RAM ring and puts a MAC on them. The cut keeps
-      the latest frames up to 8 KB. This is work at the moment the window model is
-      needed, to show it late but not lost.
-    - The lowest task stores the cut, and sends it and the alarm lines over UART with
-      `tm_snd_dat`, which does not mask interrupts. `tm_printf` masks them.
-    - The receive interrupt copies each frame into the ring.
-    - The store is Flash bank 2 as 32 sectors of 8 KB. A cut goes to an erased sector
-      at once. Erasing the oldest sector waits for a gap, about 2.7 min for 5 years
-      at 8 h a day. [board/docs/h5_flash_memory.md](board/docs/h5_flash_memory.md) has
-      the Flash facts.
+  every second. `can_bus_debug` sends and receives frames over the bus. Then steps 2,
+  5 and 6.
+- On the board, put the rows in one ring in place of the row queue. preprocess writes
+  it, and scoring and detect and a window scoring task read it under one mutex. Row
+  flags go in an array beside it. Window scoring only copies windows for now. W and S
+  belong in the window model's config header.
+- Send alarm B on CAN as its own frame, once alarm B is built.
 - A script that compares scores.
 
 ## Tests
