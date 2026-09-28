@@ -2,8 +2,13 @@ import ctypes
 
 import pytest
 
-ROWS = 20    # WINDOW_MODEL_ROWS in board/lib/window_model/window_model_config.h
+ROWS = 20    # WINDOW_MODEL_ROWS
 STRIDE = 10  # WINDOW_MODEL_STRIDE
+# W and S the tests are written for, in place of the board's
+CONFIG = ('#include "signals.h"\n#include "window_model_config.h"\n'
+          '#include "window_model_stride.h"\n'
+          "#undef WINDOW_MODEL_ROWS\n#undef WINDOW_MODEL_STRIDE\n"
+          f"#define WINDOW_MODEL_ROWS {ROWS}u\n#define WINDOW_MODEL_STRIDE {STRIDE}u\n")
 
 
 @pytest.fixture(scope="module")
@@ -13,8 +18,8 @@ def c_window(board_lib):
     `push` adds the row numbered `no` with its `row_count_since_gap`, holding `no` in
     every signal.
     """
-    library = board_lib(["window_model", "model", "signals"],
-                        "#include <stddef.h>\n"
+    library = board_lib(["window_model", "deployed_window_model", "model", "signals"],
+                        "#include <stddef.h>\n" + CONFIG +
                         '#include "row_ring_as_window.h"\n'
                         "size_t window_size(void)\n"
                         "{\n\treturn sizeof(RowRingAsWindow);\n}\n"

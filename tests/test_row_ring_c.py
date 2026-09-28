@@ -2,7 +2,13 @@ import ctypes
 
 import pytest
 
-ROWS = 20  # WINDOW_MODEL_ROWS in board/lib/window_model/window_model_config.h
+ROWS = 20    # WINDOW_MODEL_ROWS
+STRIDE = 10  # WINDOW_MODEL_STRIDE
+# W and S the tests are written for, in place of the board's
+CONFIG = ('#include "signals.h"\n#include "window_model_config.h"\n'
+          '#include "window_model_stride.h"\n'
+          "#undef WINDOW_MODEL_ROWS\n#undef WINDOW_MODEL_STRIDE\n"
+          f"#define WINDOW_MODEL_ROWS {ROWS}u\n#define WINDOW_MODEL_STRIDE {STRIDE}u\n")
 
 
 @pytest.fixture(scope="module")
@@ -11,8 +17,8 @@ def c_ring(board_lib):
 
     A row pushed as `value` holds `value` in every signal, so a read shows it is whole.
     """
-    library = board_lib(["window_model", "model", "signals"],
-                        "#include <stddef.h>\n"
+    library = board_lib(["window_model", "deployed_window_model", "model", "signals"],
+                        "#include <stddef.h>\n" + CONFIG +
                         '#include "row_ring.h"\n'
                         "size_t ring_size(void)\n"
                         "{\n\treturn sizeof(RowRing);\n}\n"
