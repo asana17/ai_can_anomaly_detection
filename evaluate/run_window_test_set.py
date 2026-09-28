@@ -21,7 +21,7 @@ from assemble.test_set import fetch_test_set
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import TestRunSettings
-from detect.alarm import alarmed_rows
+from detect.alarm import alarmed_rows, k_of_last_n
 from evaluate.run_test_set_common import (attacked_rows_of, attacks_caught_by_alarms,
                                           false_positive_alarms_per_hour,
                                           fetch_thresholds, injected_attacks_of,
@@ -34,15 +34,16 @@ def detection_of_one_window_model(scores, threshold, window_scores,
     """What the rules and the instant model caught at each k of the last `n` rows, with
     the window model's alarm added.
 
-    The window model alarms on the last row of each window whose score is above
+    The window model flags the last row of each window whose score is above
     `window_threshold`, the row it is judged at. A row where no window ends has NaN,
-    which is never above it.
+    which is never above it. The window model alarms where `k` of the last `n` rows
+    are flagged, as the rules and the instant model do.
     """
-    window_alarm = window_scores > window_threshold
+    window_flag = window_scores > window_threshold
     kept = {}
     for k in range(1, n + 1):
-        alarmed = alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, n,
-                               k) | window_alarm
+        alarmed = (alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, n, k)
+                   | k_of_last_n(window_flag, rows.segment, n, k))
         kept[str(k)] = {**attacks_caught_by_alarms(alarmed, attacks),
                         "alarms_per_hour": false_positive_alarms_per_hour(alarmed, rows,
                                                                           attacks)}

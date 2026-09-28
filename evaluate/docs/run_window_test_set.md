@@ -51,10 +51,14 @@ row.
 
 Each window's score is saved at its last row.
 
-The window model alarms on that row when the score is above its threshold.
+The window model flags that row when the score is above its threshold. A row where no
+window ends is not flagged.
 
-It catches an attack when that row is inside the attack. A window can hold rows of an
-attack and still end after the attack. That window does not catch it.
+The window model alarms when k of the last N rows are flagged, with the same k and N
+as the alarm on every tick. The count starts again when the segment changes, as it
+does for the rows.
+
+It catches an attack when an alarmed row is inside the attack.
 
 ## What is compared
 
