@@ -91,6 +91,14 @@ IMPORT ER flash_store_init(FlashStoreState *store);
 IMPORT ER flash_store_write(FlashStoreState *store, CONST void *record, UW size, UW *sector);
 
 /**
+ * @brief Give how long until the next erase may start.
+ *
+ * @param[in] store The store.
+ * @return The milliseconds until then, 0 when an erase may start now.
+ */
+IMPORT UD flash_store_ms_until_erase(CONST FlashStoreState *store);
+
+/**
  * @brief Copy a sector's header and find its record.
  *
  * It invalidates ICACHE first, since it may hold what the sector read before a write or

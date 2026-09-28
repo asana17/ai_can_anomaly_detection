@@ -211,6 +211,16 @@ EXPORT ER flash_store_write(FlashStoreState *store, CONST void *record, UW size,
 	return error;
 }
 
+EXPORT UD flash_store_ms_until_erase(CONST FlashStoreState *store)
+{
+	UD now = now_ms();
+
+	if (store->next_erase_ms > now) {
+		return store->next_erase_ms - now;
+	}
+	return 0;
+}
+
 EXPORT CONST void *flash_store_read(UW sector, FlashStoreSectorHeader *header)
 {
 	HAL_ICACHE_Invalidate();
