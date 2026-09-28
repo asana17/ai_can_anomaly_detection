@@ -140,7 +140,7 @@ def _attacked(row):
 
 
 @pytest.mark.parametrize("attack", ["frozen_replay", "jittered_frozen_replay",
-                                    "repeated_replay", "ramp"])
+                                    "repeated_replay", "ramp", "playback"])
 def test_the_attacks_from_the_log_itself_land(tmp_path, attack):
     logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
     injected = list(inject_frames(logs, random.Random(0),

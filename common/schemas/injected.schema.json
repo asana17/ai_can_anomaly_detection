@@ -29,7 +29,7 @@
         "minimum": 0
       },
       "signal": {
-        "description": "The signal a ramp moves, as SIGNALS names it.",
+        "description": "The signal a ramp or a playback changes, as SIGNALS names it.",
         "type": "string"
       },
       "bias": {
