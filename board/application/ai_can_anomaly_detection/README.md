@@ -4,10 +4,9 @@ The application the entry runs. It builds a row from the slots every 0.1 s, scor
 with the rules and the autoencoder, and reports each alarm over UART.
 
 FDCAN1 receives the frames, and its receive callback stores each one in the slots with
-`slots_store`. The application builds. It has not run on the board, and no frame has
-reached it, since the bus is not wired.
-[connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN settings and
-what is left.
+`slots_store`. [connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN
+settings, and how to send test frames from a PC and check the alarms against the PC
+answer.
 
 ```mermaid
 flowchart LR

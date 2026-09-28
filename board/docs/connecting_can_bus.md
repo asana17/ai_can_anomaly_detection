@@ -4,9 +4,9 @@ This page is for whoever brings real CAN frames onto the board.
 
 FDCAN1 is enabled in the CubeMX project, and
 [`ai_can_anomaly_detection`](../application/ai_can_anomaly_detection/README.md) starts
-it and stores every frame it receives in the slots. It builds. It has not run on the
-board. The bus is wired, and [can_bus_debug](../application/can_bus_debug/README.md)
-has sent and received frames over it.
+it and stores every frame it receives in the slots. The bus is wired, and
+[can_bus_debug](../application/can_bus_debug/README.md) has sent and received frames
+over it.
 
 ```mermaid
 flowchart LR
@@ -21,16 +21,46 @@ flowchart LR
 | part | what it is | state |
 |---|---|---|
 | wiring | PB8 and PB7 to an MCP2562FD transceiver, CANH and CANL to the USB-CAN adapter, 120 Ω at both ends of the bus, a common ground | built |
-| PC sender | sends frames through the USB-CAN adapter at their own timestamps | none in this repository |
-| first run | flash the application and see alarms while the PC sends | not done |
+| PC sender | sends frames through the USB-CAN adapter at their own timestamps | [`send_test_frames.py`](../application/ai_can_anomaly_detection/send_test_frames.py), on macOS |
+| first run | flash the application and see alarms while the PC sends | [done](#checking-it) |
 
 The hardware on hand is a DSD TECH SH-C31A USB-CAN adapter and a Microchip
 MCP2562FD-E/P CAN transceiver. Its VDD takes 5 V and its VIO takes the 3.3 V of the
 board. [can_bus_debug](../application/can_bus_debug/README.md#wiring) gives its pins.
 
-The adapter runs the candleLight firmware, which Linux drives with its `gs_usb` driver as
-a SocketCAN interface. On an Ubuntu PC with `can-utils` installed, this brings it up at
-the bus's bit rate and shows every frame:
+The adapter runs the candleLight firmware. It shows up on USB as `canable2 gs_usb`,
+VID 0x1d50 and PID 0x606f, and has no serial port.
+
+### On macOS
+
+macOS has no driver for the adapter, so Python drives it over USB with `pyusb` and
+`gs_usb`. It needs libusb from Homebrew.
+
+```sh
+brew install libusb
+python3 -m pip install --user pyusb gs_usb
+```
+
+[`send_test_frames.py`](../application/ai_can_anomaly_detection/send_test_frames.py)
+opens the adapter this way. Each point below failed on the Mac without it.
+
+- pyusb finds no libusb by itself. The script loads
+  `/opt/homebrew/lib/libusb-1.0.dylib` by its path.
+- python-can's `gs_usb` interface finds no bit timing for 250 kbit/s. The script sets it
+  with `GsUsb.set_timing(prop_seg=1, phase_seg1=57, phase_seg2=9, sjw=9, brp=10)`, for
+  the adapter's 170 MHz clock.
+- `GsUsb.start` asks whether a kernel driver holds the adapter, and macOS denies the
+  question. The script answers it with no.
+- After `GsUsb.stop` the script calls `usb.util.dispose_resources`. Without it the next
+  open reads nothing until the adapter is plugged in again. A USB reset does not help.
+
+The adapter hands back each frame it has queued. That does not mean a node acknowledged
+it.
+
+### On Ubuntu
+
+Linux drives the adapter with its `gs_usb` driver as a SocketCAN interface. With
+`can-utils` installed, this brings it up at the bus's bit rate and shows every frame:
 
 ```sh
 sudo ip link set can0 type can bitrate 250000 sample-point 0.875
@@ -99,10 +129,19 @@ This is read from the port's source and not yet checked on the board.
 
 ## Fetching the frames to send
 
-The frames for the PC to send are in a test set of the dataset repository on Hugging
-Face, `asana17/ai_can_anomaly_detection_data`, which needs no login. A test set holds
-its logs with the attacks injected, frame by frame, as Parquet files under `frames/`,
-and which attack each log holds in `injected.json`. Their columns are in
+The frames to send are the attacked test frames of the run the deployed model comes
+from. They are in the dataset repository on Hugging Face,
+`asana17/ai_can_anomaly_detection_data`, which needs no login, as `frames/frames.parquet`
+with each log's attack in `frames/attacked.json`. The PC answer needs the float model
+the board's C was generated from, which is in `asana17/ai_can_anomaly_detection_runs`.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.fetch
+```
+
+This downloads both, pinned to a commit, into
+`board/application/ai_can_anomaly_detection/fetched/`. The frames take about 2 GB.
+Each log holds about a minute of frames. The columns are in
 [injected_frames](../../assemble/docs/injected_frames.md).
 
 The CAN logs themselves, normal traffic with no attack, come from the Turku dataset as
@@ -110,14 +149,32 @@ The CAN logs themselves, normal traffic with no attack, come from the Turku data
 
 ## Checking it
 
-Prepare, build and flash, then read the UART on the ST-LINK virtual COM port while the
-PC sends. [setup.md](setup.md) and [flash.md](flash.md) give the steps.
+Prepare, build and flash. [setup.md](setup.md) and [flash.md](flash.md) give the steps.
 
 ```sh
 python3 -m board.prepare CUBEIDE_PROJECT_DIR ai_can_anomaly_detection
 python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```
 
-The first line names the model and says FDCAN1 is being read. `FDCAN start error` in
-its place means FDCAN1 did not start. An alarm line appears only when a replayed
-attack reaches rows above `MIN_SPEED`.
+Open the ST-LINK virtual COM port at 115200 bps. The board prints `reading FDCAN1`.
+`FDCAN start error` after it means FDCAN1 did not start.
+
+Pick a log from `attacked.json`, print the PC answer for it, and send it:
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093505241905.csv
+python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204093505241905.csv
+```
+
+`expected` prints the rows the alarm starts and ends on, counted from when sending
+starts. The board prints `alarm start at row N` and `alarm end at row N`, counted from
+when it started. So the board's rows are the PC's plus one offset, the rows between
+start and sending. The UART lines hold no time, so the offset is found from the first
+alarm, and the other lines are checked against it.
+
+On 2026-09-28 the board's rows matched the PC answer in both logs sent,
+`part_3/20210204093505241905.csv` with one alarm and
+`part_3/20210204094457960567.csv` with three. Over about 1,000 s between them the
+board's tick ran about 0.3% faster than the Mac's clock, so an offset taken in one
+sending does not hold for the next. Whether the rows still match over a long sending is
+not measured.
