@@ -7,6 +7,8 @@
 /* A row preprocess built. */
 typedef struct {
 	UW no; /* the tick it was built on */
+	UW frames_start; /* the frame ring's place at the tick before */
+	UW frames_end;   /* the frame ring's place at its tick */
 	float physical[SIGNAL_COUNT];
 } Row;
 

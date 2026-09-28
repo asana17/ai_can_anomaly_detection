@@ -3,6 +3,7 @@
 
 #include <tk/tkernel.h>
 #include "model.h"
+#include "frame_ring.h"
 #include "report_input.h"
 #include "slots.h"
 
@@ -11,9 +12,10 @@
 
 /*
  * Create preprocess, score and detect by row, and score and detect by window on the
- * slots. Alarms go to report_input, made by the caller.
+ * slots and the frame ring. Alarms go to report_input, made by the caller.
  */
-IMPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, ReportInput *report_input);
+IMPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_ring,
+	ReportInput *report_input);
 
 /* Start the tasks created. */
 IMPORT ER ai_can_anomaly_detection_tasks_start(void);

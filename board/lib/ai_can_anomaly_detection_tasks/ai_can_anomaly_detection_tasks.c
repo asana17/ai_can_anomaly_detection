@@ -15,7 +15,8 @@ LOCAL ScoreAndDetectByRowTask score_and_detect_by_row_task;
 LOCAL ScoreAndDetectByWindowTask score_and_detect_by_window_task;
 
 
-EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, ReportInput *report_input)
+EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_ring,
+	ReportInput *report_input)
 {
 	ER error;
 
@@ -33,6 +34,7 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, ReportInput *repor
 		return error;
 	}
 	preprocess_task.slots = slots;
+	preprocess_task.frame_ring = frame_ring;
 	/* the windowed model is best effort, so it sits below the alarm outputs */
 	error = score_and_detect_by_window_task_create(&score_and_detect_by_window_task, 11,
 		&score_and_detect_by_window_input);

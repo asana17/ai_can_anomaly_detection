@@ -84,7 +84,7 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
-	error = ai_can_anomaly_detection_tasks_create(&slots, &report_input);
+	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input);
 	if (error < E_OK) {
 		return error;
 	}
