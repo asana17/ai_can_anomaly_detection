@@ -2,9 +2,11 @@ import json
 import os
 
 import numpy as np
+import pytest
 import torch
 
-from models.fits import Var
+from deploy.export import write_onnx_files
+from models.fits import FitArguments, Var, WindowNonlinearAe, as_dict
 from preprocess.features.signal_state import SIGNALS
 from scoring import score_windows
 
@@ -141,7 +143,8 @@ def test_a_run_keeps_the_window_scores_of_every_row_of_the_set(tmp_path, hub,
     assert json.load(open(folder / "models.json")) == [{"model": "var", "rows": 3}]
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"set": "test_sets/20260101-000000",
-                              "models": "window_models/20260101-000000"}
+                              "models": "window_models/20260101-000000",
+                              "onnx_files": None}
     assert meta["rows"] == 6 and meta["windows"] == [1]
     assert meta["test_set"] == DATASET["test_set"]
 
@@ -162,3 +165,56 @@ def test_the_scores_read_back_as_they_were_written(tmp_path, hub, monkeypatch):
     assert np.array_equal(scores, written, equal_nan=True)
     assert models == [{"model": "var", "rows": 3}]
     assert meta["windows"] == [4]
+
+
+def exported_window_ae(monkeypatch, tmp_path, hub, made_from):
+    """A window fit holding a var and a window nonlinear autoencoder of 3 rows, and a
+    window export of the autoencoder made from `made_from`. Returns how the autoencoder
+    scores windows in torch."""
+    model = WindowNonlinearAe(rows=3, k=4, hidden=8, arguments=FitArguments(
+        epochs=1, batch=16, rate=1e-3, improvement=0.0, patience=1, seed=0))
+    windows = np.random.default_rng(1).normal(size=(64, 3, len(SIGNALS)))
+    tensors, score, _ = model.fit(windows.astype(np.float32))
+    weights = {"scale.mean": torch.zeros(len(SIGNALS)),
+               "scale.std": torch.ones(len(SIGNALS)), **tensors}
+    monkeypatch.setattr(score_windows, "fetch_fitted_models", lambda *args: (
+        weights, {"inputs": {"models": [{"model": "var", "rows": 3}, as_dict(model)]}}))
+    net = model.network_with_weights(weights, len(SIGNALS))
+    write_onnx_files([(model.onnx_name, net)], 3 * len(SIGNALS),
+                     str(tmp_path / "window_onnx" / "20260101-000000"))
+    hub.files = {"window_onnx/20260101-000000/meta.json": {
+        "models": {"path": made_from}, "exported": [as_dict(model)]}}
+    return model, score
+
+
+def test_a_window_export_scores_its_models_alone_as_torch_does(tmp_path, hub,
+                                                                monkeypatch):
+    model, score = exported_window_ae(monkeypatch, tmp_path, hub,
+                                      "window_models/20260101-000000")
+    rows = moving_rows(6)
+    monkeypatch.setattr(score_windows, "fetch_test_set", lambda *args: {
+        "raw": rows, "seg": np.zeros(6), "min_speed": 5.0,
+        "dataset": {name: DATASET[name] for name in ("test_set", "log_split", "grid")}})
+    made = score_windows.main("u/d", REVISION, "test_sets/20260101-000000",
+                              str(tmp_path), "u/runs", COMMIT,
+                              "window_models/20260101-000000", str(tmp_path),
+                              onnx_files="window_onnx/20260101-000000")
+
+    scores, models, meta = score_windows.fetch_scores(made, str(tmp_path))
+    assert models == [as_dict(model)], "the var is not exported, so it has no column"
+    assert scores[2:, 0] == pytest.approx(
+        score(np.stack([rows[end - 2:end + 1] for end in range(2, 6)])), abs=1e-5)
+    assert meta["inputs"]["onnx_files"] == "window_onnx/20260101-000000"
+    assert meta["onnx_files"]["precision"] == "float"
+    assert "onnxruntime" in meta["versions"]
+
+
+def test_a_window_export_needs_to_be_made_from_the_window_fit(tmp_path, hub,
+                                                              monkeypatch):
+    exported_window_ae(monkeypatch, tmp_path, hub, "window_models/20260102-000000")
+    sets_over(monkeypatch)
+    with pytest.raises(ValueError):
+        score_windows.main("u/d", REVISION, "test_sets/20260101-000000",
+                           str(tmp_path), "u/runs", COMMIT,
+                           "window_models/20260101-000000", str(tmp_path),
+                           onnx_files="window_onnx/20260101-000000")

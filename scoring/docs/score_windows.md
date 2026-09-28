@@ -7,7 +7,7 @@ and the row scores of the same set come from [score](score.md).
 ## Running it
 
 ```
-python3 -m scoring.score_windows repo revision <set> local_dir runs_repo revision window_models/<time> runs_dir [--rebuild]
+python3 -m scoring.score_windows repo revision <set> local_dir runs_repo revision window_models/<time> runs_dir [--rebuild] [--onnx-files window_onnx/<time>]
 ```
 
 | argument | |
@@ -21,6 +21,11 @@ python3 -m scoring.score_windows repo revision <set> local_dir runs_repo revisio
 | `window_models/<time>` | the window models, from [fit_windows](../../models/docs/fit_windows.md) |
 | `runs_dir` | local folder the window models are downloaded to and the scores are written to |
 | `--rebuild` | score again even if `runs_repo` already has the same scores |
+| `--onnx-files window_onnx/<time>` | score with the float ONNX files of that window export instead of the weights |
+
+With `--onnx-files` the `revision` has to hold `window_onnx/<time>` too. It stops when
+the export is not made from `window_models/<time>`. The columns are the models the
+export holds. A vector autoregression is not exported, so it gets no column.
 
 | file | holds |
 |---|---|
@@ -44,7 +49,8 @@ so two neighbouring calibration rows can be far apart in time. Their segment ids
 differ there, so no window joins them.
 
 The rows are z-scored on the scale of the fit before the cut. The models run in
-torch.
+torch, or in ONNX Runtime with `--onnx-files`. A window goes into the ONNX file as one
+row of `rows` × signals values, and scores by the error on its last row, as in torch.
 
 The windows are cut and scored `WINDOWS` at a time, a constant in `score_windows.py`,
 so the memory scoring takes does not grow with the calibration set or test set.

@@ -209,7 +209,7 @@ class WindowNonlinearAe:
         return autoencoder.NonlinearAutoencoder(signals=self.rows * signals,
                                                 latent_dim=self.k, hidden=self.hidden)
 
-    def _flat(self, windows):
+    def flat(self, windows):
         """Each window of shape (rows, signals) as one row, its oldest row first."""
         return windows.reshape(len(windows), -1)
 
@@ -217,13 +217,13 @@ class WindowNonlinearAe:
         """Its tensors, how it scores windows, and its mean loss on them each epoch."""
         torch.manual_seed(self.arguments.seed)
         net = self._network(windows.shape[2])
-        losses = autoencoder.fit(self._flat(windows), net, epochs=self.arguments.epochs,
+        losses = autoencoder.fit(self.flat(windows), net, epochs=self.arguments.epochs,
                                  batch=self.arguments.batch, rate=self.arguments.rate,
                                  threshold=self.arguments.improvement,
                                  patience=self.arguments.patience)
         return ({f"{self.prefix}{key}": tensor
                  for key, tensor in net.state_dict().items()},
-                lambda scored: autoencoder.residuals(self._flat(scored), net,
+                lambda scored: autoencoder.residuals(self.flat(scored), net,
                                                      windows.shape[2]), losses)
 
     def network_with_weights(self, weights, signals):
@@ -236,7 +236,7 @@ class WindowNonlinearAe:
     def scorer(self, weights, signals):
         """Take this model's tensors out of `weights` and score windows with them."""
         net = self.network_with_weights(weights, signals)
-        return lambda scored: autoencoder.residuals(self._flat(scored), net, signals)
+        return lambda scored: autoencoder.residuals(self.flat(scored), net, signals)
 
 
 MODELS = {model.MODEL: model

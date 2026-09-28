@@ -22,7 +22,7 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from models.fit import fetch_fitted_models
 from models.fits import as_dict, models_from
-from models.onnx_files import onnx_scorer
+from models.onnx_files import fetch_onnx_files, onnx_scorer
 from models.torch_files import scale_of, torch_scorer
 from preprocess.features.moving import moving
 from rules.hits import hits_of_every_rule
@@ -102,10 +102,8 @@ def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_p
     if onnx_files is not None:
         onnx_directory = {"repo": runs_repo, "revision": runs_revision,
                           "path": onnx_files, "precision": precision}
-        onnx_folder, onnx_meta = read_dir(runs_repo, onnx_files, runs_dir, runs_revision)
-        made_from = onnx_meta["models"]["path"]
-        if made_from != models_path:
-            raise ValueError(f"{onnx_files} is made from {made_from}, not {models_path}")
+        onnx_folder, _ = fetch_onnx_files(runs_repo, runs_revision, onnx_files,
+                                          models_path, runs_dir)
     return reuse_or_make(runs_repo, "scores",
                          {"set": set_path, "models": models_path,
                           "onnx_files": onnx_files},

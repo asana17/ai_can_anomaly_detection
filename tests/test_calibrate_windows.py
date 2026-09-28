@@ -35,7 +35,7 @@ def fit_and_scores(hub, scores):
         "window_models/20260101-000000/meta.json": {"calibration_set": calibration_set},
         "window_scores/20260101-000000/meta.json": {
             "inputs": {"set": "calibration_sets/20260101-000000",
-                       "models": "window_models/20260101-000000"},
+                       "models": "window_models/20260101-000000", "onnx_files": None},
             "models": models, "calibration_set": calibration_set,
             "log_split": dict(WHERE, path="log_splits/20260101-000000"),
             "grid": dict(WHERE, path="grids/20260101-000000"), "min_speed": 5.0,

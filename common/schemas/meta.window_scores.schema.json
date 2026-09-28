@@ -20,17 +20,30 @@
           "description": "The `window_models/<time>` directory.",
           "type": "string",
           "pattern": "^window_models/[0-9]{8}-[0-9]{6}$"
+        },
+        "onnx_files": {
+          "description": "The `window_onnx/<time>` directory the models scored as, or null for torch.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^window_onnx/[0-9]{8}-[0-9]{6}$"
         }
       },
       "required": [
         "set",
-        "models"
+        "models",
+        "onnx_files"
       ],
       "additionalProperties": false
     },
     "models": {
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The directory the weights came from."
+    },
+    "onnx_files": {
+      "$ref": "meta.schema.json#/$defs/onnx_files",
+      "description": "The ONNX files the models scored as. Null when the models scored in torch."
     },
     "calibration_set": {
       "$ref": "meta.schema.json#/$defs/directory",
@@ -67,7 +80,7 @@
     },
     "versions": {
       "$ref": "meta.schema.json#/$defs/versions",
-      "description": "Python, NumPy, torch and the platform."
+      "description": "Python, NumPy, the platform, and torch or ONNX Runtime, whichever scored."
     }
   },
   "oneOf": [
@@ -84,6 +97,7 @@
   ],
   "required": [
     "models",
+    "onnx_files",
     "log_split",
     "grid",
     "min_speed",
