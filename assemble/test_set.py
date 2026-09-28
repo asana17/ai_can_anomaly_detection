@@ -13,6 +13,7 @@ import random
 
 import numpy as np
 
+from attack.ramp import ramp
 from attack.replay import (frozen_replay, jittered_frozen_replay, matched_replay,
                            random_replay, repeated_replay)
 from assemble.grid import read_grid, starts_segment, to_arrays
@@ -57,6 +58,8 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
             made = jittered_frozen_replay.replay(frames, rng, spans=spans)
         elif attack == "repeated_replay":
             made = repeated_replay.replay(frames, rng, spans=spans)
+        elif attack == "ramp":
+            made = ramp(frames, rng, spans=spans)
         else:
             donor, donor_rows = rng.choice(pool) if source_logs else (frames, before)
             made = random_replay.replay(

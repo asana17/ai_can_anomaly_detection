@@ -28,6 +28,14 @@
         "type": "number",
         "minimum": 0
       },
+      "signal": {
+        "description": "The signal a ramp moves, as SIGNALS names it.",
+        "type": "string"
+      },
+      "bias": {
+        "description": "The bias a ramp reaches at the stop, in the signal's units.",
+        "type": "number"
+      },
       "log": {
         "description": "The attacked log's path under the data directory.",
         "type": "string"
@@ -47,7 +55,6 @@
       "pgn",
       "start",
       "stop",
-      "source",
       "log",
       "first",
       "last"

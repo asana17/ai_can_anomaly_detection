@@ -58,7 +58,8 @@ replay is given more donors than fit in memory.
 `frozen_replay` holds the payload of the start, `jittered_frozen_replay` holds it
 jittered by the log's own steps, and `repeated_replay` repeats a stretch before the
 start.
-They take the payloads from the log itself and use no donor.
+They take the payloads from the log itself and use no donor. `ramp` adds a bias to one
+signal that grows over the attack, as [ramp](../../attack/docs/ramp.md) describes.
 
 Nothing is thrown away for tripping a rule. [evaluate](../../evaluate) runs the rules
 over the rows it scores, so it can report what the rules catch and what a model adds

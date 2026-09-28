@@ -32,7 +32,8 @@
             "matched_replay",
             "frozen_replay",
             "jittered_frozen_replay",
-            "repeated_replay"
+            "repeated_replay",
+            "ramp"
           ]
         }
       },
