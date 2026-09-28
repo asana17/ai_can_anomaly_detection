@@ -22,6 +22,7 @@ typedef struct {
 LOCAL CanDebugFrame can_debug_log[CAN_DEBUG_LOG_DEPTH];
 LOCAL volatile UW can_debug_head, can_debug_tail; /* head: ISR writes, tail: task reads */
 LOCAL volatile UW can_debug_dropped; /* frames the ring could not hold */
+LOCAL volatile UW can_debug_taken; /* frames the RX interrupt took from RX FIFO 0 */
 
 /* Copy every frame into the debug ring for the debug task to print,
  * regardless of ID type, so standard-ID frames are visible too. */
@@ -32,6 +33,7 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 	uint32_t size;
 
 	while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
+		can_debug_taken++;
 		size = header.DataLength;
 		if (size > CAN_BYTES) {
 			size = CAN_BYTES;
@@ -90,6 +92,27 @@ LOCAL INT can_send(uint32_t id, const uint8_t *data, uint32_t len)
 	return 0;
 }
 
+/* Print what FDCAN1 received, to find where a received frame is lost. */
+LOCAL void print_rx_status(void)
+{
+	FDCAN_ErrorCountersTypeDef counters;
+	UW lost = 0, ram_failed = 0;
+
+	if (__HAL_FDCAN_GET_FLAG(&hfdcan1, FDCAN_FLAG_RX_FIFO0_MESSAGE_LOST) != 0u) {
+		lost = 1;
+		__HAL_FDCAN_CLEAR_FLAG(&hfdcan1, FDCAN_FLAG_RX_FIFO0_MESSAGE_LOST);
+	}
+	if (__HAL_FDCAN_GET_FLAG(&hfdcan1, FDCAN_FLAG_RAM_ACCESS_FAILURE) != 0u) {
+		ram_failed = 1;
+		__HAL_FDCAN_CLEAR_FLAG(&hfdcan1, FDCAN_FLAG_RAM_ACCESS_FAILURE);
+	}
+	HAL_FDCAN_GetErrorCounters(&hfdcan1, &counters);
+	tm_printf((UB*)"CAN RX status: taken %u, printed %u, fifo %u, fifo lost %u, ram failed %u, rec %u, tec %u\n",
+		can_debug_taken, can_debug_tail,
+		HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0), lost, ram_failed,
+		counters.RxErrorCnt, counters.TxErrorCnt);
+}
+
 /* Send a frame every second and print whatever the bus received.
  * Modelled on app_main.c's task_can in mtk3bsp2_samples. */
 LOCAL void can_debug_task(INT stacd, void *exinf)
@@ -116,6 +139,8 @@ LOCAL void can_debug_task(INT stacd, void *exinf)
 			tm_printf((UB*)"CAN RX debug log dropped %u frames\n", can_debug_dropped);
 			can_debug_dropped = 0;
 		}
+
+		print_rx_status();
 
 		/* Send one test frame, varying the payload so successive frames differ. */
 		tx[0]++;
