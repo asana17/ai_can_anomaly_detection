@@ -157,7 +157,8 @@ python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```
 
 Open the ST-LINK virtual COM port at 115200 bps. The board prints `reading FDCAN1`.
-`FDCAN start error` after it means FDCAN1 did not start.
+`FDCAN start error` after it means FDCAN1 did not start. The alarms go out on CAN, not
+over UART.
 
 Pick a log from `attacked.json`, print the PC answer for it, and send it:
 
@@ -167,14 +168,22 @@ python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20
 ```
 
 `expected` prints the rows the alarm starts and ends on, counted from when sending
-starts. The board prints `alarm start at row N` and `alarm end at row N`, counted from
-when it started. So the board's rows are the PC's plus one offset, the rows between
-start and sending. The UART lines hold no time, so the offset is found from the first
-alarm, and the other lines are checked against it.
+starts. `send_test_frames` prints each frame the board sends, such as
 
-On 2026-09-28 the board's rows matched the PC answer in both logs sent,
-`part_3/20210204093505241905.csv` with one alarm and
-`part_3/20210204094457960567.csv` with three. Over about 1,000 s between them the
-board's tick ran about 0.3% faster than the Mac's clock, so an offset taken in one
-sending does not hold for the next. Whether the rows still match over a long sending is
-not measured.
+```
+received at 1790602535.128  CFF0080   [8]  01 82 02 00 00 FF FF FF
+```
+
+The fields are in
+[the application's README](../application/ai_can_anomaly_detection/README.md#the-alarm-frame).
+The board's rows count from when it started. So they are the PC's plus one offset, the
+rows between start and sending. The offset is found from the first alarm, and the other
+rows are checked against it. A row can differ by one, since the board's tick is not in
+step with the start of sending. [can_path_from_flash](../application/can_path_from_flash/README.md)
+feeds the same frames each time and is the exact check.
+
+On 2026-09-28 `part_3/20210204094457960567.csv` gave all three alarms as frames, at an
+offset of 92 rows. The second alarm ended one row after the PC answer, and the other
+rows matched. In an earlier sending of two logs, over about 1,000 s, the board's tick
+ran about 0.3% faster than the Mac's clock, so an offset taken in one sending does not
+hold for the next.
