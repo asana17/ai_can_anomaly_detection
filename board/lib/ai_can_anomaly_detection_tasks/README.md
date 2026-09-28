@@ -1,14 +1,20 @@
 # ai_can_anomaly_detection_tasks
 
 The tasks that turn the slots into alarms. ai_can_anomaly_detection and
-can_path_from_flash both run them, and differ only in what fills the slots.
+can_path_from_flash both run them. They differ in what fills the slots and in the task
+that reports the alarms, which the application makes.
+
+| application | reports with | priority |
+|---|---|---|
+| ai_can_anomaly_detection | [report_can](../report_can), one frame on FDCAN1 | 9 |
+| can_path_from_flash | [report_uart](../report_uart), one line over UART | 10 |
 
 ```mermaid
 flowchart LR
     slots[(slots)] --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     pre -- row queue --> sd["score and detect by row 8<br/>rules, autoencoder, k of the last N"]
-    sd -- latest report --> report["report 10<br/>UART"]
+    sd -- latest report --> report["report 9 or 10<br/>CAN or UART"]
     sd -- shared ring --> win["score and detect by window 11<br/>windows of the last rows"]
 ```
 
@@ -42,8 +48,7 @@ the detections that model alone makes.
 Filling the window belongs to the guaranteed layer. A row dropped before it enters the
 buffer leaves a gap, and the model then scores a stretch of time that never happened.
 
-Report is best effort by the same rule, since a late line loses nothing. It sits below
-both guaranteed tasks.
+Report sits below both guaranteed tasks and above the windowed model.
 
 Score and detect by row hands report only the latest alarm state, as the CAN receive
 interrupt hands preprocessing the slots. A new state goes over the one before. So

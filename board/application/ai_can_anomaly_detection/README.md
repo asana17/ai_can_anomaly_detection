@@ -1,7 +1,8 @@
 # ai_can_anomaly_detection
 
 The application the entry runs. It builds a row from the slots every 0.1 s, scores it
-with the rules and the autoencoder, and reports each alarm over UART.
+with the rules and the autoencoder, and sends each start and end of the alarm on
+FDCAN1.
 
 FDCAN1 receives the frames, and its receive callback stores each one in the slots with
 `slots_store`. [connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN
@@ -17,6 +18,22 @@ flowchart LR
 The tasks after the slots are described in
 [their README](../../lib/ai_can_anomaly_detection_tasks/README.md). The application runs
 until the board is reset.
+
+## The alarm frame
+
+[report_can](../../lib/report_can/report_can_task.c) sends one frame when the alarm
+starts or ends.
+
+| field | value |
+|---|---|
+| ID | 0x0CFF0080, extended. Priority 3, PGN 0xFF00, source address 0x80 |
+| byte 0 | 1 for start, 0 for end |
+| bytes 1 to 4 | the row number, little endian |
+| bytes 5 to 7 | 0xFF |
+
+The row number counts ticks from when the board started. It is there to check the
+board against the PC answer. When the transmit FIFO is full, the frames still waiting
+are cancelled and the new one goes in.
 
 ## The model
 

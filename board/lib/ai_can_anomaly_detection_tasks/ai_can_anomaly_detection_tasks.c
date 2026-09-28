@@ -2,7 +2,6 @@
 #include <tm/tmonitor.h>
 #include "preprocess_task.h"
 #include "report_input.h"
-#include "report_task.h"
 #include "score_and_detect_by_row_input.h"
 #include "score_and_detect_by_row_task.h"
 #include "score_and_detect_by_window_input.h"
@@ -10,15 +9,13 @@
 #include "ai_can_anomaly_detection_tasks.h"
 
 LOCAL ScoreAndDetectByRowInput score_and_detect_by_row_input;
-LOCAL ReportInput report_input;
 LOCAL ScoreAndDetectByWindowInput score_and_detect_by_window_input;
 LOCAL PreprocessTask preprocess_task;
 LOCAL ScoreAndDetectByRowTask score_and_detect_by_row_task;
-LOCAL ReportTask report_task;
 LOCAL ScoreAndDetectByWindowTask score_and_detect_by_window_task;
 
 
-EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots)
+EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, ReportInput *report_input)
 {
 	ER error;
 
@@ -31,28 +28,19 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots)
 	if (error < E_OK) {
 		return error;
 	}
-	error = report_input_create(&report_input);
-	if (error < E_OK) {
-		return error;
-	}
 	error = score_and_detect_by_window_input_create(&score_and_detect_by_window_input);
 	if (error < E_OK) {
 		return error;
 	}
 	preprocess_task.slots = slots;
-	/* report sits below the tasks that raise the alarm */
-	error = report_task_create(&report_task, 10, &report_input);
-	if (error < E_OK) {
-		return error;
-	}
-	/* the windowed model is best effort, so it sits below report */
+	/* the windowed model is best effort, so it sits below the alarm outputs */
 	error = score_and_detect_by_window_task_create(&score_and_detect_by_window_task, 11,
 		&score_and_detect_by_window_input);
 	if (error < E_OK) {
 		return error;
 	}
 	error = score_and_detect_by_row_task_create(&score_and_detect_by_row_task, 8,
-		&score_and_detect_by_row_input, &report_input, &score_and_detect_by_window_input);
+		&score_and_detect_by_row_input, report_input, &score_and_detect_by_window_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -64,10 +52,6 @@ EXPORT ER ai_can_anomaly_detection_tasks_start(void)
 	ER error;
 
 	/* each task waits on its input before the one that writes to it runs */
-	error = report_task_start(&report_task);
-	if (error < E_OK) {
-		return error;
-	}
 	error = score_and_detect_by_window_task_start(&score_and_detect_by_window_task);
 	if (error < E_OK) {
 		return error;

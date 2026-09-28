@@ -3,14 +3,14 @@
 
 #include <tk/tkernel.h>
 
-/* The alarm state after its last start or end, for report to print. */
+/* The alarm state after its last start or end, for the task that reports it. */
 typedef struct {
 	UW no; /* the row of the last change */
 	INT alarm; /* the alarm is ringing */
 } Report;
 
 /*
- * The latest report score and detect by row passes to report, under a lock. A new report
+ * The latest report score and detect by row passes to the task that reports it, under a lock. A new report
  * goes over the one before, so writing never waits for report.
  */
 typedef struct {

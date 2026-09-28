@@ -1,11 +1,11 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
-#include "report_task.h"
+#include "report_uart_task.h"
 
 /* Print each alarm over UART. */
-LOCAL void report_task(INT stacd, void *exinf)
+LOCAL void report_uart_task(INT stacd, void *exinf)
 {
-	ReportTask *task = exinf;
+	ReportUartTask *task = exinf;
 	Report report;
 	INT shown = 0; /* the alarm state printed last, not ringing at first */
 
@@ -24,10 +24,11 @@ LOCAL void report_task(INT stacd, void *exinf)
 	}
 }
 
-EXPORT ER report_task_create(ReportTask *task, PRI priority, ReportInput *report_input)
+EXPORT ER report_uart_task_create(ReportUartTask *task, PRI priority,
+	ReportInput *report_input)
 {
 	T_CTSK ctsk = {
-		.itskpri = priority, .stksz = 1024, .task = report_task, .exinf = task,
+		.itskpri = priority, .stksz = 1024, .task = report_uart_task, .exinf = task,
 		.tskatr = TA_HLNG | TA_RNG3,
 	};
 
@@ -36,7 +37,7 @@ EXPORT ER report_task_create(ReportTask *task, PRI priority, ReportInput *report
 	return task->task_id;
 }
 
-EXPORT ER report_task_start(ReportTask *task)
+EXPORT ER report_uart_task_start(ReportUartTask *task)
 {
 	return tk_sta_tsk(task->task_id, 0);
 }

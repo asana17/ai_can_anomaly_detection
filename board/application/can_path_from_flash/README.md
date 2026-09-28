@@ -10,9 +10,8 @@ flowchart LR
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
 ```
 
-The replay task stands in for the CAN receive interrupt and is the only part that
-changes when the bus is connected, as
-[connecting_can_bus.md](../../docs/connecting_can_bus.md) describes. The tasks after the
+The replay task stands in for the CAN receive interrupt. With no bus, the alarms go
+over UART from [report_uart](../../lib/report_uart/report_uart_task.c) at priority 10. The tasks after the
 slots are described in [their README](../../lib/ai_can_anomaly_detection_tasks/README.md).
 
 ## Frames

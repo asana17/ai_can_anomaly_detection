@@ -2,6 +2,8 @@
 #include <tm/tmonitor.h>
 #include "stm32h5xx_hal.h"
 #include "slots.h"
+#include "report_input.h"
+#include "report_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
 #define CAN_BYTES 8u /* a classic CAN frame's payload, which DLC 9 to 15 also mean */
@@ -10,6 +12,9 @@ IMPORT FDCAN_HandleTypeDef hfdcan1; /* set up by MX_FDCAN1_Init in the CubeMX ma
 
 /* What the CAN receive side writes with slots_store(). */
 EXPORT Slots slots;
+
+LOCAL ReportInput report_input;
+LOCAL ReportCanTask report_can_task;
 
 /* Store each frame FDCAN received as the latest of its PGN. */
 EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
@@ -53,7 +58,21 @@ EXPORT INT usermain(void)
 	INT error;
 
 	tm_printf((UB*)"reading FDCAN1\n");
-	error = ai_can_anomaly_detection_tasks_create(&slots);
+	error = report_input_create(&report_input);
+	if (error < E_OK) {
+		return error;
+	}
+	error = ai_can_anomaly_detection_tasks_create(&slots, &report_input);
+	if (error < E_OK) {
+		return error;
+	}
+	/* between score and detect by row at 8 and the windowed model at 11 */
+	error = report_can_task_create(&report_can_task, 9, &report_input, &hfdcan1);
+	if (error < E_OK) {
+		return error;
+	}
+	/* sends only on an alarm, which needs frames, so it may start before FDCAN1 */
+	error = report_can_task_start(&report_can_task);
 	if (error < E_OK) {
 		return error;
 	}

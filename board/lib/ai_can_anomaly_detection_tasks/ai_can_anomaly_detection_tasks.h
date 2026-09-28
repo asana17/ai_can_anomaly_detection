@@ -3,13 +3,17 @@
 
 #include <tk/tkernel.h>
 #include "model.h"
+#include "report_input.h"
 #include "slots.h"
 
 #define MIN_SPEED 5.0f /* Settings.MIN_SPEED in common/settings.py */
 #define MIN_FLAGGED_FOR_ALARM 10u /* flagged rows among the last DETECT_BY_ROW_RECENT_FLAGS an alarm needs */
 
-/* Create preprocess, score and detect by row, and report on the slots. */
-IMPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots);
+/*
+ * Create preprocess, score and detect by row, and score and detect by window on the
+ * slots. Alarms go to report_input, made by the caller.
+ */
+IMPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, ReportInput *report_input);
 
 /* Start the tasks created. */
 IMPORT ER ai_can_anomaly_detection_tasks_start(void);
