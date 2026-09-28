@@ -7,7 +7,7 @@ calibration set the models' train set names. No model was fitted on them. Each m
 takes its threshold from its own windows alone, as the lowest at which its alarm, one
 flagged window in the last N rows, rises no more than `WINDOW_TARGET` times an hour.
 With `--onnx-files` the models are the ones that window export holds, each its float
-ONNX file, made from the same fit.
+ONNX file, made from the same fit, or the int8 files of its `window_quantize/<time>`.
 """
 
 from __future__ import annotations

@@ -52,12 +52,12 @@ def onnx_scorer(folder, precision):
                                  onnx_file_path(folder, model, precision))
 
 
-def onnx_window_scorer(folder):
-    """What scores windows with a window model in ONNX Runtime, on its float file. A
-    window of shape (rows, signals) goes in as one row, and scores by the error on its
+def onnx_window_scorer(folder, precision):
+    """What scores windows with a window model in ONNX Runtime, on its `precision` file.
+    A window of shape (rows, signals) goes in as one row, and scores by the error on its
     last row, as in torch."""
     def scorer_of(model):
-        path = onnx_file_path(folder, model, "float")
+        path = onnx_file_path(folder, model, precision)
         return lambda windows: onnx_residuals(path, model.flat(windows),
                                               signals=windows.shape[2])
     return scorer_of

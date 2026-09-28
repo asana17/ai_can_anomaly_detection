@@ -5,7 +5,8 @@
 `<set>` is `calibration_sets/<time>` or `test_sets/<time>`. A window's score is saved
 at its last row. `scores.npy` has the same rows, in the same order, as the scores
 `scoring.score` saves for that set. With `--onnx-files` the models are the ones that
-directory exported, each scoring with its float ONNX file.
+directory exported, each scoring with its float ONNX file. It can also name the
+`window_quantize/<time>` of such a directory, and they then score with their int8 files.
 """
 
 from __future__ import annotations
@@ -31,6 +32,8 @@ from preprocess.features.windows import positions, window_ends, window_rows
 
 # windows a model scores at once. It bounds the memory, not the scores
 WINDOWS = 100_000
+# the precision of the ONNX files, by the kind of directory they are in
+PRECISIONS = {"window_onnx": "float", "window_quantize": "int8"}
 
 
 def fetch_set_rows(directory, local_dir):
@@ -85,7 +88,7 @@ def write_scores(folder, set_directory, models_directory, onnx_directory, onnx_f
         runtime = {"torch": torch.__version__}
     else:
         models = models_from(exported)
-        scorer_of = onnx_window_scorer(onnx_folder)
+        scorer_of = onnx_window_scorer(onnx_folder, onnx_directory["precision"])
         runtime = {"onnxruntime": onnxruntime.__version__}
     scores, windows = scores_of(models, scorer_of,
                                 scale_of(weights).apply(raw),
@@ -111,6 +114,16 @@ def fetch_scores(directory, runs_dir):
     return np.load(os.path.join(folder, "scores.npy")), models, meta
 
 
+def exported_models(onnx_meta, runs_dir):
+    """The models a window export's `meta.json` lists. The int8 files' `meta.json` names
+    the export they were quantized from, which lists them."""
+    if "exported" in onnx_meta:
+        return onnx_meta["exported"]
+    export = onnx_meta["onnx"]
+    _, exported = read_dir(export["repo"], export["path"], runs_dir, export["revision"])
+    return exported["exported"]
+
+
 def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_path,
          runs_dir, rebuild=False, dry_run=False, onnx_files=None):
     set_directory = {"repo": repo, "revision": revision, "path": set_path}
@@ -118,12 +131,12 @@ def main(repo, revision, set_path, local_dir, runs_repo, runs_revision, models_p
                         "path": models_path}
     onnx_directory, onnx_folder, exported = None, None, None
     if onnx_files is not None:
-        # a window export holds float files alone
         onnx_directory = {"repo": runs_repo, "revision": runs_revision,
-                          "path": onnx_files, "precision": "float"}
+                          "path": onnx_files,
+                          "precision": PRECISIONS[onnx_files.split("/")[0]]}
         onnx_folder, onnx_meta = fetch_onnx_files(runs_repo, runs_revision, onnx_files,
                                                   models_path, runs_dir)
-        exported = onnx_meta["exported"]
+        exported = exported_models(onnx_meta, runs_dir)
     return reuse_or_make(runs_repo, "window_scores",
                          {"set": set_path, "models": models_path,
                           "onnx_files": onnx_files}, {}, runs_dir,

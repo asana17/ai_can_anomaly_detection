@@ -218,3 +218,30 @@ def test_a_window_export_needs_to_be_made_from_the_window_fit(tmp_path, hub,
                            str(tmp_path), "u/runs", COMMIT,
                            "window_models/20260101-000000", str(tmp_path),
                            onnx_files="window_onnx/20260101-000000")
+
+
+def test_int8_files_score_the_models_their_export_lists(tmp_path, hub, monkeypatch):
+    model, _ = exported_window_ae(monkeypatch, tmp_path, hub,
+                                  "window_models/20260101-000000")
+    folder = tmp_path / "window_quantize" / "20260101-000000"
+    folder.mkdir(parents=True)
+    # the float file stands in for the int8 one, which only its name tells apart
+    (tmp_path / "window_onnx" / "20260101-000000" / f"{model.onnx_name}_float.onnx"
+     ).rename(folder / f"{model.onnx_name}_int8.onnx")
+    hub.files["window_quantize/20260101-000000/meta.json"] = {
+        "models": {"path": "window_models/20260101-000000"},
+        "onnx": {"repo": "u/runs", "revision": COMMIT,
+                 "path": "window_onnx/20260101-000000"}}
+    rows = moving_rows(6)
+    monkeypatch.setattr(score_windows, "fetch_test_set", lambda *args: {
+        "raw": rows, "seg": np.zeros(6), "min_speed": 5.0,
+        "dataset": {name: DATASET[name] for name in ("test_set", "log_split", "grid")}})
+    made = score_windows.main("u/d", REVISION, "test_sets/20260101-000000",
+                              str(tmp_path), "u/runs", COMMIT,
+                              "window_models/20260101-000000", str(tmp_path),
+                              onnx_files="window_quantize/20260101-000000")
+
+    scores, models, meta = score_windows.fetch_scores(made, str(tmp_path))
+    assert models == [as_dict(model)]
+    assert not np.isnan(scores[2:, 0]).any()
+    assert meta["onnx_files"]["precision"] == "int8"

@@ -27,12 +27,12 @@
           "minimum": 1
         },
         "onnx_files": {
-          "description": "The `window_onnx/<time>` directory the models scored as, or null for torch.",
+          "description": "The `window_onnx/<time>` or `window_quantize/<time>` directory the models scored as, or null for torch.",
           "type": [
             "string",
             "null"
           ],
-          "pattern": "^window_onnx/[0-9]{8}-[0-9]{6}$"
+          "pattern": "^(window_onnx|window_quantize)/[0-9]{8}-[0-9]{6}$"
         }
       },
       "required": [

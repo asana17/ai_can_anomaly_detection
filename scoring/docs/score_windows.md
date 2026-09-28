@@ -21,7 +21,7 @@ python3 -m scoring.score_windows repo revision <set> local_dir runs_repo revisio
 | `window_models/<time>` | the window models, from [fit_windows](../../models/docs/fit_windows.md) |
 | `runs_dir` | local folder the window models are downloaded to and the scores are written to |
 | `--rebuild` | score again even if `runs_repo` already has the same scores |
-| `--onnx-files window_onnx/<time>` | score with the float ONNX files of that window export instead of the weights |
+| `--onnx-files window_onnx/<time>` | score with the float ONNX files of that window export instead of the weights, or with the int8 files of its `window_quantize/<time>` |
 
 With `--onnx-files` the `revision` has to hold `window_onnx/<time>` too. It stops when
 the export is not made from `window_models/<time>`. The columns are the models the
