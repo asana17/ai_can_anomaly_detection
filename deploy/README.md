@@ -12,7 +12,7 @@ Documented under [docs/](docs).
   threshold each int8 file scores the calibration rows at. It is run only when an int8
   model is wanted.
 - [generate_model_for_board](docs/generate_model_for_board.md) generates C code with ST
-  Edge AI Core from every float file of an export.
+  Edge AI Core from every float file of an export or a window export.
 
 What the int8 files cost in detection is measured by
 [run test set](../evaluate/docs/run_test_set.md#what-int8-costs), and what it came to

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_board/<time>/meta.json",
+  "description": "Where the board's C code for the window models came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "onnx": {
+          "description": "The `window_onnx/<time>` directory.",
+          "type": "string",
+          "pattern": "^window_onnx/[0-9]{8}-[0-9]{6}$"
+        },
+        "target": {
+          "description": "The `--target` passed to the generator.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "onnx",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "onnx": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The window export the float files came from."
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The window models directory the export's weights came from."
+    },
+    "exported": {
+      "description": "Every model in the directory, as the export lists it.",
+      "type": "array",
+      "items": {
+        "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
+        "unevaluatedProperties": false
+      }
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python and ST Edge AI Core."
+    }
+  },
+  "required": [
+    "onnx",
+    "models",
+    "exported",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}

@@ -156,6 +156,7 @@ class NonlinearAe(_Autoencoder):
     """A hidden layer of `hidden` units with ReLU on each side of `k`."""
 
     MODEL = "nonlinear ae"
+    C_NAME = "instant_model"                # what the board's C code for it is named
     k: int
     hidden: int
     arguments: FitArguments
@@ -185,6 +186,7 @@ class WindowNonlinearAe:
     row."""
 
     MODEL = "window nonlinear ae"
+    C_NAME = "window_model"                 # what the board's C code for it is named
     rows: int
     k: int
     hidden: int
