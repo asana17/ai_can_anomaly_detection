@@ -324,9 +324,35 @@ class WindowDriftAe(WindowDeltaAe):
         net.drift_std.copy_(torch.from_numpy(std.astype(np.float32)))
 
 
+@dataclass(frozen=True)
+class WindowConv1dAe(WindowDriftAe):
+    """`WindowDriftAe` with 1D convolutions along time in place of dense layers. `k` is
+    the channels at its narrowest, `hidden` those of the convolution before."""
+
+    MODEL = "window conv1d ae"
+
+    @property
+    def prefix(self):
+        return f"window_conv1d_ae.r{self.rows}.s{self.stride}.h{self.hidden}.k{self.k}."
+
+    @property
+    def name(self):
+        return (f"window conv1d ae r={self.rows} s={self.stride} h={self.hidden} "
+                f"k={self.k}")
+
+    @property
+    def onnx_name(self):
+        """The name its ONNX files start with."""
+        return f"window_conv1d_ae_r{self.rows}_s{self.stride}_k{self.k}_h{self.hidden}"
+
+    def _network(self, signals):
+        return autoencoder.Conv1dAutoencoder(rows=self.rows, signals=signals,
+                                             latent_dim=self.k, hidden=self.hidden)
+
+
 MODELS = {model.MODEL: model
           for model in (Pca, Var, LinearAe, NonlinearAe, WindowNonlinearAe,
-                        WindowDeltaAe, WindowDriftAe)}
+                        WindowDeltaAe, WindowDriftAe, WindowConv1dAe)}
 ARGUMENTS = tuple(field.name for field in fields(FitArguments))
 
 

@@ -81,6 +81,19 @@ It is kept with the tensors under `window_drift_ae.r{rows}.s{stride}.h{hidden}.k
 It is fitted on one window every `stride` rows, and its network returns the window
 with its error added, as the window delta ae does.
 
+## The window conv1d ae
+
+A window conv1d ae is the window drift ae with 1D convolutions along time in place of
+dense layers. Its network, `Conv1dAutoencoder`, takes the same scaled drifts, the `rows
+- 1` rows as a time series of 17 channels. Two convolutions of 5 rows and stride 2 take
+them to `hidden` and then `k` channels, each a quarter as long in time, and two
+transposed convolutions take them back. Its score is the error over the 17 values of
+the last row, as for the window drift ae.
+
+The convolutions share their weights along time, so the weights do not grow with
+`rows`. At `hidden` 32 and `k` 8 it holds 8,089 weights at any `rows`. Its tensors are
+kept under `window_conv1d_ae.r{rows}.s{stride}.h{hidden}.k{k}.`.
+
 ## The windows it fits on
 
 A window is `rows` train rows next to each other in one segment, oldest first. The

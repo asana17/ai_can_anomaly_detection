@@ -54,6 +54,10 @@
           {
             "$ref": "model.schema.json#/$defs/window_drift_ae",
             "unevaluatedProperties": false
+          },
+          {
+            "$ref": "model.schema.json#/$defs/window_conv1d_ae",
+            "unevaluatedProperties": false
           }
         ]
       }

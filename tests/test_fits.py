@@ -4,9 +4,9 @@ import torch
 
 from models import autoencoder
 from common.schema_validate import check
-from models.fits import (FitArguments, LinearAe, NonlinearAe, Pca, Var, WindowDeltaAe,
-                         WindowDriftAe, WindowNonlinearAe, as_dict, model_from,
-                         models_from)
+from models.fits import (FitArguments, LinearAe, NonlinearAe, Pca, Var, WindowConv1dAe,
+                         WindowDeltaAe, WindowDriftAe, WindowNonlinearAe, as_dict,
+                         model_from, models_from)
 
 ROWS = np.random.default_rng(0).normal(size=(64, 5)).astype(np.float32)
 WINDOWS = np.random.default_rng(1).normal(size=(64, 3, 5)).astype(np.float32)
@@ -169,3 +169,21 @@ def test_a_window_drift_ae_scores_the_error_on_how_far_its_last_row_moved():
     error = ((rebuilt - scaled)[:, -last:] ** 2).mean(axis=1)
     assert np.allclose(error, score(WINDOWS), atol=1e-6)
     assert np.allclose(model.scorer(tensors, WINDOWS.shape[2])(WINDOWS), score(WINDOWS))
+
+
+def test_a_window_conv1d_ae_scores_the_error_on_how_far_its_last_row_moved():
+    windows = np.random.default_rng(2).normal(size=(64, 9, 5)).astype(np.float32)
+    model = WindowConv1dAe(9, 3, 4, ARGUMENTS, stride=2)
+    assert model.name == "window conv1d ae r=9 s=2 h=4 k=3"
+    assert model_from(as_dict(model)) == model
+    check([as_dict(model)], "models.schema.json")
+    tensors, score, _ = model.fit(windows)
+    drift = windows[:, 1:] - windows[:, :1]
+    assert np.allclose(tensors[f"{model.prefix}drift_std"].numpy(), drift.std(axis=0))
+
+    net = model.network_with_weights(tensors, windows.shape[2])
+    scaled = torch.from_numpy((drift / drift.std(axis=0)).astype(np.float32))
+    rebuilt = net.decoder(net.encoder(scaled.transpose(1, 2)))[:, :, :8].transpose(1, 2)
+    error = ((rebuilt - scaled)[:, -1] ** 2).mean(dim=1).detach().numpy()
+    assert np.allclose(error, score(windows), atol=1e-6)
+    assert np.allclose(model.scorer(tensors, windows.shape[2])(windows), score(windows))
