@@ -48,3 +48,15 @@ python3 board/flash.py CUBEIDE_PROJECT_DIR
 
 Prepare adds ST Edge AI's `Middlewares/ST/AI/Inc` headers and links
 `NetworkRuntime1201_CM33_GCC.a`. These are board build dependencies, not model inputs.
+
+## Check on the board
+
+ONNX Runtime flags rows 1253 to 1312 of the 80 rows, 60 rows in all. This was run on
+2026-09-27 with `quantize/20260916-221145/nonlinear_ae_k8_h64_float.onnx` from the runs repository. The board should
+print the same count on its last UART line:
+
+```
+model: processed 80/80, flagged_rows 60, dropped 0, errors 0, max_cycles ...
+```
+
+`max_cycles` is the longest inference in CPU cycles. Record it.
