@@ -49,6 +49,19 @@ CubeIDE and CubeProgrammer output is printed directly in the terminal. The scrip
 does not create log files. A successful build and flash returns exit status 0; a
 configuration, project discovery, build or flash failure returns a nonzero status.
 
+## Erasing bank 2 before first use
+
+Flash bank 2 keeps the alarm records. Erase it once over SWD before an application
+that writes it first runs on a board. The store reads anything left there as records.
+
+```sh
+STM32_Programmer_CLI -c port=SWD -e '[32' '63]'
+```
+
+The programmer numbers the sectors of both banks together, so bank 2 is 32 to 63.
+Read the option bytes first with `-ob displ`. SWAP_BANK must be 0, or the erase hits
+the program.
+
 ## Viewing UART output
 
 UART is deliberately separate from the flash command. After flashing, find the

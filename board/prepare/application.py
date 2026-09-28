@@ -28,6 +28,7 @@ APPLICATIONS = {
     "alive": Application(),
     "can_bus_debug": Application(),
     "mbf_test": Application(("mbf",)),
+    "test_flash_store": Application(("flash_store",)),
     "rule_check_from_flash": Application(("mbf",)),
     "model_check_from_flash": Application(
         ("mbf", "signals", "scale", "model", "scoring", MODEL), True),
