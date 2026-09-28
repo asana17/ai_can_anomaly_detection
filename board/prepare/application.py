@@ -36,6 +36,9 @@ APPLICATIONS = {
         ("mbf", "signals", "scale", "model", "scoring", MODEL), True),
     "ae_reconstruction_from_flash": Application(
         ("signals", "scale", "model", "scoring", MODEL), True),
+    "window_model_check_from_flash": Application(
+        ("signals", "scale", "model", "scoring", "window_model", DEPLOYED_WINDOW_MODEL,
+         MODEL), True),
     "ai_can_anomaly_detection": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "frame_ring", "moving",
          "signals", "rules", "scale", "model", "scoring", "detect", "window_model",
