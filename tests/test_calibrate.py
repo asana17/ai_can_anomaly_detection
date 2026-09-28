@@ -76,4 +76,17 @@ def test_the_calibration_set_is_scored_as_the_thresholds_are_asked_for(tmp_path,
                    str(tmp_path), onnx_files="quantize/20260101-000000", precision="int8")
 
     assert asked == [("calibration_sets/20260101-000000",
-                      {"onnx_files": "quantize/20260101-000000", "precision": "int8"})]
+                      {"rebuild": False, "onnx_files": "quantize/20260101-000000",
+                       "precision": "int8"})]
+
+
+def test_a_rebuild_scores_the_calibration_set_again(tmp_path, hub, monkeypatch):
+    run_and_scores(hub, np.ones((3, 1), np.float32))
+    asked = []
+    monkeypatch.setattr(calibrate.score, "main", lambda *args, **options: (
+        asked.append(options["rebuild"]) or
+        {"repo": "u/runs", "revision": REVISION, "path": "scores/20260101-000000"}))
+    calibrate.main("u/runs", COMMIT, "models/20260101-000000", str(tmp_path),
+                   str(tmp_path), rebuild=True)
+
+    assert asked == [True]

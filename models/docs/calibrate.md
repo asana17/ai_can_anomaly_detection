@@ -21,7 +21,7 @@ python3 -m models.calibrate runs_repo revision models/<time> runs_dir local_dir 
 | `models/<time>` | the fitted models to give a threshold to |
 | `runs_dir` | local folder the models are downloaded to and `scores/<time>/` and `thresholds/<time>/` are written to |
 | `local_dir` | local folder the dataset directories those models name are downloaded to |
-| `--rebuild` | take the thresholds again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |
+| `--rebuild` | take the thresholds again even if `runs_repo` already holds a directory with the same `inputs`. The calibration set is scored again too |
 | `--onnx-files <dir>` | score each model with its ONNX file in `<dir>` instead of its weights, `quantize/<time>` for int8 |
 | `--precision <precision>` | which ONNX file of each model, `float` or `int8` |
 

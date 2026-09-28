@@ -66,13 +66,14 @@ def detection_of_each_model(thresholds, models, scores, rows, attacks, settings)
 
 
 def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
-                   runs_dir, settings):
+                   runs_dir, settings, rebuild):
     """Score the test set, count what each detector caught on it, and write that.
 
     `detection.json` gets one entry per detector. It holds the threshold the detector
     ran at, how often it flagged a row with no attack, and what it caught at each k.
     `attacks.json` lists the attacks that were actually injected, where each one was
-    and how far it moved a row. What comes back goes into `meta.json`.
+    and how far it moved a row. What comes back goes into `meta.json`. The test set
+    is scored again when `rebuild` is true.
     """
     thresholds, thresholds_meta = fetch_thresholds(thresholds_directory, runs_dir)
     onnx_files = thresholds_meta["onnx_files"]
@@ -80,7 +81,7 @@ def write_test_run(folder, test_set_directory, thresholds_directory, local_dir,
     scores_directory = score.main(
         test_set_directory["repo"], test_set_directory["revision"],
         test_set_directory["path"], local_dir, thresholds_directory["repo"],
-        thresholds_directory["revision"], at["path"], runs_dir,
+        thresholds_directory["revision"], at["path"], runs_dir, rebuild=rebuild,
         onnx_files=onnx_files and onnx_files["path"],
         precision=onnx_files and onnx_files["precision"])
     scores, rule_hit, models, _ = score.fetch_scores(scores_directory, runs_dir)
@@ -127,7 +128,7 @@ def main(repo, revision, test_path, local_dir, runs_repo, runs_revision,
                          {"moved": settings.MOVED, "n": settings.N}, runs_dir,
                          lambda folder: write_test_run(folder, test_set_directory,
                                                        thresholds_directory, local_dir,
-                                                       runs_dir, settings),
+                                                       runs_dir, settings, rebuild),
                          rebuild, dry_run=dry_run)
 
 

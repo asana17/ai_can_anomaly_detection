@@ -30,7 +30,7 @@ python3 -m evaluate.run_test_set repo revision test_sets/<time> local_dir runs_r
 | `revision` | commit of `runs_repo` to read the thresholds at, as [calibrate](../../models/docs/calibrate.md) printed it |
 | `thresholds/<time>` | the thresholds the models run at. The models they name are read too, and scored with |
 | `runs_dir` | local folder `scores/<time>/` and `test_runs/<time>/` are written to, kept after the upload |
-| `--rebuild` | count again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |
+| `--rebuild` | count again even if `runs_repo` already holds a directory with the same `inputs`. The test set is scored again too |
 
 It writes these files into `runs_dir/test_runs/<time>/` and uploads that directory to
 `runs_repo` as `test_runs/<time>/`.

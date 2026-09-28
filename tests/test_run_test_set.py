@@ -103,11 +103,11 @@ def stand_in(monkeypatch, hub, onnx_files=None):
     return scored
 
 
-def run(tmp_path):
+def run(tmp_path, rebuild=False):
     """Run the stand-in test set at the stand-in threshold, and return its folder."""
     made = run_test_set.main("u/d", REVISION, "test_sets/20260101-000000", str(tmp_path),
                              "u/runs", COMMIT, "thresholds/20260101-000000",
-                             str(tmp_path))
+                             str(tmp_path), rebuild=rebuild)
     return tmp_path / made["path"]
 
 
@@ -116,7 +116,7 @@ def test_every_model_is_counted_beside_the_rules(tmp_path, hub, monkeypatch):
     folder = run(tmp_path)
 
     assert scored == [("test_sets/20260101-000000", "models/20260101-000000",
-                       {"onnx_files": None, "precision": None})], \
+                       {"rebuild": False, "onnx_files": None, "precision": None})], \
         "the test set is scored with the models the thresholds name"
     assert sorted(os.listdir(folder)) == ["attacks.json", "detection.json", "meta.json"]
     caught = json.load(open(folder / "detection.json"))
@@ -142,7 +142,7 @@ def test_the_test_set_is_scored_with_the_onnx_files_the_thresholds_name(tmp_path
     scored = stand_in(monkeypatch, hub, onnx_files=onnx_files)
     folder = run(tmp_path)
 
-    assert scored[0][2] == {"onnx_files": "quantize/20260101-000000",
+    assert scored[0][2] == {"rebuild": False, "onnx_files": "quantize/20260101-000000",
                             "precision": "int8"}
     assert json.load(open(folder / "meta.json"))["onnx_files"] == onnx_files
 
@@ -175,3 +175,10 @@ def test_a_row_the_attack_left_alone_is_not_measured():
     moved = run_test_set_common.z_distance_an_attack_moved({"log": "a.csv", "first": 0, "last": 1}, attacked,
                            np.ones(2, np.float32))
     assert moved == 2.0
+
+
+def test_a_rebuild_scores_the_test_set_again(tmp_path, hub, monkeypatch):
+    scored = stand_in(monkeypatch, hub)
+    run(tmp_path, rebuild=True)
+
+    assert scored[0][2]["rebuild"] is True
