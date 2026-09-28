@@ -42,8 +42,16 @@
       "description": "One entry per file, the model as the window models directory writes it down.",
       "type": "array",
       "items": {
-        "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
-        "unevaluatedProperties": false
+        "oneOf": [
+          {
+            "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
+            "unevaluatedProperties": false
+          },
+          {
+            "$ref": "model.schema.json#/$defs/window_delta_ae",
+            "unevaluatedProperties": false
+          }
+        ]
       }
     },
     "versions": {

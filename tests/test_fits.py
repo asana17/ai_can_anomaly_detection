@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
+import torch
 
 from models import autoencoder
 from common.schema_validate import check
-from models.fits import (FitArguments, LinearAe, NonlinearAe, Pca, Var, WindowNonlinearAe,
-                         as_dict, model_from, models_from)
+from models.fits import (FitArguments, LinearAe, NonlinearAe, Pca, Var, WindowDeltaAe,
+                         WindowNonlinearAe, as_dict, model_from, models_from)
 
 ROWS = np.random.default_rng(0).normal(size=(64, 5)).astype(np.float32)
 WINDOWS = np.random.default_rng(1).normal(size=(64, 3, 5)).astype(np.float32)
@@ -122,3 +123,29 @@ def test_a_network_comes_back_with_the_tensors_the_run_saved():
     assert all(np.allclose(net.state_dict()[name].numpy(),
                            tensors[f"{model.prefix}{name}"].numpy())
                for name in net.state_dict())
+
+
+def test_a_window_delta_ae_is_named_apart_from_the_window_nonlinear_ae():
+    model = WindowDeltaAe(10, 8, 128, ARGUMENTS)
+    assert model.name == "window delta ae r=10 h=128 k=8"
+    assert model.prefix == "window_delta_ae.r10.h128.k8."
+    assert model_from(as_dict(model)) == model
+
+
+def test_a_window_delta_ae_scores_the_error_on_its_last_scaled_step():
+    model = WindowDeltaAe(3, 2, 8, ARGUMENTS)
+    tensors, score, _ = model.fit(WINDOWS)
+    std = np.diff(WINDOWS, axis=1).std(axis=(0, 1))
+    assert np.allclose(tensors[f"{model.prefix}step_std"].numpy(), std)
+
+    net = model.network_with_weights(tensors, WINDOWS.shape[2])
+    step = (np.diff(WINDOWS, axis=1) / std).reshape(len(WINDOWS), -1).astype(np.float32)
+    rebuilt = net.steps(torch.from_numpy(step)).detach().numpy()
+    last = WINDOWS.shape[2]
+    assert np.allclose(((rebuilt - step)[:, -last:] ** 2).mean(axis=1), score(WINDOWS),
+                       atol=1e-6)
+    assert np.allclose(model.scorer(tensors, WINDOWS.shape[2])(WINDOWS), score(WINDOWS))
+
+
+def test_a_window_delta_ae_written_down_meets_the_models_schema():
+    check([as_dict(WindowDeltaAe(5, 2, 32, ARGUMENTS))], "models.schema.json")

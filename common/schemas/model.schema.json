@@ -17,6 +17,9 @@
     },
     {
       "$ref": "#/$defs/window_nonlinear_ae"
+    },
+    {
+      "$ref": "#/$defs/window_delta_ae"
     }
   ],
   "$defs": {
@@ -181,6 +184,53 @@
       "properties": {
         "model": {
           "const": "window nonlinear ae"
+        },
+        "rows": {
+          "$ref": "#/$defs/rows"
+        },
+        "k": {
+          "$ref": "#/$defs/k"
+        },
+        "hidden": {
+          "$ref": "#/$defs/hidden"
+        },
+        "epochs": {
+          "$ref": "#/$defs/epochs"
+        },
+        "batch": {
+          "$ref": "#/$defs/batch"
+        },
+        "rate": {
+          "$ref": "#/$defs/rate"
+        },
+        "improvement": {
+          "$ref": "#/$defs/improvement"
+        },
+        "patience": {
+          "$ref": "#/$defs/patience"
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        }
+      },
+      "required": [
+        "model",
+        "rows",
+        "k",
+        "hidden",
+        "epochs",
+        "batch",
+        "rate",
+        "improvement",
+        "patience",
+        "seed"
+      ]
+    },
+    "window_delta_ae": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "window delta ae"
         },
         "rows": {
           "$ref": "#/$defs/rows"

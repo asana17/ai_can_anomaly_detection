@@ -6,7 +6,7 @@ import onnxruntime
 import torch
 
 from deploy import export_windows
-from models.autoencoder import NonlinearAutoencoder
+from models.autoencoder import DeltaAutoencoder, NonlinearAutoencoder
 
 COMMIT = "de" * 20
 
@@ -50,3 +50,30 @@ def test_every_window_nonlinear_autoencoder_is_written(tmp_path, hub, monkeypatc
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"models": "window_models/20260101-000000"}
     assert meta["exported"] == [WINDOW]
+
+
+def test_a_window_delta_ae_is_written_with_its_steps_in_the_file(tmp_path, hub,
+                                                                  monkeypatch):
+    torch.manual_seed(0)
+    model = DeltaAutoencoder(rows=3, signals=17, latent_dim=4, hidden=8)
+    model.step_std.copy_(torch.linspace(0.5, 2.0, 17))
+    delta = dict(WINDOW, model="window delta ae")
+    weights = {f"window_delta_ae.r3.h8.k4.{name}": tensor
+               for name, tensor in model.state_dict().items()}
+    weights.update({"scale.mean": torch.zeros(17), "scale.std": torch.ones(17)})
+    where = {"repo": "u/d", "revision": "ab" * 20, "path": "train_sets/20260101-000000"}
+    meta = {"inputs": {"train_set": "train_sets/20260101-000000", "models": [delta]},
+            "train_set": where,
+            "log_split": dict(where, path="log_splits/20260101-000000"),
+            "grid": dict(where, path="grids/20260101-000000")}
+    monkeypatch.setattr(export_windows, "fetch_fitted_models",
+                        lambda *args: (weights, meta))
+    made = export_windows.main("u/runs", COMMIT, "window_models/20260101-000000",
+                               str(tmp_path))
+
+    path = tmp_path / made["path"] / "window_delta_ae_r3_k4_h8_float.onnx"
+    windows = np.random.default_rng(0).normal(size=(64, 3 * 17)).astype(np.float32)
+    session = onnxruntime.InferenceSession(str(path),
+                                           providers=["CPUExecutionProvider"])
+    expected = model(torch.from_numpy(windows)).detach().numpy()
+    assert np.allclose(session.run(None, {"row": windows})[0], expected, atol=1e-5)

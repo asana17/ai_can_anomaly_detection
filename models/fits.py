@@ -10,6 +10,7 @@ from __future__ import annotations
 import itertools
 from dataclasses import asdict, dataclass, fields
 
+import numpy as np
 import torch
 
 from models import autoencoder, pca, var
@@ -239,8 +240,51 @@ class WindowNonlinearAe:
         return lambda scored: autoencoder.residuals(self.flat(scored), net, signals)
 
 
+@dataclass(frozen=True)
+class WindowDeltaAe(WindowNonlinearAe):
+    """`WindowNonlinearAe` on the steps between the rows of a window, each signal's step
+    divided by its std over the windows it is fitted on. It scores a window by the error
+    on its last step."""
+
+    MODEL = "window delta ae"
+
+    @property
+    def prefix(self):
+        return f"window_delta_ae.r{self.rows}.h{self.hidden}.k{self.k}."
+
+    @property
+    def name(self):
+        return f"window delta ae r={self.rows} h={self.hidden} k={self.k}"
+
+    @property
+    def onnx_name(self):
+        """The name its ONNX files start with."""
+        return f"window_delta_ae_r{self.rows}_k{self.k}_h{self.hidden}"
+
+    def _network(self, signals):
+        return autoencoder.DeltaAutoencoder(rows=self.rows, signals=signals,
+                                            latent_dim=self.k, hidden=self.hidden)
+
+    def fit(self, windows):
+        """Its tensors, how it scores windows, and its mean loss on them each epoch."""
+        torch.manual_seed(self.arguments.seed)
+        net = self._network(windows.shape[2])
+        std = np.diff(windows, axis=1).std(axis=(0, 1))
+        std[std == 0] = 1.0                   # a constant signal stays at 0
+        net.step_std.copy_(torch.from_numpy(std.astype(np.float32)))
+        losses = autoencoder.fit(self.flat(windows), net, epochs=self.arguments.epochs,
+                                 batch=self.arguments.batch, rate=self.arguments.rate,
+                                 threshold=self.arguments.improvement,
+                                 patience=self.arguments.patience)
+        return ({f"{self.prefix}{key}": tensor
+                 for key, tensor in net.state_dict().items()},
+                lambda scored: autoencoder.residuals(self.flat(scored), net,
+                                                     windows.shape[2]), losses)
+
+
 MODELS = {model.MODEL: model
-          for model in (Pca, Var, LinearAe, NonlinearAe, WindowNonlinearAe)}
+          for model in (Pca, Var, LinearAe, NonlinearAe, WindowNonlinearAe,
+                        WindowDeltaAe)}
 ARGUMENTS = tuple(field.name for field in fields(FitArguments))
 
 

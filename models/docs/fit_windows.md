@@ -41,6 +41,27 @@ losses = fit(flat, net, epochs=epochs, batch=batch, rate=rate,
              threshold=improvement, patience=patience)
 ```
 
+## The window delta ae
+
+A window delta ae is the window nonlinear ae on the steps between the rows of a window
+rather than on the rows. Its network, `DeltaAutoencoder`, takes the step from each row
+to the next, divides each signal's step by `step_std`, and reconstructs the `rows - 1`
+steps with a nonlinear autoencoder. Its score is the mean squared error over the 17
+values of the last step.
+
+`step_std` is each signal's std of the steps over the windows it is fitted on, taken
+before the fit. The rows are scaled already, but a signal that moves little from row
+to row would still give steps too small to count in the error without it. It is kept
+with the tensors under `window_delta_ae.r{rows}.h{hidden}.k{k}.`.
+
+The network returns the window with the error of each step added. So its output less
+its input is that error, and fit, scoring and the ONNX export treat it as they treat a
+window nonlinear ae. A delta ae is the same in the ONNX file, the steps and `step_std`
+included.
+
+It was added to catch a signal held still or repeated with noise, whose rows each look
+normal. Whether it does was not measured when it was added.
+
 ## The windows it fits on
 
 A window is `rows` train rows next to each other in one segment, oldest first. The

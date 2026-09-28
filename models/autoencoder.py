@@ -1,7 +1,8 @@
 """Score a row by how badly an autoencoder trained on normal rows reconstructs it.
 
 An autoencoder compresses a row into `latent_dim` numbers and reconstructs it. There
-are two, `LinearAutoencoder` and `NonlinearAutoencoder`, and `fit` trains either.
+are `LinearAutoencoder` and `NonlinearAutoencoder`, and `DeltaAutoencoder` for the steps
+between the rows of a window. `fit` trains any of them.
 """
 
 from __future__ import annotations
@@ -36,6 +37,28 @@ class NonlinearAutoencoder(nn.Module):
 
     def forward(self, x):
         return self.decoder(self.encoder(x))
+
+
+class DeltaAutoencoder(nn.Module):
+    """`NonlinearAutoencoder` on the steps between the rows of a window of `rows` rows,
+    each signal's step divided by its `step_std`.
+
+    It returns the window with the error of each step it reconstructs added, so that the
+    output less the input is that error, the first row's being 0. `fit` and `residuals`
+    then measure the steps as they measure rows.
+    """
+
+    def __init__(self, rows: int, signals: int, latent_dim: int, hidden: int):
+        super().__init__()
+        self.rows, self.signals = rows, signals
+        self.register_buffer("step_std", torch.ones(signals))
+        self.steps = NonlinearAutoencoder((rows - 1) * signals, latent_dim, hidden)
+
+    def forward(self, x):
+        window = x.reshape(-1, self.rows, self.signals)
+        step = ((window[:, 1:] - window[:, :-1]) / self.step_std).flatten(1)
+        error = self.steps(step) - step
+        return x + torch.cat([torch.zeros_like(x[:, :self.signals]), error], dim=1)
 
 
 def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float,

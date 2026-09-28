@@ -28,6 +28,10 @@
               {
                 "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
                 "unevaluatedProperties": false
+              },
+              {
+                "$ref": "model.schema.json#/$defs/window_delta_ae",
+                "unevaluatedProperties": false
               }
             ]
           },
