@@ -27,3 +27,13 @@ def window_ends(position: np.ndarray, *, rows: int, stride: int = 1) -> np.ndarr
 def window_rows(grid_rows: np.ndarray, ends: np.ndarray, *, rows: int) -> np.ndarray:
     """Each window as the `rows` rows of `grid_rows` up to its last row, oldest first."""
     return grid_rows[np.asarray(ends)[:, None] + np.arange(1 - rows, 1)]
+
+
+def complete_window_ends(raw: np.ndarray, moving: np.ndarray, segment: np.ndarray, *,
+                         rows: int, stride: int = 1) -> np.ndarray:
+    """`window_ends` over the `moving` rows of `raw`, leaving out a window that holds a
+    row with a NaN, a value J1939 reserves. It is left out rather than cut short, so the
+    windows stay where the board places them."""
+    complete = ~np.isnan(raw).any(axis=1)
+    ends = window_ends(positions(moving, segment), rows=rows, stride=stride)
+    return ends[window_rows(complete, ends, rows=rows).all(axis=1)]

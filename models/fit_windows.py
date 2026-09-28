@@ -24,7 +24,7 @@ from common.hub_dirs import reuse_or_make
 from models.fit import models_in, scale_for
 from models.fits import as_dict
 from preprocess.features.moving import moving
-from preprocess.features.windows import positions, window_ends, window_rows
+from preprocess.features.windows import complete_window_ends, window_rows
 
 MODELS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "window_models.json")
 
@@ -36,19 +36,15 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
     complete = ~np.isnan(train_set["train"]).any(axis=1)
     scale = scale_for(train_set["train"][complete])
     rows = scale.apply(train_set["train"])
-    position = positions(moving(train_set["train"], min_speed=train_set["min_speed"]),
-                         train_set["seg"])
+    moved = moving(train_set["train"], min_speed=train_set["min_speed"])
 
     weights = {"scale.mean": torch.from_numpy(scale.mean),
                "scale.std": torch.from_numpy(scale.std)}
     trained, windows = [], []
     for model in models:
         # a model may fit on one window every `stride` rows, the neighbours being alike
-        stride = getattr(model, "stride", 1)
-        ends = window_ends(position, rows=model.rows, stride=stride)
-        # a window holding a NaN row is left out, not cut short, so the windows stay
-        # where the board places them
-        ends = ends[window_rows(complete, ends, rows=model.rows).all(axis=1)]
+        ends = complete_window_ends(train_set["train"], moved, train_set["seg"],
+                                    rows=model.rows, stride=getattr(model, "stride", 1))
         tensors, _, losses = model.fit(window_rows(rows, ends, rows=model.rows))
         weights.update(tensors)
         windows.append(len(ends))
