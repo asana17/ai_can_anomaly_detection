@@ -58,7 +58,9 @@ class DeltaAutoencoder(nn.Module):
 
     def forward(self, x):
         window = x.reshape(-1, self.rows, self.signals)
-        step = ((window[:, 1:] - window[:, :-1]) / self.step_std).flatten(1)
+        # the end is counted from the start, since ST Edge AI Core cannot take a slice
+        # that ends at a negative index
+        step = ((window[:, 1:] - window[:, :self.rows - 1]) / self.step_std).flatten(1)
         error = self.steps(step) - step
         return x + torch.cat([torch.zeros_like(x[:, :self.signals]), error], dim=1)
 
@@ -114,7 +116,9 @@ class Conv1dAutoencoder(nn.Module):
 
     def forward(self, x):
         window = x.reshape(-1, self.rows, self.signals)
-        step = (window[:, 1:] - window[:, :-1]) / self.step_std
+        # the end is counted from the start, since ST Edge AI Core cannot take a slice
+        # that ends at a negative index
+        step = (window[:, 1:] - window[:, :self.rows - 1]) / self.step_std
         # (windows, signals, rows - 1), time along the last axis as Conv1d reads it
         rebuilt = self.decoder(self.encoder(step.transpose(1, 2)))
         rebuilt = rebuilt[:, :, :self.rows - 1].transpose(1, 2)
