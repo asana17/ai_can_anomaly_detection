@@ -5,15 +5,23 @@ from __future__ import annotations
 import numpy as np
 
 
-def count_false_positive_alarms(alarmed, attacks):
-    """How many alarms have no row of an attack in them.
+def attack_row_mask(attacks, length):
+    """Which rows are in an attack, one flag per row of a set with `length` rows.
 
-    An alarm is a stretch of alarmed rows. One that starts in an attack and goes on
-    after the attack ends is not a false positive.
+    A row is flagged when it lies between an attack's first and last row.
     """
-    attacked = np.zeros(len(alarmed), bool)
+    attacked = np.zeros(length, bool)
     for a in attacks:
         attacked[a["first"]:a["last"] + 1] = True
+    return attacked
+
+
+def count_false_positive_alarms(alarmed, attacked):
+    """Count the false positive alarms.
+
+    `alarmed` and `attacked` hold one flag per row. An alarm is a stretch of rows
+    `alarmed` flags. It is a false positive when `attacked` flags none of its rows.
+    """
     starts = alarmed & ~np.concatenate([[False], alarmed[:-1]])
     alarm = np.cumsum(starts)               # the number of the alarm each row is in
     with_attack = np.unique(alarm[alarmed & attacked])

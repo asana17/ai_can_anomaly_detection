@@ -8,6 +8,7 @@ import torch
 from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
 from evaluate import run_test_set, run_test_set_common
+from evaluate.count_alarms import attacks_with_a_flagged_row
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -30,7 +31,8 @@ def a_test(worth_catching=np.array([True])):
 def caught(flag, rows, attacks):
     """What `flag` catches when every flagged row raises an alarm."""
     alarmed = alarmed_rows(flag.astype(float), 0.5, rows.rule_hit, rows.segment, 1, 1)
-    return {**run_test_set_common.attacks_caught_by_alarms(alarmed, attacks),
+    return {**run_test_set_common.attacks_caught(
+                attacks_with_a_flagged_row(alarmed, attacks.injected), attacks),
             "alarms_per_hour":
                 run_test_set_common.false_positive_alarms_per_hour(alarmed, rows, attacks)}
 

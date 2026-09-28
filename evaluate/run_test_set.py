@@ -19,7 +19,8 @@ from common.cli import arguments
 from common.hub_dirs import reuse_or_make
 from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows
-from evaluate.run_test_set_common import (attacked_rows_of, attacks_caught_by_alarms,
+from evaluate.count_alarms import attacks_with_a_flagged_row
+from evaluate.run_test_set_common import (attacked_rows_of, attacks_caught,
                                           false_positive_alarms_per_hour,
                                           fetch_thresholds, injected_attacks_of,
                                           threshold_given_to, z_distances_attacks_moved)
@@ -39,7 +40,8 @@ def detection_of_one_detector(scores, threshold, rows, attacks, settings):
         alarmed = alarmed_rows(scores, threshold, rows.rule_hit, rows.segment,
                                settings.N, k)
         kept[str(k)] = {
-            **attacks_caught_by_alarms(alarmed, attacks),
+            **attacks_caught(attacks_with_a_flagged_row(alarmed, attacks.injected),
+                             attacks),
             "alarms_per_hour": false_positive_alarms_per_hour(alarmed, rows, attacks)}
     return kept
 

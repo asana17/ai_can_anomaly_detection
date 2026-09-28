@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from common.hub_dirs import read_dir
-from evaluate.count_alarms import (attacks_with_a_flagged_row,
+from evaluate.count_alarms import (attack_row_mask, attacks_with_a_flagged_row,
                                    count_false_positive_alarms)
 from models.fit import fetch_fitted_models
 from models.torch_files import scale_of
@@ -50,9 +50,8 @@ def z_distances_attacks_moved(attacked, models_directory, runs_dir):
             for attack in attacked["attacks"]]
 
 
-def attacks_caught_by_alarms(alarmed, attacks):
-    """How many attacks an alarm fell inside, and which ones they were."""
-    caught = attacks_with_a_flagged_row(alarmed, attacks.injected)
+def attacks_caught(caught, attacks):
+    """How many attacks `caught` marks, and which ones they were."""
     return {"found": int(caught.sum()),
             "found_worth_catching": int((caught & attacks.worth_catching).sum()),
             "caught": [int(at) for at in np.flatnonzero(caught)]}
@@ -60,7 +59,8 @@ def attacks_caught_by_alarms(alarmed, attacks):
 
 def false_positive_alarms_per_hour(alarmed, rows, attacks):
     """False positive alarms per hour of moving rows with no attack."""
-    return float(count_false_positive_alarms(alarmed, attacks.injected) / rows.hours)
+    attacked = attack_row_mask(attacks.injected, len(alarmed))
+    return float(count_false_positive_alarms(alarmed, attacked) / rows.hours)
 
 
 @dataclass
