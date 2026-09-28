@@ -81,8 +81,9 @@ EXPORT ER score_and_detect_by_row_task_create(ScoreAndDetectByRowTask *task,
 	ReportInput *report_input,
 	ScoreAndDetectByWindowInput *score_and_detect_by_window_input)
 {
+	/* The stack holds rows_before, RECENT_ROWS_ROWS rows of SIGNAL_COUNT floats. */
 	T_CTSK ctsk = {
-		.itskpri = priority, .stksz = 2048, .task = score_and_detect_by_row_task,
+		.itskpri = priority, .stksz = 3072, .task = score_and_detect_by_row_task,
 		.exinf = task, .tskatr = TA_HLNG | TA_RNG3,
 	};
 

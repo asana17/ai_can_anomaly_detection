@@ -41,7 +41,7 @@ def run(board_lib):
 
 def _held(run, pushes, cleared=-1):
     """The rows held after the pushes, oldest first, by their first value."""
-    held = np.zeros(16, np.float32)
+    held = np.zeros(32, np.float32)
     count = run(pushes, cleared if cleared >= 0 else pushes, held.ctypes.data)
     return held[:count].tolist()
 
@@ -50,8 +50,8 @@ def test_it_gives_the_rows_oldest_first(run):
     assert _held(run, 3) == [1.0, 2.0, 3.0]
 
 
-def test_it_keeps_the_last_nine_when_full(run):
-    assert _held(run, 12) == [4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+def test_it_keeps_the_last_nineteen_when_full(run):
+    assert _held(run, 22) == [float(n) for n in range(4, 23)]
 
 
 def test_clear_forgets_the_rows_before(run):

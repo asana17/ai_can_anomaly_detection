@@ -7,6 +7,7 @@
 #include "change_limit.h"
 #include "model.h"
 #include "recent_rows.h"
+#include "repeated_signal.h"
 #include "rule_hits.h"
 #include "scale.h"
 #include "scoring_error.h"
@@ -45,7 +46,8 @@ static inline ModelStatus scoring_row(const float physical[SIGNAL_COUNT],
 
 	scored->rule_hit = rule_hits(physical, min_speed)
 		|| change_limit_hits(rows_before, physical)
-		|| torque_over_load_hits(rows_before, physical);
+		|| torque_over_load_hits(rows_before, physical)
+		|| repeated_signal_hits(rows_before, physical);
 	scale_row(physical, mean, std, scaled, SIGNAL_COUNT);
 	error = model_run(scaled, reconstructed, &scored->cycles);
 	if (error != MODEL_OK) {

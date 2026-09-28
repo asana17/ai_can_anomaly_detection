@@ -5,8 +5,11 @@
 #include <string.h>
 #include "signals.h"
 
-/* The most rows before the row judged that a rule reads, TORQUE_OVER_LOAD_ROWS - 1. */
-#define RECENT_ROWS_ROWS 9u
+/*
+ * The most rows before the row judged that a rule reads,
+ * REPEATED_SIGNAL_LAG + REPEATED_SIGNAL_ROWS - 1.
+ */
+#define RECENT_ROWS_ROWS 19u
 
 /* A ring of the last RECENT_ROWS_ROWS rows, for the rules that read earlier rows. */
 typedef struct {
