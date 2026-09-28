@@ -1,0 +1,25 @@
+From fe9d6781e6f38117c6c8f8de2ac40d380e2f6bbb Mon Sep 17 00:00:00 2001
+From: asana17 <kei17.kaight084@gmail.com>
+Date: Tue, 29 Sep 2026 06:36:46 +0900
+Subject: config: allow 8 mutexes
+
+---
+ config/config.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config/config.h b/config/config.h
+index 81dd60a..419b395 100644
+--- a/config/config.h
++++ b/config/config.h
+@@ -33,7 +33,7 @@
+ #define CNF_MAX_SEMID		16	/* Semaphore */
+ #define CNF_MAX_FLGID		16	/* Event flag */
+ #define CNF_MAX_MBXID		8	/* Mailbox*/
+-#define CNF_MAX_MTXID		4	/* Mutex */
++#define CNF_MAX_MTXID		8	/* Mutex */
+ #define CNF_MAX_MBFID		8	/* Message buffer */
+ #define CNF_MAX_MPLID		4	/* Memory pool */
+ #define CNF_MAX_MPFID		8	/* Fixed size memory pool */
+-- 
+2.50.1 (Apple Git-155)
+
