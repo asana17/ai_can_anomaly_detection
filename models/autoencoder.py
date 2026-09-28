@@ -126,13 +126,17 @@ class Conv1dAutoencoder(nn.Module):
         return x + torch.cat([torch.zeros_like(x[:, :self.signals]), error], dim=1)
 
 
+PRINT_EVERY = 10       # epochs between two lines of how far a fit has gone
+
+
 def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float,
         threshold: float, patience: int) -> list[float]:
     """Train `model` on `rows` with Adam, and return the mean loss of each epoch.
 
     Stops once more than `patience` epochs in a row fail to bring the loss below
     `best * (1 - threshold)`, the test PyTorch's ReduceLROnPlateau makes with
-    threshold_mode 'rel', or after `epochs`.
+    threshold_mode 'rel', or after `epochs`. Every `PRINT_EVERY` epochs it prints the
+    epoch and its loss, so a long fit shows how far it has gone.
     """
     data = torch.from_numpy(np.asarray(rows, dtype=np.float32))
     optimizer = torch.optim.Adam(model.parameters(), lr=rate)
@@ -149,6 +153,8 @@ def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float
             optimizer.step()
             total += loss.item() * len(x)
         losses.append(total / len(data))
+        if len(losses) % PRINT_EVERY == 0:
+            print(f"epoch {len(losses)}, loss {losses[-1]:.6g}", flush=True)
         # a NaN loss fails every comparison below, so without this it would never stop
         if not np.isfinite(losses[-1]):
             raise FloatingPointError(f"loss is {losses[-1]} after epoch {len(losses)}")

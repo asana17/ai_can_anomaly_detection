@@ -62,3 +62,10 @@ def test_the_linear_one_is_one_layer_each_way():
     model = LinearAutoencoder(signals=17, latent_dim=4)
     assert isinstance(model.encoder, nn.Linear) and model.encoder.out_features == 4
     assert isinstance(model.decoder, nn.Linear) and model.decoder.out_features == 17
+
+
+def test_it_prints_how_far_it_has_gone_every_ten_epochs(capsys):
+    _, losses = _trained(_rows(n=300), epochs=20)
+    printed = capsys.readouterr().out.splitlines()
+    assert [line.split(",")[0] for line in printed] == ["epoch 10", "epoch 20"]
+    assert printed[-1] == f"epoch 20, loss {losses[-1]:.6g}"
