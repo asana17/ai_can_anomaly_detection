@@ -4,25 +4,16 @@ import numpy as np
 
 from attack.replay import random_replay
 from preprocess.features.signal_state import SIGNALS
-from preprocess.frames.can_log_loader import CanFrame
 
-CCVS1, EEC1, TCO1 = 0x18FEF1E6, 0x18F004E6, 0x18FE6CE6
+from can_frames import CCVS1, speed_frame, rpm_frame
 
-
-def _speed(t, kmh):
-    raw = round(kmh / 0.00390625)
-    return CanFrame(t, CCVS1, bytes([0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0, 0, 0]))
-
-
-def _rpm(t, rpm):
-    raw = round(rpm / 0.125)
-    return CanFrame(t, EEC1, bytes([0, 0, 0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0]))
+TCO1 = 0x18FE6CE6
 
 
 def _trace(seconds=60):
     """A minute of a truck accelerating, so any two moments differ."""
     return [f for i in range(seconds * 10)
-            for f in (_speed(i / 10, i / 10), _rpm(i / 10, 600 + i))]
+            for f in (speed_frame(i / 10, i / 10), rpm_frame(i / 10, 600 + i))]
 
 
 def test_it_reports_what_it_faked():
@@ -64,7 +55,7 @@ def test_one_seed_gives_one_injection():
 def _flat(seconds=60, kmh=0.0, rpm=600.0):
     """A minute where nothing moves, so it has no strong replay to offer itself."""
     return [f for i in range(seconds * 10)
-            for f in (_speed(i / 10, kmh), _rpm(i / 10, rpm))]
+            for f in (speed_frame(i / 10, kmh), rpm_frame(i / 10, rpm))]
 
 
 def test_the_payload_comes_from_the_source_log():
@@ -73,7 +64,7 @@ def test_the_payload_comes_from_the_source_log():
                                source_log=_flat(kmh=80.0, rpm=1400.0))
     faked = [f.data for f in hurt if f.can_id == CCVS1 and
              info["start"] <= f.timestamp <= info["stop"]]
-    assert faked and all(d == _speed(0.0, 80.0).data for d in faked)
+    assert faked and all(d == speed_frame(0.0, 80.0).data for d in faked)
 
 
 def test_a_pgn_the_source_log_does_not_carry_is_not_faked():

@@ -1,19 +1,13 @@
 import random
 
 from attack.replay import repeated_replay
-from preprocess.frames.can_log_loader import CanFrame
 
-CCVS1 = 0x18FEF1E6
-
-
-def _speed(t, kmh):
-    raw = round(kmh / 0.00390625)
-    return CanFrame(t, CCVS1, bytes([0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0, 0, 0]))
+from can_frames import speed_frame
 
 
 def _trace(seconds=60):
     """A minute of a truck accelerating, so any two moments differ."""
-    return [_speed(i / 10, i / 10) for i in range(seconds * 10)]
+    return [speed_frame(i / 10, i / 10) for i in range(seconds * 10)]
 
 
 def _faked(hurt, info):

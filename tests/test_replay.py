@@ -1,27 +1,18 @@
 from attack.replay.replay import replay
-from preprocess.frames.can_log_loader import CanFrame
 
-CCVS1, EEC1 = 0x18FEF1E6, 0x18F004E6
-
-
-def _speed(t, kmh):
-    raw = round(kmh / 0.00390625)
-    return CanFrame(t, CCVS1, bytes([0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0, 0, 0]))
-
-
-def _rpm(t, rpm):
-    raw = round(rpm / 0.125)
-    return CanFrame(t, EEC1, bytes([0, 0, 0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0]))
+from can_frames import CCVS1, EEC1, speed_frame, rpm_frame
 
 
 def _trace():
     # speed climbs 0, 10, 20, 30 while the engine holds, one frame of each per second
-    return [f for t in range(4) for f in (_speed(float(t), t * 10.0), _rpm(float(t), 800.0))]
+    return [f for t in range(4)
+            for f in (speed_frame(float(t), t * 10.0), rpm_frame(float(t), 800.0))]
 
 
 def test_the_window_takes_the_payload_from_the_source_time():
     out = replay(_trace(), [65265], start=3.0, stop=3.0, source=0.0)
-    assert out[-2].data == _speed(0.0, 0.0).data      # 30 km/h replaced by the 0 km/h bytes
+    # 30 km/h replaced by the 0 km/h bytes
+    assert out[-2].data == speed_frame(0.0, 0.0).data
 
 
 def test_times_and_count_do_not_change():
@@ -47,7 +38,7 @@ def test_a_pgn_not_named_is_untouched():
 def test_the_window_walks_the_source_at_the_same_pace():
     out = replay(_trace(), [65265], start=2.0, stop=3.0, source=0.0)
     speeds = [f.data for f in out if f.can_id == CCVS1]
-    assert speeds[2:] == [_speed(0.0, 0.0).data, _speed(0.0, 10.0).data]
+    assert speeds[2:] == [speed_frame(0.0, 0.0).data, speed_frame(0.0, 10.0).data]
 
 
 def test_naming_a_pgn_the_trace_does_not_carry_changes_nothing():
@@ -58,10 +49,10 @@ def test_naming_a_pgn_the_trace_does_not_carry_changes_nothing():
 def test_repeat_seconds_goes_back_to_the_source():
     out = replay(_trace(), [65265], start=1.0, stop=3.0, source=0.0, repeat_seconds=1.0)
     speeds = [f.data for f in out if f.can_id == CCVS1]
-    assert speeds[1:] == [_speed(0.0, 0.0).data] * 3
+    assert speeds[1:] == [speed_frame(0.0, 0.0).data] * 3
 
 
 def test_repeat_seconds_of_zero_holds_the_source():
     out = replay(_trace(), [65265], start=1.0, stop=3.0, source=1.0, repeat_seconds=0.0)
     speeds = [f.data for f in out if f.can_id == CCVS1]
-    assert speeds[1:] == [_speed(0.0, 10.0).data] * 3
+    assert speeds[1:] == [speed_frame(0.0, 10.0).data] * 3

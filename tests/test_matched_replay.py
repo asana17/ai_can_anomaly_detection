@@ -7,23 +7,15 @@ from attack.replay.matched_replay import matched_sources
 from preprocess.features.signal_state import SIGNALS
 from preprocess.frames.can_log_loader import CanFrame
 
-CCVS1, EEC1, TCO1 = 0x18FEF1E6, 0x18F004E6, 0x18FE6CE6
+from can_frames import speed_frame, rpm_frame
 
-
-def _speed(t, kmh):
-    raw = round(kmh / 0.00390625)
-    return CanFrame(t, CCVS1, bytes([0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0, 0, 0]))
-
-
-def _rpm(t, rpm):
-    raw = round(rpm / 0.125)
-    return CanFrame(t, EEC1, bytes([0, 0, 0, raw & 0xFF, (raw >> 8) & 0xFF, 0, 0, 0]))
+TCO1 = 0x18FE6CE6
 
 
 def _trace(seconds=60):
     """A minute of a truck accelerating, so any two moments differ."""
     return [f for i in range(seconds * 10)
-            for f in (_speed(i / 10, i / 10), _rpm(i / 10, 600 + i))]
+            for f in (speed_frame(i / 10, i / 10), rpm_frame(i / 10, 600 + i))]
 
 
 def _rows(speeds, gears, start=0.0, period=0.1):
