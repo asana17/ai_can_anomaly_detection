@@ -13,6 +13,7 @@ replay(frames, [65265, 65132], start=25.0, stop=30.0, source=5.0, source_log=oth
 | `start`, `stop` | the window, in the attacked log's own times |
 | `source` | the time in the donor log the copy starts at |
 | `source_log` | the donor log. The attacked log itself when not given |
+| `repeat_seconds` | how often the copy goes back to `source`. At 0 it stays at `source`. When not given it walks on with the window |
 
 The frames keep their original times, and none are added or removed.
 

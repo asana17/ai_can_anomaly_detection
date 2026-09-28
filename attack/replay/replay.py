@@ -31,12 +31,16 @@ def _nearest(times: list, data: list, t: float):
 
 
 def replay(frames: Iterable[CanFrame], pgns, start: float, stop: float,
-           source: float, source_log: Iterable[CanFrame] | None = None) -> list:
+           source: float, source_log: Iterable[CanFrame] | None = None, *,
+           repeat_seconds: float | None = None) -> list:
     """Give every `pgns` frame in [start, stop] the payload it had `source` seconds on.
 
     Frame times and counts do not change, so the frame rate stays normal and only
     the values move. `source` is a time in `source_log`, the log the payload is taken
     from, which is this one unless another is given.
+
+    With `repeat_seconds`, the copy goes back to `source` every `repeat_seconds`, and
+    at 0 it stays at `source`.
     """
     frames = list(frames)
     streams = _by_pgn(frames if source_log is None else list(source_log), set(pgns))
@@ -45,7 +49,12 @@ def replay(frames: Iterable[CanFrame], pgns, start: float, stop: float,
         pgn = decompose_can_id(f.can_id).pgn
         if pgn in streams and start <= f.timestamp <= stop:
             times, data = streams[pgn]
-            payload = _nearest(times, data, source + (f.timestamp - start))
+            offset = f.timestamp - start
+            if repeat_seconds == 0:
+                offset = 0.0
+            elif repeat_seconds:
+                offset %= repeat_seconds
+            payload = _nearest(times, data, source + offset)
             if payload is not None:
                 out.append(CanFrame(f.timestamp, f.can_id, payload))
                 continue
@@ -54,10 +63,14 @@ def replay(frames: Iterable[CanFrame], pgns, start: float, stop: float,
 
 
 def write_replay(frames: list, pgn: int, start: float, length: float, source: float,
-                 source_log: list) -> tuple | None:
+                 source_log: list, *, repeat_seconds: float | None = None) -> tuple | None:
     """The frames with the replay in them, and what it was, or None when it wrote the
-    payloads the PGN already had."""
-    hurt = replay(frames, [pgn], start, start + length, source, source_log)
+    payloads the PGN already had. What it was holds `repeat_seconds` when given."""
+    hurt = replay(frames, [pgn], start, start + length, source, source_log,
+                  repeat_seconds=repeat_seconds)
     if [f.data for f in hurt] == [f.data for f in frames]:
         return None
-    return hurt, dict(pgn=pgn, start=start, stop=start + length, source=source)
+    found = dict(pgn=pgn, start=start, stop=start + length, source=source)
+    if repeat_seconds is not None:
+        found["repeat_seconds"] = repeat_seconds
+    return hurt, found

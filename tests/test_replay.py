@@ -53,3 +53,15 @@ def test_the_window_walks_the_source_at_the_same_pace():
 def test_naming_a_pgn_the_trace_does_not_carry_changes_nothing():
     trace = _trace()
     assert replay(trace, [61449], start=0.0, stop=3.0, source=0.0) == trace
+
+
+def test_repeat_seconds_goes_back_to_the_source():
+    out = replay(_trace(), [65265], start=1.0, stop=3.0, source=0.0, repeat_seconds=1.0)
+    speeds = [f.data for f in out if f.can_id == CCVS1]
+    assert speeds[1:] == [_speed(0.0, 0.0).data] * 3
+
+
+def test_repeat_seconds_of_zero_holds_the_source():
+    out = replay(_trace(), [65265], start=1.0, stop=3.0, source=1.0, repeat_seconds=0.0)
+    speeds = [f.data for f in out if f.can_id == CCVS1]
+    assert speeds[1:] == [_speed(0.0, 10.0).data] * 3
