@@ -4,13 +4,14 @@ How the board application grows from the instant model to a windowed one. Alarm 
 the rules and the instant model, is the detector and runs on time every tick. The
 windowed model is an aid to it. So it runs below the tasks that raise alarm A, at a
 lower rate than the instant model, and lower still when the CPU is short. Its outputs
-come after alarm A's. Nothing here is built yet.
+come after alarm A's.
 
 ## Frames and rows
 
 The FDCAN receive interrupt keeps `slots_store`, which overwrites the slot of the
 frame's PGN and returns, so a frame is never lost to work done after it. The only thing
-it adds is a copy of the frame into a frame ring in RAM, for the cut task below.
+it adds is a copy of the frame into a frame ring in RAM, for the copy of the alarm
+frames below.
 Everything that detects works on the 0.1 s rows the preprocess task builds from the
 slots, never on frames.
 
@@ -90,15 +91,16 @@ flowchart LR
     irq -- copies --> frames[(frame ring)]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     slots --> pre["preprocess 6<br/>row from the slots"]
+    frames -. position at each tick .-> pre
     pre -- writes --> ring[(row ring<br/>and row flags)]
     ring --> sd["scoring and detect 8<br/>rules, instant model, alarm A<br/>writes the row flag"]
     ring --> win["window scoring 11<br/>windowed model every S rows, alarm B"]
     sd -. wakes on a step row .-> win
     sd -- latest alarm A --> can["CAN send 9<br/>FDCAN1"]
     win -- latest alarm B --> can
-    sd -- alarm A start --> cut["cut 10<br/>frames before alarm A, MAC"]
-    frames --> cut
-    cut --> out["UART and Flash 12<br/>stores the cut, prints"]
+    sd -- positions at alarm A start --> copy["copy alarm frames 10<br/>frames before alarm A"]
+    frames --> copy
+    copy -- latest alarm frames --> store["store alarm frames 12<br/>Flash bank 2"]
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -108,9 +110,9 @@ The numbers are task priorities, smaller runs first.
 | preprocess | builds a row every tick, numbers it and writes it into the ring | must not happen |
 | scoring and detect | reads each new row, runs the rules and the instant model, raises alarm A, writes the row flag | the ring overwrites the oldest rows, which are counted as dropped |
 | CAN send | sends each start and end of alarm A and of alarm B as one frame | only the latest state is sent |
-| cut | at the start of alarm A, cuts the frames of the N rows before it from the frame ring, up to 8 KB, and puts a MAC on them | the ring overwrites the frames it has not cut yet |
+| copy alarm frames | at the start of alarm A, copies the frames of the N rows before it from the frame ring, the latest up to 510 | the ring overwrites the frames it has not copied yet, and then it keeps none |
 | window scoring | copies the latest window and its row flags, runs the windowed model, raises alarm B | windows in between are skipped |
-| UART and Flash | writes the cut to Flash and prints the cut over UART | cuts wait |
+| store alarm frames | writes the alarm frames to Flash bank 2 | only the latest alarm frames wait |
 
 preprocess writes the ring because it makes the rows and numbers them, so it never
 misses one. The rows sit in one ring, and the row flags in an array beside it. Each has
@@ -161,18 +163,21 @@ Alarm A goes out first. Alarm B's outputs never come before it.
 - Alarm B goes out on CAN in the same form as alarm A.
 - The alarms go out only on CAN. The row number is for checking the board against the
   PC answer.
-- The cut keeps the frames of the N rows that raised alarm A, the latest first up to
-  8 KB. A frame is 16 bytes, one Flash word. At the replay's 330 frames a second the
-  N rows are about 5.3 KB. A flood of about 2000 frames a second leaves about the last
-  0.25 s. The MAC is HMAC-SHA256 with a key written in the code, for the demo.
+- The copy keeps the frames of the N rows that raised alarm A, the latest up to 510.
+  With a head of 16 bytes they fill one 8 KB sector less its header. A frame is 16
+  bytes, one Flash write. At the replay's 330 frames a second the N rows are about
+  5.3 KB. A flood of about 2000 frames a second leaves about the last 0.25 s.
+- A MAC on the alarm frames is to be added in the copy, HMAC-SHA256 with a key written
+  in the code, for the demo.
 - The frame ring is 64 KB in RAM.
-- Flash bank 2 holds the cuts as 32 sectors of 8 KB. A cut goes to an erased sector at
-  once, so 32 cuts in a row are kept. Only erasing the oldest sector waits for a gap.
-  The only state it keeps is the time of the last erase. For 5 years at 8 h a day the
+- Flash bank 2 holds the alarm frames as 32 sectors of 8 KB. They go to an erased
+  sector at once, so 32 in a row are kept. Only erasing the oldest sector waits for a
+  gap. The store keeps each sector's state in RAM, rebuilt from the sector headers at
+  start, and the time the next erase may start. For 5 years at 8 h a day the
   gap is about 2.7 min. The linker keeps the program in bank 1. The facts are in
   [h5_flash_memory.md](h5_flash_memory.md).
-- UART output goes through `tm_snd_dat` from the lowest task. `tm_printf` masks
-  interrupts while it waits on each character, and is left only for init errors.
+- The alarm frames go only to Flash. `tm_printf` masks interrupts while it waits on
+  each character, and is left only for init errors.
 
 These numbers are computed, not measured.
 
@@ -190,8 +195,8 @@ load.
 | gateway | forwards filtered frames to FDCAN2 | has its own deadline, so it would sit above detection |
 | self check | computes a CRC over Flash on a period | heavy and periodic, and can wait |
 
-The entry carries the cut task. It has a reason to run above the window task, since
-the ring overwrites the frames it has not cut. Its work comes at the start of alarm A,
+The entry carries the copy of the alarm frames. It has a reason to run above the
+window task, since the ring overwrites the frames it has not copied. Its work comes at the start of alarm A,
 when alarm B is wanted, and grows with the frames on the bus. The others fall short.
 The Flash write has no reason to hurry. Diagnostics run while the vehicle stands.
 SecOC is light. A gateway needs a second transceiver. Slots already absorb a flood.
@@ -202,5 +207,5 @@ SecOC is light. A gateway needs a second transceiver. Slots already absorb a flo
 - How alarm B holds across skipped windows.
 - The ID alarm B goes out with.
 - How long preprocess waits on the mutex.
-- Whether the cut and its MAC, about 1 ms by estimate, are enough to delay the window
-  task.
+- Whether the copy of the alarm frames and its MAC, about 1 ms by estimate, are
+  enough to delay the window task.

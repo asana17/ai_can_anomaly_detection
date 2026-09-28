@@ -7,10 +7,16 @@ from Flash in place of the bus.
 flowchart LR
     frames[(Flash frames)] --> replay["replay 1<br/>each frame at its own time"]
     replay -- slots_store --> slots[(slots)]
+    replay -- frame_ring_push --> frames[(frame ring)]
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
+    frames --> tasks
+    tasks -- latest report --> uart["report_uart 9<br/>UART"]
+    tasks -- latest alarm frames --> store["store alarm frames 12<br/>Flash bank 2"]
 ```
 
-The replay task stands in for the CAN receive interrupt. With no bus, the alarms go
+The replay task stands in for the CAN receive interrupt. At each alarm start the
+frames behind it go to Flash bank 2, as in
+[ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash). With no bus, the alarms go
 over UART from [report_uart](../../lib/report_uart/report_uart_task.c) at priority 9. The tasks after the
 slots are described in [their README](../../lib/ai_can_anomaly_detection_tasks/README.md).
 
@@ -62,3 +68,7 @@ a push adds to it. On 2026-09-28 the Debug build, at `-O0`, printed
 ```
 frame ring push 300 to 363 cycles at 32000000 Hz
 ```
+
+Bank 2 then holds one record, for row 29. On 2026-09-29 it held 330 frames, frames 628
+to 957 of `replay_frames.h`, from 1.905 s to 2.900 s. Their IDs, sizes, data and the
+times between them matched the file.

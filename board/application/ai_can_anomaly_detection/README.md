@@ -2,17 +2,21 @@
 
 The application the entry runs. It builds a row from the slots every 0.1 s, scores it
 with the rules and the autoencoder, and sends each start and end of the alarm on
-FDCAN1.
+FDCAN1. At each alarm start it writes the frames behind it to Flash bank 2.
 
 FDCAN1 receives the frames, and its receive callback stores each one in the slots with
-`slots_store`. [connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN
+`slots_store` and copies it into the frame ring with `frame_ring_push`. [connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN
 settings, and how to send test frames from a PC and check the alarms against the PC
 answer.
 
 ```mermaid
 flowchart LR
     irq["FDCAN1 receive callback"] -- slots_store --> slots[(slots)]
+    irq -- frame_ring_push --> frames[(frame ring)]
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
+    frames --> tasks
+    tasks -- latest report --> can["report_can 9<br/>FDCAN1"]
+    tasks -- latest alarm frames --> store["store alarm frames 12<br/>Flash bank 2"]
 ```
 
 The tasks after the slots are described in
@@ -34,6 +38,35 @@ starts or ends.
 The row number counts ticks from when the board started. It is there to check the
 board against the PC answer. When the transmit FIFO is full, the frames still waiting
 are cancelled and the new one goes in.
+
+## The alarm frames in Flash
+
+[store_alarm_frames](../../lib/store_alarm_frames/store_alarm_frames_task.c), the lowest
+task at 12, writes the frames the copy took at each alarm start to Flash bank 2 with
+[flash_store](../../lib/flash_store/flash_store.h). Erase bank 2 once before the first
+run, as [flash.md](../../docs/flash.md#erasing-bank-2-before-first-use) says. The start
+prints `flash store init error` and stops when the store cannot start.
+
+Each sector holds one record after the 16-byte header `flash_store` writes, its
+sequence and size. The record, all little endian:
+
+| bytes | value |
+|---|---|
+| 0 to 3 | the row alarm A started on, as in the alarm frame |
+| 4 to 7 | the frame count |
+| 8 to 15 | 0 |
+| then 16 per frame, oldest first | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
+
+Read bank 2 with the programmer while the board runs:
+
+```sh
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
+```
+
+On 2026-09-29 the Mac sent `part_3/20210204094457960567.csv` with EEC1 held from 20 s
+for 5 s. The board wrote a record at each of its three alarm starts. Each held 510
+frames, and each matched a run of the frames sent in ID, size and data. The times
+between them were within 0.4 ms of the Mac's.
 
 ## The model
 
