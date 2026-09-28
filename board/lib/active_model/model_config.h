@@ -1,10 +1,10 @@
-#ifndef ACTIVE_MODEL_CONFIG_H
-#define ACTIVE_MODEL_CONFIG_H
+#ifndef INSTANT_MODEL_CONFIG_H
+#define INSTANT_MODEL_CONFIG_H
 
 /* nonlinear_ae_k8_h64_float from board/20260916-232708. */
-#define ACTIVE_MODEL_ID "nonlinear-ae-k8-h64-float"
+#define INSTANT_MODEL_ID "nonlinear-ae-k8-h64-float"
 
-static const float active_model_mean[SIGNAL_COUNT] = {
+static const float instant_model_mean[SIGNAL_COUNT] = {
 		0x1.0037300000000p+10f, 0x1.1d63200000000p+4f,
 		0x1.0409c60000000p+4f, 0x1.64b02a0000000p+4f,
 		0x1.18b53c0000000p+4f, 0x1.43138c0000000p+5f,
@@ -16,7 +16,7 @@ static const float active_model_mean[SIGNAL_COUNT] = {
 		0x1.b357ca0000000p-3f,
 	};
 
-static const float active_model_std[SIGNAL_COUNT] = {
+static const float instant_model_std[SIGNAL_COUNT] = {
 		0x1.7932440000000p+7f, 0x1.36663e0000000p+4f,
 		0x1.10a1720000000p+4f, 0x1.46630e0000000p+4f,
 		0x1.1a913c0000000p+4f, 0x1.8019800000000p+4f,

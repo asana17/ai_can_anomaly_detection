@@ -44,7 +44,7 @@ def scale():
     """The mean and std the board scales with."""
     text = CONFIG.read_text()
     arrays = []
-    for name in ("active_model_mean", "active_model_std"):
+    for name in ("instant_model_mean", "instant_model_std"):
         body = text[text.index(name):]
         body = body[:body.index("}")]
         arrays.append(np.array([float.fromhex(value) for value in HEX_FLOAT.findall(body)],

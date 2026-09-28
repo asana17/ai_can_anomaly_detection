@@ -17,7 +17,7 @@ typedef enum {
 /**
  * @brief Initialize the generated st-ai model linked into the application.
  *
- * The build must provide `active_model.h`, `active_model.c` and its generated data
+ * The build must provide `instant_model.h`, `instant_model.c` and its generated data
  * files. The model has one float32 input and output of SIGNAL_COUNT values.
  *
  * @retval MODEL_OK Initialization completed.

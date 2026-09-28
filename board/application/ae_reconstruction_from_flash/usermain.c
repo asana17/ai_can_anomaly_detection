@@ -27,11 +27,11 @@ EXPORT INT usermain(void)
 		tm_printf((UB*)"model init error %d\n", status);
 		return status;
 	}
-	tm_printf((UB*)"model %s: %d rows from row %d\n", ACTIVE_MODEL_ID, RULE_ROWS,
+	tm_printf((UB*)"model %s: %d rows from row %d\n", INSTANT_MODEL_ID, RULE_ROWS,
 		FIRST_ROW);
 	for (i = 0; i < RULE_ROWS; i++) {
 		memcpy(physical, physical_rows[i], sizeof(physical));
-		scale_row(physical, active_model_mean, active_model_std, scaled, SIGNAL_COUNT);
+		scale_row(physical, instant_model_mean, instant_model_std, scaled, SIGNAL_COUNT);
 		status = model_run(scaled, reconstructed, &cycles);
 		if (status != MODEL_OK) {
 			tm_printf((UB*)"row %d model error %d\n", FIRST_ROW + i, status);

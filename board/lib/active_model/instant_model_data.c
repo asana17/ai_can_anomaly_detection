@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    active_model_data.c
+  * @file    instant_model_data.c
   * @author  AST Embedded Analytics Research Platform
   * @date    2026-09-16T23:30:04+0900
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
@@ -14,9 +14,9 @@
   ******************************************************************************
   */
 
-#include "active_model_data.h"
+#include "instant_model_data.h"
 STAI_ALIGNED(8)
-const uint64_t g_active_model_weights_array[1677] = {
+const uint64_t g_instant_model_weights_array[1677] = {
   0x3dacba0abd0f3960U, 0xbdd36e6abe49ca00U, 0x3dad16883dd2ce5dU, 0x3cc17fecbed5386aU,
   0x3d9ad11f3e933808U, 0xbd07220c3d02150fU, 0x3d49d33bbdf076c8U, 0xbbff1e183c03d629U,
   0xbf21d0f1bbad33abU, 0xbe00a032beaa5b62U, 0xbea40568bea95904U, 0x3e0ab892bdb93a21U,

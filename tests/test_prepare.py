@@ -47,7 +47,7 @@ def test_model_application_requires_the_fixed_model_inputs(tmp_path, monkeypatch
     model = tmp_path / MODEL
     model.mkdir()
     app = tmp_path / "model_check_from_flash"
-    with pytest.raises(SystemExit, match="active_model.c"):
+    with pytest.raises(SystemExit, match="instant_model.c"):
         application_for(str(app))
     for name in MODEL_FILES:
         (model / name).touch()

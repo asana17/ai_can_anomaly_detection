@@ -78,7 +78,7 @@ LOCAL ModelStatus score_row(const float physical[SIGNAL_COUNT], Scored *scored)
 	float reconstructed[SIGNAL_COUNT];
 	ModelStatus error;
 
-	scale_row(physical, active_model_mean, active_model_std, scaled, SIGNAL_COUNT);
+	scale_row(physical, instant_model_mean, instant_model_std, scaled, SIGNAL_COUNT);
 	error = model_run(scaled, reconstructed, &scored->cycles);
 	if (error != MODEL_OK) {
 		return error;
@@ -128,7 +128,7 @@ LOCAL void report_task(INT stacd, void *exinf)
 	UW maximum_cycles = 0;
 
 	tm_printf((UB*)"model %s: starting %d physical rows at row %d\n",
-		ACTIVE_MODEL_ID, RULE_ROWS, FIRST_ROW);
+		INSTANT_MODEL_ID, RULE_ROWS, FIRST_ROW);
 	while (tk_rcv_mbf(report_mbf, &report, TMO_FEVR) == sizeof(report)) {
 		if (report.no == RULE_ROWS) {
 			break;

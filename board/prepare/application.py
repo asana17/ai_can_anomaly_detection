@@ -12,8 +12,8 @@ TEST_COMMON = os.path.join(HERE, "test_common")
 MODEL = "active_model"          # the model the sample applications check against
 DEPLOYED_MODEL = "deployed_model"  # the model the entry runs
 MODEL_FILES = (
-    "active_model.c", "active_model.h", "active_model_data.c",
-    "active_model_data.h", "active_model_details.h", "model_config.h",
+    "instant_model.c", "instant_model.h", "instant_model_data.c",
+    "instant_model_data.h", "instant_model_details.h", "model_config.h",
     "threshold.h",
 )
 

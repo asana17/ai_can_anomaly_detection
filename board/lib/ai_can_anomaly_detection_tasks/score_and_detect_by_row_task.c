@@ -58,8 +58,8 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			recent_rows_clear(&rows_before);
 		}
 		last_no = row.no;
-		if (scoring_row(row.physical, &rows_before, active_model_mean,
-			active_model_std, MIN_SPEED, &scored) != MODEL_OK) {
+		if (scoring_row(row.physical, &rows_before, instant_model_mean,
+			instant_model_std, MIN_SPEED, &scored) != MODEL_OK) {
 			break;
 		}
 		flagged = detect_by_row_flagged(scored.score, THRESHOLD_SCORE, scored.rule_hit);
