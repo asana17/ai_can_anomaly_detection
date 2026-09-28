@@ -4,6 +4,7 @@
 #include "slots.h"
 #include "frame_ring.h"
 #include "report_input.h"
+#include "store_alarm_frames_input.h"
 #include "report_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
@@ -22,6 +23,7 @@ EXPORT UW fewest_receive_cycles = 0xFFFFFFFFu;
 EXPORT UW most_receive_cycles = 0;
 
 LOCAL ReportInput report_input;
+LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL ReportCanTask report_can_task;
 
 /*
@@ -84,11 +86,16 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
-	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input);
+	error = store_alarm_frames_input_create(&store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
-	/* between score and detect by row at 8 and the windowed model at 11 */
+	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
+		&store_alarm_frames_input);
+	if (error < E_OK) {
+		return error;
+	}
+	/* between score and detect by row at 8 and the copy of the alarm frames at 10 */
 	error = report_can_task_create(&report_can_task, 9, &report_input, &hfdcan1);
 	if (error < E_OK) {
 		return error;

@@ -4,6 +4,7 @@
 #include "slots.h"
 #include "frame_ring.h"
 #include "report_input.h"
+#include "store_alarm_frames_input.h"
 #include "report_uart_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 #include "replay_frames.h"
@@ -15,6 +16,7 @@ EXPORT Slots slots;
 LOCAL FrameRing frame_ring;
 
 LOCAL ReportInput report_input;
+LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL ReportUartTask report_uart_task;
 
 /*
@@ -71,12 +73,17 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
-	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input);
+	error = store_alarm_frames_input_create(&store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
-	/* below score and detect by row at 8, above the windowed model at 11 */
-	error = report_uart_task_create(&report_uart_task, 10, &report_input);
+	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
+		&store_alarm_frames_input);
+	if (error < E_OK) {
+		return error;
+	}
+	/* between score and detect by row at 8 and the copy of the alarm frames at 10 */
+	error = report_uart_task_create(&report_uart_task, 9, &report_input);
 	if (error < E_OK) {
 		return error;
 	}

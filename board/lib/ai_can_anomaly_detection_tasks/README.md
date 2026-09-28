@@ -7,14 +7,17 @@ that reports the alarms, which the application makes.
 | application | reports with | priority |
 |---|---|---|
 | ai_can_anomaly_detection | [report_can](../report_can), one frame on FDCAN1 | 9 |
-| can_path_from_flash | [report_uart](../report_uart), one line over UART | 10 |
+| can_path_from_flash | [report_uart](../report_uart), one line over UART | 9 |
 
 ```mermaid
 flowchart LR
     slots[(slots)] --> pre["preprocess 6<br/>row from the slots, above MIN_SPEED"]
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     pre -- row queue --> sd["score and detect by row 8<br/>rules, autoencoder, k of the last N"]
-    sd -- latest report --> report["report 9 or 10<br/>CAN or UART"]
+    sd -- latest report --> report["report 9<br/>CAN or UART"]
+    sd -- latest positions --> copy["copy alarm frames 10<br/>frames behind alarm A"]
+    frames[(frame ring)] --> copy
+    copy -- latest alarm frames --> store["the application's store"]
     sd -- shared ring --> win["score and detect by window 11<br/>windows of the last rows"]
 ```
 
@@ -48,11 +51,30 @@ the detections that model alone makes.
 Filling the window belongs to the guaranteed layer. A row dropped before it enters the
 buffer leaves a gap, and the model then scores a stretch of time that never happened.
 
-Report sits below both guaranteed tasks and above the windowed model.
+Report sits below both guaranteed tasks and above the copy of the alarm frames. The
+copy sits above the windowed model, since the frame ring overwrites the frames it has
+not copied.
 
 Score and detect by row hands report only the latest alarm state, as the CAN receive
 interrupt hands preprocessing the slots. A new state goes over the one before. So
 writing never waits for report, and report always gets the current state.
+
+## Copying the frames behind alarm A
+
+On each tick preprocess reads the frame ring's position once, and gives the row the
+positions at the tick before and at its own. So each row names the frames that arrived
+since the tick before.
+
+When alarm A starts, score and detect by row passes the row it starts on and the
+positions of the frames behind the rows that raised it. Those are the last
+`DETECT_BY_ROW_RECENT_FLAGS` rows, or fewer since the last gap. As with report, only
+the latest positions are kept.
+
+The copy takes the latest `ALARM_FRAMES_MAX` of those frames, oldest first, without
+stopping interrupts. It then reads the ring's position again. When newer frames went
+over any of those it copied, it keeps none, and the record holds only the row. It hands
+the alarm frames on, again keeping only the latest. Their record is in
+[store_alarm_frames_input.h](../store_alarm_frames/store_alarm_frames_input.h).
 
 ## Passing rows
 
