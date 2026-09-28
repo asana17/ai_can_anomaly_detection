@@ -200,6 +200,10 @@ above the window task, since the ring overwrites the frames it has not copied. I
 comes at the start of alarm A, when alarm B is wanted, and grows with the frames on the
 bus. In the Release build at `-O2` and 32 MHz the copy took 0.18 ms and the MAC 14.1 ms
 for 330 frames, and 0.27 ms and 21.7 ms for 508. The others fall short.
+On 2026-09-29 an ECDSA P-256 signature with mbed-crypto in software took the MAC's
+place in the store. It took 51.1 million cycles, 1.60 s, for 506 frames at 32 MHz, and
+about 30 KB more Flash. It was dropped. Below the window task it loads nothing, and
+with the key in the code it checks no more than the MAC.
 The Flash write has no reason to hurry. Diagnostics run while the vehicle stands.
 SecOC is light. A gateway needs a second transceiver. Slots already absorb a flood.
 
