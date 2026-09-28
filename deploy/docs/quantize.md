@@ -14,7 +14,7 @@ python3 -u -m deploy.quantize runs_repo revision onnx/<time> runs_dir local_dir 
 |---|---|
 | `runs_repo` | Hugging Face model repo holding the export and uploaded to, needs `hf auth login` |
 | `revision` | commit of `runs_repo` to read the export at, as [export](export.md) printed it |
-| `onnx/<time>` | the float onnx to quantize, which export step created |
+| `onnx/<time>` | the float onnx to quantize, which export step created, or `window_onnx/<time>`, which [export_windows](export_windows.md) created |
 | `runs_dir` | local folder the export is downloaded to and `quantize/<time>/` is written to |
 | `local_dir` | local folder the train set the models name is downloaded to |
 | `--rebuild` | quantize again even if `runs_repo` already holds a directory with the same `inputs` |
@@ -29,6 +29,11 @@ It writes these files into `runs_dir/quantize/<time>/` and uploads that director
 | `nonlinear_ae_k{k}_h{h}_int8.onnx` | one file per model, in int8 QDQ form, the input ST Edge AI Core takes |
 | `meta.json` | where the export came from, as [meta.quantize.schema.json](../../common/schemas/meta.quantize.schema.json) describes |
 
+From `window_onnx/<time>` it writes the same into `window_quantize/<time>/`, one file
+per window model under its own name, and `meta.json` as
+[meta.window_quantize.schema.json](../../common/schemas/meta.window_quantize.schema.json)
+describes.
+
 ## Where the quantization ranges come from
 
 The quantization follows what [ST Edge AI Core recommends](https://stedgeai-dc.st.com/assets/embedded-docs/quantization.html).
@@ -36,7 +41,9 @@ It uses the QDQ format with per-channel int8 weights and int8 activations, and t
 the activation ranges by MinMax.
 
 The rows those ranges are measured on are the train rows the models were fitted on.
-Like [fit](../../models/docs/fit.md), it leaves out a row that holds a NaN.
+Like [fit](../../models/docs/fit.md), it leaves out a row that holds a NaN. A window
+model's are the windows [fit_windows](../../models/docs/fit_windows.md) fitted it on,
+each as one row.
 The quantizer reads those rows in batches, `BATCH` rows or a few more each. `BATCH`
 is the batch the autoencoders were fitted at, but
 [fit](../../models/docs/fit.md) reads its own from the `--models` file. Quantize

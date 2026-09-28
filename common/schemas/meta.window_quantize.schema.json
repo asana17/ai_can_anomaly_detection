@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "window_quantize/<time>/meta.json",
+  "description": "Where int8 files of window models came from.",
+  "allOf": [
+    {
+      "$ref": "meta.schema.json"
+    }
+  ],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "onnx": {
+          "description": "The `window_onnx/<time>` directory.",
+          "type": "string",
+          "pattern": "^window_onnx/[0-9]{8}-[0-9]{6}$"
+        }
+      },
+      "required": [
+        "onnx"
+      ],
+      "additionalProperties": false
+    },
+    "onnx": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The export the float files came from."
+    },
+    "models": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The window models directory, as the export records it."
+    },
+    "train_set": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The train set, as the export records it."
+    },
+    "log_split": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The log split, as the export records it."
+    },
+    "grid": {
+      "$ref": "meta.schema.json#/$defs/directory",
+      "description": "The grid, as the export records it."
+    },
+    "versions": {
+      "$ref": "meta.schema.json#/$defs/versions",
+      "description": "Python, NumPy, ONNX and ONNX Runtime."
+    }
+  },
+  "required": [
+    "onnx",
+    "models",
+    "train_set",
+    "log_split",
+    "grid",
+    "versions"
+  ],
+  "unevaluatedProperties": false
+}
