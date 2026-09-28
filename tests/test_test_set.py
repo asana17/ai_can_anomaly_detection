@@ -139,6 +139,17 @@ def _attacked(row):
             "wheel": np.array([QUIET["wheel_speed"]], np.float32)}
 
 
+@pytest.mark.parametrize("attack", ["frozen_replay", "repeated_replay"])
+def test_the_attacks_from_the_log_itself_land(tmp_path, attack):
+    logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
+    injected = list(inject_frames(logs, random.Random(0),
+                                  rows_before_attack=_rows_before_attack(logs),
+                                  period=PERIOD, max_hold=MAX_HOLD, min_speed=5.0,
+                                  attack=attack))
+    # only the speed and the engine speed move in these logs, so only they can land
+    assert any(found is not None for *_, found in injected)
+
+
 def test_the_stage_records_the_kind_of_attack(tmp_path, hub):
     logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
     _hub_files(tmp_path, hub, logs)

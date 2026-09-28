@@ -13,7 +13,7 @@ import random
 
 import numpy as np
 
-from attack.replay import matched_replay, random_replay
+from attack.replay import frozen_replay, matched_replay, random_replay, repeated_replay
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from assemble.split_test_logs import read_log_split
@@ -41,8 +41,9 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
 
     `attack` is `replay`, which copies from a moving stretch of one donor, or
     `matched_replay`, which copies from a donor moment of this log's speed and gear.
-    Either way it copies onto moving rows, and lands only when every row it changed is
-    still moving.
+    `frozen_replay` holds the payload of the start, and `repeated_replay` repeats the
+    stretch just before the start, both from the log itself. Every kind copies onto
+    moving rows, and lands only when every row it changed is still moving.
     """
     pool = [(list(load_can_log(p)), rows_before_attack(p)) for p in source_logs]
     for path in logs:
@@ -53,6 +54,10 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
             donors = [(rows, lambda donor=donor: donor) for donor, rows in pool]
             made = matched_replay.replay(frames, rng, donors, rows=before, spans=spans,
                                          period=period)
+        elif attack == "frozen_replay":
+            made = frozen_replay.replay(frames, rng, spans=spans)
+        elif attack == "repeated_replay":
+            made = repeated_replay.replay(frames, rng, spans=spans)
         else:
             donor, donor_rows = rng.choice(pool) if source_logs else (frames, before)
             made = random_replay.replay(

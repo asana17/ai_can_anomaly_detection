@@ -29,7 +29,9 @@
           "description": "The kind of attack injected into every test log.",
           "enum": [
             "replay",
-            "matched_replay"
+            "matched_replay",
+            "frozen_replay",
+            "repeated_replay"
           ]
         }
       },
