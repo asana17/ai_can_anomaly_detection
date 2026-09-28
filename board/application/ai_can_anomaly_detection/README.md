@@ -63,6 +63,13 @@ Read bank 2 with the programmer while the board runs:
 STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
 ```
 
+[read_alarm_frames](read_alarm_frames.py) prints the records in it, or with `--log` where
+each matches the frames sent.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204094457960567.csv
+```
+
 On 2026-09-29 the Mac sent `part_3/20210204094457960567.csv` with EEC1 held from 20 s
 for 5 s. The board wrote a record at each of its three alarm starts. Each held 510
 frames, and each matched a run of the frames sent in ID, size and data. The times
