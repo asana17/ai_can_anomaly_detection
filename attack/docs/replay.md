@@ -117,3 +117,23 @@ window carries the payload of the start. `source` is the start.
 
 At the start the held value is still close to the real one, so the first rows barely
 move.
+
+## jittered_frozen_replay.replay
+
+Holds the payload a PGN had at a random moment, and jitters each frame by a step the log
+itself took.
+
+```python
+jittered_frozen_replay.replay(frames, rng, spans=spans)
+# -> (frames, {pgn, start, stop, source, repeat_seconds}), or None
+```
+
+It is `frozen_replay.replay` with a step added to the raw value of each signal of the
+PGN, frame by frame. The step is drawn from the steps that signal took from one frame
+to the next within `spans` of the same log. So the jitter is as large and as often as
+the log's own. A signal that barely moves, such as the gear, barely moves here either.
+
+The step is taken from the held value, so the values do not drift. A reserved value is
+left as it is, and so is a step that would leave the field or reach a reserved value.
+
+The values still stand still, but no two rows in a row need be exactly the same.
