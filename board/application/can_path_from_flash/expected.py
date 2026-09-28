@@ -1,10 +1,10 @@
 """Print the rows the alarm starts and ends on when the PC runs this application's frames.
 
-    python3 -m board.application.can_path_from_flash.expected ONNX_FILE
+    python3 -m board.application.can_path_from_flash.expected
 
-ONNX_FILE is the float model `board/lib/active_model/` was generated from. The frames,
-the scale, the threshold and the flagged rows an alarm needs are read from the C
-headers the board is built with. Row 1 is the row 0.1 s after the first frame, as on
+The model is the float ONNX file in `board/lib/active_model/`, the one its C was
+generated from. The frames, the scale, the threshold and the flagged rows an alarm
+needs are read from the C headers the board is built with. Row 1 is the row 0.1 s after the first frame, as on
 the board.
 """
 
@@ -31,10 +31,9 @@ def frames():
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("onnx_file")
-    args = parser.parse_args()
+    parser.parse_args()
 
-    result = answer(frames(), MODEL_DIR, args.onnx_file)
+    result = answer(frames(), MODEL_DIR)
     number, mv = result.number, result.moving
     print(f"rows: {len(number)}, from row {number[0]} to row {number[-1]}, "
           f"moving {int(mv.sum())}, segments {result.segment[-1] + 1}")

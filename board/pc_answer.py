@@ -57,11 +57,11 @@ def min_flagged_for_alarm():
     return int(re.search(r"#define MIN_FLAGGED_FOR_ALARM (\d+)u", TASKS.read_text()).group(1))
 
 
-def answer(frames, model_dir, onnx_file):
+def answer(frames, model_dir):
     """The PC's rows, scores and alarm for `frames`, timed in seconds since the first.
 
-    `model_dir` is the folder under `board/lib/` the board's model is built from, and
-    `onnx_file` the float model its C was generated from.
+    `model_dir` is the folder under `board/lib/` the board's model is built from. It
+    holds `instant_model.onnx`, the float model the C was generated from.
     """
     grid, split, run = GridSettings(), SplitSettings(), TestRunSettings()
     ticks = list(resample(frames, grid.PERIOD, grid.MAX_HOLD))
@@ -73,7 +73,7 @@ def answer(frames, model_dir, onnx_file):
     hits = hits_of_every_rule(raw, segment, split.MIN_SPEED)
     mean, std = scale(model_dir)
     scores = np.full(len(raw), np.nan, np.float32)
-    scores[mv] = onnx_residuals(str(onnx_file), (raw[mv] - mean) / std)
+    scores[mv] = onnx_residuals(str(model_dir / "instant_model.onnx"), (raw[mv] - mean) / std)
     limit = threshold(model_dir)
     alarm = alarmed_rows(scores, limit, hits, segment, run.N, min_flagged_for_alarm())
     return Answer(number, segment, mv, hits, scores, limit, alarm)

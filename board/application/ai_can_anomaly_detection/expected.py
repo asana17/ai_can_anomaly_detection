@@ -3,7 +3,7 @@
     python3 -m board.application.ai_can_anomaly_detection.expected LOG
 
 LOG is a log of `fetched/frames/frames.parquet`, as `attacked.json` names it.
-`fetch.py` downloads both, and the float model the board's C was generated from. Row 1
+`fetch.py` downloads both. Row 1
 is the row 0.1 s after the first frame, so the rows count from when sending starts.
 """
 
@@ -17,8 +17,6 @@ from preprocess.frames.can_log_loader import CanFrame
 
 HERE = Path(__file__).resolve().parent
 FRAMES = HERE / "fetched" / "frames" / "frames.parquet"
-ONNX_FILE = (HERE / "fetched" / "quantize" / "20260916-221145"
-             / "nonlinear_ae_k8_h128_float.onnx")
 MODEL_DIR = LIB / "deployed_model"
 
 
@@ -39,7 +37,7 @@ def main():
     sent = frames(args.log)
     first = sent[0].timestamp
     since_first = [CanFrame(f.timestamp - first, f.can_id, f.data) for f in sent]
-    print_alarm_changes(answer(since_first, MODEL_DIR, ONNX_FILE))
+    print_alarm_changes(answer(since_first, MODEL_DIR))
 
 
 if __name__ == "__main__":

@@ -40,14 +40,14 @@ the frames of `replay_frames.h` through the same steps on the PC. It builds a ro
 are flagged by a rule or by the model. It numbers the rows from the first frame, one
 every 0.1 s, as the board does.
 
-Run it from the repository root with the float ONNX file of the model,
-`quantize/20260916-221145/nonlinear_ae_k8_h64_float.onnx` in the runs repository.
+Run it from the repository root. It runs the float ONNX file in
+`board/lib/active_model/`.
 
 ```sh
-python3 -m board.application.can_path_from_flash.expected ONNX_FILE
+python3 -m board.application.can_path_from_flash.expected
 ```
 
-On 2026-09-27 it printed:
+On 2026-09-28 it printed:
 
 ```
 rows: 88, from row 1 to row 88, moving 88, segments 1

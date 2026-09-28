@@ -129,17 +129,17 @@ This is read from the port's source and not yet checked on the board.
 
 ## Fetching the frames to send
 
-The frames to send are the attacked test frames of the run the deployed model comes
-from. They are in the dataset repository on Hugging Face,
-`asana17/ai_can_anomaly_detection_data`, which needs no login, as `frames/frames.parquet`
-with each log's attack in `frames/attacked.json`. The PC answer needs the float model
-the board's C was generated from, which is in `asana17/ai_can_anomaly_detection_runs`.
+The frames to send are attacked test frames. They are in the dataset repository on
+Hugging Face, `asana17/ai_can_anomaly_detection_data`, which needs no login, as
+`frames/frames.parquet` with each log's attack in `frames/attacked.json`. The PC answer
+runs the float model in `board/lib/deployed_model/`, the one the board's C was generated
+from.
 
 ```sh
 python3 -m board.application.ai_can_anomaly_detection.fetch
 ```
 
-This downloads both, pinned to a commit, into
+This downloads them, pinned to a commit, into
 `board/application/ai_can_anomaly_detection/fetched/`. The frames take about 2 GB.
 Each log holds about a minute of frames. The columns are in
 [injected_frames](../../assemble/docs/injected_frames.md).

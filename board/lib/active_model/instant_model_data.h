@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    instant_model_data.h
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-16T23:30:04+0900
+  * @date    2026-09-28T20:03:29+0900
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * Copyright (c) 2026 STMicroelectronics.
@@ -18,6 +18,6 @@
 #define STAI_INSTANT_MODEL_DATA_H
 #include "stai.h"
 STAI_ALIGNED(8)
-extern const uint64_t g_instant_model_weights_array[1677];
+extern const uint64_t g_instant_model_weights_array[3341];
 #endif  /* STAI_INSTANT_MODEL_DATA_H */
 

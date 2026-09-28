@@ -22,11 +22,12 @@ until the board is reset.
 
 It runs `nonlinear_ae_k8_h128` from
 [`board/lib/deployed_model/`](../../lib/deployed_model), with the scale of the fit it
-came from and the threshold `calibrate` took for it. The sample applications run a
-smaller one from `board/lib/active_model/`, so changing one leaves the other alone.
+came from and the threshold `calibrate` took for it. The sample applications run their
+own copy from `board/lib/active_model/`, so changing one leaves the other alone.
 
-The files come from the runs repository, `board/20260916-232708/nonlinear_ae_k8_h128/`
-and `results/20260916-001002`. They are kept here so that the application builds from a
+[fetch_model](../../fetch_model.py) writes the files from the runs repository,
+`board/20260928-200316/nonlinear_ae_k8_h128/`, the scale of `models/20260928-112526` and
+the threshold of `thresholds/20260928-114811`. They are kept here so that the application builds from a
 clone with nothing fetched.
 
 ## Prepare, build and flash

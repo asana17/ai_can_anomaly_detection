@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    instant_model.c
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-16T23:30:19+0900
+  * @date    2026-09-28T20:03:29+0900
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * @attention
@@ -25,9 +25,9 @@
 #include "instant_model_data.h"
 #include "stai_events.h"
 
-#include "ai_lite_inspect.h"
-
 #include "lite_operators.h"
+
+#include "ai_lite_inspect.h"
 /*****************************************************************************/
 #define STAI_INTERNAL_API_MAJOR               (1)
 #define STAI_INTERNAL_API_MINOR               (0)
@@ -152,8 +152,8 @@
 
 
 /*****************************************************************************/
-#define _STAI_INSTANT_MODEL_MODEL_SIGNATURE     "0xed4c77a1bc389dd0b1438f1fa8bc09bb"
-#define _STAI_INSTANT_MODEL_DATETIME            "2026-09-16T23:30:19+0900"
+#define _STAI_INSTANT_MODEL_MODEL_SIGNATURE     "0x60f2cd43855eebf3c51a21ee2aca33b3"
+#define _STAI_INSTANT_MODEL_DATETIME            "2026-09-28T20:03:29+0900"
 #define _STAI_INSTANT_MODEL_COMPILE_DATETIME    __DATE__ " " __TIME__
 
 #define _STAI_CONTEXT_ALIGNMENT        STAI_INSTANT_MODEL_CONTEXT_ALIGNMENT
@@ -263,19 +263,19 @@ void _stai_instant_model_check(_stai_instant_model_context* net_ctx)
     if (net_ctx->_weights[idx] == NULL) break;
   }
   net_ctx->_flags |= (idx == STAI_INSTANT_MODEL_WEIGHTS_NUM) ? STAI_FLAG_WEIGHTS : STAI_FLAG_NONE;
-STAI_PRINT("  [_stai_instant_model_check] flags: 0x%08x\n", net_ctx->_flags)
+STAI_PRINT("  [_stai_network_check] flags: 0x%08x\n", net_ctx->_flags)
 }
 
 
 /*****************************************************************************/
 STAI_API_ENTRY
 stai_return_code stai_instant_model_init(
-  stai_network* instant_model)
+  stai_network* network)
 {
   /* Memory where to store internal context is provided by applications as a raw byte buffer */
-  _stai_instant_model_context* net_ctx = (_stai_instant_model_context*)(instant_model);
+  _stai_instant_model_context* net_ctx = (_stai_instant_model_context*)(network);
   net_ctx->_return_code = STAI_SUCCESS;
-  STAI_PRINT("[Entering Network Init] instant_model(%p) context_size(%d)\n", net_ctx, (int32_t)sizeof(_stai_instant_model_context))
+  STAI_PRINT("[Entering Network Init] network(%p) context_size(%d)\n", net_ctx, (int32_t)sizeof(_stai_instant_model_context))
 
   _STAI_SET_ERROR(net_ctx, STAI_INSTANT_MODEL_CONTEXT_SIZE != sizeof(_stai_instant_model_context),
                  STAI_ERROR_NETWORK_INVALID_CONTEXT_SIZE, net_ctx->_return_code)
@@ -312,9 +312,9 @@ stai_return_code stai_instant_model_init(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_deinit(
-  stai_network* instant_model)
+  stai_network* network)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 
   /*  Reset flags to initial state  */
   net_ctx->_flags = STAI_INSTANT_MODEL_FLAGS;
@@ -343,11 +343,11 @@ static const ai_i32 _decoder_decoder_1_Relu_output_0_t_in_0_shape_ch_prod_const_
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_run(
-  stai_network* instant_model,
+  stai_network* network,
   const stai_run_mode mode)
 {
    STAI_UNUSED(mode)
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 
   _STAI_SET_ERROR(net_ctx, (net_ctx->_flags & STAI_FLAG_ACTIVATIONS) != STAI_FLAG_ACTIVATIONS,
         STAI_ERROR_NETWORK_INVALID_ACTIVATIONS_PTR, net_ctx->_return_code)
@@ -475,13 +475,13 @@ stai_size stai_instant_model_get_context_size()
 #if defined(HAVE_INSTANT_MODEL_INFO)
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_info(
-  stai_network* instant_model,
+  stai_network* network,
   stai_network_info* info)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, info==NULL, STAI_ERROR_NETWORK_INVALID_INFO, net_ctx->_return_code)
 
-  // Copy of instant_model info struct
+  // Copy of network info struct
   *info = g_instant_model_info;
 
   return STAI_SUCCESS;
@@ -491,9 +491,9 @@ stai_return_code stai_instant_model_get_info(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_activations(
-  stai_network* instant_model, stai_ptr* activations, stai_size* n_activations)
+  stai_network* network, stai_ptr* activations, stai_size* n_activations)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 
   _STAI_SET_ERROR(net_ctx, !n_activations, STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   *n_activations = STAI_INSTANT_MODEL_ACTIVATIONS_NUM;
@@ -506,9 +506,9 @@ for (stai_size idx=0; activations && (idx<STAI_INSTANT_MODEL_ACTIVATIONS_NUM); i
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_weights(
-  stai_network* instant_model, stai_ptr* weights, stai_size* n_weights)
+  stai_network* network, stai_ptr* weights, stai_size* n_weights)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, !n_weights, STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   *n_weights = STAI_INSTANT_MODEL_WEIGHTS_NUM;
 for (stai_size idx=0; weights && (idx<STAI_INSTANT_MODEL_WEIGHTS_NUM); idx++) {
@@ -520,9 +520,9 @@ for (stai_size idx=0; weights && (idx<STAI_INSTANT_MODEL_WEIGHTS_NUM); idx++) {
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_inputs(
-  stai_network* instant_model, stai_ptr* inputs, stai_size* n_inputs)
+  stai_network* network, stai_ptr* inputs, stai_size* n_inputs)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, !n_inputs, STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   *n_inputs = STAI_INSTANT_MODEL_IN_NUM;
   for (stai_size idx=0; inputs && (idx<STAI_INSTANT_MODEL_IN_NUM); idx++) {
@@ -534,9 +534,9 @@ stai_return_code stai_instant_model_get_inputs(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_outputs(
-  stai_network* instant_model, stai_ptr* outputs, stai_size* n_outputs)
+  stai_network* network, stai_ptr* outputs, stai_size* n_outputs)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, !n_outputs, STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   *n_outputs = STAI_INSTANT_MODEL_OUT_NUM;
   for (stai_size idx=0; outputs && (idx<STAI_INSTANT_MODEL_OUT_NUM); idx++) {
@@ -548,9 +548,9 @@ stai_return_code stai_instant_model_get_outputs(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_error(
-  stai_network* instant_model)
+  stai_network* network)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 
   /* return 1st generated error or STAI_SUCCESS if no errors so far */
   return net_ctx->_return_code;
@@ -559,9 +559,9 @@ stai_return_code stai_instant_model_get_error(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_get_states(
-  stai_network* instant_model, stai_ptr* states, stai_size* n_states)
+  stai_network* network, stai_ptr* states, stai_size* n_states)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, !n_states, STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   /* get the number of internals states (supporting multi-heap also for internal states) */
   *n_states = STAI_INSTANT_MODEL_STATES_NUM;
@@ -576,13 +576,13 @@ return net_ctx->_return_code;
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_set_activations(
-  stai_network* instant_model,
+  stai_network* network,
   const stai_ptr* activations,
   const stai_size n_activations)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 const uintptr_t _activations_alignment[] = STAI_INSTANT_MODEL_ACTIVATIONS_ALIGNMENTS;
-  STAI_PRINT("  [stai_instant_model_set_activations] instant_model(%p) activations[%d]: %p\n\n", net_ctx, n_activations, activations)
+  STAI_PRINT("  [stai_instant_model_set_activations] network(%p) activations[%d]: %p\n\n", net_ctx, n_activations, activations)
   _STAI_SET_ERROR(net_ctx, !activations,
                   STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   _STAI_SET_ERROR(net_ctx, n_activations!=STAI_INSTANT_MODEL_ACTIVATIONS_NUM,
@@ -606,11 +606,11 @@ _stai_instant_model_check(net_ctx);
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_set_weights(
-  stai_network* instant_model,
+  stai_network* network,
   const stai_ptr* weights,
   const stai_size n_weights)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 const uintptr_t _weights_alignment[] = STAI_INSTANT_MODEL_WEIGHTS_ALIGNMENTS;
   _STAI_SET_ERROR(net_ctx, !weights,
                   STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
@@ -630,12 +630,12 @@ const uintptr_t _weights_alignment[] = STAI_INSTANT_MODEL_WEIGHTS_ALIGNMENTS;
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_set_inputs(
-  stai_network* instant_model,
+  stai_network* network,
   const stai_ptr* inputs,
   const stai_size n_inputs)
 {
   const uintptr_t _inputs_alignment[] = STAI_INSTANT_MODEL_IN_ALIGNMENTS;
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, !inputs,
                   STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   _STAI_SET_ERROR(net_ctx, n_inputs!=STAI_INSTANT_MODEL_IN_NUM,
@@ -657,12 +657,12 @@ stai_return_code stai_instant_model_set_inputs(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_set_outputs(
-  stai_network* instant_model,
+  stai_network* network,
   const stai_ptr* outputs,
   const stai_size n_outputs)
 {
   const uintptr_t _outputs_alignment[] = STAI_INSTANT_MODEL_OUT_ALIGNMENTS;
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   _STAI_SET_ERROR(net_ctx, !outputs,
                   STAI_ERROR_NETWORK_INVALID_API_ARGUMENTS, net_ctx->_return_code)
   _STAI_SET_ERROR(net_ctx, n_outputs!=STAI_INSTANT_MODEL_OUT_NUM,
@@ -684,11 +684,11 @@ stai_return_code stai_instant_model_set_outputs(
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_set_states(
-  stai_network* instant_model,
+  stai_network* network,
   const stai_ptr* states,
   const stai_size n_states)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
 
   STAI_UNUSED(states)
   STAI_UNUSED(n_states)
@@ -698,9 +698,9 @@ _stai_instant_model_check(net_ctx);
 
 STAI_API_ENTRY
 stai_return_code stai_instant_model_set_callback(
-  stai_network* instant_model, const stai_event_cb cb, void* cb_cookie)
+  stai_network* network, const stai_event_cb cb, void* cb_cookie)
 {
-  _STAI_CONTEXT_ACQUIRE(net_ctx, instant_model)
+  _STAI_CONTEXT_ACQUIRE(net_ctx, network)
   STAI_PRINT("  set_callback %p cb %p cookie %p\n", net_ctx, cb, cb_cookie)
   // _STAI_SET_ERROR(net_ctx, cb==NULL, STAI_ERROR_NETWORK_INVALID_CALLBACK, net_ctx->_return_code)
   net_ctx->_callback = cb;
