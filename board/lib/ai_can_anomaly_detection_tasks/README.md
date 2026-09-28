@@ -47,8 +47,10 @@ can promise this, with 0.90 ms of inference against a 0.1 s tick.
 
 The best-effort layer holds detection the board cannot promise, since an ECU cannot
 hold a model large enough. The window model is the one there. It runs on the time the
-guaranteed layer leaves and skips its inference when there is none. A skip loses only
-the detections that model alone makes.
+guaranteed layer leaves. When it runs late, it scores the windows it missed one after
+another until it catches up. When it falls more than `WINDOW_MODEL_ROWS` rows behind,
+the older rows are lost and it goes on from the rows left. What it loses is only the
+detections that model alone makes.
 
 Filling the window belongs to the guaranteed layer. A row dropped before it enters the
 buffer leaves a gap, and the model then scores a stretch of time that never happened.
@@ -87,6 +89,11 @@ Score and detect by window first copies every row in the shared ring at once, an
 shared ring is emptied. It may hold several rows, since score and detect by window has
 a lower priority. The task then adds the copied rows to its window one at a time. After
 each row, it checks whether the window is complete, and if so scores it.
+
+The shared ring holds `WINDOW_MODEL_ROWS` rows. A new row on a full ring goes over the
+oldest one not read. The rows left then do not follow the window's newest row in their
+place since the last gap. So the window empties and fills again from them. A window
+that needs a lost row is not scored, and no window spans the lost rows.
 
 ## Scoring a window
 
