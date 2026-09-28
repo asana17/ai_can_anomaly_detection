@@ -7,7 +7,7 @@ rows each attack changed.
 
 ```
 python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir
-    [--rebuild]
+    [--attack KIND] [--rebuild]
 ```
 
 | argument | |
@@ -17,7 +17,8 @@ python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir
 | `log_splits/<time>` | the [log split](split_test_logs.md) whose test logs are attacked. The grid it names is read too |
 | `data_dir` | local folder holding the CAN frame logs the log split names |
 | `local_dir` | local folder `test_sets/<time>/` is written to, kept after the upload |
-| `--rebuild` | build even if `repo` already has `test_sets/<time>/` for the same log split, `ATTACK`, `SEED` and `DONORS` |
+| `--attack` | the kind of attack, `replay` by default |
+| `--rebuild` | build even if `repo` already has `test_sets/<time>/` for the same log split, attack, `SEED` and `DONORS` |
 
 `PERIOD` and `MAX_HOLD` come from the grid's `meta.json`, so the rows land on the same
 ticks as the grid's. The payloads are replayed from `DONORS` of the non-test logs,
@@ -48,7 +49,7 @@ from the moving rows of one donor onto the moving rows of the log, the rows a mo
 trained on. It lands only when every row it changed is moving before and after it, and
 is not drawn again when it does not.
 
-`ATTACK` picks the kind, and one set holds one kind, so what a detector is measured
+`--attack` picks the kind, and one set holds one kind, so what a detector is measured
 against is one thing at a time. `replay` draws the donor and then the moment, both at
 random.
 `matched_replay` searches every donor for the moments it drove this log's speed in this

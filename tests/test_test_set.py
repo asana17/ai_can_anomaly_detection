@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from assemble import test_set
-from common.settings import TestSetSettings
 from assemble.test_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
 from preprocess.features import signal_state
@@ -155,7 +154,7 @@ def test_the_stage_records_the_kind_of_attack(tmp_path, hub):
     _hub_files(tmp_path, hub, logs)
     made = test_set.main("u/d", REVISION, "log_splits/20260101-000000", str(tmp_path),
                          str(tmp_path / "local"),
-                         settings=TestSetSettings(ATTACK="matched_replay"))
+                         attack="matched_replay")
     meta = json.loads((tmp_path / "local" / made["path"] / "meta.json").read_text())
     assert meta["inputs"]["attack"] == "matched_replay"
 

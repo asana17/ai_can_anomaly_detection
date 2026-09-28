@@ -12,6 +12,9 @@ same train set and calibration set as the row models.
 A stage whose inputs the repo already holds is not run again, its directory is passed
 on.
 
+The test set and the two test runs are made once for each kind in the test set's
+`ATTACKS`.
+
 ## Running it
 
 1. Write the run's values into three files outside the repository. Leave the code as it is.

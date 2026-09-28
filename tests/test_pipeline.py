@@ -51,7 +51,7 @@ def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
     assert calls["train_sets"] == (("u/d", "calibration_sets-rev", "calibration_sets/t",
                                     "out"), s("train_set"))
     assert calls["test_sets"] == (("u/d", "log_splits-rev", "log_splits/t", "data",
-                                   "out"), s("test_set"))
+                                   "out"), {"attack": "replay", **s("test_set")})
     assert calls["models"] == (("u/d", "train_sets-rev", "train_sets/t", "out", "u/r",
                                 "runs"),
                                {"models": "m.json", "rebuild": False, "dry_run": False})
@@ -78,12 +78,29 @@ def test_each_stage_reads_what_the_one_before_made(calls, tmp_path):
          "window_thresholds/t", "out", "runs"), {"rebuild": False, "dry_run": False})
 
 
+def test_each_attack_gets_its_own_test_set_and_test_runs(monkeypatch, tmp_path):
+    (tmp_path / "s.json").write_text(json.dumps(
+        {"test_set": {"ATTACKS": ["frozen_replay", "repeated_replay"]}}))
+    for module in stages.STAGES:
+        monkeypatch.setattr(module, "main", lambda *args, **flags: {
+            "repo": "r", "revision": "rev", "path": flags.get("attack", "t")})
+    # each test run passes on the test set it was given, named by its attack
+    for module in (stages.run_test_set, stages.run_window_test_set):
+        monkeypatch.setattr(module, "main",
+                            lambda repo, revision, path, *args, **flags: {
+                                "repo": "r", "revision": "rev", "path": path})
+    assert stages.main("u/d", "data", "*.csv", "out", "u/r", "runs",
+                       str(tmp_path / "s.json"), "m.json", "w.json") == [
+        {"repo": "r", "revision": "rev", "path": attack}
+        for attack in ("frozen_replay", "repeated_replay")]
+
+
 def test_rebuild_builds_the_stages_it_names_alone(calls, tmp_path):
     (tmp_path / "s.json").write_text("{}")
     stages.main("u/d", "data", "*.csv", "out", "u/r", "runs", str(tmp_path / "s.json"),
                 "m.json", "w.json", rebuild=["assemble.test_set", "models.fit_windows"])
     assert [name for name, (_, flags) in calls.items() if flags["rebuild"]] == [
-        "test_sets", "window_models"]
+        "window_models", "test_sets"]
 
 
 def test_rebuild_of_a_stage_there_is_not_stops_it(calls, tmp_path):

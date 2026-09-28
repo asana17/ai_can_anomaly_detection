@@ -1,7 +1,7 @@
 """Build the test arrays with attacks in them, and say which rows they cover.
 
     python3 -m assemble.test_set repo revision log_splits/<time> data_dir local_dir
-        [--rebuild]
+        [--attack KIND] [--rebuild]
 """
 
 from __future__ import annotations
@@ -186,7 +186,7 @@ def fetch_test_set(repo, revision, test_path, local_dir):
                         "log_split": log_split, "grid": grid}}
 
 
-def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
+def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir, attack,
                    settings):
     """Write the attacked frames and rows, and return the log split and grid for
     meta.json."""
@@ -212,7 +212,7 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
                                  os.path.relpath(log, data_dir)),
                              period=period, max_hold=max_hold,
                              min_speed=log_split_meta["inputs"]["min_speed"],
-                             attack=settings.ATTACK)
+                             attack=attack)
     got = grid_rows_injected(
         write_and_pass_frames(injected, os.path.join(folder, "frames"), data_dir))
 
@@ -227,18 +227,17 @@ def write_test_set(folder, repo, revision, log_split_path, data_dir, local_dir,
             "grid": grid}
 
 
-def main(repo, revision, log_split_path, data_dir, local_dir, rebuild=False,
-         dry_run=False, settings=TestSetSettings()):
-    parameters = {"seed": settings.SEED, "donors": settings.DONORS,
-                  "attack": settings.ATTACK}
+def main(repo, revision, log_split_path, data_dir, local_dir, attack="replay",
+         rebuild=False, dry_run=False, settings=TestSetSettings()):
+    parameters = {"seed": settings.SEED, "donors": settings.DONORS, "attack": attack}
     return reuse_or_make(repo, "test_sets", {"log_split": log_split_path}, parameters,
                          local_dir,
                          lambda folder: write_test_set(folder, repo, revision,
                                                        log_split_path, data_dir,
-                                                       local_dir, settings),
+                                                       local_dir, attack, settings),
                          rebuild, repo_type="dataset", dry_run=dry_run)
 
 
 if __name__ == "__main__":
     main(**arguments(("repo", "revision", "log_split_path", "data_dir", "local_dir"),
-                    rebuild=False))
+                    attack="replay", rebuild=False))

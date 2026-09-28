@@ -20,7 +20,11 @@ STAGES = (grid, split_test_logs, calibration_set, train_set, test_set, fit, expo
 def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
          local_runs_dir, settings, models, window_models, dry_run=False, rebuild=()):
     """Run every stage, building the ones `rebuild` names, such as `assemble.test_set`,
-    again even when one made from the same inputs is there."""
+    again even when one made from the same inputs is there.
+
+    The test set and the two test runs are made once for each of `ATTACKS`, and the
+    window test runs are returned in that order.
+    """
     unknown = set(rebuild) - {stage.__name__ for stage in STAGES}
     if unknown:
         raise SystemExit(f"no stage is named {', '.join(sorted(unknown))}")
@@ -39,9 +43,6 @@ def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
     train = train_set.main(data_repo, calibration["revision"], calibration["path"],
                            local_data_dir, settings=each.train_set,
                            rebuild=again[train_set], dry_run=dry_run)
-    test = test_set.main(data_repo, log_split["revision"], log_split["path"],
-                         can_data_dir, local_data_dir, settings=each.test_set,
-                         rebuild=again[test_set], dry_run=dry_run)
     fitted = fit.main(data_repo, train["revision"], train["path"], local_data_dir,
                       runs_repo, local_runs_dir, models=models, rebuild=again[fit],
                       dry_run=dry_run)
@@ -63,16 +64,22 @@ def main(data_repo, can_data_dir, can_data_pattern, local_data_dir, runs_repo,
         runs_repo, fitted_windows["revision"], fitted_windows["path"], local_runs_dir,
         local_data_dir, settings=each.calibrate, rebuild=again[calibrate_windows],
         dry_run=dry_run)
-    test_run = run_test_set.main(data_repo, test["revision"], test["path"],
-                                 local_data_dir, runs_repo, thresholds["revision"],
-                                 thresholds["path"], local_runs_dir,
-                                 settings=each.run_test_set,
-                                 rebuild=again[run_test_set], dry_run=dry_run)
-    return run_window_test_set.main(runs_repo, test_run["revision"], test_run["path"],
-                                    window_thresholds["revision"],
-                                    window_thresholds["path"], local_data_dir,
-                                    local_runs_dir, rebuild=again[run_window_test_set],
-                                    dry_run=dry_run)
+    window_test_runs = []
+    for attack in each.test_set.ATTACKS:
+        test = test_set.main(data_repo, log_split["revision"], log_split["path"],
+                             can_data_dir, local_data_dir, attack=attack,
+                             settings=each.test_set, rebuild=again[test_set],
+                             dry_run=dry_run)
+        test_run = run_test_set.main(data_repo, test["revision"], test["path"],
+                                     local_data_dir, runs_repo, thresholds["revision"],
+                                     thresholds["path"], local_runs_dir,
+                                     settings=each.run_test_set,
+                                     rebuild=again[run_test_set], dry_run=dry_run)
+        window_test_runs.append(run_window_test_set.main(
+            runs_repo, test_run["revision"], test_run["path"],
+            window_thresholds["revision"], window_thresholds["path"], local_data_dir,
+            local_runs_dir, rebuild=again[run_window_test_set], dry_run=dry_run))
+    return window_test_runs
 
 
 if __name__ == "__main__":
