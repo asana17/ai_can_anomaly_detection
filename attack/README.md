@@ -10,6 +10,7 @@ Documented under [docs/](docs).
 - [masquerade](docs/masquerade.md) overwrites signals in place within a time
   window, keeping the frame timing normal. Nothing calls it yet.
 - [replay](docs/replay.md) copies the payloads of some PGNs from another moment.
+- [ramp](docs/ramp.md) adds a bias to one signal that grows over the attack.
 
 ## Utilities
 
