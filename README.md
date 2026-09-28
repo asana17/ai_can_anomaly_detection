@@ -122,7 +122,8 @@ J1939's own terms, frame, PGN and SPN, are described in
   runs on the board. `can_path_from_flash` replays CAN frames through the slots, a
   preprocess task on a 0.1 s cyclic handler, scoring and detect, and report. FDCAN1 is
   on PB7 and PB8, and `can_bus_debug` prints what the bus receives and sends a frame
-  every second. Neither has run on the board yet. Then steps 2, 5 and 6.
+  every second. `can_bus_debug` sends and receives frames over the bus.
+  `can_path_from_flash` has not run on the board yet. Then steps 2, 5 and 6.
 - Decide whether the matched replay is the attack the windowed pair is measured on.
   `assemble.test_set --attack matched_replay` replays a PGN from a donor that held this
   log's speed and gear over the whole stretch. What no detector reads is a matched
