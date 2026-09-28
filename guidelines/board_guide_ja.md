@@ -16,6 +16,7 @@ NUCLEO-H533RE の上で μT-Kernel 3.0 ([mtk3_bsp2](https://github.com/tron-foru
 | STM32Cube FW_H5 | V1.6.0 |
 | STM32CubeIDE | 2.1.1 |
 | STM32CubeProgrammer | コマンドラインの `STM32_Programmer_CLI` を使う |
+| ST Edge AI Core | 4.0.1。モデルの実行ライブラリを 8 の手順で使う |
 | Python | 3.9 |
 | libusb | `brew install libusb` |
 
@@ -231,3 +232,109 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
 `taken` と `printed` が送ったフレームの数と同じになり、残りが 0 のままなら
 バスは動いている。`FDCAN start error` が出たときは FDCAN1 が起動していない。
 `send failed` が出たときは、ボードが送信するフレームを送信キューに入れられなかった。
+
+## 8. 異常検知を動かす
+
+`ai_can_anomaly_detection` は受信したフレームから 0.1 秒ごとに行を作り、ルールと
+オートエンコーダで判定し、警報の始まりと終わりを FDCAN1 に送る。警報が始まるたびに、
+その前のフレームを Flash のバンク 2 に書く。
+
+### Flash のバンク 2 を消す
+
+最初に一度だけ、SWD でバンク 2 を消す。書き込みの処理はバンク 2 に残っているものを
+記録として読む。
+
+```sh
+STM32_Programmer_CLI -c port=SWD -ob displ
+STM32_Programmer_CLI -c port=SWD -e '[32' '63]'
+```
+
+1 つ目のコマンドで出るオプションバイトの SWAP_BANK が 0 であることを確かめてから
+消す。1 だと消去がプログラムに当たる。セクタ番号は両方のバンクを通して数える
+ので、バンク 2 は 32 から 63 になる。
+
+### 書き込む
+
+4 と 5 の手順で `ai_can_anomaly_detection` を書き込む。モデルの実行ライブラリを
+ST Edge AI Core から取るので、`/Applications/ST/STEdgeAI/4.0` 以外に入れたときは
+`--stedgeai-root` で場所を渡す。
+
+```sh
+python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection ai_can_anomaly_detection
+python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
+```
+
+UART に `reading FDCAN1` が出れば受信を始めている。`FDCAN start error` は FDCAN1
+が起動していない。`flash store init error` はバンク 2 の記録を読めず、そこで止まって
+いる。警報は UART ではなく CAN に出る。
+
+### 送るフレームを取ってくる
+
+攻撃を入れたテスト用のフレームを Hugging Face のデータ用リポジトリから取ってくる。
+約 2 GB ある。ログインは要らない。
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.fetch
+```
+
+`board/application/ai_can_anomaly_detection/fetched/frames/` に `frames.parquet`
+と `attacked.json` が入る。`attacked.json` は各ログに入れた攻撃で、`log` が
+ログの名前、`pgn` が攻撃した PGN である。ログ 1 つは約 1 分のフレームである。
+
+### PC での答えを出す
+
+ログを 1 つ選び、PC で同じモデルを動かしたときに警報が始まる行と終わる行を出す。
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204094457960567.csv
+```
+
+`alarm start at row` と `alarm end at row` の後に行番号が出る。行は送り始めから
+0.1 秒ごとに数える。
+
+### フレームを送って警報を受ける
+
+3 の手順の macOS で、同じログのフレームを記録された時刻の間隔で送る。
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204094457960567.csv
+```
+
+ボードが送った警報のフレームは、受け取った時刻とともに次のように出る。
+
+```
+received at 1790602535.128  CFF0080   [8]  01 82 02 00 00 FF FF FF
+```
+
+| バイト | 中身 |
+|---|---|
+| ID | 0x0CFF0080、拡張 ID。優先度 3、PGN 0xFF00、送信元アドレス 0x80 |
+| 0 | 1 なら始まり、0 なら終わり |
+| 1 から 4 | 行番号、リトルエンディアン |
+| 5 から 7 | 0xFF |
+
+ボードの行番号はボードが起動してから数えるので、PC の行番号に一定の差を足したもの
+になる。最初の警報で差を求め、残りの警報をその差で PC の答えと比べる。ボードの tick
+は送り始めと揃っていないので、1 行ずれることがある。
+
+### Flash に書いた記録を読む
+
+ボードを動かしたまま、バンク 2 をファイルに読み出す。
+
+```sh
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
+```
+
+バンク 2 は 8 KB のセクタ 32 個で、1 セクタに記録が 1 つ入る。各セクタの先頭 16
+バイトは書き込み順の番号と大きさのヘッダで、その後に記録が続く。値はすべて
+リトルエンディアンである。
+
+| バイト | 中身 |
+|---|---|
+| 0 から 3 | 警報が始まった行番号。警報のフレームと同じもの |
+| 4 から 7 | フレームの数 |
+| 8 から 15 | 0 |
+| その後 16 バイトずつ、古い順 | 前のフレームからのマイクロ秒 3 バイト、データの長さ 1 バイト、ID 4 バイト、データ 8 バイト。長さより後は 0 |
+
+記録のフレームが、送ったフレームの一続きの部分と ID、長さ、データで一致すれば、
+正しく書けている。
