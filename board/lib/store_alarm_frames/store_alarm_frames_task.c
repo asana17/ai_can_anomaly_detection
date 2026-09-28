@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <tk/tkernel.h>
 #include "store_alarm_frames_task.h"
 
@@ -20,7 +21,7 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 		if (error < E_OK && error != E_TMOUT) {
 			break;
 		}
-		size = FLASH_STORE_WORD +
+		size = offsetof(AlarmFramesRecord, frames) +
 			task->alarm_frames.frame_count * (UW)sizeof(FrameRingEntry);
 		error = flash_store_write(task->flash_store, &task->alarm_frames, size, &sector);
 		wait = TMO_FEVR;

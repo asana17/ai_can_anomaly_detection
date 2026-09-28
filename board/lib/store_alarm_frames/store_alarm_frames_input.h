@@ -2,18 +2,24 @@
 #define STORE_ALARM_FRAMES_INPUT_H
 
 #include <tk/tkernel.h>
+#include "alarm_frames_mac.h"
 #include "flash_store.h"
 #include "frame_ring.h"
 
-/* The frames a Flash store record holds after the head */
+/* The frames a Flash store record holds after the head and the MAC */
 #define ALARM_FRAMES_MAX \
-	((FLASH_STORE_RECORD_MAX - FLASH_STORE_WORD) / sizeof(FrameRingEntry))
+	((FLASH_STORE_RECORD_MAX - FLASH_STORE_WORD - ALARM_FRAMES_MAC_BYTES) / \
+		sizeof(FrameRingEntry))
 
-/* What is written to Flash for an alarm, a head of one Flash write and then the frames. */
+/*
+ * What is written to Flash for an alarm, a head of one Flash write, the MAC of two and
+ * then the frames.
+ */
 typedef struct {
 	UW no;          /* the row alarm A started on */
 	UW frame_count; /* frames filled, from the first */
 	UW unused[2];   /* left 0, so the head fills one Flash write */
+	UB mac[ALARM_FRAMES_MAC_BYTES]; /* HMAC-SHA256 of the head, then the frames filled */
 	FrameRingEntry frames[ALARM_FRAMES_MAX]; /* oldest first */
 } AlarmFramesRecord;
 
