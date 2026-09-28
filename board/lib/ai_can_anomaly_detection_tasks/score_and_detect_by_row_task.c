@@ -25,6 +25,7 @@ LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST R
 {
 	RowRingEntry entry;
 
+	entry.no = row->no;
 	memcpy(entry.physical, row->physical, sizeof(entry.physical));
 	entry.flag = flag;
 	entry.row_count_since_gap = row_count_since_gap;

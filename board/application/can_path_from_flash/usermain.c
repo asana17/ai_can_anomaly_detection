@@ -18,10 +18,12 @@ EXPORT Slots slots;
 LOCAL FrameRing frame_ring;
 
 LOCAL ReportInput report_input;
+LOCAL ReportInput window_report_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
 LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL ReportUartTask report_uart_task;
+LOCAL ReportUartTask window_report_uart_task;
 
 /*
  * Store each Flash frame at its own time, as the CAN receive interrupt will. At the end,
@@ -77,6 +79,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = report_input_create(&window_report_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = store_alarm_frames_input_create(&store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
@@ -93,7 +99,7 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
-		&store_alarm_frames_input);
+		&window_report_input, &store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -102,11 +108,21 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	/* above score and detect by window at 11, and below the alarm's report */
+	error = report_uart_task_create(&window_report_uart_task, 10, &window_report_input,
+		WINDOW_ALARM_ID);
+	if (error < E_OK) {
+		return error;
+	}
 	replay = tk_cre_tsk(&replay_ctsk);
 	if (replay < E_OK) {
 		return replay;
 	}
 	error = report_uart_task_start(&report_uart_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = report_uart_task_start(&window_report_uart_task);
 	if (error < E_OK) {
 		return error;
 	}

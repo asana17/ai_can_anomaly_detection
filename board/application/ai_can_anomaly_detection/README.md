@@ -26,11 +26,11 @@ until the board is reset.
 ## The alarm frame
 
 [report_can](../../lib/report_can/report_can_task.c) sends one frame when the alarm
-starts or ends.
+or the window alarm starts or ends.
 
 | field | value |
 |---|---|
-| ID | 0x0CFF0080, extended. Priority 3, PGN 0xFF00, source address 0x80 |
+| ID | 0x0CFF0080 for the alarm, 0x0CFF0180 for the window alarm, extended. Priority 3, PGN 0xFF00 and 0xFF01, source address 0x80 |
 | byte 0 | 1 for start, 0 for end |
 | bytes 1 to 4 | the row number, little endian |
 | bytes 5 to 7 | 0xFF |
@@ -101,7 +101,7 @@ It also runs the window model `window_drift_ae_r20_s3_k24_h128` in int8, from
 [`board/lib/deployed_window_model/`](../../lib/deployed_window_model), with the scale of
 its fit. fetch_model writes it from `window_board/20260929-051743/`, generated from the
 int8 files of `window_quantize/20260929-050631`, and the scale of
-`window_models/20260929-024828`. It has no threshold, since its score raises no alarm.
+`window_models/20260929-024828`. Its threshold is from `window_thresholds/20260929-061441`, taken on the int8 files.
 
 ## Prepare, build and flash
 

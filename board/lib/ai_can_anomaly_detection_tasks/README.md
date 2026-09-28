@@ -1,13 +1,14 @@
 # ai_can_anomaly_detection_tasks
 
 The tasks that turn the slots into alarms. ai_can_anomaly_detection and
-can_path_from_flash both run them. They differ in what fills the slots and in the task
-that reports the alarms, which the application makes.
+can_path_from_flash both run them. They differ in what fills the slots and in the tasks
+that report the alarms, which the application makes. It makes one for the alarm, at 9,
+and one for the window alarm, at 10, with the alarm's ID, `ALARM_ID` or `WINDOW_ALARM_ID`.
 
-| application | reports with | priority |
-|---|---|---|
-| ai_can_anomaly_detection | [report_can](../report_can), one frame on FDCAN1 | 9 |
-| can_path_from_flash | [report_uart](../report_uart), one line over UART | 9 |
+| application | reports with |
+|---|---|
+| ai_can_anomaly_detection | [report_can](../report_can), one frame on FDCAN1 |
+| can_path_from_flash | [report_uart](../report_uart), one line over UART |
 
 ```mermaid
 flowchart LR
@@ -19,6 +20,7 @@ flowchart LR
     frames[(frame ring)] --> copy
     copy -- latest alarm frames --> store["the application's store"]
     sd -- shared ring --> win["score and detect by window 11<br/>window model on the last rows"]
+    win -- latest window alarm --> window_report["window alarm report 10<br/>CAN or UART"]
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -91,4 +93,9 @@ each row, it checks whether the window is complete, and if so scores it.
 The window is `WINDOW_MODEL_ROWS` rows, and one is scored every `WINDOW_MODEL_STRIDE`
 rows. Each row is z-scored with the scale of the window model's own fit, the model runs
 on the window, and the score is the mean squared error on its last row, as on the PC.
-Nothing reads the score.
+
+A row is flagged when the window ending on it scores above `WINDOW_THRESHOLD_SCORE`, and
+a row no window ends on is not. The window alarm rings while
+`MIN_FLAGGED_WINDOWS_FOR_ALARM` of the last `DETECT_BY_ROW_RECENT_FLAGS` rows are
+flagged, and a gap in the row numbers starts the count again, as for the alarm. This is
+the window model's alarm `evaluate.run_window_test_set` counts.

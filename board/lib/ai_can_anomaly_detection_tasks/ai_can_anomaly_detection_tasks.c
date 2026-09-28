@@ -21,7 +21,8 @@ LOCAL CopyAlarmFramesTask copy_alarm_frames_task;
 
 
 EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_ring,
-	ReportInput *report_input, StoreAlarmFramesInput *store_alarm_frames_input)
+	ReportInput *report_input, ReportInput *window_report_input,
+	StoreAlarmFramesInput *store_alarm_frames_input)
 {
 	ER error;
 
@@ -51,7 +52,7 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 	preprocess_task.frame_ring = frame_ring;
 	/* the windowed model is best effort, so it sits below the alarm outputs */
 	error = score_and_detect_by_window_task_create(&score_and_detect_by_window_task, 11,
-		&score_and_detect_by_window_input);
+		&score_and_detect_by_window_input, window_report_input);
 	if (error < E_OK) {
 		return error;
 	}

@@ -26,11 +26,13 @@ EXPORT UW fewest_receive_cycles = 0xFFFFFFFFu;
 EXPORT UW most_receive_cycles = 0;
 
 LOCAL ReportInput report_input;
+LOCAL ReportInput window_report_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
 LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL CanSender can_sender;
 LOCAL ReportCanTask report_can_task;
+LOCAL ReportCanTask window_report_can_task;
 
 /*
  * Store each frame FDCAN received as the latest of its PGN, and copy it into the frame
@@ -92,6 +94,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = report_input_create(&window_report_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = store_alarm_frames_input_create(&store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
@@ -108,7 +114,7 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
-		&store_alarm_frames_input);
+		&window_report_input, &store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -122,8 +128,18 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	/* above score and detect by window at 11, and below the alarm's report */
+	error = report_can_task_create(&window_report_can_task, 10, &window_report_input,
+		&can_sender, WINDOW_ALARM_ID);
+	if (error < E_OK) {
+		return error;
+	}
 	/* sends only on an alarm, which needs frames, so it may start before FDCAN1 */
 	error = report_can_task_start(&report_can_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = report_can_task_start(&window_report_can_task);
 	if (error < E_OK) {
 		return error;
 	}
