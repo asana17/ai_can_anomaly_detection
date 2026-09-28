@@ -1,9 +1,9 @@
 #ifndef WINDOW_MODEL_CONFIG_H
 #define WINDOW_MODEL_CONFIG_H
 
-/* window_drift_ae_r20_s3_k24_h128_int8 from window_board/20260929-051743, with the scale of the fit
- * it came from, window_models/20260929-024828. */
-#define WINDOW_MODEL_ID "window-drift-ae-r20-s3-k24-h128-int8"
+/* window_delta_ae_r20_s3_k24_h128_int8 from window_board/20260929-070505, with the scale of the fit
+ * it came from, window_models/20260929-004741. */
+#define WINDOW_MODEL_ID "window-delta-ae-r20-s3-k24-h128-int8"
 
 #define WINDOW_MODEL_ROWS 20u /* W, the rows of a window */
 

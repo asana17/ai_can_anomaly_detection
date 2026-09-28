@@ -19,17 +19,17 @@ largest difference of the score, and the mean and largest cycles.
 
 ## Result
 
-Measured on 2026-09-29 with `window_drift_ae_r20_s3_k24_h128` in int8, from runs repo
-`window_board/20260929-051743`, against its `window_model.onnx`. The Release build ran
+Measured on 2026-09-29 with `window_delta_ae_r20_s3_k24_h128` in int8, from runs repo
+`window_board/20260929-070505`, against its `window_model.onnx`. The Release build ran
 at `-O2` and 32 MHz.
 
 | what | result |
 |---|---|
 | windows | 61, ending at rows 1262 to 1322 |
-| score on the PC | 0.0448 to 6.5121 |
-| score, largest absolute difference | 4.77e-7 |
-| inference cycles, mean and largest | 324,203 and 324,295 |
-| inference time, largest | 10.1 ms |
+| score on the PC | 0.0757 to 95.2920 |
+| score, largest absolute difference | 9.54e-7 |
+| inference cycles, mean and largest | 330,086 and 330,207 |
+| inference time, largest | 10.3 ms |
 
 The time covers the st-ai inference inside `window_model_run` only, not the int8
 conversion of the input and output, the scaling or the score.

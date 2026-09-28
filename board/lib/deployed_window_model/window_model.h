@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    window_model.h
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-29T05:17:55+0900
+  * @date    2026-09-29T07:05:18+0900
   * @brief   ST.AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * @attention
@@ -23,12 +23,12 @@
 
 /*****************************************************************************/
 /*  Original model name and signature  */
-#define STAI_WINDOW_MODEL_ORIGIN_MODEL_NAME         "window_drift_ae_r20_s3_k24_h128_int8"
-#define STAI_WINDOW_MODEL_ORIGIN_MODEL_SIGNATURE    "0x97fe266d5949e4cb35e0b1540d7c7ce2"
+#define STAI_WINDOW_MODEL_ORIGIN_MODEL_NAME         "window_delta_ae_r20_s3_k24_h128_int8"
+#define STAI_WINDOW_MODEL_ORIGIN_MODEL_SIGNATURE    "0xdba7ba8750b78c7d627ba85b4b922974"
 
 /*  Generated model name and signature  */
 #define STAI_WINDOW_MODEL_MODEL_NAME                "window_model"
-#define STAI_WINDOW_MODEL_MODEL_SIGNATURE           (0xd5bf09bf0d0412d5)
+#define STAI_WINDOW_MODEL_MODEL_SIGNATURE           (0x836343e576647bc0)
 
 
 /*****************************************************************************/
@@ -43,7 +43,7 @@
 #define STAI_WINDOW_MODEL_NODES_NUM           (14)
 
 /*  Macro to declare number macc for generated network model  */
-#define STAI_WINDOW_MODEL_MACC_NUM            (93362)
+#define STAI_WINDOW_MODEL_MACC_NUM            (93974)
 
 /*  Macros to declare input buffers characteristics  */
 #define STAI_WINDOW_MODEL_IN_NUM              (1)
@@ -98,36 +98,36 @@
 #define STAI_WINDOW_MODEL_OUT_1_RANK        (1)
 #define STAI_WINDOW_MODEL_OUT_1_SIZE        ((340))
 #define STAI_WINDOW_MODEL_OUT_1_SIZE_BYTES  (340)
-#define STAI_WINDOW_MODEL_OUT_1_SCALE       (0.2099904716014862f)
-#define STAI_WINDOW_MODEL_OUT_1_ZERO_POINT  (-16)
+#define STAI_WINDOW_MODEL_OUT_1_SCALE       (0.34855908155441284f)
+#define STAI_WINDOW_MODEL_OUT_1_ZERO_POINT  (-13)
 
 /*****************************************************************************/
 /*  Macros to declare activations buffers characteristics  */
-#define STAI_WINDOW_MODEL_ACTIVATIONS_SIZE              (4604)
-#define STAI_WINDOW_MODEL_ACTIVATIONS_SIZE_BYTES        (4604)
+#define STAI_WINDOW_MODEL_ACTIVATIONS_SIZE              (6420)
+#define STAI_WINDOW_MODEL_ACTIVATIONS_SIZE_BYTES        (6420)
 #define STAI_WINDOW_MODEL_ACTIVATIONS_ALIGNMENTS \
   { 4}
 #define STAI_WINDOW_MODEL_ACTIVATIONS_SIZES \
-  { 4604}
+  { 6420}
 #define STAI_WINDOW_MODEL_ACTIVATIONS_NUM               (1)
 
 #define STAI_WINDOW_MODEL_ACTIVATION_1_FLAGS      (STAI_FLAG_ACTIVATIONS)
-#define STAI_WINDOW_MODEL_ACTIVATION_1_SIZE       (4604)
-#define STAI_WINDOW_MODEL_ACTIVATION_1_SIZE_BYTES (4604)
+#define STAI_WINDOW_MODEL_ACTIVATION_1_SIZE       (6420)
+#define STAI_WINDOW_MODEL_ACTIVATION_1_SIZE_BYTES (6420)
 #define STAI_WINDOW_MODEL_ACTIVATION_1_ALIGNMENT  4
 /*  Macros to declare weights buffers characteristics  */
 
 #define STAI_WINDOW_MODEL_WEIGHTS_NUM                  (1)
-#define STAI_WINDOW_MODEL_WEIGHTS_SIZE                  (92556)
-#define STAI_WINDOW_MODEL_WEIGHTS_SIZE_BYTES            (92556)
+#define STAI_WINDOW_MODEL_WEIGHTS_SIZE                  (91332)
+#define STAI_WINDOW_MODEL_WEIGHTS_SIZE_BYTES            (91332)
 #define STAI_WINDOW_MODEL_WEIGHTS_ALIGNMENTS \
   { 4}
 #define STAI_WINDOW_MODEL_WEIGHTS_SIZES \
-  { 92556}
+  { 91332}
 #define STAI_WINDOW_MODEL_WEIGHTS_NUM        (1)
 #define STAI_WINDOW_MODEL_WEIGHT_1_FLAGS       ((STAI_FLAG_PREALLOCATED))
-#define STAI_WINDOW_MODEL_WEIGHT_1_SIZE        (92556)
-#define STAI_WINDOW_MODEL_WEIGHT_1_SIZE_BYTES  (92556)
+#define STAI_WINDOW_MODEL_WEIGHT_1_SIZE        (91332)
+#define STAI_WINDOW_MODEL_WEIGHT_1_SIZE_BYTES  (91332)
 
 
 /*****************************************************************************/
