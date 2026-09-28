@@ -5,7 +5,8 @@ This page is for whoever brings real CAN frames onto the board.
 FDCAN1 is enabled in the CubeMX project, and
 [`ai_can_anomaly_detection`](../application/ai_can_anomaly_detection/README.md) starts
 it and stores every frame it receives in the slots. It builds. It has not run on the
-board, and no frame has reached it. The bus is not wired, and nothing on the PC sends.
+board. The bus is wired, and [can_bus_debug](../application/can_bus_debug/README.md)
+has sent and received frames over it.
 
 ```mermaid
 flowchart LR
@@ -19,12 +20,26 @@ flowchart LR
 
 | part | what it is | state |
 |---|---|---|
-| wiring | PB8 and PB7 to a 3.3 V transceiver module, CANH and CANL to the USB-CAN adapter, 120 Ω at both ends of the bus, a common ground | not built |
+| wiring | PB8 and PB7 to an MCP2562FD transceiver, CANH and CANL to the USB-CAN adapter, 120 Ω at both ends of the bus, a common ground | built |
 | PC sender | sends frames through the USB-CAN adapter at their own timestamps | none in this repository |
 | first run | flash the application and see alarms while the PC sends | not done |
 
-The hardware on hand is a DSD TECH SH-C31A USB-CAN adapter and a 3.3 V CAN transceiver
-module. How the PC talks to the adapter is left open.
+The hardware on hand is a DSD TECH SH-C31A USB-CAN adapter and a Microchip
+MCP2562FD-E/P CAN transceiver. Its VDD takes 5 V and its VIO takes the 3.3 V of the
+board. [can_bus_debug](../application/can_bus_debug/README.md#wiring) gives its pins.
+
+The adapter runs the candleLight firmware, which Linux drives with its `gs_usb` driver as
+a SocketCAN interface. On an Ubuntu PC with `can-utils` installed, this brings it up at
+the bus's bit rate and shows every frame:
+
+```sh
+sudo ip link set can0 type can bitrate 250000 sample-point 0.875
+sudo ip link set can0 up
+candump -t d -e can0
+```
+
+`cansend can0 18FEF200#1111111111111111` sends one frame.
+`ip -details -statistics link show can0` shows the adapter's error counts and bus state.
 
 ## FDCAN1 in CubeMX
 
@@ -34,14 +49,20 @@ The settings are in [`board/cubemx/ai_can_detection.ioc`](../cubemx/ai_can_detec
 |---|---|
 | pins | PB8 RX, PB7 TX |
 | frame format | classic CAN, normal mode |
-| kernel clock | 86 MHz, PLL1Q from CSI. SYSCLK stays at 32 MHz from HSI |
-| bit timing | prescaler 4, seg1 74, seg2 11, SJW 11, which is 250 kbit/s with the sample point at 87.2% |
+| kernel clock | 32 MHz, PLL1Q from CSI, with N 128 and Q 16. SYSCLK and APB1 stay at 32 MHz from HSI |
+| bit timing | prescaler 2, seg1 55, seg2 8, SJW 8, which is 250 kbit/s with the sample point at 87.5% |
+| automatic retransmission | on. A frame that loses arbitration or meets an error is sent again |
 | filters | none. `can_start` in the application accepts every frame into RX FIFO 0 |
 | interrupt | `FDCAN1_IT0_IRQn` at preemption priority 1 |
 
 The recorded bus is SAE J1939, 250 kbit/s, extended 29-bit IDs, as
 [can_data.md](../../can_data/can_data.md#source) describes. The bit timing holds only
-at an 86 MHz kernel clock. A change to the clock tree changes it.
+at a 32 MHz kernel clock. A change to the clock tree changes it.
+
+A kernel clock faster than APB1 loses frames. With the kernel clock at 86 MHz and APB1
+at 32 MHz, FDCAN1 acknowledged every frame on the bus but failed to write some of them
+into its message RAM. It set the message RAM access failure flag and dropped them. On
+2026-09-28 it dropped 11 of 25 frames that way. At 32 MHz it received all 25.
 
 PLL1 runs only for FDCAN. It draws current the board did not draw before, which the
 current measurement will include.
