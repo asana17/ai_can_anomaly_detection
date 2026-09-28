@@ -5,16 +5,17 @@ from __future__ import annotations
 import random
 from typing import Iterable
 
-from attack.replay.options import PGNS, REPEAT_SECONDS, SECONDS, pgns_of, time_in
+from attack.replay.options import PGNS, SECONDS, pgns_of, time_in
 from attack.replay.replay import write_replay
 from preprocess.frames.can_log_loader import CanFrame
 
 
 def replay(frames: Iterable[CanFrame], rng: random.Random, pgns=PGNS, seconds=SECONDS,
-           *, spans=None, repeat_seconds: float = REPEAT_SECONDS) -> tuple | None:
+           *, spans=None, repeat_seconds: float | None = None) -> tuple | None:
     """Replay one PGN over a random stretch, repeating its `repeat_seconds` before.
 
-    The stretch and the `repeat_seconds` before it lie in one of `spans`, a list of
+    `repeat_seconds` is drawn from 0 to the length of the stretch when not given. The
+    stretch and the `repeat_seconds` before it lie in one of `spans`, a list of
     (start, end) times defaulting to the whole log.
 
     Returns what `random_replay.replay` returns, with `repeat_seconds` added. `source`
@@ -31,6 +32,8 @@ def replay(frames: Iterable[CanFrame], rng: random.Random, pgns=PGNS, seconds=SE
 
     length = rng.uniform(*seconds)
     pgn = rng.choice(sorted(present))
+    if repeat_seconds is None:
+        repeat_seconds = rng.uniform(0.0, length)
     start = time_in([(first + repeat_seconds, last) for first, last in spans], length,
                     rng)
     if start is None:

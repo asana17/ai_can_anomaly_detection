@@ -16,13 +16,20 @@ def _faked(hurt, info):
 
 def test_the_stretch_before_the_start_is_sent_again_and_again():
     trace = _trace()
-    hurt, info = repeated_replay.replay(trace, random.Random(0))
+    hurt, info = repeated_replay.replay(trace, random.Random(0), repeat_seconds=1.0)
     assert info["source"] == info["start"] - 1.0 and info["repeat_seconds"] == 1.0
     before = {round(f.timestamp, 1): f.data for f in trace}
     for f in _faked(hurt, info):
         offset = (f.timestamp - info["start"]) % 1.0
         assert f.data in (before.get(round(info["source"] + offset, 1)),
                           before.get(round(info["source"] + offset + 0.1, 1)))
+
+
+def test_the_stretch_repeated_is_drawn_up_to_the_length_of_the_attack():
+    for seed in range(20):
+        _, info = repeated_replay.replay(_trace(), random.Random(seed))
+        assert 0.0 <= info["repeat_seconds"] <= info["stop"] - info["start"]
+        assert info["source"] == info["start"] - info["repeat_seconds"]
 
 
 def test_the_stretch_before_the_start_lies_in_the_spans_given():
@@ -32,7 +39,7 @@ def test_the_stretch_before_the_start_lies_in_the_spans_given():
 
 def test_a_span_with_no_room_before_gives_nothing():
     assert repeated_replay.replay(_trace(), random.Random(0), seconds=(2.0, 2.0),
-                                  spans=[(10.0, 12.5)]) is None
+                                  spans=[(10.0, 12.5)], repeat_seconds=1.0) is None
 
 
 def test_times_and_count_survive():

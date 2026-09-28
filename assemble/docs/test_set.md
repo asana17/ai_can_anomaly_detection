@@ -55,7 +55,7 @@ random.
 `matched_replay` searches every donor for the moments it drove this log's speed in this
 log's gear, and takes one of those. Only the donors it draws are read, since the matched
 replay is given more donors than fit in memory.
-`frozen_replay` holds the payload of the start and `repeated_replay` repeats the second
+`frozen_replay` holds the payload of the start and `repeated_replay` repeats a stretch
 before the start. Both take the payloads from the log itself and use no donor.
 
 Nothing is thrown away for tripping a rule. [evaluate](../../evaluate) runs the rules

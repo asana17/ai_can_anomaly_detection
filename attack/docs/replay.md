@@ -90,9 +90,11 @@ repeated_replay.replay(frames, rng, spans=spans)
 # -> (frames, {pgn, start, stop, source, repeat_seconds}), or None
 ```
 
-It picks the PGN, the start time and the length of the window at random. The window
-repeats the `repeat_seconds` of the log before its start. `source` is the start less
-`repeat_seconds`. `REPEAT_SECONDS` is 1 second.
+It picks the PGN, the start time, the length of the window and `repeat_seconds` at
+random. `repeat_seconds` runs from 0 to the length of the window. The window repeats
+the `repeat_seconds` of the log before its start. `source` is the start less
+`repeat_seconds`. Close to 0 it sends one payload again and again, as
+`frozen_replay.replay` does.
 
 Each row is one the log itself produced a moment before. What is wrong is the order in
 time. The same short stretch comes back while the other PGNs move on.
