@@ -22,7 +22,15 @@ def _trained(rows, epochs=1, threshold=float("-inf"), patience=0):
 def test_there_is_one_residual_per_row():
     rows = _rows()
     model, _ = _trained(rows)
-    assert residuals(rows, model).shape == (3000,)
+    assert residuals(rows, model, 17).shape == (3000,)
+
+
+def test_only_the_last_signals_values_are_scored():
+    window = np.array([[3.0, 3.0, 1.0, 2.0]], np.float32)    # two rows of two signals
+    zeros = nn.Linear(4, 4)
+    nn.init.zeros_(zeros.weight)
+    nn.init.zeros_(zeros.bias)
+    assert residuals(window, zeros, 2).tolist() == [2.5], "(1 + 4) / 2, the last row"
 
 
 def test_without_a_stop_every_epoch_runs():
@@ -47,7 +55,7 @@ def test_the_same_seed_gives_the_same_model():
     rows = _rows()
     first, _ = _trained(rows)
     second, _ = _trained(rows)
-    assert np.array_equal(residuals(rows, first), residuals(rows, second))
+    assert np.array_equal(residuals(rows, first, 17), residuals(rows, second, 17))
 
 
 def test_the_linear_one_is_one_layer_each_way():

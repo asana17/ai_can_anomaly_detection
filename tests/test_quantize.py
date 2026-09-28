@@ -54,7 +54,7 @@ def test_onnx_residuals_reads_the_rows_it_is_given(tmp_path):
     model, rows = _model(), _rows()
     write_onnx_files([("ae", model)], 17, str(tmp_path / "out"))
     got = onnx_residuals(str(tmp_path / "out" / "ae_float.onnx"), rows[:8])
-    assert np.allclose(got, residuals(rows[:8], model), atol=1e-6)
+    assert np.allclose(got, residuals(rows[:8], model, 17), atol=1e-6)
 
 
 def exported(monkeypatch, tmp_path):

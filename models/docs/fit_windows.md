@@ -30,8 +30,9 @@ nonlinear ae's are those of the [nonlinear autoencoder](autoencoder.md) under
 
 A window nonlinear ae is the nonlinear autoencoder of [fit](fit.md) on windows. Each
 window is laid out oldest row first as one row of `rows` × 17 values. It is trained and
-scored as fit trains and scores rows, with the same `models.autoencoder.fit`. Its score
-is the mean squared error over all `rows` × 17 values.
+scored as fit trains and scores rows, with the same `models.autoencoder.fit`. It is
+trained on the error over all `rows` × 17 values. Its score is the mean squared error
+over the 17 values of the last row only.
 
 ```python
 flat = windows.reshape(len(windows), -1)   # (windows, rows * signals)

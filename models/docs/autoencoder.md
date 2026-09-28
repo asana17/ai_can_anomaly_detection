@@ -57,7 +57,8 @@ each autoencoder gets its seed right before it is built, and is trained before t
 next is built. Running the same code again then gives the same autoencoders.
 
 `residuals` gives each row one score, the mean of the squared differences between the
-row and its reconstruction. The higher the score, the less the row looks like the
+row and its reconstruction. Given a window laid out as one row, it takes the mean over
+the last row's values alone. The higher the score, the less the row looks like the
 training rows.
 
 | class | layers | what it can reconstruct |

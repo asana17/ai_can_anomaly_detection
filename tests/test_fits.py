@@ -75,7 +75,8 @@ def test_a_window_goes_into_the_window_nonlinear_ae_flat_and_oldest_row_first():
 
     net = model.network_with_weights(tensors, WINDOWS.shape[2])
     flat = np.concatenate([WINDOWS[:, 0], WINDOWS[:, 1], WINDOWS[:, 2]], axis=1)
-    assert np.allclose(autoencoder.residuals(flat, net), score(WINDOWS))
+    assert np.allclose(autoencoder.residuals(flat, net, WINDOWS.shape[2]),
+                       score(WINDOWS))
 
 
 def test_a_window_nonlinear_ae_listed_with_the_var_spreads_into_one_model_per_value():

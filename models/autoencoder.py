@@ -73,9 +73,13 @@ def fit(rows: np.ndarray, model: nn.Module, epochs: int, batch: int, rate: float
     return losses
 
 
-def residuals(rows: np.ndarray, model: nn.Module) -> np.ndarray:
-    """Each row's mean squared reconstruction error."""
+def residuals(rows: np.ndarray, model: nn.Module, signals: int) -> np.ndarray:
+    """Each input's mean squared reconstruction error over its last `signals` values.
+
+    An input is one row of `signals` values, or a window of rows laid out oldest first,
+    where the last `signals` values are its last row.
+    """
     data = torch.from_numpy(np.asarray(rows, dtype=np.float32))
     model.eval()
     with torch.no_grad():
-        return ((model(data) - data) ** 2).mean(dim=1).numpy()
+        return ((model(data) - data)[:, -signals:] ** 2).mean(dim=1).numpy()

@@ -116,7 +116,8 @@ class _Autoencoder:
                                  patience=self.arguments.patience)
         return ({f"{self.prefix}{key}": tensor
                  for key, tensor in net.state_dict().items()},
-                lambda scored: autoencoder.residuals(scored, net), losses)
+                lambda scored: autoencoder.residuals(scored, net, rows.shape[1]),
+                losses)
 
     def network_with_weights(self, weights, signals):
         """This model as a network, holding the tensors `weights` kept for it."""
@@ -127,7 +128,7 @@ class _Autoencoder:
     def scorer(self, weights, signals):
         """Take this model's tensors out of `weights` and score rows with them."""
         net = self.network_with_weights(weights, signals)
-        return lambda scored: autoencoder.residuals(scored, net)
+        return lambda scored: autoencoder.residuals(scored, net, signals)
 
 
 @dataclass(frozen=True)
@@ -180,7 +181,8 @@ class NonlinearAe(_Autoencoder):
 @dataclass(frozen=True)
 class WindowNonlinearAe:
     """The network of `NonlinearAe` on a window of `rows` rows, laid out oldest first as
-    one row of `rows` × signals values."""
+    one row of `rows` × signals values. It scores a window by the error on its last
+    row."""
 
     MODEL = "window nonlinear ae"
     rows: int
@@ -219,7 +221,8 @@ class WindowNonlinearAe:
                                  patience=self.arguments.patience)
         return ({f"{self.prefix}{key}": tensor
                  for key, tensor in net.state_dict().items()},
-                lambda scored: autoencoder.residuals(self._flat(scored), net), losses)
+                lambda scored: autoencoder.residuals(self._flat(scored), net,
+                                                     windows.shape[2]), losses)
 
     def network_with_weights(self, weights, signals):
         """This model as a network, holding the tensors `weights` kept for it. `signals`
@@ -231,7 +234,7 @@ class WindowNonlinearAe:
     def scorer(self, weights, signals):
         """Take this model's tensors out of `weights` and score windows with them."""
         net = self.network_with_weights(weights, signals)
-        return lambda scored: autoencoder.residuals(self._flat(scored), net)
+        return lambda scored: autoencoder.residuals(self._flat(scored), net, signals)
 
 
 MODELS = {model.MODEL: model
