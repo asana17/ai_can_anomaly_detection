@@ -12,7 +12,8 @@ window models and their thresholds come from a directory
 [calibrate_windows](../../models/docs/calibrate_windows.md) wrote. It scores the test
 set's windows with those models by running
 [score_windows](../../scoring/docs/score_windows.md), or reuses the scores the runs
-repository holds for them already.
+repository holds for them already. When the thresholds came from the ONNX files of a
+window export, the test set's windows are scored with the same files.
 
 It writes one directory of the runs repository, `window_test_runs/<time>/`.
 

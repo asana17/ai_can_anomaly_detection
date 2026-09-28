@@ -106,8 +106,9 @@ def test_each_window_model_is_counted_at_its_own_threshold():
         "k 4 and the second window model are each under their own threshold"
 
 
-def stand_in(monkeypatch, hub):
-    """The rows of `twenty_rows` as a test run and window thresholds on the hub.
+def stand_in(monkeypatch, hub, window_onnx_files=None):
+    """The rows of `twenty_rows` as a test run and window thresholds on the hub, the
+    window thresholds taken as `window_onnx_files`, in torch when None.
 
     The instant model scores 1 on row 2, the window model on row 11. The attack moved
     row 10 by 40 on a scale of 1.
@@ -131,7 +132,9 @@ def stand_in(monkeypatch, hub):
         "thresholds/20260101-000000/meta.json": {},
         "thresholds/20260101-000000/thresholds.json": [{**INSTANT, "threshold": 0.5}],
         "window_thresholds/20260101-000000/meta.json": {
-            "models": at("window_models/20260101-000000")},
+            "models": at("window_models/20260101-000000"),
+            "onnx_files": window_onnx_files and {**at(window_onnx_files),
+                                                 "precision": "float"}},
         "window_thresholds/20260101-000000/thresholds.json": [
             {**WINDOW, "threshold": 0.5}],
         "window_scores/20260101-000000/meta.json": {},
@@ -139,8 +142,10 @@ def stand_in(monkeypatch, hub):
         "window_scores/20260101-000000/scores.npy":
             score_on(11)[:, None].astype(np.float32)}
     scored = []
-    monkeypatch.setattr(run_window_test_set.score_windows, "main", lambda *args: (
-        scored.append((args[2], args[6])) or at("window_scores/20260101-000000")))
+    monkeypatch.setattr(run_window_test_set.score_windows, "main",
+                        lambda *args, onnx_files: (
+                            scored.append((args[2], args[6], onnx_files))
+                            or at("window_scores/20260101-000000")))
     scale = {"scale.mean": torch.zeros(len(SIGNALS)),
              "scale.std": torch.ones(len(SIGNALS))}
     monkeypatch.setattr(run_test_set_common, "fetch_fitted_models",
@@ -171,7 +176,8 @@ def test_the_test_set_is_counted_with_each_window_model(tmp_path, hub, monkeypat
     scored = stand_in(monkeypatch, hub)
     folder = run(tmp_path)
 
-    assert scored == [("test_sets/20260101-000000", "window_models/20260101-000000")], \
+    assert scored == [("test_sets/20260101-000000", "window_models/20260101-000000",
+                       None)], \
         "the test set's windows are scored with the models the thresholds name"
     kept = json.load(open(folder / "window_detection.json"))
     assert len(kept) == 1
@@ -184,6 +190,16 @@ def test_the_test_set_is_counted_with_each_window_model(tmp_path, hub, monkeypat
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"test_run": "test_runs/20260101-000000",
                               "window_thresholds": "window_thresholds/20260101-000000"}
+
+
+def test_the_windows_score_with_the_onnx_files_the_thresholds_came_from(
+        tmp_path, hub, monkeypatch):
+    scored = stand_in(monkeypatch, hub, window_onnx_files="window_onnx/20260101-000000")
+    folder = run(tmp_path)
+
+    assert scored[0][2] == "window_onnx/20260101-000000"
+    meta = json.load(open(folder / "meta.json"))
+    assert meta["window_onnx_files"]["path"] == "window_onnx/20260101-000000"
 
 
 def test_a_window_model_with_no_threshold_is_refused(tmp_path, hub, monkeypatch):

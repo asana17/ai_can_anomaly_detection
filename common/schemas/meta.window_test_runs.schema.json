@@ -56,6 +56,10 @@
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The directory the window models came from."
     },
+    "window_onnx_files": {
+      "$ref": "meta.schema.json#/$defs/onnx_files",
+      "description": "The ONNX files the window models scored as, as the window thresholds record them. Null when they scored in torch."
+    },
     "test_set": {
       "$ref": "meta.schema.json#/$defs/directory",
       "description": "The test set the rows came from."
@@ -113,7 +117,8 @@
     "hours",
     "versions",
     "models",
-    "onnx_files"
+    "onnx_files",
+    "window_onnx_files"
   ],
   "unevaluatedProperties": false
 }

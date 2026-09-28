@@ -6,7 +6,7 @@ rows.
 The instant scores, the rule hits and the test set come from a directory
 `evaluate.run_test_set` wrote. The window models and their thresholds come from one
 `models.calibrate_windows` wrote. The test set's windows are scored with them, as the
-calibration set's were.
+calibration set's were, in torch or with the same ONNX files.
 """
 
 from __future__ import annotations
@@ -102,9 +102,11 @@ def write_window_test_run(folder, test_run_directory, window_thresholds_director
         window_thresholds_directory, runs_dir)
     at = test_run["test_set"]
     fitted = window_thresholds_meta["models"]
+    window_onnx_files = window_thresholds_meta["onnx_files"]
     window_scores_directory = score_windows.main(
         at["repo"], at["revision"], at["path"], local_dir, fitted["repo"],
-        fitted["revision"], fitted["path"], runs_dir)
+        fitted["revision"], fitted["path"], runs_dir,
+        onnx_files=window_onnx_files and window_onnx_files["path"])
     window_scores, window_models, _ = score_windows.fetch_scores(
         window_scores_directory, runs_dir)
     attacked = fetch_test_set(at["repo"], at["revision"], at["path"], local_dir)
@@ -124,7 +126,7 @@ def write_window_test_run(folder, test_run_directory, window_thresholds_director
             "window_thresholds": window_thresholds_directory,
             "scores": test_run["scores"], "window_scores": window_scores_directory,
             "models": test_run["models"], "onnx_files": test_run["onnx_files"],
-            "window_models": fitted,
+            "window_models": fitted, "window_onnx_files": window_onnx_files,
             **{name: test_run[name] for name in ("test_set", "log_split", "grid",
                                                  "min_speed", "rows", "attacks",
                                                  "attacks_worth_catching", "hours")},
