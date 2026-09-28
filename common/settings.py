@@ -45,6 +45,7 @@ class TestSetSettings:
 @dataclass(frozen=True)
 class CalibrateSettings:
     TARGET: float = 0.001       # share of normal rows the threshold cuts off
+    WINDOW_TARGET: float = 0.5  # false alarms an hour a window model's alarm may raise
 
 
 @dataclass(frozen=True)

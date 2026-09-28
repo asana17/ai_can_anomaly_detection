@@ -32,9 +32,16 @@ It scores the windows of the calibration set with
 the runs repository. The calibration rows were held out of the train
 set the window models were fitted on, so the models have not seen them.
 
-A model's threshold is the score that `TARGET` of its windows are above. `TARGET` is
-the same setting as for [calibrate](calibrate.md), so window models and row models are
-cut at the same share of normal data.
+A model's threshold is the lowest score at which its alarm rises no more than
+`WINDOW_TARGET` times an hour on the calibration set, 0.5. The alarm is the one
+[run_window_test_set](../../evaluate/docs/run_window_test_set.md) counts, on while one
+of the last N rows, `TestRunSettings.N`, is flagged. Flags within N rows of each other
+make one alarm, and a new segment starts a new one. The hours are the moving rows of
+the calibration set at 0.1 s each.
+
+A window model is held to a number of alarms rather than a share of windows. A window
+that sees an attack sees it only while the window holds it, so few of its windows are
+flagged, and k of the last N would seldom be reached.
 
 Each model takes its threshold from its own windows. So models with different `rows`
 take their thresholds from different windows.

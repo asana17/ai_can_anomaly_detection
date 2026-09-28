@@ -6,6 +6,7 @@ import pytest
 
 from common.settings import CalibrateSettings
 from models import calibrate_windows
+from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
 COMMIT = "de" * 20
@@ -15,20 +16,42 @@ MODELS = [{"model": "var", "rows": 3}, {"model": "var", "rows": 5}]
 
 def test_a_threshold_is_taken_from_the_model_s_own_windows():
     scores = np.full((1000, 2), np.nan, np.float32)
-    # the first model has windows on rows 0 to 499, the second on rows 500 to 999
-    scores[:500, 0] = np.arange(500)
-    scores[500:, 1] = np.arange(500) + 1000.0
-    kept = calibrate_windows.thresholds_for(MODELS, scores, target=0.1)
+    # the first model has windows on every other row of 0 to 499, the second of 500 on
+    scores[:500:2, 0] = np.arange(250)
+    scores[500::2, 1] = np.arange(250) + 1000.0
+    kept = calibrate_windows.thresholds_for(MODELS, scores, np.zeros(1000, int), 1.0,
+                                            n=1, target=5)
 
     assert [k["rows"] for k in kept] == [3, 5]
-    assert (scores[:500, 0] > kept[0]["threshold"]).mean() == pytest.approx(0.1, 0.01)
-    assert (scores[500:, 1] > kept[1]["threshold"]).mean() == pytest.approx(0.1, 0.01)
+    # with n = 1 each flagged window raises its own alarm, so 5 an hour flags 5
+    assert kept[0]["threshold"] == 244.0
+    assert kept[1]["threshold"] == 1244.0
 
 
-def fit_and_scores(hub, scores, onnx_files=None):
+def test_flags_within_n_rows_raise_one_alarm():
+    column = np.zeros(100, np.float32)
+    column[[10, 15, 19, 50]] = 9.0            # 10 to 19 is one alarm, 50 another
+    column[[70]] = 5.0
+    segments = np.zeros(100, int)
+    assert calibrate_windows.threshold_for(column, segments, 1.0, n=10, target=2) == 5.0
+    assert calibrate_windows.threshold_for(column, segments, 1.0, n=10, target=1) == 9.0
+
+
+def test_a_new_segment_raises_a_new_alarm():
+    column = np.zeros(20, np.float32)
+    column[[4, 6]] = 9.0
+    assert calibrate_windows.alarms(column > 1, np.zeros(20, int), 10) == 1
+    assert calibrate_windows.alarms(column > 1, np.r_[[0] * 5, [1] * 15], 10) == 2
+
+
+def fit_and_scores(hub, monkeypatch, scores, onnx_files=None):
     """A window fit on the calibration set `calibration_sets/20260101-000000`, and the
     window scores of that set it already has, scored as `onnx_files`, in torch when
-    None."""
+    None. The set's rows are all moving, in one segment."""
+    rows = np.zeros((len(scores), len(SIGNALS)), np.float32)
+    rows[:, SIGNALS.index("wheel_speed")] = 50.0
+    monkeypatch.setattr(calibrate_windows.score_windows, "fetch_set_rows",
+                        lambda *args: (rows, np.zeros(len(scores), int), 5.0, {}))
     models = {"repo": "u/runs", "revision": REVISION,
               "path": "window_models/20260101-000000"}
     calibration_set = dict(WHERE, path="calibration_sets/20260101-000000")
@@ -49,11 +72,11 @@ def fit_and_scores(hub, scores, onnx_files=None):
         "window_scores/20260101-000000/scores.npy": scores}
 
 
-def test_a_threshold_is_kept_for_every_window_model(tmp_path, hub):
+def test_a_threshold_is_kept_for_every_window_model(tmp_path, hub, monkeypatch):
     scores = np.full((21, 2), np.nan, np.float32)
     scores[2:, 0] = np.arange(19)
     scores[4:, 1] = np.arange(17)
-    fit_and_scores(hub, scores)
+    fit_and_scores(hub, monkeypatch, scores)
     made = calibrate_windows.main("u/runs", COMMIT, "window_models/20260101-000000",
                                   str(tmp_path), str(tmp_path))
 
@@ -65,16 +88,18 @@ def test_a_threshold_is_kept_for_every_window_model(tmp_path, hub):
     assert all(k["threshold"] > 0 for k in kept)
     meta = json.load(open(folder / "meta.json"))
     assert meta["inputs"] == {"models": "window_models/20260101-000000",
-                              "target": CalibrateSettings().TARGET, "onnx_files": None}
+                              "window_target": CalibrateSettings().WINDOW_TARGET,
+                              "n": 10, "onnx_files": None}
     assert meta["scores"]["path"] == "window_scores/20260101-000000", "reused"
     assert meta["windows"] == [19, 17], "counted from the scores the thresholds used"
 
 
-def test_the_thresholds_of_a_window_export_come_from_its_scores(tmp_path, hub):
+def test_the_thresholds_of_a_window_export_come_from_its_scores(tmp_path, hub,
+                                                               monkeypatch):
     scores = np.full((21, 2), np.nan, np.float32)
     scores[2:, 0] = np.arange(19)
     scores[4:, 1] = np.arange(17)
-    fit_and_scores(hub, scores, onnx_files="window_onnx/20260101-000000")
+    fit_and_scores(hub, monkeypatch, scores, onnx_files="window_onnx/20260101-000000")
     hub.files["window_onnx/20260101-000000/meta.json"] = {
         "models": {"path": "window_models/20260101-000000"}, "exported": MODELS}
     made = calibrate_windows.main("u/runs", COMMIT, "window_models/20260101-000000",
@@ -91,7 +116,7 @@ def test_a_rebuild_scores_the_calibration_set_again(tmp_path, hub, monkeypatch):
     scores = np.full((21, 2), np.nan, np.float32)
     scores[2:, 0] = np.arange(19)
     scores[4:, 1] = np.arange(17)
-    fit_and_scores(hub, scores)
+    fit_and_scores(hub, monkeypatch, scores)
     given = []
     real = calibrate_windows.score_windows.main
     monkeypatch.setattr(calibrate_windows.score_windows, "main",

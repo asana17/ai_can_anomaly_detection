@@ -16,8 +16,15 @@
           "type": "string",
           "pattern": "^window_models/[0-9]{8}-[0-9]{6}$"
         },
-        "target": {
-          "$ref": "meta.schema.json#/$defs/target"
+        "window_target": {
+          "description": "False alarms an hour a window model's alarm may raise on the calibration set.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "n": {
+          "description": "The rows the alarm looks back over, one flagged window among them raising it.",
+          "type": "integer",
+          "minimum": 1
         },
         "onnx_files": {
           "description": "The `window_onnx/<time>` directory the models scored as, or null for torch.",
@@ -30,7 +37,8 @@
       },
       "required": [
         "models",
-        "target",
+        "window_target",
+        "n",
         "onnx_files"
       ],
       "additionalProperties": false

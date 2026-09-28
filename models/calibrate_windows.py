@@ -4,8 +4,10 @@
 
 The thresholds come from the scores `scoring.score_windows` gives the windows of the
 calibration set the models' train set names. No model was fitted on them. Each model
-takes its threshold from its own windows alone. With `--onnx-files` the models are the
-ones that window export holds, each its float ONNX file, made from the same fit.
+takes its threshold from its own windows alone, as the lowest at which its alarm, one
+flagged window in the last N rows, rises no more than `WINDOW_TARGET` times an hour.
+With `--onnx-files` the models are the ones that window export holds, each its float
+ONNX file, made from the same fit.
 """
 
 from __future__ import annotations
@@ -18,18 +20,37 @@ import numpy as np
 
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
-from common.settings import CalibrateSettings
-from models.calibrate import quantile
+from common.settings import CalibrateSettings, GridSettings, TestRunSettings
+from detect.alarm import k_of_last_n
+from preprocess.features.moving import moving
 from scoring import score_windows
 
 
-def thresholds_for(models, scores, *, target):
-    """Return each of `models` with its threshold, from its column of `scores`.
+def alarms(flag, segments, n):
+    """How many times the alarm rises that one flag in the last `n` rows raises."""
+    alarmed = k_of_last_n(flag, segments, n, 1)
+    return int((alarmed & ~np.r_[False, alarmed[:-1]]).sum())
 
-    A model's threshold is the score that `target` of its windows are above. A row
-    where no window of the model ends has NaN, and is left out.
-    """
-    return [{**model, "threshold": quantile(column[~np.isnan(column)], target)}
+
+def threshold_for(column, segments, hours, *, n, target):
+    """The lowest of `column`'s scores at which the alarm rises no more than `target`
+    times an hour. A row where no window ends has NaN, and never flags."""
+    candidates = np.unique(column[~np.isnan(column)])[::-1]
+    # the alarm rises more often the further down the candidates the threshold goes
+    low, high = 0, len(candidates) - 1
+    while low < high:
+        middle = (low + high + 1) // 2
+        if alarms(column > candidates[middle], segments, n) <= target * hours:
+            low = middle
+        else:
+            high = middle - 1
+    return float(candidates[low])
+
+
+def thresholds_for(models, scores, segments, hours, *, n, target):
+    """Return each of `models` with its threshold, from its column of `scores`."""
+    return [{**model, "threshold": threshold_for(column, segments, hours, n=n,
+                                                 target=target)}
             for model, column in zip(models, scores.T)]
 
 
@@ -47,7 +68,10 @@ def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_d
                                           runs_dir, rebuild=rebuild,
                                           onnx_files=onnx_files)
     scores, models, scored = score_windows.fetch_scores(scores_directory, runs_dir)
-    thresholds = thresholds_for(models, scores, target=settings.TARGET)
+    rows, segments, min_speed, _ = score_windows.fetch_set_rows(at, local_dir)
+    hours = moving(rows, min_speed=min_speed).sum() * GridSettings.PERIOD / 3600
+    thresholds = thresholds_for(models, scores, segments, hours, n=TestRunSettings.N,
+                                target=settings.WINDOW_TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
         json.dump(thresholds, f, indent=2)
     return {"scores": scores_directory,
@@ -62,7 +86,8 @@ def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
          dry_run=False, settings=CalibrateSettings(), onnx_files=None):
     return reuse_or_make(runs_repo, "window_thresholds",
                          {"models": models_path, "onnx_files": onnx_files},
-                         {"target": settings.TARGET}, runs_dir,
+                         {"window_target": settings.WINDOW_TARGET,
+                          "n": TestRunSettings.N}, runs_dir,
                          lambda folder: write_thresholds(folder, runs_repo, revision,
                                                          models_path, runs_dir,
                                                          local_dir, onnx_files,
