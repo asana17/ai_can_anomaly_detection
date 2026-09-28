@@ -25,9 +25,7 @@ from models.fits import as_dict, models_from
 from models.onnx_files import onnx_scorer
 from models.torch_files import scale_of, torch_scorer
 from preprocess.features.moving import moving
-from preprocess.features.windows import positions
-from rules.hits import rule_hits
-from rules.sequence import change_limit, torque_over_load
+from rules.hits import hits_of_every_rule
 
 
 def fetch_set_rows(directory, local_dir):
@@ -71,9 +69,7 @@ def write_scores(folder, set_directory, models_directory, onnx_directory, onnx_f
         runtime = {"onnxruntime": onnxruntime.__version__}
     raw, segments, min_speed, dataset = fetch_set_rows(set_directory, local_dir)
     mv = moving(raw, min_speed=min_speed)
-    position = positions(mv, segments)
-    hits = (rule_hits(raw, min_speed) | change_limit.hits(raw, position)
-            | torque_over_load.hits(raw, position)) & mv
+    hits = hits_of_every_rule(raw, segments, min_speed)
     models = models_from(fitted["inputs"]["models"])
     scores = scores_of(models, scorer_of, scale_of(weights).apply(raw), mv)
 

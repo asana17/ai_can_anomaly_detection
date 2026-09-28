@@ -12,6 +12,7 @@ from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
 from models.onnx_files import onnx_residuals
 from preprocess.features.signal_state import SIGNALS
+from rules import hits
 
 REVISION = "ab" * 20
 COMMIT = "de" * 20
@@ -42,7 +43,7 @@ def stand_in(monkeypatch, hub, raw, flagged, models=({"model": "pca", "k": 2},),
         weights, {"inputs": {"models": list(models)}}))
     monkeypatch.setattr(score, "fetch_calibration_set", lambda *args: {
         "calibration": raw, "seg": segments, "min_speed": 5.0, "dataset": DATASET})
-    monkeypatch.setattr(score, "rule_hits", lambda raw, settings: flagged)
+    monkeypatch.setattr(hits, "rule_hits", lambda raw, settings: flagged)
     hub.files = {}
 
 
