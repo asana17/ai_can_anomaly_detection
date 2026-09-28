@@ -12,6 +12,9 @@ UNITY_URL = "https://github.com/ThrowTheSwitch/Unity.git"
 UNITY_BASE = "b6763fb"
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
 DEFAULT_STEDGEAI = "/Applications/ST/STEdgeAI/4.0"
+DEFAULT_MBED_CRYPTO = ("~/STM32Cube/Repository/STM32Cube_FW_H5_V1.6.0/Middlewares/"
+                       "Third_Party/mbed-crypto")
+MBED_CRYPTO_SOURCES = ("md.c", "platform.c", "platform_util.c", "sha256.c")
 
 
 @dataclass(frozen=True)
@@ -19,6 +22,12 @@ class EdgeAIRuntime:
     include_dir: str
     library_dir: str
     library: str
+
+
+@dataclass(frozen=True)
+class MbedCrypto:
+    include_dir: str
+    sources: tuple[str, ...]
 
 
 def git(*args):
@@ -71,3 +80,15 @@ def stedgeai_runtime(root=None):
     if missing:
         raise SystemExit("ST Edge AI v4.0 st-ai runtime is incomplete: " + ", ".join(missing))
     return EdgeAIRuntime(include_dir, library_dir, library)
+
+
+def mbed_crypto(root=None):
+    """Locate the mbed-crypto headers and the sources HMAC-SHA256 needs."""
+    root = os.path.abspath(os.path.expanduser(root or DEFAULT_MBED_CRYPTO))
+    include_dir = os.path.join(root, "include")
+    sources = tuple(os.path.join(root, "library", name) for name in MBED_CRYPTO_SOURCES)
+    required = (os.path.join(include_dir, "mbedtls", "md.h"), *sources)
+    missing = [path for path in required if not os.path.isfile(path)]
+    if missing:
+        raise SystemExit("mbed-crypto is incomplete: " + ", ".join(missing))
+    return MbedCrypto(include_dir, sources)

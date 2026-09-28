@@ -13,7 +13,8 @@ belong to others and keep their own licenses.
 ## Fetched or generated when a board project is prepared
 
 [board/prepare](board/prepare) clones the BSP and Unity into the STM32CubeIDE project
-and links the ST Edge AI runtime from where ST Edge AI Core is installed. CubeMX
+and links the ST Edge AI runtime from where ST Edge AI Core is installed. It links the
+mbed-crypto sources from the STM32Cube FW_H5 repository. CubeMX
 generates the drivers and CMSIS there.
 
 | what | version | used for | license |
@@ -22,6 +23,7 @@ generates the drivers and CMSIS there.
 | [Unity](https://github.com/ThrowTheSwitch/Unity) | `b6763fb` | the board unit tests | MIT |
 | STM32H5xx HAL and BSP STM32H5xx_Nucleo | STM32Cube FW_H5 V1.6.0 | drivers | BSD-3-Clause |
 | CMSIS and CMSIS Device | STM32Cube FW_H5 V1.6.0 | Cortex-M33 core and device headers | Apache-2.0 |
+| mbed-crypto, `md.c`, `platform.c`, `platform_util.c` and `sha256.c` and its headers | Mbed TLS 3.6.4 in STM32Cube FW_H5 V1.6.0 | the HMAC-SHA256 on the alarm frames | Apache-2.0 |
 | ST Edge AI Core runtime, `NetworkRuntime1201_CM33_GCC.a` and its headers | 4.0.1 | runs the model on the board | STMicroelectronics SLA0104 |
 
 ## Python packages

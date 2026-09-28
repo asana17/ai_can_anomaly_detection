@@ -1,6 +1,7 @@
 """Select one application and prepare a generated CubeIDE project for it.
 
     python3 -m board.prepare project_dir application_dir [--stedgeai-root PATH]
+        [--mbed-crypto-root PATH]
 
 The command only consumes local application/model inputs. Fetching or generating a
 model belongs to the deployment pipeline, not to project preparation.
@@ -14,7 +15,8 @@ import shutil
 from .application import HERE, application_dir, application_for
 from .cubeide import (LINKER_SCRIPT, configure, keep_program_in_bank_1, link_folders, rewrite,
                       start_kernel)
-from .dependencies import DEFAULT_STEDGEAI, add_bsp, add_unity, stedgeai_runtime
+from .dependencies import (DEFAULT_MBED_CRYPTO, DEFAULT_STEDGEAI, add_bsp, add_unity,
+                           mbed_crypto, stedgeai_runtime)
 
 CUBEMX = os.path.join(HERE, "cubemx")
 
@@ -37,7 +39,7 @@ def keep_ioc(project_dir):
     return "copied"
 
 
-def main(project_dir, application, stedgeai_root=None):
+def main(project_dir, application, stedgeai_root=None, mbed_crypto_root=None):
     project_dir = os.path.abspath(os.path.expanduser(project_dir))
     main_c = os.path.join(project_dir, "Core", "Src", "main.c")
     if not os.path.exists(main_c):
@@ -45,6 +47,7 @@ def main(project_dir, application, stedgeai_root=None):
     app_dir = application_dir(application)
     selected = application_for(app_dir)
     runtime = stedgeai_runtime(stedgeai_root) if selected.needs_stedgeai else None
+    crypto = mbed_crypto(mbed_crypto_root) if selected.needs_mbed_crypto else None
 
     print(f".ioc: {keep_ioc(project_dir)}")
     print(f"mtk3_bsp2: {add_bsp(project_dir)}")
@@ -53,9 +56,9 @@ def main(project_dir, application, stedgeai_root=None):
         ("main.c", main_c, start_kernel),
         (LINKER_SCRIPT, os.path.join(project_dir, LINKER_SCRIPT), keep_program_in_bank_1),
         (".cproject", os.path.join(project_dir, ".cproject"),
-         lambda text: configure(text, selected.libraries, runtime)),
+         lambda text: configure(text, selected.libraries, runtime, crypto)),
         (".project", os.path.join(project_dir, ".project"),
-         lambda text: link_folders(text, app_dir)),
+         lambda text: link_folders(text, app_dir, crypto)),
     )
     for name, path, change in changes:
         print(f"{name}: {'changed' if rewrite(path, change) else 'already done'}")
@@ -67,5 +70,7 @@ def cli():
     parser.add_argument("application_dir")
     parser.add_argument("--stedgeai-root", default=None,
                         help=f"ST Edge AI v4.0 root (default: STEDGEAI_ROOT or {DEFAULT_STEDGEAI})")
+    parser.add_argument("--mbed-crypto-root", default=None,
+                        help=f"FW_H5 V1.6.0 mbed-crypto root (default: {DEFAULT_MBED_CRYPTO})")
     args = parser.parse_args()
-    main(args.project_dir, args.application_dir, args.stedgeai_root)
+    main(args.project_dir, args.application_dir, args.stedgeai_root, args.mbed_crypto_root)

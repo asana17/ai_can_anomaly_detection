@@ -6,9 +6,11 @@ from board.prepare.application import (LIB, MODEL, MODEL_FILES, TEST_COMMON,
                                        application_dir, application_for)
 from board.prepare.cli import keep_ioc
 from board.prepare.cubeide import (C_COMPILER, C_FLAGS, COMPILE_TOOLS, DEFINES, LINKER_TOOL,
-                                   MARKER, configure, keep_program_in_bank_1, link_folder,
-                                   link_folders, start_kernel)
-from board.prepare.dependencies import stedgeai_runtime
+                                   MARKER, MBED_CRYPTO_CONFIG, configure,
+                                   keep_program_in_bank_1, link_folder, link_folders,
+                                   start_kernel)
+from board.prepare.dependencies import (MBED_CRYPTO_SOURCES, MbedCrypto, mbed_crypto,
+                                       stedgeai_runtime)
 
 MAIN_C = ("  }\r\n"
           "\r\n"
@@ -89,6 +91,20 @@ def test_stedgeai_runtime_requires_header_and_cm33_archive(tmp_path):
     runtime = stedgeai_runtime(str(tmp_path))
     assert runtime.include_dir == str(include)
     assert runtime.library_dir == str(library)
+
+
+def test_mbed_crypto_requires_its_header_and_sources(tmp_path):
+    with pytest.raises(SystemExit):
+        mbed_crypto(str(tmp_path))
+    (tmp_path / "include/mbedtls").mkdir(parents=True)
+    (tmp_path / "include/mbedtls/md.h").touch()
+    (tmp_path / "library").mkdir()
+    for name in MBED_CRYPTO_SOURCES:
+        (tmp_path / "library" / name).touch()
+    crypto = mbed_crypto(str(tmp_path))
+    assert crypto.include_dir == str(tmp_path / "include")
+    assert crypto.sources == tuple(str(tmp_path / "library" / name)
+                                   for name in MBED_CRYPTO_SOURCES)
 
 
 def test_no_marker_is_an_error():
@@ -197,6 +213,43 @@ def test_model_adds_its_headers_and_stedgeai_runtime():
                    for path in _values(switched, COMPILE_TOOLS[1], "includepaths"))
     assert _values(switched, LINKER_TOOL, "libraries") == []
     assert _values(switched, LINKER_TOOL, "directories") == []
+
+
+MBED_CRYPTO = MbedCrypto("/opt/mbed-crypto/include",
+                         ("/opt/mbed-crypto/library/md.c", "/opt/mbed-crypto/library/sha256.c"))
+
+
+def test_mbed_crypto_adds_its_config_headers_and_sources():
+    configured = configure(CPROJECT, ("alarm_frames_mac",), None, MBED_CRYPTO)
+    root = ET.fromstring(configured.split("?>", 2)[2])
+    for tool in COMPILE_TOOLS:
+        assert _values(root, tool, "definedsymbols")[-1] == MBED_CRYPTO_CONFIG
+        assert _values(root, tool, "includepaths")[-1] == '"/opt/mbed-crypto/include"'
+    assert [e.get("name") for e in root.iter("entry")][-2:] == [
+        "lib/alarm_frames_mac", "mbed-crypto"]
+    assert configure(configured, ("alarm_frames_mac",), None, MBED_CRYPTO) == configured
+    switched = ET.fromstring(configure(configured).split("?>", 2)[2])
+    for tool in COMPILE_TOOLS:
+        assert MBED_CRYPTO_CONFIG not in _values(switched, tool, "definedsymbols")
+        assert '"/opt/mbed-crypto/include"' not in _values(switched, tool, "includepaths")
+    assert "mbed-crypto" not in [e.get("name") for e in switched.iter("entry")]
+
+
+def test_mbed_crypto_sources_are_linked_in_a_virtual_folder():
+    project = "<?xml version=\"1.0\"?>\n<projectDescription>\n\t<name>p</name>\n</projectDescription>\n"
+    once = link_folders(project, "/repo/board/application/rows", MBED_CRYPTO)
+    assert link_folders(once, "/repo/board/application/rows", MBED_CRYPTO) == once
+    root = ET.fromstring(once.split("?>", 1)[1])
+    assert [(l.findtext("name"), l.findtext("type"),
+             l.findtext("location") or l.findtext("locationURI"))
+            for l in root.iter("link")][-3:] == [
+        ("mbed-crypto", "2", "virtual:/virtual"),
+        ("mbed-crypto/md.c", "1", "/opt/mbed-crypto/library/md.c"),
+        ("mbed-crypto/sha256.c", "1", "/opt/mbed-crypto/library/sha256.c")]
+    switched = link_folders(once, "/repo/board/application/rows")
+    switched = ET.fromstring(switched.split("?>", 1)[1])
+    assert [l.findtext("name") for l in switched.iter("link")] == [
+        "application", "lib", "test_common"]
 
 
 def test_the_app_folder_is_linked_once():

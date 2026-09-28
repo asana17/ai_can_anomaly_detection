@@ -1,5 +1,6 @@
 """Pure transformations of CubeMX/CubeIDE project files."""
 
+import os
 import random
 import re
 import xml.etree.ElementTree as ET
@@ -18,6 +19,8 @@ DEFINES = ("_STM32CUBE_NUCLEO_H533_", "UNITY_INCLUDE_CONFIG_H")
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
             "mtk3_bsp2/mtkernel/kernel/knlinc", "test_common", "Unity/src")
 SOURCES = ("mtk3_bsp2", "Unity/src", "application", "test_common")
+MBED_CRYPTO_FOLDER = "mbed-crypto"
+MBED_CRYPTO_CONFIG = "MBEDTLS_CONFIG_FILE=<alarm_frames_mac_mbedtls_config.h>"
 LINKER_SCRIPT = "STM32H533RETX_FLASH.ld"
 # bank 2 keeps the alarm cuts, so the program stays in bank 1
 FLASH_LENGTH = re.compile(r"(FLASH\s*\(rx\)\s*:\s*ORIGIN = 0x08000000,\s*LENGTH = )\d+K")
@@ -79,26 +82,33 @@ def _workspace_path(path):
     return f'"${{workspace_loc:/${{ProjName}}/{path}}}"'
 
 
-def configure(cproject, libraries=(), runtime=None):
-    """Select sources/includes and, when needed, the st-ai runtime."""
+def configure(cproject, libraries=(), runtime=None, mbed_crypto=None):
+    """Select sources/includes and, when needed, the st-ai runtime and mbed-crypto."""
     head, root = _parse(cproject, "cproject")
     library_paths = tuple(f"lib/{library}" for library in libraries)
+    source_paths = SOURCES + library_paths + ((MBED_CRYPTO_FOLDER,) if mbed_crypto else ())
     project_includes = INCLUDES + library_paths
     for tool in root.iter("tool"):
         if tool.get("superClass") in COMPILE_TOOLS:
             defines = _list_option(tool, "definedsymbols", "Define symbols (-D)",
                                    "definedSymbols")
+            _remove_values(defines, lambda value: value.startswith("MBEDTLS_CONFIG_FILE="))
             for define in DEFINES:
                 _add_value(defines, define)
+            if mbed_crypto:
+                _add_value(defines, MBED_CRYPTO_CONFIG)
             includes = _list_option(tool, "includepaths", "Include paths (-I)", "includePath")
             _remove_values(includes, lambda path: ("/${ProjName}/common}" in path or
                                                    "/${ProjName}/lib/" in path or
                                                    "/${ProjName}/application/" in path or
-                                                   path.endswith("/Middlewares/ST/AI/Inc\"")))
+                                                   path.endswith("/Middlewares/ST/AI/Inc\"") or
+                                                   path.endswith("/mbed-crypto/include\"")))
             for path in project_includes:
                 _add_value(includes, _workspace_path(path))
             if runtime:
                 _add_value(includes, f'"{runtime.include_dir}"')
+            if mbed_crypto:
+                _add_value(includes, f'"{mbed_crypto.include_dir}"')
             if tool.get("superClass") == C_COMPILER:
                 flags = _list_option(tool, "otherflags", "Other flags", "stringList")
                 for flag in C_FLAGS:
@@ -115,10 +125,10 @@ def configure(cproject, libraries=(), runtime=None):
     for entries in root.iter("sourceEntries"):
         for entry in list(entries):
             name = entry.get("name", "")
-            if name == "common" or name.startswith("lib/"):
+            if name in ("common", MBED_CRYPTO_FOLDER) or name.startswith("lib/"):
                 entries.remove(entry)
         names = [entry.get("name") for entry in entries]
-        for name in SOURCES + library_paths:
+        for name in source_paths:
             if name not in names:
                 ET.SubElement(entries, "entry", {"flags": "VALUE_WORKSPACE_PATH",
                                                  "kind": "sourcePath", "name": name})
@@ -142,7 +152,30 @@ def link_folder(project, name, location):
     return _write(head, root)
 
 
-def link_folders(project, app_dir):
+def link_files(project, folder, paths):
+    """Link each path as a file in a virtual folder, or drop the folder when none."""
+    head, root = _parse(project, "projectDescription")
+    links = root.find("linkedResources")
+    if links is None:
+        links = ET.SubElement(root, "linkedResources")
+    for link in list(links):
+        name = link.findtext("name", "")
+        if name == folder or name.startswith(f"{folder}/"):
+            links.remove(link)
+    if paths:
+        link = ET.SubElement(links, "link")
+        ET.SubElement(link, "name").text = folder
+        ET.SubElement(link, "type").text = "2"
+        ET.SubElement(link, "locationURI").text = "virtual:/virtual"
+    for path in paths:
+        link = ET.SubElement(links, "link")
+        ET.SubElement(link, "name").text = f"{folder}/{os.path.basename(path)}"
+        ET.SubElement(link, "type").text = "1"
+        ET.SubElement(link, "location").text = path
+    return _write(head, root)
+
+
+def link_folders(project, app_dir, mbed_crypto=None):
     head, root = _parse(project, "projectDescription")
     links = root.find("linkedResources")
     if links is not None:
@@ -153,7 +186,7 @@ def link_folders(project, app_dir):
     for name, location in (("application", app_dir), ("lib", LIB),
                            ("test_common", TEST_COMMON)):
         project = link_folder(project, name, location)
-    return project
+    return link_files(project, MBED_CRYPTO_FOLDER, mbed_crypto.sources if mbed_crypto else ())
 
 
 def rewrite(path, change):

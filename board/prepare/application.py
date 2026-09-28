@@ -22,6 +22,7 @@ MODEL_FILES = (
 class Application:
     libraries: tuple[str, ...] = ()
     needs_stedgeai: bool = False
+    needs_mbed_crypto: bool = False
 
 
 APPLICATIONS = {
