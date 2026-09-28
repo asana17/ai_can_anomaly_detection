@@ -58,8 +58,7 @@ sequence and size. The record, all little endian:
 | 16 to 47 | the HMAC-SHA256 of bytes 0 to 15 and then the frames |
 | then 16 per frame, oldest first, up to 508 | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
 
-The copy at priority 10 puts the MAC on before it hands the record to the store. The
-key is the 32 bytes in
+The store puts the MAC on before it writes the record. The key is the 32 bytes in
 [alarm_frames_mac_demo_key.h](../../lib/alarm_frames_mac/alarm_frames_mac_demo_key.h).
 It is in the code for the demo, so anyone who reads the code can make a valid MAC. To
 check a record, compute the MAC with that key and compare it with bytes 16 to 47.

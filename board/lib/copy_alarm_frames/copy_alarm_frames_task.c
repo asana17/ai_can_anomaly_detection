@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <tk/tkernel.h>
 #include "copy_alarm_frames_task.h"
 
@@ -26,8 +25,7 @@ LOCAL void copy_frames(CONST FrameRing *ring, UW start, UW end,
 }
 
 /*
- * For each alarm start, copy the frames behind it, put the MAC on them and hand them on.
- * Alarm frames whose MAC fails are dropped.
+ * For each alarm start, copy the frames behind it and hand them on.
  */
 LOCAL void copy_alarm_frames_task(INT stacd, void *exinf)
 {
@@ -39,12 +37,6 @@ LOCAL void copy_alarm_frames_task(INT stacd, void *exinf)
 		task->alarm_frames.no = positions.no;
 		copy_frames(task->frame_ring, positions.frames_start, positions.frames_end,
 			&task->alarm_frames);
-		if (alarm_frames_mac_compute(&task->mac, &task->alarm_frames,
-			offsetof(AlarmFramesRecord, mac), task->alarm_frames.frames,
-			task->alarm_frames.frame_count * (UW)sizeof(FrameRingEntry),
-			task->alarm_frames.mac) < E_OK) {
-			continue;
-		}
 		store_alarm_frames_input_write(task->store_alarm_frames_input,
 			&task->alarm_frames);
 	}
@@ -58,15 +50,10 @@ EXPORT ER copy_alarm_frames_task_create(CopyAlarmFramesTask *task, PRI priority,
 		.itskpri = priority, .stksz = 1024, .task = copy_alarm_frames_task,
 		.exinf = task, .tskatr = TA_HLNG | TA_RNG3,
 	};
-	ER error;
 
 	task->copy_alarm_frames_input = copy_alarm_frames_input;
 	task->frame_ring = frame_ring;
 	task->store_alarm_frames_input = store_alarm_frames_input;
-	error = alarm_frames_mac_create(&task->mac);
-	if (error < E_OK) {
-		return error;
-	}
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }

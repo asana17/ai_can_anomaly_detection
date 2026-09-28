@@ -2,6 +2,7 @@
 #define STORE_ALARM_FRAMES_TASK_H
 
 #include <tk/tkernel.h>
+#include "alarm_frames_mac.h"
 #include "flash_store.h"
 #include "store_alarm_frames_input.h"
 
@@ -10,12 +11,14 @@ typedef struct {
 	StoreAlarmFramesInput *store_alarm_frames_input; /* where the alarm frames come from */
 	FlashStoreState *flash_store;                    /* bank 2, made by flash_store_init */
 	AlarmFramesRecord alarm_frames; /* the alarm frames being written, kept off the stack */
+	AlarmFramesMac mac;             /* puts the MAC on them */
 	ID task_id;
 } StoreAlarmFramesTask;
 
 /*
- * Create the store at priority, writing the alarm frames from store_alarm_frames_input
- * to flash_store.
+ * Create the store at priority. It puts a MAC on the alarm frames from
+ * store_alarm_frames_input and writes them to flash_store. It makes the MAC, so call it
+ * once.
  */
 IMPORT ER store_alarm_frames_task_create(StoreAlarmFramesTask *task, PRI priority,
 	StoreAlarmFramesInput *store_alarm_frames_input, FlashStoreState *flash_store);

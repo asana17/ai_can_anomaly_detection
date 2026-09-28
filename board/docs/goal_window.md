@@ -110,9 +110,9 @@ The numbers are task priorities, smaller runs first.
 | preprocess | builds a row every tick, numbers it and writes it into the ring | must not happen |
 | scoring and detect | reads each new row, runs the rules and the instant model, raises alarm A, writes the row flag | the ring overwrites the oldest rows, which are counted as dropped |
 | CAN send | sends each start and end of alarm A and of alarm B as one frame | only the latest state is sent |
-| copy alarm frames | at the start of alarm A, copies the frames of the N rows before it from the frame ring, the latest up to 508, and puts a MAC on them | the ring overwrites the frames it has not copied yet, and then it keeps none |
+| copy alarm frames | at the start of alarm A, copies the frames of the N rows before it from the frame ring, the latest up to 508 | the ring overwrites the frames it has not copied yet, and then it keeps none |
 | window scoring | copies the latest window and its row flags, runs the windowed model, raises alarm B | windows in between are skipped |
-| store alarm frames | writes the alarm frames to Flash bank 2 | only the latest alarm frames wait |
+| store alarm frames | puts a MAC on the alarm frames and writes them to Flash bank 2 | only the latest alarm frames wait |
 
 preprocess writes the ring because it makes the rows and numbers them, so it never
 misses one. The rows sit in one ring, and the row flags in an array beside it. Each has
@@ -167,7 +167,7 @@ Alarm A goes out first. Alarm B's outputs never come before it.
   With a head of 16 bytes and a MAC of 32 they fill one 8 KB sector less its header. A
   frame is 16 bytes, one Flash write. At the replay's 330 frames a second the N rows
   are about 5.3 KB. A flood of about 2000 frames a second leaves about the last 0.25 s.
-- The copy puts an HMAC-SHA256 on the alarm frames with mbed-crypto from FW_H5. The key
+- The store puts an HMAC-SHA256 on the alarm frames with mbed-crypto from FW_H5. The key
   is written in the code, for the demo. The PC checks it with the same key.
 - The frame ring is 64 KB in RAM.
 - Flash bank 2 holds the alarm frames as 32 sectors of 8 KB. They go to an erased
@@ -195,11 +195,12 @@ load.
 | gateway | forwards filtered frames to FDCAN2 | has its own deadline, so it would sit above detection |
 | self check | computes a CRC over Flash on a period | heavy and periodic, and can wait |
 
-The entry carries the copy of the alarm frames and its MAC. The copy has a reason to run
-above the window task, since the ring overwrites the frames it has not copied. Its work
-comes at the start of alarm A, when alarm B is wanted, and grows with the frames on the
-bus. In the Release build at `-O2` and 32 MHz the copy took 0.18 ms and the MAC 14.1 ms
-for 330 frames, and 0.27 ms and 21.7 ms for 508. The others fall short.
+The entry carries the copy of the alarm frames. The copy has a reason to run above the
+window task, since the ring overwrites the frames it has not copied. Its work comes at
+the start of alarm A, when alarm B is wanted, and grows with the frames on the bus. In
+the Release build at `-O2` and 32 MHz the copy took 0.18 ms and the MAC 14.1 ms for 330
+frames, and 0.27 ms and 21.7 ms for 508. The MAC has no reason to run above the window
+task, so it runs in the store. The others fall short.
 On 2026-09-29 an ECDSA P-256 signature with mbed-crypto in software took the MAC's
 place in the store. It took 51.1 million cycles, 1.60 s, for 506 frames at 32 MHz, and
 about 30 KB more Flash. It was dropped. Below the window task it loads nothing, and
@@ -213,4 +214,3 @@ SecOC is light. A gateway needs a second transceiver. Slots already absorb a flo
 - How alarm B holds across skipped windows.
 - The ID alarm B goes out with.
 - How long preprocess waits on the mutex.
-- How long the MAC, about 22 ms for 508 frames, delays the window task.
