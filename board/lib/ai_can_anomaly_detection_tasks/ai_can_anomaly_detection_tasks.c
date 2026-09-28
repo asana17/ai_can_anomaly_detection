@@ -1,5 +1,6 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
+#include "copy_alarm_frames_input.h"
 #include "preprocess_task.h"
 #include "report_input.h"
 #include "score_and_detect_by_row_input.h"
@@ -10,6 +11,7 @@
 
 LOCAL ScoreAndDetectByRowInput score_and_detect_by_row_input;
 LOCAL ScoreAndDetectByWindowInput score_and_detect_by_window_input;
+LOCAL CopyAlarmFramesInput copy_alarm_frames_input;
 LOCAL PreprocessTask preprocess_task;
 LOCAL ScoreAndDetectByRowTask score_and_detect_by_row_task;
 LOCAL ScoreAndDetectByWindowTask score_and_detect_by_window_task;
@@ -33,6 +35,10 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 	if (error < E_OK) {
 		return error;
 	}
+	error = copy_alarm_frames_input_create(&copy_alarm_frames_input);
+	if (error < E_OK) {
+		return error;
+	}
 	preprocess_task.slots = slots;
 	preprocess_task.frame_ring = frame_ring;
 	/* the windowed model is best effort, so it sits below the alarm outputs */
@@ -42,7 +48,8 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 		return error;
 	}
 	error = score_and_detect_by_row_task_create(&score_and_detect_by_row_task, 8,
-		&score_and_detect_by_row_input, report_input, &score_and_detect_by_window_input);
+		&score_and_detect_by_row_input, report_input, &score_and_detect_by_window_input,
+		&copy_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
