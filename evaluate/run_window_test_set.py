@@ -37,15 +37,15 @@ def detection_of_one_window_model(scores, threshold, window_scores,
 
     The window model flags the last row of each window whose score is above
     `window_threshold`, the row it is judged at. A row where no window ends has NaN,
-    which is never above it. The window model alarms where `k` of the last `n` rows
-    are flagged, as the rules and the instant model do.
+    which is never above it. The window model alarms where one of the last `n` rows is
+    flagged, whatever `k` the rules and the instant model alarm at.
     """
     window_flag = window_scores > window_threshold
     kept = {}
     for k in range(1, n + 1):
         kept[str(k)] = caught_with_the_window_alarm(
             alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, n, k),
-            k_of_last_n(window_flag, rows.segment, n, k), rows_in_window, rows, attacks)
+            k_of_last_n(window_flag, rows.segment, n, 1), rows_in_window, rows, attacks)
     return kept
 
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "window_detection.json",
-  "description": "One entry per instant model and window model. Each holds what the alarm on every tick caught with the window model's alarm added, keyed by k, when k of the last `n` rows raise the alarm on every tick. The window model flags the last row of each window whose score is above its threshold, and alarms where k of the last `n` rows are flagged. Its alarm catches an attack, and is not a false positive, up to W - 1 rows after the attack's last row, W being the window's `rows`. Compare each k with the same model's entry in the test run's `detection.json`.",
+  "description": "One entry per instant model and window model. Each holds what the alarm on every tick caught with the window model's alarm added, keyed by k, when k of the last `n` rows raise the alarm on every tick. The window model flags the last row of each window whose score is above its threshold, and alarms where one of the last `n` rows is flagged, at every k. Its alarm catches an attack, and is not a false positive, up to W - 1 rows after the attack's last row, W being the window's `rows`. Compare each k with the same model's entry in the test run's `detection.json`.",
   "type": "array",
   "items": {
     "type": "object",

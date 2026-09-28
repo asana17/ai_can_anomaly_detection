@@ -55,9 +55,10 @@ Each window's score is saved at its last row.
 The window model flags that row when the score is above its threshold. A row where no
 window ends is not flagged.
 
-The window model alarms when k of the last N rows are flagged, with the same k and N
-as the alarm on every tick. The count starts again when the segment changes, as it
-does for the rows.
+The window model alarms while one of the last N rows is flagged, at every k of the
+alarm on every tick. Its threshold is set by
+[calibrate_windows](../../models/docs/calibrate_windows.md) to a number of alarms an
+hour. The count starts again when the segment changes, as it does for the rows.
 
 The rules and the instant model catch an attack when they alarm on a row of the
 attack. The window model's alarm catches it on a row up to W - 1 rows after the

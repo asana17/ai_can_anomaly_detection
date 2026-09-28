@@ -48,20 +48,19 @@ def test_the_window_model_adds_the_rows_it_is_judged_at():
         "rows 2 to 4 and row 16 are two alarms in 18 rows of 0.1 s"
 
 
-def test_the_window_model_alarms_only_at_k_of_the_last_n_rows():
+def test_the_window_model_alarms_on_one_flag_at_every_k():
     kept = counted(score_on(), score_on(11))
-    assert kept["1"]["caught"] == [0]
-    assert kept["2"]["found"] == 0, "row 11 alone is under 2 of 3"
-    assert counted(score_on(), score_on(10, 11))["2"]["caught"] == [0]
+    assert [kept[k]["caught"] for k in ("1", "2", "3")] == [[0], [0], [0]]
 
 
-def test_the_window_model_counts_again_when_the_segment_changes():
+def test_the_window_model_s_alarm_ends_when_the_segment_changes():
     rows, attacks = twenty_rows()
     rows.segment[10:] = 1
     kept = run_window_test_set.detection_of_one_window_model(
-        score_on(), 0.5, score_on(9, 10), 0.5, 5, rows, attacks, 3)
-    assert kept["2"]["found"] == 0, "row 9 is in the segment before row 10"
-    assert counted(score_on(), score_on(9, 10))["2"]["caught"] == [0]
+        score_on(), 0.5, score_on(8), 0.5, 5, rows, attacks, 3)
+    assert kept["1"]["found"] == 0, "row 8 is in the segment before row 10"
+    assert counted(score_on(), score_on(8))["1"]["caught"] == [0], \
+        "the alarm row 8 raises lasts to row 10"
 
 
 def test_a_window_that_holds_an_attack_catches_it_after_the_attack_ended():
