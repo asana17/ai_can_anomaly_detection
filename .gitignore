@@ -7,3 +7,4 @@ st_ai_ws/
 __pycache__/
 board/application/rows/rows.h
 board/flash.json
+board/application/ai_can_anomaly_detection/fetched/
