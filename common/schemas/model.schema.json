@@ -20,6 +20,9 @@
     },
     {
       "$ref": "#/$defs/window_delta_ae"
+    },
+    {
+      "$ref": "#/$defs/window_drift_ae"
     }
   ],
   "$defs": {
@@ -231,6 +234,59 @@
       "properties": {
         "model": {
           "const": "window delta ae"
+        },
+        "rows": {
+          "$ref": "#/$defs/rows"
+        },
+        "stride": {
+          "description": "The rows from one window it is fitted on to the next. It is scored on every window.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "k": {
+          "$ref": "#/$defs/k"
+        },
+        "hidden": {
+          "$ref": "#/$defs/hidden"
+        },
+        "epochs": {
+          "$ref": "#/$defs/epochs"
+        },
+        "batch": {
+          "$ref": "#/$defs/batch"
+        },
+        "rate": {
+          "$ref": "#/$defs/rate"
+        },
+        "improvement": {
+          "$ref": "#/$defs/improvement"
+        },
+        "patience": {
+          "$ref": "#/$defs/patience"
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        }
+      },
+      "required": [
+        "model",
+        "rows",
+        "stride",
+        "k",
+        "hidden",
+        "epochs",
+        "batch",
+        "rate",
+        "improvement",
+        "patience",
+        "seed"
+      ]
+    },
+    "window_drift_ae": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "const": "window drift ae"
         },
         "rows": {
           "$ref": "#/$defs/rows"

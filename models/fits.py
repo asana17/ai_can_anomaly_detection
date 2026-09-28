@@ -269,13 +269,17 @@ class WindowDeltaAe(WindowNonlinearAe):
         return autoencoder.DeltaAutoencoder(rows=self.rows, signals=signals,
                                             latent_dim=self.k, hidden=self.hidden)
 
+    def _scale(self, net, windows):
+        """Give `net` the std each signal's step has over `windows`."""
+        std = np.diff(windows, axis=1).std(axis=(0, 1))
+        std[std == 0] = 1.0                   # a constant signal stays at 0
+        net.step_std.copy_(torch.from_numpy(std.astype(np.float32)))
+
     def fit(self, windows):
         """Its tensors, how it scores windows, and its mean loss on them each epoch."""
         torch.manual_seed(self.arguments.seed)
         net = self._network(windows.shape[2])
-        std = np.diff(windows, axis=1).std(axis=(0, 1))
-        std[std == 0] = 1.0                   # a constant signal stays at 0
-        net.step_std.copy_(torch.from_numpy(std.astype(np.float32)))
+        self._scale(net, windows)
         losses = autoencoder.fit(self.flat(windows), net, epochs=self.arguments.epochs,
                                  batch=self.arguments.batch, rate=self.arguments.rate,
                                  threshold=self.arguments.improvement,
@@ -286,9 +290,43 @@ class WindowDeltaAe(WindowNonlinearAe):
                                                      windows.shape[2]), losses)
 
 
+@dataclass(frozen=True)
+class WindowDriftAe(WindowDeltaAe):
+    """`WindowDeltaAe` on how far each row of a window sits from its first row rather
+    than on the steps, each value divided by its std for its row and signal over the
+    windows it is fitted on. It scores a window by the error on how far its last row
+    sits from its first."""
+
+    MODEL = "window drift ae"
+
+    @property
+    def prefix(self):
+        return f"window_drift_ae.r{self.rows}.s{self.stride}.h{self.hidden}.k{self.k}."
+
+    @property
+    def name(self):
+        return (f"window drift ae r={self.rows} s={self.stride} h={self.hidden} "
+                f"k={self.k}")
+
+    @property
+    def onnx_name(self):
+        """The name its ONNX files start with."""
+        return f"window_drift_ae_r{self.rows}_s{self.stride}_k{self.k}_h{self.hidden}"
+
+    def _network(self, signals):
+        return autoencoder.DriftAutoencoder(rows=self.rows, signals=signals,
+                                            latent_dim=self.k, hidden=self.hidden)
+
+    def _scale(self, net, windows):
+        """Give `net` the std each row's drift from the first has over `windows`."""
+        std = (windows[:, 1:] - windows[:, :1]).std(axis=0)
+        std[std == 0] = 1.0                   # a constant signal stays at 0
+        net.drift_std.copy_(torch.from_numpy(std.astype(np.float32)))
+
+
 MODELS = {model.MODEL: model
           for model in (Pca, Var, LinearAe, NonlinearAe, WindowNonlinearAe,
-                        WindowDeltaAe)}
+                        WindowDeltaAe, WindowDriftAe)}
 ARGUMENTS = tuple(field.name for field in fields(FitArguments))
 
 

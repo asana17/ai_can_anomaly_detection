@@ -67,6 +67,20 @@ other share all but one row, so a `stride` above 1 cuts the memory and the time 
 fit while leaving out little. What it leaves out was not measured. It is scored and
 calibrated on every window, as the board scores it.
 
+## The window drift ae
+
+A window drift ae is the window delta ae on how far each row of a window sits from its
+first row rather than on the steps. Its network, `DriftAutoencoder`, takes each row less
+the first, divides each value by `drift_std` for its row and signal, and reconstructs
+the `rows - 1` rows. Its score is the mean squared error over the 17 values of the last
+row, how far the window moved in all.
+
+`drift_std` is each value's std over the windows it is fitted on, taken before the fit.
+A row further from the first moves further on a normal drive, so each row has its own.
+It is kept with the tensors under `window_drift_ae.r{rows}.s{stride}.h{hidden}.k{k}.`.
+It is fitted on one window every `stride` rows, and its network returns the window
+with its error added, as the window delta ae does.
+
 ## The windows it fits on
 
 A window is `rows` train rows next to each other in one segment, oldest first. The

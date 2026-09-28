@@ -2,7 +2,8 @@
 
 An autoencoder compresses a row into `latent_dim` numbers and reconstructs it. There
 are `LinearAutoencoder` and `NonlinearAutoencoder`, and `DeltaAutoencoder` for the steps
-between the rows of a window. `fit` trains any of them.
+between the rows of a window and `DriftAutoencoder` for how far each row of a window
+sits from its first. `fit` trains any of them.
 """
 
 from __future__ import annotations
@@ -58,6 +59,27 @@ class DeltaAutoencoder(nn.Module):
         window = x.reshape(-1, self.rows, self.signals)
         step = ((window[:, 1:] - window[:, :-1]) / self.step_std).flatten(1)
         error = self.steps(step) - step
+        return x + torch.cat([torch.zeros_like(x[:, :self.signals]), error], dim=1)
+
+
+class DriftAutoencoder(nn.Module):
+    """`NonlinearAutoencoder` on how far each row of a window of `rows` rows sits from
+    its first row, each value divided by `drift_std` for its row and signal.
+
+    It returns the window with the error of each value it reconstructs added, as
+    `DeltaAutoencoder` does, the first row's being 0.
+    """
+
+    def __init__(self, rows: int, signals: int, latent_dim: int, hidden: int):
+        super().__init__()
+        self.rows, self.signals = rows, signals
+        self.register_buffer("drift_std", torch.ones(rows - 1, signals))
+        self.drifts = NonlinearAutoencoder((rows - 1) * signals, latent_dim, hidden)
+
+    def forward(self, x):
+        window = x.reshape(-1, self.rows, self.signals)
+        drift = ((window[:, 1:] - window[:, :1]) / self.drift_std).flatten(1)
+        error = self.drifts(drift) - drift
         return x + torch.cat([torch.zeros_like(x[:, :self.signals]), error], dim=1)
 
 
