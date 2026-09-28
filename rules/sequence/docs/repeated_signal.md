@@ -30,12 +30,11 @@ signal read what it read ten rows before, on each of five and ten rows.
 | output_shaft_speed | 1,960 | 52 |
 | steering_angle | 639 | 3 |
 
-Those counts leave out the rows the signal held one value over, which
-[frozen_signal](frozen_signal.md) judges. The rule itself does not, so it fires on a
-held value too.
+Those counts leave out the rows the signal held one value over. The rule itself does
+not, so it fires on a value held for twenty rows too.
 
-It fires on no row. The rules together fire on the same 1,945 rows as with
-frozen_signal alone.
+It fires on no row. With the other rules the rules fire on 1,942 of 2,757,787 moving
+rows, 0.0704%, under the 0.1% the rules are held to.
 
 ## What it misses
 

@@ -44,8 +44,6 @@ Documented under [sequence/docs/](sequence/docs).
   truck can move it.
 - [torque_over_load](sequence/docs/torque_over_load.md) flags actual_engine_torque
   sitting above engine_load over the last ten rows.
-- [frozen_signal](sequence/docs/frozen_signal.md) flags a signal holding one value
-  over the last ten rows.
 - [repeated_signal](sequence/docs/repeated_signal.md) flags a signal reading what it
   read ten rows before, over the last ten rows.
 
