@@ -37,11 +37,13 @@ APPLICATIONS = {
     "ai_can_anomaly_detection": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "frame_ring", "moving",
          "signals", "rules", "scale", "model", "scoring", "detect", "window_model",
-         "copy_alarm_frames", "ai_can_anomaly_detection_tasks", "report_can", DEPLOYED_MODEL), True),
+         "copy_alarm_frames", "flash_store", "store_alarm_frames",
+         "ai_can_anomaly_detection_tasks", "report_can", DEPLOYED_MODEL), True),
     "can_path_from_flash": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "frame_ring", "moving",
          "signals", "rules", "scale", "model", "scoring", "detect", "window_model",
-         "copy_alarm_frames", "ai_can_anomaly_detection_tasks", "report_uart", MODEL), True),
+         "copy_alarm_frames", "flash_store", "store_alarm_frames",
+         "ai_can_anomaly_detection_tasks", "report_uart", MODEL), True),
 }
 
 
