@@ -3,7 +3,7 @@
 An autoencoder compresses a row into `latent_dim` numbers and reconstructs it. There
 are `LinearAutoencoder` and `NonlinearAutoencoder`, and `DeltaAutoencoder` for the steps
 between the rows of a window, `DriftAutoencoder` for how far each row of a window
-sits from its first, and `Conv1dAutoencoder` for the same with 1D convolutions. `fit`
+sits from its first, and `Conv1dAutoencoder` for the steps with 1D convolutions. `fit`
 trains any of them.
 """
 
@@ -85,14 +85,14 @@ class DriftAutoencoder(nn.Module):
 
 
 class Conv1dAutoencoder(nn.Module):
-    """An autoencoder of 1D convolutions along time, on how far each row of a window of
-    `rows` rows sits from its first row, each value divided by `drift_std` as in
-    `DriftAutoencoder`.
+    """An autoencoder of 1D convolutions along time, on the steps between the rows of a
+    window of `rows` rows, each signal's step divided by its `step_std` as in
+    `DeltaAutoencoder`.
 
-    Two convolutions of `KERNEL` rows and stride 2 take the `rows - 1` rows of signals
+    Two convolutions of `KERNEL` rows and stride 2 take the `rows - 1` steps of signals
     to `hidden` and then `latent_dim` channels, each a quarter as long in time, and two
-    transposed ones take them back. It returns the window with the error of each value
-    it reconstructs added, as `DriftAutoencoder` does.
+    transposed ones take them back. It returns the window with the error of each step
+    it reconstructs added, as `DeltaAutoencoder` does.
     """
 
     KERNEL = 5
@@ -100,7 +100,7 @@ class Conv1dAutoencoder(nn.Module):
     def __init__(self, rows: int, signals: int, latent_dim: int, hidden: int):
         super().__init__()
         self.rows, self.signals = rows, signals
-        self.register_buffer("drift_std", torch.ones(rows - 1, signals))
+        self.register_buffer("step_std", torch.ones(signals))
         pad = self.KERNEL // 2
         self.encoder = nn.Sequential(
             nn.Conv1d(signals, hidden, self.KERNEL, stride=2, padding=pad), nn.ReLU(),
@@ -114,11 +114,11 @@ class Conv1dAutoencoder(nn.Module):
 
     def forward(self, x):
         window = x.reshape(-1, self.rows, self.signals)
-        drift = (window[:, 1:] - window[:, :1]) / self.drift_std
+        step = (window[:, 1:] - window[:, :-1]) / self.step_std
         # (windows, signals, rows - 1), time along the last axis as Conv1d reads it
-        rebuilt = self.decoder(self.encoder(drift.transpose(1, 2)))
+        rebuilt = self.decoder(self.encoder(step.transpose(1, 2)))
         rebuilt = rebuilt[:, :, :self.rows - 1].transpose(1, 2)
-        error = (rebuilt - drift).flatten(1)
+        error = (rebuilt - step).flatten(1)
         return x + torch.cat([torch.zeros_like(x[:, :self.signals]), error], dim=1)
 
 

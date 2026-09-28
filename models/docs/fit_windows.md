@@ -83,12 +83,12 @@ with its error added, as the window delta ae does.
 
 ## The window conv1d ae
 
-A window conv1d ae is the window drift ae with 1D convolutions along time in place of
-dense layers. Its network, `Conv1dAutoencoder`, takes the same scaled drifts, the `rows
-- 1` rows as a time series of 17 channels. Two convolutions of 5 rows and stride 2 take
-them to `hidden` and then `k` channels, each a quarter as long in time, and two
+A window conv1d ae is the window delta ae with 1D convolutions along time in place of
+dense layers. Its network, `Conv1dAutoencoder`, takes the same scaled steps, the `rows
+- 1` steps as a time series of 17 channels. Two convolutions of 5 rows and stride 2
+take them to `hidden` and then `k` channels, each a quarter as long in time, and two
 transposed convolutions take them back. Its score is the error over the 17 values of
-the last row, as for the window drift ae.
+the last step, as for the window delta ae.
 
 The convolutions share their weights along time, so the weights do not grow with
 `rows`. At `hidden` 32 and `k` 8 it holds 8,089 weights at any `rows`. Its tensors are

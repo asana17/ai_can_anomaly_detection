@@ -111,7 +111,7 @@ def test_a_window_conv1d_ae_is_written_with_its_convolutions_in_the_file(
         tmp_path, hub, monkeypatch):
     torch.manual_seed(0)
     model = Conv1dAutoencoder(rows=9, signals=17, latent_dim=4, hidden=8)
-    model.drift_std.copy_(torch.linspace(0.5, 2.0, 8 * 17).reshape(8, 17))
+    model.step_std.copy_(torch.linspace(0.5, 2.0, 17))
     conv = dict(WINDOW, model="window conv1d ae", rows=9, stride=1)
     weights = {f"window_conv1d_ae.r9.s1.h8.k4.{name}": tensor
                for name, tensor in model.state_dict().items()}

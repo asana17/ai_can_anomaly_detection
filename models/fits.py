@@ -325,8 +325,8 @@ class WindowDriftAe(WindowDeltaAe):
 
 
 @dataclass(frozen=True)
-class WindowConv1dAe(WindowDriftAe):
-    """`WindowDriftAe` with 1D convolutions along time in place of dense layers. `k` is
+class WindowConv1dAe(WindowDeltaAe):
+    """`WindowDeltaAe` with 1D convolutions along time in place of dense layers. `k` is
     the channels at its narrowest, `hidden` those of the convolution before."""
 
     MODEL = "window conv1d ae"

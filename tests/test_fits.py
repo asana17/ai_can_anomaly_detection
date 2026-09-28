@@ -171,18 +171,19 @@ def test_a_window_drift_ae_scores_the_error_on_how_far_its_last_row_moved():
     assert np.allclose(model.scorer(tensors, WINDOWS.shape[2])(WINDOWS), score(WINDOWS))
 
 
-def test_a_window_conv1d_ae_scores_the_error_on_how_far_its_last_row_moved():
+def test_a_window_conv1d_ae_scores_the_error_on_its_last_scaled_step():
     windows = np.random.default_rng(2).normal(size=(64, 9, 5)).astype(np.float32)
     model = WindowConv1dAe(9, 3, 4, ARGUMENTS, stride=2)
     assert model.name == "window conv1d ae r=9 s=2 h=4 k=3"
     assert model_from(as_dict(model)) == model
     check([as_dict(model)], "models.schema.json")
     tensors, score, _ = model.fit(windows)
-    drift = windows[:, 1:] - windows[:, :1]
-    assert np.allclose(tensors[f"{model.prefix}drift_std"].numpy(), drift.std(axis=0))
+    step = np.diff(windows, axis=1)
+    std = step.std(axis=(0, 1))
+    assert np.allclose(tensors[f"{model.prefix}step_std"].numpy(), std)
 
     net = model.network_with_weights(tensors, windows.shape[2])
-    scaled = torch.from_numpy((drift / drift.std(axis=0)).astype(np.float32))
+    scaled = torch.from_numpy((step / std).astype(np.float32))
     rebuilt = net.decoder(net.encoder(scaled.transpose(1, 2)))[:, :, :8].transpose(1, 2)
     error = ((rebuilt - scaled)[:, -1] ** 2).mean(dim=1).detach().numpy()
     assert np.allclose(error, score(windows), atol=1e-6)
