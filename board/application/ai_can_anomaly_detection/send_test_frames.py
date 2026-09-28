@@ -5,7 +5,8 @@
 LOG is a log of `fetched/frames/frames.parquet`, as for `expected.py`. The adapter is a
 candleLight gs_usb one, such as the DSD TECH SH-C31A, run at 250 kbit/s. It prints the
 time sending started, as epoch seconds, and how late the frames were handed to the
-adapter.
+adapter. Each frame another node sends, such as the board's alarm frame, is printed
+with the epoch seconds it came.
 """
 
 import argparse
@@ -17,7 +18,7 @@ import usb.backend.libusb1
 import usb.util
 from gs_usb.constants import CAN_EFF_FLAG
 from gs_usb.gs_usb import GsUsb
-from gs_usb.gs_usb_frame import GsUsbFrame
+from gs_usb.gs_usb_frame import GS_USB_NONE_ECHO_ID, GsUsbFrame
 
 from board.application.ai_can_anomaly_detection.expected import frames
 
@@ -47,11 +48,16 @@ def close_adapter(dev):
     usb.util.dispose_resources(dev.gs_usb)
 
 
-def read_echoes(dev, stop, echoes):
-    """Count the frames the adapter hands back once it has queued them."""
+def read_frames(dev, stop, echoes):
+    """Count the frames the adapter hands back once it has queued them, and print the
+    frames other nodes send."""
     frame = GsUsbFrame()
     while not stop.is_set():
-        if dev.read(frame, 100):
+        if not dev.read(frame, 100):
+            continue
+        if frame.echo_id == GS_USB_NONE_ECHO_ID:
+            print(f"received at {time.time():.3f} {frame}", flush=True)
+        else:
             echoes[0] += 1
 
 
@@ -67,7 +73,7 @@ def main():
     echoes = [0]
     stop = threading.Event()
     dev = open_adapter()
-    reader = threading.Thread(target=read_echoes, args=(dev, stop, echoes))
+    reader = threading.Thread(target=read_frames, args=(dev, stop, echoes))
     reader.start()
     try:
         start = time.perf_counter()
