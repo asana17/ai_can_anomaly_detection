@@ -8,6 +8,7 @@ import pytest
 from assemble import test_set
 from assemble.test_set import grid_rows_injected, inject_frames
 from assemble.grid import grid_rows
+from common.schema_validate import check
 from preprocess.features import signal_state
 from preprocess.frames.can_log_loader import CanFrame
 
@@ -148,6 +149,8 @@ def test_the_attacks_from_the_log_itself_land(tmp_path, attack):
                                   attack=attack))
     # only the speed and the engine speed move in these logs, so only they can land
     assert any(found is not None for *_, found in injected)
+    check([dict(found, log=path) for path, *_, found in injected if found is not None],
+          "injected.schema.json")
 
 
 def test_the_stage_records_the_kind_of_attack(tmp_path, hub):

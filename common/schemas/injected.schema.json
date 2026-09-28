@@ -23,6 +23,11 @@
         "description": "The time in the donor log the replay copies from.",
         "type": "number"
       },
+      "repeat_seconds": {
+        "description": "How often a repeated or frozen replay goes back to `source`, 0 for held.",
+        "type": "number",
+        "minimum": 0
+      },
       "log": {
         "description": "The attacked log's path under the data directory.",
         "type": "string"
