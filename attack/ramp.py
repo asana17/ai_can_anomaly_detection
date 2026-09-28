@@ -7,7 +7,7 @@ from typing import Iterable
 
 import numpy as np
 
-from attack.replay.options import PGNS, SECONDS, pgns_of, time_in
+from attack.replay.options import PGNS, SECONDS, STEPPED, pgns_of, time_in
 from attack.spn_encode import set_field
 from preprocess.frames.can_id_decompose import decompose_can_id
 from preprocess.frames.can_log_loader import CanFrame
@@ -16,9 +16,6 @@ from preprocess.frames.spn_spec import SPEC
 
 # The most the bias reaches, in stds of the signal over the log's own moving frames.
 MOST = 2.0
-
-# Signals that move in whole steps, which a growing bias would not move smoothly.
-STEPPED = ("selected_gear", "current_gear")
 
 
 def _values(frames: list, pgn: int, spn, spans) -> list:

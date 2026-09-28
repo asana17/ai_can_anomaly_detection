@@ -137,3 +137,22 @@ The step is taken from the held value, so the values do not drift. A reserved va
 left as it is, and so is a step that would leave the field or reach a reserved value.
 
 The values still stand still, but no two rows in a row need be exactly the same.
+
+## playback.replay
+
+Overwrites one signal with the values it took at another moment of the same log. It is
+the playback attack of [SynCAN](https://github.com/etas/SynCAN), a signal overwritten
+with a recorded time series of that same signal.
+
+```python
+playback.replay(frames, rng, spans=spans)
+# -> (frames, {pgn, start, stop, source, signal}), or None
+```
+
+It picks the PGN, the start time, the length of the window and the moment to copy from
+as `random_replay.replay` does, both within `spans` of the log itself, then one signal
+of the PGN. Gears move in whole steps and are left out, so ETC2 is never picked.
+
+Only the signal picked is copied. The other signals of the PGN keep their real values,
+so the row holds one signal from another moment beside the rest from now. A reserved
+value, in the frame or in the one copied from, is left as it is.

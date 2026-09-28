@@ -11,6 +11,9 @@ PGNS = (61441, 61442, 61443, 61444, 61445, 61449, 65132, 65265, 65266)
 # would rarely fit in one, and a grid row is 0.1 s, so the shortest covers 20 rows.
 SECONDS = (2.0, 10.0)
 
+# Signals that move in whole steps, which an attack on one signal leaves alone.
+STEPPED = ("selected_gear", "current_gear")
+
 
 def pgns_of(frames) -> set:
     """Which PGNs `frames` carries."""
