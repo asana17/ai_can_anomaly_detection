@@ -1,6 +1,7 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
 #include "slots.h"
+#include "frame_ring.h"
 #include "report_input.h"
 #include "report_uart_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
@@ -8,6 +9,9 @@
 
 /* What the CAN receive side writes with slots_store(). */
 EXPORT Slots slots;
+
+/* The frames the replay copies for the cut. */
+LOCAL FrameRing frame_ring;
 
 LOCAL ReportInput report_input;
 LOCAL ReportUartTask report_uart_task;
@@ -28,6 +32,8 @@ LOCAL void replay_task(INT stacd, void *exinf)
 		}
 		slots_store(&slots, replay_frames[i].arb_id, replay_frames[i].data,
 			replay_frames[i].size, replay_frames[i].time_us);
+		frame_ring_push(&frame_ring, replay_frames[i].arb_id, replay_frames[i].data,
+			replay_frames[i].size, replay_frames[i].time_us);
 	}
 	tk_ext_tsk();
 }
@@ -43,6 +49,7 @@ EXPORT INT usermain(void)
 	INT error;
 
 	tm_printf((UB*)"replaying %d frames\n", REPLAY_FRAMES);
+	frame_ring_clear(&frame_ring, 1u); /* the replay's times are in us */
 	error = report_input_create(&report_input);
 	if (error < E_OK) {
 		return error;

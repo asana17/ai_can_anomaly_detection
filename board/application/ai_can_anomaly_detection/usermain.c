@@ -2,6 +2,7 @@
 #include <tm/tmonitor.h>
 #include "stm32h5xx_hal.h"
 #include "slots.h"
+#include "frame_ring.h"
 #include "report_input.h"
 #include "report_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
@@ -13,15 +14,21 @@ IMPORT FDCAN_HandleTypeDef hfdcan1; /* set up by MX_FDCAN1_Init in the CubeMX ma
 /* What the CAN receive side writes with slots_store(). */
 EXPORT Slots slots;
 
+/* The frames the receive interrupt copies for the cut. */
+LOCAL FrameRing frame_ring;
+
 LOCAL ReportInput report_input;
 LOCAL ReportCanTask report_can_task;
 
-/* Store each frame FDCAN received as the latest of its PGN. */
+/*
+ * Store each frame FDCAN received as the latest of its PGN, and copy it into the frame
+ * ring. One callback takes every frame waiting in RX FIFO 0.
+ */
 EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef header;
 	uint8_t data[CAN_BYTES];
-	uint32_t size;
+	uint32_t size, time;
 
 	while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
 		if (header.IdType != FDCAN_EXTENDED_ID) {
@@ -32,7 +39,9 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 			size = CAN_BYTES;
 		}
 		/* DWT counts cycles once model_init has run, which is before reception starts */
-		slots_store(&slots, header.Identifier, data, size, DWT->CYCCNT);
+		time = DWT->CYCCNT;
+		slots_store(&slots, header.Identifier, data, size, time);
+		frame_ring_push(&frame_ring, header.Identifier, data, size, time);
 	}
 }
 
@@ -58,6 +67,7 @@ EXPORT INT usermain(void)
 	INT error;
 
 	tm_printf((UB*)"reading FDCAN1\n");
+	frame_ring_clear(&frame_ring, SystemCoreClock / 1000000u);
 	error = report_input_create(&report_input);
 	if (error < E_OK) {
 		return error;
