@@ -58,7 +58,10 @@ The window model alarms when k of the last N rows are flagged, with the same k a
 as the alarm on every tick. The count starts again when the segment changes, as it
 does for the rows.
 
-It catches an attack when an alarmed row is inside the attack.
+The rules and the instant model catch an attack when they alarm on a row of the
+attack. The window model's alarm catches it on a row up to W - 1 rows after the
+attack's last row too, as the window ending there still holds a row of the attack.
+Such an alarm is not a false positive.
 
 ## What is compared
 

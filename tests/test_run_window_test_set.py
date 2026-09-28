@@ -34,10 +34,10 @@ def score_on(*at):
 
 
 def counted(scores, window_scores, n=3):
-    """What the instant model caught with the window model, both at a threshold of
-    0.5."""
+    """What the instant model caught with a window model of 5 rows, both at a
+    threshold of 0.5."""
     return run_window_test_set.detection_of_one_window_model(
-        scores, 0.5, window_scores, 0.5, *twenty_rows(), n)
+        scores, 0.5, window_scores, 0.5, 5, *twenty_rows(), n)
 
 
 def test_the_window_model_adds_the_rows_it_is_judged_at():
@@ -59,15 +59,27 @@ def test_the_window_model_counts_again_when_the_segment_changes():
     rows, attacks = twenty_rows()
     rows.segment[10:] = 1
     kept = run_window_test_set.detection_of_one_window_model(
-        score_on(), 0.5, score_on(9, 10), 0.5, rows, attacks, 3)
+        score_on(), 0.5, score_on(9, 10), 0.5, 5, rows, attacks, 3)
     assert kept["2"]["found"] == 0, "row 9 is in the segment before row 10"
     assert counted(score_on(), score_on(9, 10))["2"]["caught"] == [0]
 
 
-def test_a_window_catches_an_attack_only_when_its_last_row_is_in_it():
-    kept = counted(score_on(), score_on(13))    # the window holds rows 9 to 13
-    assert kept["1"]["found"] == 0, \
-        "it holds the attack's rows, but is judged after the attack ended"
+def test_a_window_that_holds_an_attack_catches_it_after_the_attack_ended():
+    kept = counted(score_on(), score_on(15))    # the window holds rows 11 to 15
+    assert kept["1"]["caught"] == [0]
+    assert kept["1"]["alarms_per_hour"] == 0.0
+
+
+def test_a_window_that_holds_no_row_of_an_attack_is_a_false_positive():
+    kept = counted(score_on(), score_on(16))    # the window holds rows 12 to 16
+    assert kept["1"]["found"] == 0
+    assert kept["1"]["alarms_per_hour"] == 2000.0, "one alarm in 18 rows of 0.1 s"
+
+
+def test_the_instant_model_catches_an_attack_only_inside_it():
+    kept = counted(score_on(13), score_on())
+    assert kept["1"]["found"] == 0
+    assert kept["1"]["alarms_per_hour"] == 2000.0
 
 
 def test_a_row_where_no_window_ends_does_not_alarm():

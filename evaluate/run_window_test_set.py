@@ -22,16 +22,16 @@ from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import TestRunSettings
 from detect.alarm import alarmed_rows, k_of_last_n
-from evaluate.count_alarms import attacks_with_a_flagged_row
+from evaluate.count_alarms import (attack_row_mask, attacks_with_a_flagged_row,
+                                   count_false_positive_alarms)
 from evaluate.run_test_set_common import (attacked_rows_of, attacks_caught,
-                                          false_positive_alarms_per_hour,
                                           fetch_thresholds, injected_attacks_of,
                                           threshold_given_to, z_distances_attacks_moved)
 from scoring import score, score_windows
 
 
 def detection_of_one_window_model(scores, threshold, window_scores,
-                                    window_threshold, rows, attacks, n):
+                                    window_threshold, rows_in_window, rows, attacks, n):
     """What the rules and the instant model caught at each k of the last `n` rows, with
     the window model's alarm added.
 
@@ -43,14 +43,29 @@ def detection_of_one_window_model(scores, threshold, window_scores,
     window_flag = window_scores > window_threshold
     kept = {}
     for k in range(1, n + 1):
-        alarmed = (alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, n, k)
-                   | k_of_last_n(window_flag, rows.segment, n, k))
-        kept[str(k)] = {**attacks_caught(
-                            attacks_with_a_flagged_row(alarmed, attacks.injected),
-                            attacks),
-                        "alarms_per_hour": false_positive_alarms_per_hour(alarmed, rows,
-                                                                          attacks)}
+        kept[str(k)] = caught_with_the_window_alarm(
+            alarmed_rows(scores, threshold, rows.rule_hit, rows.segment, n, k),
+            k_of_last_n(window_flag, rows.segment, n, k), rows_in_window, rows, attacks)
     return kept
+
+
+def caught_with_the_window_alarm(row_alarm, window_alarm, rows_in_window, rows,
+                                 attacks):
+    """Which attacks the alarm on every tick and the window model's alarm caught, and
+    the false positive alarms per hour.
+
+    A window that ends up to `rows_in_window` - 1 rows after an attack still holds its
+    rows. The window model's alarm on those rows catches the attack and is not a false
+    positive.
+    """
+    held = [{**a, "last": a["last"] + rows_in_window - 1} for a in attacks.injected]
+    caught = (attacks_with_a_flagged_row(row_alarm, attacks.injected)
+              | attacks_with_a_flagged_row(window_alarm, held))
+    attacked = ((row_alarm & attack_row_mask(attacks.injected, len(row_alarm)))
+                | (window_alarm & attack_row_mask(held, len(window_alarm))))
+    false_positives = count_false_positive_alarms(row_alarm | window_alarm, attacked)
+    return {**attacks_caught(caught, attacks),
+            "alarms_per_hour": float(false_positives / rows.hours)}
 
 
 def detection_of_each_window_model(thresholds, models, scores, window_thresholds,
@@ -65,8 +80,8 @@ def detection_of_each_window_model(thresholds, models, scores, window_thresholds
             kept.append({"instant": {**model, "threshold": threshold},
                          "window": {**window_model, "threshold": window_threshold},
                          **detection_of_one_window_model(
-                             column, threshold, window_column, window_threshold, rows,
-                             attacks, n)})
+                             column, threshold, window_column, window_threshold,
+                             window_model["rows"], rows, attacks, n)})
     return kept
 
 
