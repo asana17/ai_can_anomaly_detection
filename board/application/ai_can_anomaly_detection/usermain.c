@@ -4,7 +4,9 @@
 #include "slots.h"
 #include "frame_ring.h"
 #include "report_input.h"
+#include "flash_store.h"
 #include "store_alarm_frames_input.h"
+#include "store_alarm_frames_task.h"
 #include "report_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
@@ -24,6 +26,8 @@ EXPORT UW most_receive_cycles = 0;
 
 LOCAL ReportInput report_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
+LOCAL FlashStoreState flash_store;
+LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL ReportCanTask report_can_task;
 
 /*
@@ -90,6 +94,17 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = flash_store_init(&flash_store);
+	if (error < E_OK) {
+		tm_printf((UB*)"flash store init error %d\n", error);
+		return error;
+	}
+	/* Flash writes are slow and nothing waits on them, so the store is lowest */
+	error = store_alarm_frames_task_create(&store_alarm_frames_task, 12,
+		&store_alarm_frames_input, &flash_store);
+	if (error < E_OK) {
+		return error;
+	}
 	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
 		&store_alarm_frames_input);
 	if (error < E_OK) {
@@ -102,6 +117,10 @@ EXPORT INT usermain(void)
 	}
 	/* sends only on an alarm, which needs frames, so it may start before FDCAN1 */
 	error = report_can_task_start(&report_can_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = store_alarm_frames_task_start(&store_alarm_frames_task);
 	if (error < E_OK) {
 		return error;
 	}

@@ -49,9 +49,11 @@ IMPORT void store_alarm_frames_input_write(StoreAlarmFramesInput *store_alarm_fr
  * @brief Wait for a write, then copy the latest alarm frames.
  *
  * @param[in,out] store_alarm_frames_input The input.
- * @param[out] alarm_frames The latest alarm frames.
+ * @param[out] alarm_frames The latest alarm frames, left as they were on a timeout.
+ * @param[in] timeout The longest wait in ms, or TMO_FEVR.
+ * @return E_OK, or E_TMOUT when no alarm frames came within timeout.
  */
-IMPORT void store_alarm_frames_input_read(StoreAlarmFramesInput *store_alarm_frames_input,
-	AlarmFramesRecord *alarm_frames);
+IMPORT ER store_alarm_frames_input_read(StoreAlarmFramesInput *store_alarm_frames_input,
+	AlarmFramesRecord *alarm_frames, TMO timeout);
 
 #endif

@@ -33,14 +33,19 @@ EXPORT void store_alarm_frames_input_write(StoreAlarmFramesInput *store_alarm_fr
 	tk_set_flg(store_alarm_frames_input->wake_reader_flag, 1);
 }
 
-EXPORT void store_alarm_frames_input_read(StoreAlarmFramesInput *store_alarm_frames_input,
-	AlarmFramesRecord *alarm_frames)
+EXPORT ER store_alarm_frames_input_read(StoreAlarmFramesInput *store_alarm_frames_input,
+	AlarmFramesRecord *alarm_frames, TMO timeout)
 {
 	UINT pattern;
+	ER error;
 
-	tk_wai_flg(store_alarm_frames_input->wake_reader_flag, 1, TWF_ANDW | TWF_CLR, &pattern,
-		TMO_FEVR);
+	error = tk_wai_flg(store_alarm_frames_input->wake_reader_flag, 1, TWF_ANDW | TWF_CLR,
+		&pattern, timeout);
+	if (error < E_OK) {
+		return error;
+	}
 	tk_loc_mtx(store_alarm_frames_input->mutex, TMO_FEVR);
 	*alarm_frames = store_alarm_frames_input->alarm_frames;
 	tk_unl_mtx(store_alarm_frames_input->mutex);
+	return E_OK;
 }
