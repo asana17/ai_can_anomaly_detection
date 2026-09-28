@@ -5,8 +5,11 @@
 The C code comes from `BOARD`, the directory `deploy.generate_model_for_board` wrote,
 and the scale from the fit that directory records. The threshold comes from
 `THRESHOLDS`, which has to be taken on the same fit. All are pinned to `RUNS_REVISION`.
-The same model goes into every folder of `DESTINATIONS`, with the float ONNX file the
-C code was generated from, which the PC answer runs.
+The same model goes into every folder of `DESTINATIONS`, with the ONNX file the C code
+was generated from, which the PC answer runs.
+
+The window model's C code comes from `WINDOW_BOARD` and goes into
+`WINDOW_DESTINATION`, with the scale of its own fit and its rows. It has no threshold.
 """
 
 from __future__ import annotations
@@ -24,12 +27,17 @@ from models.fits import as_dict, model_from
 
 LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")
 RUNS_REPO = "asana17/ai_can_anomaly_detection_runs"
-RUNS_REVISION = "f324e2e89b9e1c08dfb0681c11fe91b0db4d66e0"
+RUNS_REVISION = "7ec1f4b4c3237cd28aa28735247cff1be6eb481d"
 BOARD = "board/20260928-200316"
 THRESHOLDS = "thresholds/20260928-114811"
 MODEL = "nonlinear_ae_k8_h128"
 # the sample applications' model, and the one the entry runs
 DESTINATIONS = ("active_model", "deployed_model")
+WINDOW_BOARD = "window_board/20260929-051743"
+WINDOW_MODEL = "window_drift_ae_r20_s3_k24_h128"
+WINDOW_DESTINATION = "deployed_window_model"
+# the header each kind of model's scale goes in
+CONFIG_FILES = {"instant_model": "model_config.h", "window_model": "window_model_config.h"}
 
 
 def code_files(name):
@@ -50,18 +58,22 @@ def c_array(values):
                      for at in range(0, len(literals), 2))
 
 
-def model_config(model, mean, std, board_path, models_path):
-    """`model_config.h`, the name of `model` and the scale its rows are z-scored with."""
+def model_config(model, mean, std, precision, board_path, models_path):
+    """The config header, the name of `model`, the scale its rows are z-scored with and,
+    for a window model, its rows."""
     name, upper = model.C_NAME, model.C_NAME.upper()
-    identifier = f"{model.onnx_name}-float".replace("_", "-")
+    identifier = f"{model.onnx_name}-{precision}".replace("_", "-")
+    rows = ""
+    if hasattr(model, "rows"):
+        rows = f"#define {upper}_ROWS {model.rows}u /* W, the rows of a window */\n\n"
     return f"""#ifndef {upper}_CONFIG_H
 #define {upper}_CONFIG_H
 
-/* {model.onnx_name}_float from {board_path}, with the scale of the fit
+/* {model.onnx_name}_{precision} from {board_path}, with the scale of the fit
  * it came from, {models_path}. */
 #define {upper}_ID "{identifier}"
 
-static const float {name}_mean[SIGNAL_COUNT] = {{
+{rows}static const float {name}_mean[SIGNAL_COUNT] = {{
 {c_array(mean)}
 	}};
 
@@ -108,32 +120,58 @@ def write_model(dest, code, onnx_file, model, headers):
             f.write(text)
 
 
+def fetch_board_code(board_path, name, fetched):
+    """The folder `board_path` holds, its `meta.json`, the model `name`, the ONNX file its
+    C code was generated from, that file's precision, and the weights of its fit."""
+    board, board_meta = read_dir(RUNS_REPO, board_path, fetched, RUNS_REVISION)
+    models = board_meta["models"]
+    source = board_meta.get("quantize", board_meta["onnx"])
+    precision = "int8" if "quantize" in board_meta else "float"
+    source_folder, _ = read_dir(source["repo"], source["path"], fetched,
+                                source["revision"])
+    weights, _ = fetch_fitted_models(models["repo"], models["revision"], models["path"],
+                                     fetched)
+    model = next(model for model in map(model_from, board_meta["exported"])
+                 if model.onnx_name == name)
+    onnx_file = os.path.join(source_folder, f"{name}_{precision}.onnx")
+    return board, board_meta, model, onnx_file, precision, weights
+
+
+def config_header(model, weights, precision, board_path, board_meta):
+    """The config header of `model`, by its file name."""
+    return {CONFIG_FILES[model.C_NAME]: model_config(
+        model, weights["scale.mean"].numpy(), weights["scale.std"].numpy(), precision,
+        board_path, board_meta["models"]["path"])}
+
+
 def main():
     with tempfile.TemporaryDirectory() as fetched:
-        board, board_meta = read_dir(RUNS_REPO, BOARD, fetched, RUNS_REVISION)
+        board, board_meta, model, onnx_file, precision, weights = fetch_board_code(
+            BOARD, MODEL, fetched)
         models = board_meta["models"]
-        onnx = board_meta["onnx"]
-        onnx_folder, _ = read_dir(onnx["repo"], onnx["path"], fetched, onnx["revision"])
         thresholds_folder, thresholds_meta = read_dir(RUNS_REPO, THRESHOLDS, fetched,
                                                       RUNS_REVISION)
         if thresholds_meta["models"]["path"] != models["path"]:
             raise ValueError(f"{THRESHOLDS} is taken on "
                              f"{thresholds_meta['models']['path']}, not {models['path']}")
-        weights, _ = fetch_fitted_models(models["repo"], models["revision"],
-                                         models["path"], fetched)
         with open(os.path.join(thresholds_folder, "thresholds.json")) as f:
             thresholds = json.load(f)
-        model = next(model for model in map(model_from, board_meta["exported"])
-                     if model.onnx_name == MODEL)
-        headers = {
-            "model_config.h": model_config(model, weights["scale.mean"].numpy(),
-                                           weights["scale.std"].numpy(), BOARD,
-                                           models["path"]),
-            "threshold.h": threshold_header(threshold_of(thresholds, model), THRESHOLDS)}
+        headers = {**config_header(model, weights, precision, BOARD, board_meta),
+                   "threshold.h": threshold_header(threshold_of(thresholds, model),
+                                                   THRESHOLDS)}
         for dest in DESTINATIONS:
-            write_model(os.path.join(LIB, dest), os.path.join(board, MODEL),
-                        os.path.join(onnx_folder, f"{MODEL}_float.onnx"), model, headers)
+            write_model(os.path.join(LIB, dest), os.path.join(board, MODEL), onnx_file,
+                        model, headers)
             print(f"{MODEL} from {BOARD} written into board/lib/{dest}/", flush=True)
+
+        board, board_meta, model, onnx_file, precision, weights = fetch_board_code(
+            WINDOW_BOARD, WINDOW_MODEL, fetched)
+        dest = os.path.join(LIB, WINDOW_DESTINATION)
+        os.makedirs(dest, exist_ok=True)
+        write_model(dest, os.path.join(board, WINDOW_MODEL), onnx_file, model,
+                    config_header(model, weights, precision, WINDOW_BOARD, board_meta))
+        print(f"{WINDOW_MODEL} from {WINDOW_BOARD} written into "
+              f"board/lib/{WINDOW_DESTINATION}/", flush=True)
 
 
 if __name__ == "__main__":
