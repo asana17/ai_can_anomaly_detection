@@ -11,7 +11,8 @@ from preprocess.features.windows import positions
 from rules.instant import (engine_off, gear_ratio, pedal_conflict, range_check,
                            reserved_moving, reverse_speed, shaft_ratio, speed_agreement,
                            steering_sign, stopped_shaft)
-from rules.sequence import change_limit, frozen_signal, torque_over_load
+from rules.sequence import (change_limit, frozen_signal, repeated_signal,
+                            torque_over_load)
 
 
 def instant(min_speed):
@@ -39,4 +40,5 @@ def hits_of_every_rule(raw, segments, min_speed):
     position = positions(mv, segments)
     return (rule_hits(raw, min_speed) | change_limit.hits(raw, position)
             | torque_over_load.hits(raw, position)
-            | frozen_signal.hits(raw, position)) & mv
+            | frozen_signal.hits(raw, position)
+            | repeated_signal.hits(raw, position)) & mv

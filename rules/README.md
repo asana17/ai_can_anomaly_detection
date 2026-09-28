@@ -46,6 +46,8 @@ Documented under [sequence/docs/](sequence/docs).
   sitting above engine_load over the last ten rows.
 - [frozen_signal](sequence/docs/frozen_signal.md) flags a signal holding one value
   over the last ten rows.
+- [repeated_signal](sequence/docs/repeated_signal.md) flags a signal reading what it
+  read ten rows before, over the last ten rows.
 
 ## Measurements
 
