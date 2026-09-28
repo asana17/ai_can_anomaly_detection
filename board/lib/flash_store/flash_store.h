@@ -90,4 +90,17 @@ IMPORT ER flash_store_init(FlashStoreState *store);
  */
 IMPORT ER flash_store_write(FlashStoreState *store, CONST void *record, UW size, UW *sector);
 
+/**
+ * @brief Copy a sector's header and find its record.
+ *
+ * It invalidates ICACHE first, since it may hold what the sector read before a write or
+ * an erase.
+ *
+ * @param[in] sector The sector, below FLASH_STORE_SECTORS.
+ * @param[out] header The header. Its sequence is FLASH_STORE_ERASED when the sector
+ *                    holds no whole record.
+ * @return The record in Flash, header->size bytes long.
+ */
+IMPORT CONST void *flash_store_read(UW sector, FlashStoreSectorHeader *header);
+
 #endif

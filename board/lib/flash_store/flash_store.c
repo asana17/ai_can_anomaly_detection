@@ -210,3 +210,10 @@ EXPORT ER flash_store_write(FlashStoreState *store, CONST void *record, UW size,
 	*sector = found;
 	return error;
 }
+
+EXPORT CONST void *flash_store_read(UW sector, FlashStoreSectorHeader *header)
+{
+	HAL_ICACHE_Invalidate();
+	*header = *(CONST FlashStoreSectorHeader *)FLASH_STORE_SECTOR_ADDRESS(sector);
+	return (CONST void *)(FLASH_STORE_SECTOR_ADDRESS(sector) + FLASH_STORE_WORD);
+}
