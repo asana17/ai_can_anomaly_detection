@@ -60,6 +60,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [pipeline/](pipeline) runs every stage from the grid to the test run in one command,
   on HEAD's code in a worktree of its own, and says first what a run would build.
 - `data/` holds the raw logs and is not tracked in git.
+- [THIRD_PARTY.md](THIRD_PARTY.md) lists the software and data from others and their
+  licenses.
 
 ## Words
 
