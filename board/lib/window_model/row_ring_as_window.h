@@ -6,6 +6,7 @@
 #include "model.h"
 #include "row_ring.h"
 #include "window_model_config.h"
+#include "window_model_stride.h"
 
 /*
  * The rows window scoring and detect keeps for the windowed model. It takes every row

@@ -5,7 +5,7 @@ import pytest
 
 from preprocess.features.windows import positions, window_ends, window_rows
 
-# W and S besides the ones in board/lib/window_model/window_model_config.h
+# W and S besides the board's, from window_model_config.h and window_model_stride.h
 OTHER_ROWS_AND_STRIDES = [(1, 1), (3, 1), (5, 2), (8, 3), (4, 4), (6, 9)]
 
 
@@ -13,7 +13,7 @@ OTHER_ROWS_AND_STRIDES = [(1, 1), (3, 1), (5, 2), (8, 3), (4, 4), (6, 9)]
 def c_window(board_lib):
     """Build board/lib/window_model/row_ring_as_window.h for this machine and give its functions.
 
-    Called with W and S, it builds with those in place of the ones in window_model_config.h.
+    Called with W and S, it builds with those in place of the board's.
     `push` adds the row numbered `no`, holding `no` in every signal.
     """
     built = {}
@@ -21,13 +21,14 @@ def c_window(board_lib):
     def build(rows=None, stride=None):
         if (rows, stride) in built:
             return built[rows, stride]
-        # window_model_config.h has an include guard, so row_ring_as_window.h keeps these
+        # both headers have include guards, so row_ring_as_window.h keeps these
         config = ""
         if rows is not None:
-            config = ('#include "window_model_config.h"\n'
+            config = ('#include "signals.h"\n#include "window_model_config.h"\n'
+                      '#include "window_model_stride.h"\n'
                       "#undef WINDOW_MODEL_ROWS\n#undef WINDOW_MODEL_STRIDE\n"
                       f"#define WINDOW_MODEL_ROWS {rows}u\n#define WINDOW_MODEL_STRIDE {stride}u\n")
-        library = board_lib(["window_model", "model", "signals"],
+        library = board_lib(["window_model", "deployed_window_model", "model", "signals"],
                             "#include <stddef.h>\n" + config +
                             '#include "row_ring_as_window.h"\n'
                             "uint32_t rows(void)\n{\n\treturn WINDOW_MODEL_ROWS;\n}\n"
@@ -62,7 +63,7 @@ def c_window(board_lib):
 @pytest.fixture(params=[None, *OTHER_ROWS_AND_STRIDES],
                 ids=["config", *(f"W{w}-S{s}" for w, s in OTHER_ROWS_AND_STRIDES)])
 def library(request, c_window):
-    """The C window, with the W and S of window_model_config.h and then with others."""
+    """The C window, with the board's W and S and then with others."""
     if request.param is None:
         return c_window()
     return c_window(*request.param)

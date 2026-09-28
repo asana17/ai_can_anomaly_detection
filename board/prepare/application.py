@@ -11,6 +11,7 @@ LIB = os.path.join(HERE, "lib")
 TEST_COMMON = os.path.join(HERE, "test_common")
 MODEL = "active_model"          # the model the sample applications check against
 DEPLOYED_MODEL = "deployed_model"  # the model the entry runs
+DEPLOYED_WINDOW_MODEL = "deployed_window_model"  # the window model the entry runs
 MODEL_FILES = (
     "instant_model.c", "instant_model.h", "instant_model_data.c",
     "instant_model_data.h", "instant_model_details.h", "model_config.h",
@@ -38,14 +39,16 @@ APPLICATIONS = {
     "ai_can_anomaly_detection": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "frame_ring", "moving",
          "signals", "rules", "scale", "model", "scoring", "detect", "window_model",
-         "alarm_frames_mac", "copy_alarm_frames", "flash_store", "store_alarm_frames",
-         "ai_can_anomaly_detection_tasks", "can_sender", "report_can", DEPLOYED_MODEL),
+         DEPLOYED_WINDOW_MODEL, "alarm_frames_mac", "copy_alarm_frames", "flash_store",
+         "store_alarm_frames", "ai_can_anomaly_detection_tasks", "can_sender", "report_can",
+         DEPLOYED_MODEL),
         True, True),
     "can_path_from_flash": Application(
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "frame_ring", "moving",
          "signals", "rules", "scale", "model", "scoring", "detect", "window_model",
-         "alarm_frames_mac", "copy_alarm_frames", "flash_store", "store_alarm_frames",
-         "ai_can_anomaly_detection_tasks", "report_uart", MODEL), True, True),
+         DEPLOYED_WINDOW_MODEL, "alarm_frames_mac", "copy_alarm_frames", "flash_store",
+         "store_alarm_frames", "ai_can_anomaly_detection_tasks", "report_uart", MODEL),
+        True, True),
 }
 
 
