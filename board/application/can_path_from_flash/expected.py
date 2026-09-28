@@ -1,4 +1,5 @@
-"""Print the rows the alarm starts and ends on when the PC runs this application's frames.
+"""Print the rows the alarm and the window alarm start and end on when the PC runs this
+application's frames.
 
     python3 -m board.application.can_path_from_flash.expected
 
@@ -12,7 +13,8 @@ import argparse
 from pathlib import Path
 import re
 
-from board.pc_answer import LIB, answer, print_alarm_changes
+from board.pc_answer import (LIB, answer, print_alarm_changes,
+                             print_window_alarm_changes, window_answer)
 from preprocess.frames.can_log_loader import CanFrame
 
 HERE = Path(__file__).resolve().parent
@@ -40,6 +42,7 @@ def main():
     print(f"rule hits {int(result.hits.sum())}, "
           f"above the threshold {int((result.scores > result.threshold).sum())}")
     print_alarm_changes(result)
+    print_window_alarm_changes(window_answer(frames()))
 
 
 if __name__ == "__main__":

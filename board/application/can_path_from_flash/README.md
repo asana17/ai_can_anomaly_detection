@@ -39,7 +39,8 @@ This application runs `nonlinear_ae_k8_h64` from
 [`board/lib/active_model/`](../../lib/active_model). `ai_can_anomaly_detection` runs a
 larger model.
 
-[expected.py](expected.py) gives the rows the alarm should start and end on. It sends
+[expected.py](expected.py) gives the rows the alarm and the window alarm should start
+and end on. It sends
 the frames of `replay_frames.h` through the same steps on the PC. It builds a row every
 0.1 s, runs the rules and the model, and raises an alarm when 10 of the last 10 rows
 are flagged by a rule or by the model. It numbers the rows from the first frame, one
@@ -52,16 +53,22 @@ Run it from the repository root. It runs the float ONNX file in
 python3 -m board.application.can_path_from_flash.expected
 ```
 
-On 2026-09-28 it printed:
+The window alarm runs the window model's int8 ONNX file in
+`board/lib/deployed_window_model/` on the moving rows, as `score_and_detect_by_window`
+does. On 2026-09-29 it printed:
 
 ```
 rows: 88, from row 1 to row 88, moving 88, segments 1
 rule hits 60, above the threshold 60
 alarm 0x0CFF0080 start at row 29
 alarm 0x0CFF0080 end at row 80
+alarm 0x0CFF0180 start at row 20
+alarm 0x0CFF0180 end at row 30
+alarm 0x0CFF0180 start at row 80
 ```
 
-The board should print the last two lines. After the replay it prints the fewest and
+The board should print the five alarm lines, the two alarms' lines mixed in the order
+they happen. After the replay it prints the fewest and
 most cycles one push into the frame ring took, and the core clock. An interrupt during
 a push adds to it. On 2026-09-29 the Release build, at `-O2`, printed
 

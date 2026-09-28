@@ -1,4 +1,5 @@
-"""Print the rows the alarm starts and ends on when the PC runs one log's frames.
+"""Print the rows the alarm and the window alarm start and end on when the PC runs one
+log's frames.
 
     python3 -m board.application.ai_can_anomaly_detection.expected LOG
 
@@ -12,7 +13,8 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 
-from board.pc_answer import LIB, answer, print_alarm_changes
+from board.pc_answer import (LIB, answer, print_alarm_changes,
+                             print_window_alarm_changes, window_answer)
 from preprocess.frames.can_log_loader import CanFrame
 
 HERE = Path(__file__).resolve().parent
@@ -38,6 +40,7 @@ def main():
     first = sent[0].timestamp
     since_first = [CanFrame(f.timestamp - first, f.can_id, f.data) for f in sent]
     print_alarm_changes(answer(since_first, MODEL_DIR))
+    print_window_alarm_changes(window_answer(since_first))
 
 
 if __name__ == "__main__":
