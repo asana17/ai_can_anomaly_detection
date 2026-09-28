@@ -57,8 +57,8 @@ def test_a_window_delta_ae_is_written_with_its_steps_in_the_file(tmp_path, hub,
     torch.manual_seed(0)
     model = DeltaAutoencoder(rows=3, signals=17, latent_dim=4, hidden=8)
     model.step_std.copy_(torch.linspace(0.5, 2.0, 17))
-    delta = dict(WINDOW, model="window delta ae")
-    weights = {f"window_delta_ae.r3.h8.k4.{name}": tensor
+    delta = dict(WINDOW, model="window delta ae", stride=1)
+    weights = {f"window_delta_ae.r3.s1.h8.k4.{name}": tensor
                for name, tensor in model.state_dict().items()}
     weights.update({"scale.mean": torch.zeros(17), "scale.std": torch.ones(17)})
     where = {"repo": "u/d", "revision": "ab" * 20, "path": "train_sets/20260101-000000"}
@@ -71,7 +71,7 @@ def test_a_window_delta_ae_is_written_with_its_steps_in_the_file(tmp_path, hub,
     made = export_windows.main("u/runs", COMMIT, "window_models/20260101-000000",
                                str(tmp_path))
 
-    path = tmp_path / made["path"] / "window_delta_ae_r3_k4_h8_float.onnx"
+    path = tmp_path / made["path"] / "window_delta_ae_r3_s1_k4_h8_float.onnx"
     windows = np.random.default_rng(0).normal(size=(64, 3 * 17)).astype(np.float32)
     session = onnxruntime.InferenceSession(str(path),
                                            providers=["CPUExecutionProvider"])

@@ -108,3 +108,24 @@ def test_a_window_holding_a_nan_is_not_fitted_on(tmp_path, monkeypatch):
     # row 5 is in the window 4 to 6 alone, so the other two are kept
     assert np.array_equal(model.windows[0], scaled[[[0, 1, 2], [1, 2, 3]]])
     assert meta["windows"] == [2]
+
+
+class KeptEvery(Kept):
+    """A window model that keeps the windows it is fitted on, one every `stride` rows."""
+
+    def __init__(self, rows, stride):
+        super().__init__(rows)
+        self.stride = stride
+
+
+def test_a_model_with_a_stride_fits_on_one_window_every_stride_rows(
+        tmp_path, monkeypatch):
+    train = train_set(monkeypatch)
+    model = KeptEvery(2, 2)
+    meta = fit_windows.write_models(str(tmp_path), [model], "u/d", REVISION,
+                                    "train_sets/20260101-000000", str(tmp_path))
+
+    scaled = scale_for(train).apply(train)
+    # each segment starts its count again, so 0-1 and 2-3, 4-5, and 7-8
+    assert np.array_equal(model.windows[0], scaled[[[0, 1], [2, 3], [4, 5], [7, 8]]])
+    assert meta["windows"] == [4]

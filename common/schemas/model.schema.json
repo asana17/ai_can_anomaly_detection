@@ -235,6 +235,11 @@
         "rows": {
           "$ref": "#/$defs/rows"
         },
+        "stride": {
+          "description": "The rows from one window it is fitted on to the next. It is scored on every window.",
+          "type": "integer",
+          "minimum": 1
+        },
         "k": {
           "$ref": "#/$defs/k"
         },
@@ -263,6 +268,7 @@
       "required": [
         "model",
         "rows",
+        "stride",
         "k",
         "hidden",
         "epochs",

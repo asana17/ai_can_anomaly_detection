@@ -244,22 +244,26 @@ class WindowNonlinearAe:
 class WindowDeltaAe(WindowNonlinearAe):
     """`WindowNonlinearAe` on the steps between the rows of a window, each signal's step
     divided by its std over the windows it is fitted on. It scores a window by the error
-    on its last step."""
+    on its last step.
+
+    It is fitted on one window every `stride` rows, and scored on every window."""
 
     MODEL = "window delta ae"
+    stride: int = 1
 
     @property
     def prefix(self):
-        return f"window_delta_ae.r{self.rows}.h{self.hidden}.k{self.k}."
+        return f"window_delta_ae.r{self.rows}.s{self.stride}.h{self.hidden}.k{self.k}."
 
     @property
     def name(self):
-        return f"window delta ae r={self.rows} h={self.hidden} k={self.k}"
+        return (f"window delta ae r={self.rows} s={self.stride} h={self.hidden} "
+                f"k={self.k}")
 
     @property
     def onnx_name(self):
         """The name its ONNX files start with."""
-        return f"window_delta_ae_r{self.rows}_k{self.k}_h{self.hidden}"
+        return f"window_delta_ae_r{self.rows}_s{self.stride}_k{self.k}_h{self.hidden}"
 
     def _network(self, signals):
         return autoencoder.DeltaAutoencoder(rows=self.rows, signals=signals,

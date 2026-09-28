@@ -43,7 +43,9 @@ def write_models(folder, models, repo, revision, train_path, local_dir):
                "scale.std": torch.from_numpy(scale.std)}
     trained, windows = [], []
     for model in models:
-        ends = window_ends(position, rows=model.rows)
+        # a model may fit on one window every `stride` rows, the neighbours being alike
+        stride = getattr(model, "stride", 1)
+        ends = window_ends(position, rows=model.rows, stride=stride)
         # a window holding a NaN row is left out, not cut short, so the windows stay
         # where the board places them
         ends = ends[window_rows(complete, ends, rows=model.rows).all(axis=1)]

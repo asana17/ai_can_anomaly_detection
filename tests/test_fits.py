@@ -126,9 +126,9 @@ def test_a_network_comes_back_with_the_tensors_the_run_saved():
 
 
 def test_a_window_delta_ae_is_named_apart_from_the_window_nonlinear_ae():
-    model = WindowDeltaAe(10, 8, 128, ARGUMENTS)
-    assert model.name == "window delta ae r=10 h=128 k=8"
-    assert model.prefix == "window_delta_ae.r10.h128.k8."
+    model = WindowDeltaAe(10, 8, 128, ARGUMENTS, stride=3)
+    assert model.name == "window delta ae r=10 s=3 h=128 k=8"
+    assert model.prefix == "window_delta_ae.r10.s3.h128.k8."
     assert model_from(as_dict(model)) == model
 
 
@@ -148,4 +148,4 @@ def test_a_window_delta_ae_scores_the_error_on_its_last_scaled_step():
 
 
 def test_a_window_delta_ae_written_down_meets_the_models_schema():
-    check([as_dict(WindowDeltaAe(5, 2, 32, ARGUMENTS))], "models.schema.json")
+    check([as_dict(WindowDeltaAe(5, 2, 32, ARGUMENTS, stride=3))], "models.schema.json")

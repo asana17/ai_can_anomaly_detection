@@ -62,6 +62,11 @@ included.
 It was added to catch a signal held still or repeated with noise, whose rows each look
 normal. Whether it does was not measured when it was added.
 
+A window delta ae is fitted on one window every `stride` rows. Two windows next to each
+other share all but one row, so a `stride` above 1 cuts the memory and the time of the
+fit while leaving out little. What it leaves out was not measured. It is scored and
+calibrated on every window, as the board scores it.
+
 ## The windows it fits on
 
 A window is `rows` train rows next to each other in one segment, oldest first. The
