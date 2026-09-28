@@ -17,7 +17,7 @@ python3 -m models.calibrate_windows runs_repo revision window_models/<time> runs
 | `window_models/<time>` | the window models, from [fit_windows](fit_windows.md) |
 | `runs_dir` | local folder the window models are downloaded to and the scores and thresholds are written to |
 | `local_dir` | local folder the calibration set is downloaded to |
-| `--rebuild` | take the thresholds again even if `runs_repo` already has them. The scores are still reused |
+| `--rebuild` | take the thresholds again even if `runs_repo` already has them. The calibration set's windows are scored again too |
 | `--onnx-files window_onnx/<time>` | take the thresholds from the scores of that window export's float ONNX files, as [score_windows](../../scoring/docs/score_windows.md) gives them |
 
 | file | holds |

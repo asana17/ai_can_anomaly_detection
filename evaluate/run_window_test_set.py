@@ -86,13 +86,13 @@ def detection_of_each_window_model(thresholds, models, scores, window_thresholds
 
 
 def write_window_test_run(folder, test_run_directory, window_thresholds_directory,
-                          local_dir, runs_dir):
+                          local_dir, runs_dir, rebuild):
     """Score the test set's windows, count what each window model adds to the alarm on
     every tick of each instant model, and write that.
 
     `window_detection.json` gets one entry per instant model and window model. It holds
     what they caught at each k of the test run's `n`. What comes back goes into
-    `meta.json`.
+    `meta.json`. The windows are scored again when `rebuild` is true.
     """
     _, test_run = read_dir(test_run_directory["repo"], test_run_directory["path"],
                            runs_dir, test_run_directory["revision"])
@@ -105,7 +105,7 @@ def write_window_test_run(folder, test_run_directory, window_thresholds_director
     window_onnx_files = window_thresholds_meta["onnx_files"]
     window_scores_directory = score_windows.main(
         at["repo"], at["revision"], at["path"], local_dir, fitted["repo"],
-        fitted["revision"], fitted["path"], runs_dir,
+        fitted["revision"], fitted["path"], runs_dir, rebuild=rebuild,
         onnx_files=window_onnx_files and window_onnx_files["path"])
     window_scores, window_models, _ = score_windows.fetch_scores(
         window_scores_directory, runs_dir)
@@ -146,7 +146,7 @@ def main(runs_repo, test_run_revision, test_run_path, window_thresholds_revision
                           "window_thresholds": window_thresholds_path}, {}, runs_dir,
                          lambda folder: write_window_test_run(
                              folder, test_run_directory, window_thresholds_directory,
-                             local_dir, runs_dir),
+                             local_dir, runs_dir, rebuild),
                          rebuild, dry_run=dry_run)
 
 

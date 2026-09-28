@@ -32,7 +32,7 @@ python3 -m evaluate.run_window_test_set runs_repo revision test_runs/<time> revi
 | `window_thresholds/<time>` | the thresholds the window models run at. The models they name are read too, and scored with |
 | `local_dir` | local folder the dataset directories are downloaded to |
 | `runs_dir` | local folder `window_scores/<time>/` and `window_test_runs/<time>/` are written to, kept after the upload |
-| `--rebuild` | count again even if `runs_repo` already holds a directory with the same `inputs`. The scores are still reused |
+| `--rebuild` | count again even if `runs_repo` already holds a directory with the same `inputs`. The test set's windows are scored again too. The instant scores are still the test run's |
 
 It writes these files into `runs_dir/window_test_runs/<time>/` and uploads that
 directory to `runs_repo` as `window_test_runs/<time>/`.

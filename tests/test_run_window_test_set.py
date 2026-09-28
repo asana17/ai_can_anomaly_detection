@@ -143,8 +143,8 @@ def stand_in(monkeypatch, hub, window_onnx_files=None):
             score_on(11)[:, None].astype(np.float32)}
     scored = []
     monkeypatch.setattr(run_window_test_set.score_windows, "main",
-                        lambda *args, onnx_files: (
-                            scored.append((args[2], args[6], onnx_files))
+                        lambda *args, rebuild, onnx_files: (
+                            scored.append((args[2], args[6], onnx_files, rebuild))
                             or at("window_scores/20260101-000000")))
     scale = {"scale.mean": torch.zeros(len(SIGNALS)),
              "scale.std": torch.ones(len(SIGNALS))}
@@ -165,10 +165,10 @@ def stand_in(monkeypatch, hub, window_onnx_files=None):
     return scored
 
 
-def run(tmp_path):
+def run(tmp_path, rebuild=False):
     made = run_window_test_set.main("u/runs", REVISION, "test_runs/20260101-000000",
                                     REVISION, "window_thresholds/20260101-000000",
-                                    str(tmp_path), str(tmp_path))
+                                    str(tmp_path), str(tmp_path), rebuild=rebuild)
     return tmp_path / made["path"]
 
 
@@ -177,7 +177,7 @@ def test_the_test_set_is_counted_with_each_window_model(tmp_path, hub, monkeypat
     folder = run(tmp_path)
 
     assert scored == [("test_sets/20260101-000000", "window_models/20260101-000000",
-                       None)], \
+                       None, False)], \
         "the test set's windows are scored with the models the thresholds name"
     kept = json.load(open(folder / "window_detection.json"))
     assert len(kept) == 1
@@ -200,6 +200,13 @@ def test_the_windows_score_with_the_onnx_files_the_thresholds_came_from(
     assert scored[0][2] == "window_onnx/20260101-000000"
     meta = json.load(open(folder / "meta.json"))
     assert meta["window_onnx_files"]["path"] == "window_onnx/20260101-000000"
+
+
+def test_a_rebuild_scores_the_test_set_s_windows_again(tmp_path, hub, monkeypatch):
+    scored = stand_in(monkeypatch, hub)
+    run(tmp_path, rebuild=True)
+
+    assert scored[0][3] is True
 
 
 def test_a_window_model_with_no_threshold_is_refused(tmp_path, hub, monkeypatch):

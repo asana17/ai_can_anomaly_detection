@@ -85,3 +85,19 @@ def test_the_thresholds_of_a_window_export_come_from_its_scores(tmp_path, hub):
     assert meta["inputs"]["onnx_files"] == "window_onnx/20260101-000000"
     assert meta["scores"]["path"] == "window_scores/20260101-000000", "reused"
     assert meta["onnx_files"]["path"] == "window_onnx/20260101-000000"
+
+
+def test_a_rebuild_scores_the_calibration_set_again(tmp_path, hub, monkeypatch):
+    scores = np.full((21, 2), np.nan, np.float32)
+    scores[2:, 0] = np.arange(19)
+    scores[4:, 1] = np.arange(17)
+    fit_and_scores(hub, scores)
+    given = []
+    real = calibrate_windows.score_windows.main
+    monkeypatch.setattr(calibrate_windows.score_windows, "main",
+                        lambda *args, rebuild, **kwargs: (
+                            given.append(rebuild) or real(*args, **kwargs)))
+    calibrate_windows.main("u/runs", COMMIT, "window_models/20260101-000000",
+                           str(tmp_path), str(tmp_path), rebuild=True)
+
+    assert given == [True]

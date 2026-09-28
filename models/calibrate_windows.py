@@ -34,16 +34,18 @@ def thresholds_for(models, scores, *, target):
 
 
 def write_thresholds(folder, runs_repo, revision, models_path, runs_dir, local_dir,
-                     onnx_files, settings):
+                     onnx_files, settings, rebuild):
     """Write `thresholds.json` into `folder`, and return what its `meta.json` adds.
 
-    The calibration set is scored first, unless `runs_repo` holds its scores already.
+    The calibration set is scored first, unless `runs_repo` holds its scores already
+    and `rebuild` is false.
     """
     _, fitted = read_dir(runs_repo, models_path, runs_dir, revision)
     at = fitted["calibration_set"]
     scores_directory = score_windows.main(at["repo"], at["revision"], at["path"],
                                           local_dir, runs_repo, revision, models_path,
-                                          runs_dir, onnx_files=onnx_files)
+                                          runs_dir, rebuild=rebuild,
+                                          onnx_files=onnx_files)
     scores, models, scored = score_windows.fetch_scores(scores_directory, runs_dir)
     thresholds = thresholds_for(models, scores, target=settings.TARGET)
     with open(os.path.join(folder, "thresholds.json"), "w") as f:
@@ -64,7 +66,7 @@ def main(runs_repo, revision, models_path, runs_dir, local_dir, rebuild=False,
                          lambda folder: write_thresholds(folder, runs_repo, revision,
                                                          models_path, runs_dir,
                                                          local_dir, onnx_files,
-                                                         settings),
+                                                         settings, rebuild),
                          rebuild, dry_run=dry_run)
 
 
