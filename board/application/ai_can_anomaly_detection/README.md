@@ -117,17 +117,17 @@ STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 ADDRESS 4
 The time starts inside the callback. It leaves out the HAL interrupt handler that calls
 it and the CPU's interrupt entry and exit. An interrupt during the callback adds to it.
 
-On 2026-09-28 the Debug build, at `-O0` and 32 MHz, took 1,086 to 1,494 cycles, 34 to
-47 us, while the Mac sent `part_3/20210204094457960567.csv`. All 50,001 frames reached
+On 2026-09-29 the Release build, at `-O2` and 32 MHz, took 430 to 694 cycles, 13 to
+22 us, while the Mac sent `part_3/20210204094457960567.csv`. All 50,001 frames reached
 the frame ring.
 
 ## Size
 
-`arm-none-eabi-size` of the image, built on 2026-09-22 with `nonlinear_ae_k16_h128` in the
-Debug configuration, which compiles at `-O0`.
+`arm-none-eabi-size` of the image, built on 2026-09-29 with `nonlinear_ae_k8_h128` in the
+Release configuration, which compiles at `-O2`.
 
 | what | bytes |
 |---|---|
-| text | 93,972 |
-| data | 2,548 |
-| bss | 11,932 |
+| text | 76,276 |
+| data | 2,520 |
+| bss | 107,188 |
