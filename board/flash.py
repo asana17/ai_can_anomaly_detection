@@ -21,11 +21,11 @@ def project_name(project_dir):
 
 def commands(project_dir, workspace, cubeide, programmer):
     name = project_name(project_dir)
-    elf = project_dir / "Debug" / f"{name}.elf"
+    elf = project_dir / "Release" / f"{name}.elf"
     return (
         [str(cubeide), "--launcher.suppressErrors", "-nosplash", "-application",
          "org.eclipse.cdt.managedbuilder.core.headlessbuild", "-data", str(workspace),
-         "-import", str(project_dir), "-cleanBuild", f"{name}/Debug"],
+         "-import", str(project_dir), "-cleanBuild", f"{name}/Release"],
         [str(programmer), "-c", "port=SWD", "-w", str(elf), "-v", "-rst"],
     )
 

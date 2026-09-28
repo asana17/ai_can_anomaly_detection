@@ -15,6 +15,9 @@ C_COMPILER = COMPILE_TOOLS[1]
 LINKER_TOOL = "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker"
 # float32 math rounds as numpy does, the product before the sum, which GCC's FMA does not
 C_FLAGS = ("-ffp-contract=off",)
+# board/flash.py builds Release
+RELEASE = "Release"
+RELEASE_OPTIMIZATION = f"{C_COMPILER}.option.optimization.level.value.o2"
 DEFINES = ("_STM32CUBE_NUCLEO_H533_", "UNITY_INCLUDE_CONFIG_H")
 INCLUDES = ("mtk3_bsp2", "mtk3_bsp2/config", "mtk3_bsp2/include",
             "mtk3_bsp2/mtkernel/kernel/knlinc", "test_common", "Unity/src")
@@ -122,6 +125,13 @@ def configure(cproject, libraries=(), runtime=None, mbed_crypto=None):
             if runtime:
                 _add_value(libraries_option, f":{runtime.library}")
                 _add_value(directories, runtime.library_dir)
+    for configuration in root.iter("configuration"):
+        if configuration.get("name") != RELEASE:
+            continue
+        for tool in configuration.iter("tool"):
+            if tool.get("superClass") == C_COMPILER:
+                _list_option(tool, "optimization.level", "Optimization level",
+                             "enumerated").set("value", RELEASE_OPTIMIZATION)
     for entries in root.iter("sourceEntries"):
         for entry in list(entries):
             name = entry.get("name", "")

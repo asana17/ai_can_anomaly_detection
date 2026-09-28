@@ -42,7 +42,8 @@ The project directory is the generated CubeIDE project containing `.project` and
 The script performs these steps:
 
 1. Read the CubeIDE project name from `.project`.
-2. Create a temporary workspace and run a headless clean build of `Debug`.
+2. Create a temporary workspace and run a headless clean build of `Release`, which
+   `board.prepare` sets to `-O2`.
 3. Write the resulting ELF over SWD, verify it and reset the MCU.
 
 CubeIDE and CubeProgrammer output is printed directly in the terminal. The script

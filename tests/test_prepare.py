@@ -6,8 +6,8 @@ from board.prepare.application import (LIB, MODEL, MODEL_FILES, TEST_COMMON,
                                        application_dir, application_for)
 from board.prepare.cli import keep_ioc
 from board.prepare.cubeide import (C_COMPILER, C_FLAGS, COMPILE_TOOLS, DEFINES, LINKER_TOOL,
-                                   MARKER, MBED_CRYPTO_CONFIG, configure,
-                                   keep_program_in_bank_1, link_folder, link_folders,
+                                   MARKER, MBED_CRYPTO_CONFIG, RELEASE_OPTIMIZATION,
+                                   configure, keep_program_in_bank_1, link_folder, link_folders,
                                    start_kernel)
 from board.prepare.dependencies import (MBED_CRYPTO_SOURCES, MbedCrypto, mbed_crypto,
                                        stedgeai_runtime)
@@ -172,6 +172,27 @@ def test_both_tools_get_the_define_and_the_selected_library_paths():
 def test_the_c_compiler_gets_the_flags():
     root = ET.fromstring(configure(CPROJECT).split("?>", 2)[2])
     assert _values(root, C_COMPILER, "otherflags") == list(C_FLAGS)
+
+
+def test_release_is_built_at_o2_and_debug_is_left():
+    tool = ('<tool superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler">'
+            '<option superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler'
+            '.option.optimization.level" value="{}"/></tool>')
+    cproject = ('<?xml version="1.0"?>\n<cproject>'
+                f'<configuration name="Debug">{tool.format("")}</configuration>'
+                f'<configuration name="Release">{tool.format("os")}</configuration>'
+                '</cproject>\n')
+    configured = configure(cproject)
+    root = ET.fromstring(configured.split("?>", 1)[1])
+    levels = {c.get("name"): _optimization(c) for c in root.iter("configuration")}
+    assert levels == {"Debug": "", "Release": RELEASE_OPTIMIZATION}
+    assert configure(configured) == configured
+
+
+def _optimization(configuration):
+    option = configuration.find(
+        f"tool/option[@superClass='{C_COMPILER}.option.optimization.level']")
+    return option.get("value")
 
 
 def test_configuring_twice_changes_nothing():
