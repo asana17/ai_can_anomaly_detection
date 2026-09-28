@@ -7,6 +7,7 @@
 #include "flash_store.h"
 #include "store_alarm_frames_input.h"
 #include "store_alarm_frames_task.h"
+#include "can_sender.h"
 #include "report_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
@@ -28,6 +29,7 @@ LOCAL ReportInput report_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
 LOCAL StoreAlarmFramesTask store_alarm_frames_task;
+LOCAL CanSender can_sender;
 LOCAL ReportCanTask report_can_task;
 
 /*
@@ -110,8 +112,13 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = can_sender_create(&can_sender, &hfdcan1);
+	if (error < E_OK) {
+		return error;
+	}
 	/* between score and detect by row at 8 and the copy of the alarm frames at 10 */
-	error = report_can_task_create(&report_can_task, 9, &report_input, &hfdcan1);
+	error = report_can_task_create(&report_can_task, 9, &report_input, &can_sender,
+		ALARM_ID);
 	if (error < E_OK) {
 		return error;
 	}

@@ -289,7 +289,7 @@ python3 -m board.application.ai_can_anomaly_detection.fetch
 python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204094457960567.csv
 ```
 
-`alarm start at row` と `alarm end at row` の後に行番号が出る。行は送り始めから
+`alarm 0x0CFF0080 start at row` と `alarm 0x0CFF0080 end at row` の後に行番号が出る。行は送り始めから
 0.1 秒ごとに数える。
 
 ### フレームを送って警報を受ける

@@ -36,8 +36,8 @@ starts or ends.
 | bytes 5 to 7 | 0xFF |
 
 The row number counts ticks from when the board started. It is there to check the
-board against the PC answer. When the transmit FIFO is full, the frames still waiting
-are cancelled and the new one goes in.
+board against the PC answer. When a change comes while the frame of the one before is
+still waiting, that frame is cancelled and the new one goes in.
 
 ## The alarm frames in Flash
 

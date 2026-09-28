@@ -57,6 +57,11 @@ def min_flagged_for_alarm():
     return int(re.search(r"#define MIN_FLAGGED_FOR_ALARM (\d+)u", TASKS.read_text()).group(1))
 
 
+def alarm_id():
+    """The ID the board reports the alarm with."""
+    return int(re.search(r"#define ALARM_ID (0x[0-9A-F]+)u", TASKS.read_text()).group(1), 16)
+
+
 def answer(frames, model_dir):
     """The PC's rows, scores and alarm for `frames`, timed in seconds since the first.
 
@@ -84,5 +89,5 @@ def print_alarm_changes(result):
     ringing = False
     for row, alarmed in zip(result.number, result.alarm):
         if alarmed != ringing:
-            print(f"alarm {'start' if alarmed else 'end'} at row {row}")
+            print(f"alarm 0x{alarm_id():08X} {'start' if alarmed else 'end'} at row {row}")
             ringing = alarmed

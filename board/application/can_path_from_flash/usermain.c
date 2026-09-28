@@ -98,7 +98,7 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	/* between score and detect by row at 8 and the copy of the alarm frames at 10 */
-	error = report_uart_task_create(&report_uart_task, 9, &report_input);
+	error = report_uart_task_create(&report_uart_task, 9, &report_input, ALARM_ID);
 	if (error < E_OK) {
 		return error;
 	}

@@ -57,8 +57,8 @@ On 2026-09-28 it printed:
 ```
 rows: 88, from row 1 to row 88, moving 88, segments 1
 rule hits 60, above the threshold 60
-alarm start at row 29
-alarm end at row 80
+alarm 0x0CFF0080 start at row 29
+alarm 0x0CFF0080 end at row 80
 ```
 
 The board should print the last two lines. After the replay it prints the fewest and

@@ -17,15 +17,15 @@ LOCAL void report_uart_task(INT stacd, void *exinf)
 		}
 		shown = report.alarm;
 		if (report.alarm) {
-			tm_printf((UB*)"alarm start at row %u\n", report.no);
+			tm_printf((UB*)"alarm 0x%08X start at row %u\n", task->id, report.no);
 		} else {
-			tm_printf((UB*)"alarm end at row %u\n", report.no);
+			tm_printf((UB*)"alarm 0x%08X end at row %u\n", task->id, report.no);
 		}
 	}
 }
 
 EXPORT ER report_uart_task_create(ReportUartTask *task, PRI priority,
-	ReportInput *report_input)
+	ReportInput *report_input, UW id)
 {
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 1024, .task = report_uart_task, .exinf = task,
@@ -33,6 +33,7 @@ EXPORT ER report_uart_task_create(ReportUartTask *task, PRI priority,
 	};
 
 	task->report_input = report_input;
+	task->id = id;
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }
