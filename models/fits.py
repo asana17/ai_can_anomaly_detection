@@ -196,6 +196,11 @@ class WindowNonlinearAe:
     def name(self):
         return f"window nonlinear ae r={self.rows} h={self.hidden} k={self.k}"
 
+    @property
+    def onnx_name(self):
+        """The name its ONNX files start with."""
+        return f"window_nonlinear_ae_r{self.rows}_k{self.k}_h{self.hidden}"
+
     def _network(self, signals):
         return autoencoder.NonlinearAutoencoder(signals=self.rows * signals,
                                                 latent_dim=self.k, hidden=self.hidden)

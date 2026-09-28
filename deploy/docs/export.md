@@ -19,7 +19,8 @@ python3 -u -m deploy.export runs_repo revision models/<time> runs_dir [--rebuild
 | `--rebuild` | export again even if `runs_repo` already holds a directory with the same `inputs` |
 
 Limitation: only the nonlinear autoencoders are exported. Every one in the models
-directory is written.
+directory is written. The window models are exported by
+[export_windows](export_windows.md).
 
 ## What it writes
 
