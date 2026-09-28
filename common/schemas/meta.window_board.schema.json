@@ -39,8 +39,20 @@
       "description": "Every model in the directory, as the export lists it.",
       "type": "array",
       "items": {
-        "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
-        "unevaluatedProperties": false
+        "oneOf": [
+          {
+            "$ref": "model.schema.json#/$defs/window_nonlinear_ae",
+            "unevaluatedProperties": false
+          },
+          {
+            "$ref": "model.schema.json#/$defs/window_delta_ae",
+            "unevaluatedProperties": false
+          },
+          {
+            "$ref": "model.schema.json#/$defs/window_drift_ae",
+            "unevaluatedProperties": false
+          }
+        ]
       }
     },
     "versions": {
