@@ -86,6 +86,10 @@ Where this differs from the BSP2 document:
   share.
 - [Unity](https://github.com/ThrowTheSwitch/Unity), the test framework the test
   applications use, is cloned at v2.7.0 into the folder `Unity`. Its `src` is built.
+- Applications that put a MAC on the alarm frames get the folder `mbed-crypto`. It
+  links the four mbed-crypto sources HMAC-SHA256 needs from
+  `~/STM32Cube/Repository/STM32Cube_FW_H5_V1.6.0/Middlewares/Third_Party/mbed-crypto`,
+  which CubeMX downloads with FW_H5. `--mbed-crypto-root` points elsewhere.
 
 After CubeMX generates again, run `board.prepare` again. To build another application,
 close the project in CubeIDE, run `python3 -m board.prepare` with that folder, and open it again.

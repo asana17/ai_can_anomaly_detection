@@ -69,6 +69,7 @@ a push adds to it. On 2026-09-28 the Debug build, at `-O0`, printed
 frame ring push 300 to 363 cycles at 32000000 Hz
 ```
 
-Bank 2 then holds one record, for row 29. On 2026-09-29 it held 330 frames, frames 628
-to 957 of `replay_frames.h`, from 1.905 s to 2.900 s. Their IDs, sizes, data and the
-times between them matched the file.
+Bank 2 then holds one record, for row 29. On 2026-09-29 it held 330 frames. Its MAC
+matched the one computed on the PC, as
+[ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash)
+describes. With one bit of the head or of the last frame changed, it did not.

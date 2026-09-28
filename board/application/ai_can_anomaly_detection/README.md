@@ -55,7 +55,18 @@ sequence and size. The record, all little endian:
 | 0 to 3 | the row alarm A started on, as in the alarm frame |
 | 4 to 7 | the frame count |
 | 8 to 15 | 0 |
-| then 16 per frame, oldest first | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
+| 16 to 47 | the HMAC-SHA256 of bytes 0 to 15 and then the frames |
+| then 16 per frame, oldest first, up to 508 | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
+
+The copy at priority 10 puts the MAC on before it hands the record to the store. The
+key is the 32 bytes in
+[alarm_frames_mac_demo_key.h](../../lib/alarm_frames_mac/alarm_frames_mac_demo_key.h).
+It is in the code for the demo, so anyone who reads the code can make a valid MAC. To
+check a record, compute the MAC with that key and compare it with bytes 16 to 47.
+
+```python
+hmac.new(key, record[:16] + record[48:48 + 16 * count], hashlib.sha256).digest()
+```
 
 Read bank 2 with the programmer while the board runs:
 
@@ -70,10 +81,9 @@ each matches the frames sent.
 python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204094457960567.csv
 ```
 
-On 2026-09-29 the Mac sent `part_3/20210204094457960567.csv` with EEC1 held from 20 s
-for 5 s. The board wrote a record at each of its three alarm starts. Each held 510
-frames, and each matched a run of the frames sent in ID, size and data. The times
-between them were within 0.4 ms of the Mac's.
+On 2026-09-29 the Mac sent `part_3/20210204093505241905.csv`. The board wrote one
+record, for row 629, with 508 frames. Its MAC matched the one computed on the PC.
+With one bit of the head or of the last frame changed, it did not.
 
 ## The model
 
