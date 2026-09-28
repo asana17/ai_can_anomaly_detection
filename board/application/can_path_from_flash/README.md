@@ -63,10 +63,10 @@ alarm end at row 80
 
 The board should print the last two lines. After the replay it prints the fewest and
 most cycles one push into the frame ring took, and the core clock. An interrupt during
-a push adds to it. On 2026-09-28 the Debug build, at `-O0`, printed
+a push adds to it. On 2026-09-29 the Release build, at `-O2`, printed
 
 ```
-frame ring push 300 to 363 cycles at 32000000 Hz
+frame ring push 87 to 133 cycles at 32000000 Hz
 ```
 
 Bank 2 then holds one record, for row 29. On 2026-09-29 it held 330 frames. Its MAC

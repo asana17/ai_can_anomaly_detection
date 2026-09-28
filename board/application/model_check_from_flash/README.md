@@ -60,4 +60,5 @@ print the same count on its last UART line:
 model: processed 80/80, flagged_rows 60, dropped 0, errors 0, max_cycles ...
 ```
 
-`max_cycles` is the longest inference in CPU cycles. Record it.
+`max_cycles` is the longest inference in CPU cycles. On 2026-09-29 the Release build, at
+`-O2` and 32 MHz, printed `flagged_rows 60` and `max_cycles 55938`, 1.75 ms.
