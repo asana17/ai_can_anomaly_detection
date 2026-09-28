@@ -49,8 +49,8 @@ hf auth login
 | ファイル | 中身 |
 |---|---|
 | `SETTINGS` | 既定と違う各段階の設定。すべて既定なら `{}` |
-| `MODELS` | 学習する行ごとのモデルと乱数の種。形は [models/models.json](models/models.json) |
-| `WINDOW_MODELS` | 学習する窓のモデル。形は [models/window_models.json](models/window_models.json) |
+| `MODELS` | 学習する行ごとのモデルと乱数の種。形は [models/models.json](../models/models.json) |
+| `WINDOW_MODELS` | 学習する窓のモデル。形は [models/window_models.json](../models/window_models.json) |
 
 保存先のリポジトリは `SETTINGS` の `pipeline` に書く。
 
@@ -58,7 +58,7 @@ hf auth login
 {"pipeline": {"data_repo": "USER/can_data", "runs_repo": "USER/can_runs"}}
 ```
 
-各設定の既定と決め方は [common/docs/settings.md](common/docs/settings.md) にある。
+各設定の既定と決め方は [common/docs/settings.md](../common/docs/settings.md) にある。
 
 ## 4. 実行する
 
@@ -86,7 +86,7 @@ nohup caffeinate -i python3 -m pipeline.worktree SETTINGS MODELS WINDOW_MODELS >
 git worktree remove <snapshot_dir>/<time>/code
 ```
 
-各段階は [pipeline/README.md](pipeline/README.md) にある。
+各段階は [pipeline/README.md](../pipeline/README.md) にある。
 
 ## 5. ボード用のモデルを作る
 
@@ -106,7 +106,7 @@ python3 -m deploy.generate_model_for_board STEDGEAI RUNS_REPO REVISION onnx/<tim
 | `out/runs` | ダウンロードと出力に使う手元のフォルダ |
 
 作った C コードを `board/lib/` に入れる。どの結果のどのモデルを入れるかは
-[board/fetch_model.py](board/fetch_model.py) の先頭の定数で決まる。
+[board/fetch_model.py](../board/fetch_model.py) の先頭の定数で決まる。
 
 ```sh
 python3 -m board.fetch_model

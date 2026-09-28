@@ -23,7 +23,7 @@ NUCLEO-H533RE の上で μT-Kernel 3.0 ([mtk3_bsp2](https://github.com/tron-foru
 
 ## 1. CubeMX でプロジェクトを作る
 
-できあがる設定は [board/cubemx/ai_can_detection.ioc](board/cubemx/ai_can_detection.ioc)
+できあがる設定は [board/cubemx/ai_can_detection.ioc](../board/cubemx/ai_can_detection.ioc)
 にある。この `.ioc` を CubeMX で開けば以下の操作は済んだ状態になる。
 
 ### ボードを選ぶ
