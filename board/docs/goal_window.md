@@ -95,11 +95,10 @@ flowchart LR
     ring --> win["window scoring 11<br/>windowed model every S rows, alarm B"]
     sd -. wakes on a step row .-> win
     sd -- latest alarm A --> can["CAN send 9<br/>FDCAN1"]
+    win -- latest alarm B --> can
     sd -- alarm A start --> cut["cut 10<br/>frames before alarm A, MAC"]
     frames --> cut
     cut --> out["UART and Flash 12<br/>stores the cut, prints"]
-    sd --> out
-    win --> out
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -108,10 +107,10 @@ The numbers are task priorities, smaller runs first.
 |---|---|---|
 | preprocess | builds a row every tick, numbers it and writes it into the ring | must not happen |
 | scoring and detect | reads each new row, runs the rules and the instant model, raises alarm A, writes the row flag | the ring overwrites the oldest rows, which are counted as dropped |
-| CAN send | sends each start and end of alarm A as one frame | only the latest state is sent |
+| CAN send | sends each start and end of alarm A and of alarm B as one frame | only the latest state is sent |
 | cut | at the start of alarm A, cuts the frames of the N rows before it from the frame ring, up to 8 KB, and puts a MAC on them | the ring overwrites the frames it has not cut yet |
 | window scoring | copies the latest window and its row flags, runs the windowed model, raises alarm B | windows in between are skipped |
-| UART and Flash | writes the cut to Flash and prints the alarm lines and the cut over UART | lines and cuts wait |
+| UART and Flash | writes the cut to Flash and prints the cut over UART | cuts wait |
 
 preprocess writes the ring because it makes the rows and numbers them, so it never
 misses one. The rows sit in one ring, and the row flags in an array beside it. Each has
@@ -156,7 +155,12 @@ Alarm A goes out first. Alarm B's outputs never come before it.
 
 - CAN send puts alarm A on FDCAN1 as ID 0x0CFF0080, priority 3, PGN 0xFF00 and source
   address 0x80. The data is the state in 1 byte, 1 for start and 0 for end, then the
-  row number in 4 bytes, then 0xFF. It is sent only when the state changes.
+  row number in 4 bytes little endian, then 0xFF. It is sent only when the state
+  changes. When the transmit FIFO is full, the frames still waiting are cancelled and
+  the new one goes in.
+- Alarm B goes out on CAN in the same form as alarm A.
+- The alarms go out only on CAN. The row number is for checking the board against the
+  PC answer.
 - The cut keeps the frames of the N rows that raised alarm A, the latest first up to
   8 KB. A frame is 16 bytes, one Flash word. At the replay's 330 frames a second the
   N rows are about 5.3 KB. A flood of about 2000 frames a second leaves about the last
@@ -196,6 +200,7 @@ SecOC is light. A gateway needs a second transceiver. Slots already absorb a flo
 
 - The windowed model's time per window on the board at 32 MHz, which sets S.
 - How alarm B holds across skipped windows.
+- The ID alarm B goes out with.
 - How long preprocess waits on the mutex.
 - Whether the cut and its MAC, about 1 ms by estimate, are enough to delay the window
   task.
