@@ -27,3 +27,33 @@ the board decodes, from 1 s before the first of those rows.
 python3 -m board.prepare CUBEIDE_PROJECT_DIR can_path_from_flash
 python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```
+
+## Check on the board
+
+This application runs `nonlinear_ae_k8_h64` from
+[`board/lib/active_model/`](../../lib/active_model). `ai_can_anomaly_detection` runs a
+larger model.
+
+[expected.py](expected.py) gives the rows the alarm should start and end on. It sends
+the frames of `replay_frames.h` through the same steps on the PC. It builds a row every
+0.1 s, runs the rules and the model, and raises an alarm when 10 of the last 10 rows
+are flagged by a rule or by the model. It numbers the rows from the first frame, one
+every 0.1 s, as the board does.
+
+Run it from the repository root with the float ONNX file of the model,
+`quantize/20260916-221145/nonlinear_ae_k8_h64_float.onnx` in the runs repository.
+
+```sh
+python3 -m board.application.can_path_from_flash.expected ONNX_FILE
+```
+
+On 2026-09-27 it printed:
+
+```
+rows: 88, from row 1 to row 88, moving 88, segments 1
+rule hits 60, above the threshold 60
+alarm start at row 29
+alarm end at row 80
+```
+
+The board should print the last two lines.
