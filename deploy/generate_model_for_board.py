@@ -14,7 +14,7 @@ import tempfile
 from common.cli import arguments
 from common.hub_dirs import read_dir, reuse_or_make
 from models.fits import model_from
-from models.onnx_files import onnx_file_path, onnx_name
+from models.onnx_files import onnx_file_path
 
 TARGET = "stm32h5"
 KEPT = ("network.c", "network.h", "network_data.c", "network_data.h",
@@ -44,7 +44,7 @@ def write_board_files(folder, stedgeai, runs_repo, revision, onnx_path, runs_dir
     for entry in exported["exported"]:
         model = model_from(entry)
         generate(stedgeai, onnx_file_path(source, model, "float"),
-                 os.path.join(folder, onnx_name(model)))
+                 os.path.join(folder, model.onnx_name))
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},
             **{name: exported[name] for name in ("models", "exported")},
             "versions": {"python": platform.python_version(), "stedgeai": version}}

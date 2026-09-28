@@ -10,7 +10,7 @@ from deploy.quantize import write_int8_files
 from scoring import score
 from models.autoencoder import NonlinearAutoencoder
 from models.fits import FitArguments, NonlinearAe, as_dict
-from models.onnx_files import onnx_name, onnx_residuals
+from models.onnx_files import onnx_residuals
 from preprocess.features.signal_state import SIGNALS
 
 REVISION = "ab" * 20
@@ -96,10 +96,10 @@ def int8_fit(monkeypatch, tmp_path, hub, raw):
     stand_in(monkeypatch, hub, raw, np.zeros(len(raw), bool), models=(as_dict(model),))
     torch.manual_seed(0)
     net = NonlinearAutoencoder(signals=len(SIGNALS), latent_dim=4, hidden=8)
-    write_onnx_files([(onnx_name(model), net)], len(SIGNALS), str(tmp_path / "float"))
-    write_int8_files([onnx_name(model)], str(tmp_path / "float"), raw,
+    write_onnx_files([(model.onnx_name, net)], len(SIGNALS), str(tmp_path / "float"))
+    write_int8_files([model.onnx_name], str(tmp_path / "float"), raw,
                      str(tmp_path / "quantize" / "20260101-000000"), batch=16)
-    return tmp_path / "quantize" / "20260101-000000" / f"{onnx_name(model)}_int8.onnx"
+    return tmp_path / "quantize" / "20260101-000000" / f"{model.onnx_name}_int8.onnx"
 
 
 def test_onnx_files_score_as_themselves(tmp_path, hub, monkeypatch):

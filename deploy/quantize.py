@@ -22,7 +22,6 @@ from common.hub_dirs import read_dir, reuse_or_make
 from common.settings import QuantizeSettings
 from models.fit import fetch_fitted_models
 from models.fits import model_from
-from models.onnx_files import onnx_name
 from models.torch_files import scale_of
 
 
@@ -81,7 +80,7 @@ def write_quantized(folder, runs_repo, revision, onnx_path, runs_dir, local_dir,
     train = train_set["train"][~np.isnan(train_set["train"]).any(axis=1)]
     rows = scale_of(weights).apply(train)
 
-    write_int8_files([onnx_name(model_from(entry)) for entry in exported["exported"]],
+    write_int8_files([model_from(entry).onnx_name for entry in exported["exported"]],
                      source, rows, folder,
                      batch_for(fitted["inputs"]["models"], settings))
     return {"onnx": {"repo": runs_repo, "revision": revision, "path": onnx_path},

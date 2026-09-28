@@ -167,6 +167,11 @@ class NonlinearAe(_Autoencoder):
     def name(self):
         return f"nonlinear ae h={self.hidden} k={self.k}"
 
+    @property
+    def onnx_name(self):
+        """The name its ONNX files start with."""
+        return f"nonlinear_ae_k{self.k}_h{self.hidden}"
+
     def _network(self, signals):
         return autoencoder.NonlinearAutoencoder(signals=signals, latent_dim=self.k,
                                                 hidden=self.hidden)

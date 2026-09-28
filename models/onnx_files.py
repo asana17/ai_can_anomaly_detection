@@ -9,14 +9,9 @@ import numpy as np
 import onnxruntime
 
 
-def onnx_name(model):
-    """The name the ONNX files of `model` start with."""
-    return f"nonlinear_ae_k{model.k}_h{model.hidden}"
-
-
 def onnx_file_path(folder, model, precision):
     """The ONNX file of `model` in `folder`, `precision` being `float` or `int8`."""
-    return os.path.join(folder, f"{onnx_name(model)}_{precision}.onnx")
+    return os.path.join(folder, f"{model.onnx_name}_{precision}.onnx")
 
 
 def onnx_residuals(path, rows, batch=8192):
