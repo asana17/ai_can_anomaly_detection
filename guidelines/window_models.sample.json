@@ -1,0 +1,6 @@
+[
+  {"model": "var", "rows": [5, 10, 20]},
+  {"model": "window nonlinear ae", "rows": 5, "k": [12, 24], "hidden": 128, "epochs": 1000, "batch": 1024, "rate": 0.001, "improvement": 0.0001, "patience": 10, "seed": 3},
+  {"model": "window nonlinear ae", "rows": 10, "k": [16, 32], "hidden": 128, "epochs": 1000, "batch": 1024, "rate": 0.001, "improvement": 0.0001, "patience": 10, "seed": 3},
+  {"model": "window nonlinear ae", "rows": 20, "k": [24, 48], "hidden": 128, "epochs": 1000, "batch": 1024, "rate": 0.001, "improvement": 0.0001, "patience": 10, "seed": 3}
+]

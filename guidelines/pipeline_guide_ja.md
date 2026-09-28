@@ -44,13 +44,14 @@ hf auth login
 
 ## 3. 設定ファイルを書く
 
-リポジトリの外に JSON ファイルを 3 つ置く。コードは変えない。
+リポジトリの外に JSON ファイルを 3 つ置く。コードは変えない。このディレクトリの
+サンプルを写して書き換えればよい。
 
-| ファイル | 中身 |
-|---|---|
-| `SETTINGS` | 既定と違う各段階の設定。すべて既定なら `{}` |
-| `MODELS` | 学習する行ごとのモデルと乱数の種。形は [models/models.json](../models/models.json) |
-| `WINDOW_MODELS` | 学習する窓のモデル。形は [models/window_models.json](../models/window_models.json) |
+| ファイル | 中身 | サンプル |
+|---|---|---|
+| `SETTINGS` | 既定と違う各段階の設定。すべて既定なら `{}` | [settings.sample.json](settings.sample.json) |
+| `MODELS` | 学習する行ごとのモデルと乱数の種 | [models.sample.json](models.sample.json) |
+| `WINDOW_MODELS` | 学習する窓のモデル | [window_models.sample.json](window_models.sample.json) |
 
 保存先のリポジトリは `SETTINGS` の `pipeline` に書く。
 
