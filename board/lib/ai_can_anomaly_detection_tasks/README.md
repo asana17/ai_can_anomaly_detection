@@ -18,7 +18,7 @@ flowchart LR
     sd -- latest positions --> copy["copy alarm frames 10<br/>frames behind alarm A"]
     frames[(frame ring)] --> copy
     copy -- latest alarm frames --> store["the application's store"]
-    sd -- shared ring --> win["score and detect by window 11<br/>windows of the last rows"]
+    sd -- shared ring --> win["score and detect by window 11<br/>window model on the last rows"]
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -44,7 +44,7 @@ scored and its alarm raised before the next tick. Nothing in it is dropped. The 
 can promise this, with 0.90 ms of inference against a 0.1 s tick.
 
 The best-effort layer holds detection the board cannot promise, since an ECU cannot
-hold a model large enough. A windowed model is the one planned. It runs on the time the
+hold a model large enough. The window model is the one there. It runs on the time the
 guaranteed layer leaves and skips its inference when there is none. A skip loses only
 the detections that model alone makes.
 
@@ -84,4 +84,11 @@ flagged and the row's place since the last gap, 0 for the first row after it.
 Score and detect by window first copies every row in the shared ring at once, and the
 shared ring is emptied. It may hold several rows, since score and detect by window has
 a lower priority. The task then adds the copied rows to its window one at a time. After
-each row, it checks whether the window is complete, and if so processes it.
+each row, it checks whether the window is complete, and if so scores it.
+
+## Scoring a window
+
+The window is `WINDOW_MODEL_ROWS` rows, and one is scored every `WINDOW_MODEL_STRIDE`
+rows. Each row is z-scored with the scale of the window model's own fit, the model runs
+on the window, and the score is the mean squared error on its last row, as on the PC.
+Nothing reads the score.

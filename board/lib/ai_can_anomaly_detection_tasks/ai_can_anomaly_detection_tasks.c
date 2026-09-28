@@ -8,6 +8,7 @@
 #include "score_and_detect_by_row_task.h"
 #include "score_and_detect_by_window_input.h"
 #include "score_and_detect_by_window_task.h"
+#include "window_model_run.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
 LOCAL ScoreAndDetectByRowInput score_and_detect_by_row_input;
@@ -27,6 +28,11 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 	error = model_init();
 	if (error != MODEL_OK) {
 		tm_printf((UB*)"model init error %d\n", error);
+		return error;
+	}
+	error = window_model_init();
+	if (error != MODEL_OK) {
+		tm_printf((UB*)"window model init error %d\n", error);
 		return error;
 	}
 	error = score_and_detect_by_row_input_create(&score_and_detect_by_row_input);
