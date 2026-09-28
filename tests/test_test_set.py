@@ -138,7 +138,8 @@ def _attacked(row):
             "wheel": np.array([QUIET["wheel_speed"]], np.float32)}
 
 
-@pytest.mark.parametrize("attack", ["frozen_replay", "repeated_replay"])
+@pytest.mark.parametrize("attack", ["frozen_replay", "jittered_frozen_replay",
+                                    "repeated_replay"])
 def test_the_attacks_from_the_log_itself_land(tmp_path, attack):
     logs = [_write_log(tmp_path / f"{n}.csv") for n in "ab"]
     injected = list(inject_frames(logs, random.Random(0),
