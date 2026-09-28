@@ -33,6 +33,12 @@ so they are left out.
 It fires on 3 rows. With the other rules the rules fire on 1,945 of 2,757,787 moving
 rows, 0.0705%, under the 0.1% the rules are held to.
 
+## What it misses
+
+It needs ten rows of exactly one value in one of the four signals. A value held for 9
+rows and then moved a step, again and again, does not fire. Nor does a held value with
+the smallest step of noise added, or a held value in a signal it does not watch.
+
 ## Where it came from
 
 It was thought of after `frozen_replay` in [replay](../../../attack/docs/replay.md) was
