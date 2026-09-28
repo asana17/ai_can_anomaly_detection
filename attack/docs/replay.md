@@ -80,3 +80,23 @@ Those only look wrong when several rows are read together.
 It looks in every donor log and picks one matching moment at random. It never fakes
 CCVS1 or ETC2, which carry the speed and the gear it matches on. It returns None in the
 same three cases as `random_replay.replay`, and when no moment matches.
+
+## repeated_replay.replay
+
+Sends the stretch just before a random moment again and again.
+
+```python
+repeated_replay.replay(frames, rng, spans=spans)
+# -> (frames, {pgn, start, stop, source, repeat_seconds}), or None
+```
+
+It picks the PGN, the start time and the length of the window at random. The window
+repeats the `repeat_seconds` of the log before its start. `source` is the start less
+`repeat_seconds`. `REPEAT_SECONDS` is 1 second.
+
+Each row is one the log itself produced a moment before. What is wrong is the order in
+time. The same short stretch comes back while the other PGNs move on.
+
+The window and the stretch before it lie in one span. It returns None when no span has
+room for both, when the log does not carry a PGN to fake, and when the payloads written
+were already there.
