@@ -39,11 +39,7 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
     each log itself when there are none, and `rows_before_attack(log)` gives a log's
     rows by time.
 
-    `attack` is `replay`, which copies from a moving stretch of one donor, or
-    `matched_replay`, which copies from a donor moment of this log's speed and gear.
-    `frozen_replay` holds the payload of the start, and `repeated_replay` repeats the
-    stretch just before the start, both from the log itself. Every kind copies onto
-    moving rows, and lands only when every row it changed is still moving.
+    `attack` names the kind of attack.
     """
     pool = [(list(load_can_log(p)), rows_before_attack(p)) for p in source_logs]
     for path in logs:
