@@ -54,6 +54,23 @@ python3 -m board.prepare CUBEIDE_PROJECT_DIR ai_can_anomaly_detection
 python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```
 
+## Receive callback time
+
+`HAL_FDCAN_RxFifo0Callback` keeps the fewest and most cycles one call took in
+`fewest_receive_cycles` and `most_receive_cycles`. The board prints nothing, so they are
+read with the programmer while it runs. Their addresses are in the map file.
+
+```sh
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 ADDRESS 4
+```
+
+The time starts inside the callback. It leaves out the HAL interrupt handler that calls
+it and the CPU's interrupt entry and exit. An interrupt during the callback adds to it.
+
+On 2026-09-28 the Debug build, at `-O0` and 32 MHz, took 1,086 to 1,494 cycles, 34 to
+47 us, while the Mac sent `part_3/20210204094457960567.csv`. All 50,001 frames reached
+the frame ring.
+
 ## Size
 
 `arm-none-eabi-size` of the image, built on 2026-09-22 with `nonlinear_ae_k16_h128` in the

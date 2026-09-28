@@ -1,5 +1,6 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
+#include "stm32h5xx_hal.h"
 #include "slots.h"
 #include "frame_ring.h"
 #include "report_input.h"
@@ -16,11 +17,16 @@ LOCAL FrameRing frame_ring;
 LOCAL ReportInput report_input;
 LOCAL ReportUartTask report_uart_task;
 
-/* Store each Flash frame at its own time, as the CAN receive interrupt will. */
+/*
+ * Store each Flash frame at its own time, as the CAN receive interrupt will. At the end,
+ * print the fewest and most cycles one push into the frame ring took. An interrupt in a
+ * push adds to its cycles.
+ */
 LOCAL void replay_task(INT stacd, void *exinf)
 {
 	SYSTIM start, now;
-	UW i, due, elapsed;
+	UW i, due, elapsed, push_started, push_cycles;
+	UW fewest_push_cycles = 0xFFFFFFFFu, most_push_cycles = 0;
 
 	tk_get_otm(&start);
 	for (i = 0; i < REPLAY_FRAMES; i++) {
@@ -32,9 +38,20 @@ LOCAL void replay_task(INT stacd, void *exinf)
 		}
 		slots_store(&slots, replay_frames[i].arb_id, replay_frames[i].data,
 			replay_frames[i].size, replay_frames[i].time_us);
+		/* DWT counts cycles once model_init has run, which is before the replay starts */
+		push_started = DWT->CYCCNT;
 		frame_ring_push(&frame_ring, replay_frames[i].arb_id, replay_frames[i].data,
 			replay_frames[i].size, replay_frames[i].time_us);
+		push_cycles = DWT->CYCCNT - push_started;
+		if (push_cycles < fewest_push_cycles) {
+			fewest_push_cycles = push_cycles;
+		}
+		if (push_cycles > most_push_cycles) {
+			most_push_cycles = push_cycles;
+		}
 	}
+	tm_printf((UB*)"frame ring push %u to %u cycles at %u Hz\n", fewest_push_cycles,
+		most_push_cycles, SystemCoreClock);
 	tk_ext_tsk();
 }
 

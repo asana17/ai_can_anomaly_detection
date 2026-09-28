@@ -55,4 +55,10 @@ alarm start at row 29
 alarm end at row 80
 ```
 
-The board should print the last two lines.
+The board should print the last two lines. After the replay it prints the fewest and
+most cycles one push into the frame ring took, and the core clock. An interrupt during
+a push adds to it. On 2026-09-28 the Debug build, at `-O0`, printed
+
+```
+frame ring push 300 to 363 cycles at 32000000 Hz
+```

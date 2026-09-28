@@ -17,6 +17,10 @@ EXPORT Slots slots;
 /* The frames the receive interrupt copies for the cut. */
 LOCAL FrameRing frame_ring;
 
+/* The fewest and most cycles one receive callback took, read with the programmer. */
+EXPORT UW fewest_receive_cycles = 0xFFFFFFFFu;
+EXPORT UW most_receive_cycles = 0;
+
 LOCAL ReportInput report_input;
 LOCAL ReportCanTask report_can_task;
 
@@ -28,8 +32,9 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 {
 	FDCAN_RxHeaderTypeDef header;
 	uint8_t data[CAN_BYTES];
-	uint32_t size, time;
+	uint32_t size, time, started, cycles;
 
+	started = DWT->CYCCNT;
 	while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
 		if (header.IdType != FDCAN_EXTENDED_ID) {
 			continue; /* J1939 uses 29-bit IDs only */
@@ -42,6 +47,13 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 		time = DWT->CYCCNT;
 		slots_store(&slots, header.Identifier, data, size, time);
 		frame_ring_push(&frame_ring, header.Identifier, data, size, time);
+	}
+	cycles = DWT->CYCCNT - started;
+	if (cycles < fewest_receive_cycles) {
+		fewest_receive_cycles = cycles;
+	}
+	if (cycles > most_receive_cycles) {
+		most_receive_cycles = cycles;
 	}
 }
 
