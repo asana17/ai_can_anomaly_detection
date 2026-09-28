@@ -100,3 +100,18 @@ time. The same short stretch comes back while the other PGNs move on.
 The window and the stretch before it lie in one span. It returns None when no span has
 room for both, when the log does not carry a PGN to fake, and when the payloads written
 were already there.
+
+## frozen_replay.replay
+
+Holds the payload a PGN had at a random moment.
+
+```python
+frozen_replay.replay(frames, rng, spans=spans)
+# -> (frames, {pgn, start, stop, source, repeat_seconds}), or None
+```
+
+It is `repeated_replay.replay` with `repeat_seconds` 0. Every frame of the PGN in the
+window carries the payload of the start. `source` is the start.
+
+At the start the held value is still close to the real one, so the first rows barely
+move.
