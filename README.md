@@ -1,17 +1,25 @@
 # CAN anomaly detection
 
-Detects unknown anomalies on a heavy duty truck's CAN bus (J1939/FMS), meant to run
-on a small microcontroller (NUCLEO-H533RE).
+Watches a heavy duty truck's CAN bus (J1939/FMS) on a NUCLEO-H533RE, raises an alarm
+on CAN when the signals go wrong, and keeps the frames before the alarm in Flash for
+investigation.
 
-Deterministic rules catch what can be written as an invariant, a value out of range
-or two signals that must agree, like the engine and wheel speeds picking out the gear
-the transmission reports. They are in [rules/](rules).
+The frames become one row of 17 signals every 100 ms. Three detectors read the rows.
 
-What no invariant covers is left to a model, a nonlinear
-[autoencoder](models/docs/autoencoder.md). A model trains offline on a PC on
-normal data only, then runs on the device for inference, in float since the float model
-fits. Anomalies are synthesized from the normal data to test detection and never enter
-training.
+| detector | what it catches |
+|---|---|
+| [rules](rules) | what can be written as a condition, like a value out of range or the engine and wheel speeds disagreeing with the reported gear |
+| row [autoencoder](models/docs/autoencoder.md) | how the signals of one row relate, beyond what the rules list |
+| window autoencoder | how the signals change over a window of rows |
+
+The autoencoders train on a PC on normal rows only and run on the board. Attacks are
+synthesized from normal logs to test detection and never enter training.
+
+On the board, making rows, the rules and the row model, the alarm and storing the
+frames come before the window model, which is the heaviest. The window model waits
+while they run and catches up from the rows kept for it. The design and the results
+on the board are in the
+[slides](https://docs.google.com/presentation/d/1hwYTSuzBjXj9xMCqELzK-VM9VE5GtPjH6FCRop7E4cI/edit?usp=sharing).
 
 ## Setup
 
@@ -76,46 +84,6 @@ J1939's own terms, frame, PGN and SPN, are described in
 | segment | a run of rows with no gap in time, broken between logs |
 | residual | how far a row sits off the subspace a model fitted |
 | block | one calibration window, in seconds above 5 km/h |
-
-## TODO
-
-- Rework `evaluate` before running `fit` and the stages after it. A row goes through
-  four steps, the same on the PC and the board. The first three are the scoring
-  pipeline.
-  1. `preprocess` marks the moving rows.
-  2. `rules` flags the moving rows it hits.
-  3. The model scores the moving rows.
-  4. `detect` compares the scores with the threshold, adds the rule flags, and raises
-     an alarm when k of the last N rows are flagged.
-
-  `scoring.score` runs the scoring pipeline over a set of rows and keeps each row's
-  scores and rule flags. `models.calibrate` runs it over the calibration rows and takes
-  the threshold from them, and `evaluate.run_test_set` runs it over the test set's rows
-  and counts what each detector caught, so a new threshold or k needs no
-  rescoring. About 33 MB and 430 MB for 40 models, reckoned from the grid's row counts.
-  Rows are selected by mask and never cut out, since the alarm counts rows next to each
-  other. No function joins the steps.
-
-  The stages after it are drawn in [evaluate/README.md](evaluate/README.md).
-
-  The same two parts run on the PC and on the board.
-
-  | part | steps | on the PC | on the board |
-  |---|---|---|---|
-  | scoring pipeline | `preprocess`, `rules`, the model | `scoring.score` | in C |
-  | `detect` | threshold, OR the rule flags, k of the last N | `detect`, run by `evaluate.run_test_set` | in C |
-
-  What still differs from today's code. `moving` and `Scale` are in `preprocess`, the
-  rules run over columns with numpy, and `fit` keeps the scale in the models, `detect`
-  holds step 4, and `split_test_logs`, `calibration_set`, `train_set` and `test_set`
-  build the sets, and `score`, `calibrate` and
-  `run_test_set` are split as drawn, with their schemas and tests, and the stage docs
-  follow them, and the `evaluate` box is broken up, `fit` and `calibrate` into
-  `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
-  `evaluate`, all done 2026-09-22.
-
-- Slides for the TRON Programming Contest 2026 entry, and the source published. Due
-  2026-09-30.
 
 ## Tests
 
