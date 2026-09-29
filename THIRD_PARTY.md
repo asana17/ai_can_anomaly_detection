@@ -7,7 +7,7 @@ belong to others and keep their own licenses.
 
 | what | used for | license |
 |---|---|---|
-| C code and ONNX files that ST Edge AI Core generated, in [board/lib/active_model](board/lib/active_model) and [board/lib/deployed_model](board/lib/deployed_model) | the model the board runs | STMicroelectronics SLA0104, in the `LICENSE.txt` next to them |
+| C code and ONNX files that ST Edge AI Core generated, in [board/lib/active_model](board/lib/active_model), [board/lib/deployed_model](board/lib/deployed_model) and [board/lib/deployed_window_model](board/lib/deployed_window_model) | the models the board runs | STMicroelectronics SLA0104, in the `LICENSE.txt` next to them |
 | [mtk3bsp2_samples](https://github.com/mox692/mtk3bsp2_samples), a git submodule on branch `can_driver`, forked from [tron-forum/mtk3bsp2_samples](https://github.com/tron-forum/mtk3bsp2_samples) | the CAN task in `board/application/can_bus_debug` is modelled on its `task_can` | as its README states, μT-Kernel 3.0 under T-License 2.2 and IDE generated code under the terms in its archive |
 
 ## Fetched or generated when a board project is prepared
@@ -42,6 +42,13 @@ Installed from [requirements.txt](requirements.txt).
 | scikit-learn | BSD-3-Clause |
 | jsonschema | MIT |
 | pytest | MIT |
+| gs_usb | MIT |
+| pyusb | BSD-3-Clause |
+
+`send_test_frames.py` in
+[board/application/ai_can_anomaly_detection](board/application/ai_can_anomaly_detection)
+loads [libusb](https://libusb.info) 1.0, LGPL-2.1-or-later, installed on its own, at run
+time through pyusb.
 
 ## Data
 
