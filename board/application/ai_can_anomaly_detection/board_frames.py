@@ -6,8 +6,9 @@
 Only the `received at` lines are read.
 
 Each frame the board sent prints as one line, with its row. An alarm or window alarm
-frame prints how many ms after the board made its row it went out. A stored record
-frame prints how many ms after the last alarm start it came, and its frame count. A
+frame prints how many ms after the board made its row it went out. A stored record or
+window stored record frame prints how many ms after the last start of its alarm it
+came, and its frame count. A
 window backlog frame prints how many ms after the board made its row the window model
 finished it, and the rows lost just before it. The time the board made a row is taken
 from the last alarm or window alarm frame, less the ms it carries, one row period for
@@ -48,12 +49,13 @@ def main():
     alarm_id = defined(TASKS, "ALARM_ID")
     window_alarm_id = defined(TASKS, "WINDOW_ALARM_ID")
     backlog_id = defined(TASKS, "WINDOW_BACKLOG_ID")
-    stored_id = defined(TASKS, "STORED_RECORD_ID")
+    stored_ids = {defined(TASKS, "STORED_RECORD_ID"): "alarm",
+                  defined(TASKS, "WINDOW_STORED_RECORD_ID"): "window alarm"}
     period = GridSettings().PERIOD
     lines = sys.stdin if args.received == "-" else open(args.received)
 
     made = None          # (row, seconds the board made it) from the last alarm frame
-    alarm_started = None  # seconds the last alarm start came
+    started = {}          # seconds the last start came, by alarm name
     late = []            # (row, rows lost before it) of the stretch the model is late on
 
     def end_late():
@@ -70,14 +72,15 @@ def main():
             made = (row, came - ms / 1000)
             name = "alarm" if can_id == alarm_id else "window alarm"
             state = "start" if data[0] else "end"
-            if can_id == alarm_id and data[0]:
-                alarm_started = came
+            if data[0]:
+                started[name] = came
             print(f"row {row}: {name} {state}, {ms} ms after the row was made")
-        elif can_id == stored_id:
+        elif can_id in stored_ids:
             row, count = little(data, 0, 4), little(data, 4, 2)
-            after = "" if alarm_started is None else \
-                f"{round((came - alarm_started) * 1000)} ms after the alarm start, "
-            print(f"row {row}: alarm frames stored, {after}{count} frames")
+            name = stored_ids[can_id]
+            after = "" if name not in started else \
+                f"{round((came - started[name]) * 1000)} ms after the {name} start, "
+            print(f"row {row}: {name} frames stored, {after}{count} frames")
         elif can_id == backlog_id:
             row, lost = little(data, 0, 4), little(data, 4, 2)
             if late and row != late[-1][0] + 1 + lost:

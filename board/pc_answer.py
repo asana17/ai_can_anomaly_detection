@@ -24,6 +24,7 @@ LIB = Path(__file__).resolve().parent / "lib"
 TASKS = LIB / "ai_can_anomaly_detection_tasks" / "ai_can_anomaly_detection_tasks.h"
 WINDOW_MODEL_DIR = LIB / "deployed_window_model"
 STRIDE = LIB / "window_model" / "window_model_stride.h"
+ALARM_KIND = LIB / "store_alarm_frames" / "alarm_kind.h"
 HEX_FLOAT = re.compile(r"-?0x[0-9a-f]\.[0-9a-f]+p[+-]\d+")
 
 
@@ -76,6 +77,14 @@ def min_flagged_for_alarm():
 def alarm_id():
     """The ID the board reports the alarm with."""
     return defined(TASKS, "ALARM_ID")
+
+
+def alarm_kind_name(alarm):
+    """The name of the alarm an alarm frames record is for, from the alarm kind it
+    carries."""
+    names = {defined(ALARM_KIND, "ALARM_KIND_ALARM"): "alarm",
+             defined(ALARM_KIND, "ALARM_KIND_WINDOW_ALARM"): "window alarm"}
+    return names.get(alarm, f"unknown alarm kind {alarm}")
 
 
 def ticks_of(frames):
