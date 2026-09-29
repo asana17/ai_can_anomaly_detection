@@ -57,8 +57,9 @@ buffer leaves a gap, and the model then scores a stretch of time that never happ
 
 Report sits below both guaranteed tasks and above the copy of the alarm frames. The
 copy sits above the windowed model, since the frame ring overwrites the frames it has
-not copied. Priority 11, between the copy and the windowed model, is left for work with
-a deadline of its own, as an ECU has besides detection.
+not copied. The applications put the store of the alarm frames at 11, between the copy and the
+windowed model. Below the windowed model it would get only the time that model leaves,
+and the alarm frames would wait in RAM.
 
 Score and detect by row hands report only the latest alarm state, as the CAN receive
 interrupt hands preprocessing the slots. A new state goes over the one before. So

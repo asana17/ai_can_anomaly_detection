@@ -92,8 +92,8 @@ EXPORT INT usermain(void)
 		tm_printf((UB*)"flash store init error %d\n", error);
 		return error;
 	}
-	/* Flash writes are slow and nothing waits on them, so the store is lowest */
-	error = store_alarm_frames_task_create(&store_alarm_frames_task, 13,
+	/* above score and detect by window at 12, so the window model never holds back Flash */
+	error = store_alarm_frames_task_create(&store_alarm_frames_task, 11,
 		&store_alarm_frames_input, &flash_store);
 	if (error < E_OK) {
 		return error;
