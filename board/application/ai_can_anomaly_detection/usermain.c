@@ -13,6 +13,7 @@
 #include "report_can_task.h"
 #include "stored_record_can_task.h"
 #include "window_backlog_can_task.h"
+#include "alarm_led_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
 #define CAN_BYTES 8u /* a classic CAN frame's payload, which DLC 9 to 15 also mean */
@@ -44,6 +45,7 @@ LOCAL ReportCanTask window_report_can_task;
 LOCAL WindowBacklogCanTask window_backlog_can_task;
 LOCAL StoredRecordCanTask stored_record_can_task;
 LOCAL StoredRecordCanTask window_stored_record_can_task;
+LOCAL AlarmLedTask alarm_led_task;
 
 /*
  * Store each frame FDCAN received as the latest of its PGN, and copy it into the frame
@@ -177,6 +179,11 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	/* above score and detect by window at 12, so the LED blinks while the window model catches up */
+	error = alarm_led_task_create(&alarm_led_task, 11, &report_input, &window_report_input);
+	if (error < E_OK) {
+		return error;
+	}
 	/* sends only on an alarm, which needs frames, so it may start before FDCAN1 */
 	error = report_can_task_start(&report_can_task);
 	if (error < E_OK) {
@@ -199,6 +206,10 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = store_alarm_frames_task_start(&store_alarm_frames_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = alarm_led_task_start(&alarm_led_task);
 	if (error < E_OK) {
 		return error;
 	}

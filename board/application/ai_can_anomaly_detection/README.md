@@ -35,6 +35,8 @@ flowchart LR
     win -- at window alarm start --> copy
     win --> window_report["10 send the window alarm"]
     win --> backlog["10 send the backlog"]
+    row --> led["11 show the alarms<br/>on the green LED"]
+    win --> led
     report --> bus["FDCAN1 send"]
     window_report --> bus
     backlog --> bus
@@ -48,8 +50,11 @@ flowchart LR
 | 8 | score the row with the rules and the row model, raise the alarm | the alarm is decided before the next row |
 | 9 | send the alarm | the alarm goes out before anything slower |
 | 10 | copy the frames before the alarm or the window alarm, send the window alarm, the backlog and the stored records | the frame ring overwrites frames not yet copied |
-| 11 | store the frames in Flash bank 2 | the frames are kept before the window model runs |
+| 11 | store the frames in Flash bank 2, show the alarms on the green LED | the frames are kept before the window model runs, and the LED blinks while the window model catches up |
 | 12 | score the window with the window model | it is the heaviest, so it gets the time left |
+
+The green LED blinks fast while only the alarm rings and slowly while only the window
+alarm rings. It stays on while both ring. Each alarm is shown for 2 s more after it ends.
 
 Frames are received in the interrupt, so no task holds them up. When an alarm starts,
 the copy and the store run first and the window model waits. The rows it has not

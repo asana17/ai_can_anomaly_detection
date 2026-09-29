@@ -36,6 +36,11 @@ EXPORT void report_input_read(ReportInput *report_input, Report *report)
 	UINT pattern;
 
 	tk_wai_flg(report_input->wake_reader_flag, 1, TWF_ANDW | TWF_CLR, &pattern, TMO_FEVR);
+	report_input_peek(report_input, report);
+}
+
+EXPORT void report_input_peek(ReportInput *report_input, Report *report)
+{
 	tk_loc_mtx(report_input->mutex, TMO_FEVR);
 	*report = report_input->report;
 	tk_unl_mtx(report_input->mutex);

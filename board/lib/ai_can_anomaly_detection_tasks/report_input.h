@@ -44,4 +44,12 @@ IMPORT void report_input_write(ReportInput *report_input, CONST Report *report);
  */
 IMPORT void report_input_read(ReportInput *report_input, Report *report);
 
+/**
+ * @brief Copy the latest report without waiting for a write or waking the reader.
+ *
+ * @param[in,out] report_input The input.
+ * @param[out] report The latest report.
+ */
+IMPORT void report_input_peek(ReportInput *report_input, Report *report);
+
 #endif
