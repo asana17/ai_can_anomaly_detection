@@ -15,6 +15,9 @@ typedef struct {
 	float physical[SIGNAL_COUNT];
 	bool flag; /* a rule or the instant model flagged the row */
 	uint32_t row_count_since_gap; /* this row's place since the last gap, from 0 */
+	/* the frame ring's places of the frames to store if an alarm starts on this row */
+	uint32_t frames_start;
+	uint32_t frames_end;
 } RowRingEntry;
 
 /* A ring of the last ROW_RING_ROWS rows. */

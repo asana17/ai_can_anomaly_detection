@@ -99,7 +99,8 @@ large to keep several waiting in RAM in the order they came.
 ## Passing rows
 
 Score and detect by row puts each row in a shared ring, with whether the row was
-flagged and the row's place since the last gap, 0 for the first row after it.
+flagged, the row's place since the last gap, 0 for the first row after it, and the
+positions of the frames to copy if the window alarm starts on it.
 
 Score and detect by window first copies every row in the shared ring at once, and the
 shared ring is emptied. It may hold several rows, since score and detect by window has
