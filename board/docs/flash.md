@@ -4,10 +4,9 @@
 then writes, verifies and resets the connected board. Application selection belongs to
 `board.prepare` and is a separate command.
 
-## Current limitation
+## Platforms
 
-The script currently supports macOS only. Linux and Windows have not been implemented
-or tested.
+The script runs on macOS and Ubuntu. Windows has not been tested.
 
 Put both machine-specific executable paths in the untracked `board/flash.json`:
 

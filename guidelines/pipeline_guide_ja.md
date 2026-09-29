@@ -7,12 +7,32 @@ CAN のログから学習用と評価用のデータを作り、モデルを学�
 
 | もの | 版 |
 |---|---|
-| Python | 3.9 |
-| Python のパッケージ | `python3 -m pip install -r requirements.txt` |
+| Python | 3.9。下の手順で [uv](https://docs.astral.sh/uv/) を使って用意する |
 | Hugging Face のアカウント | 書き込みのできるトークン |
 | ST Edge AI Core | 4.0.1 と STM32 MCU コンポーネント。ボード用の C コードを作るときだけ使う |
 
 ONNX Runtime 1.19.2 が Python 3.9 に入る最後の版なので、Python は 3.9 にしている。
+
+### Python を用意する
+
+uv を入れる。macOS では Homebrew で、Ubuntu では uv の公式のインストーラで入れる。
+
+```sh
+brew install uv                                  # macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh  # Ubuntu
+```
+
+リポジトリのトップに 3.9 の仮想環境を作り、パッケージを入れる。uv が 3.9 を
+ダウンロードするので、OS に入っている Python の版には関係ない。
+
+```sh
+uv venv --python 3.9 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
+
+新しいターミナルでは `source .venv/bin/activate` を実行してから使う。有効な間は
+`python3` が 3.9 になり、このガイドとボードのガイドのコマンドはそのまま動く。
 
 ## 1. CAN のログを用意する
 
@@ -100,7 +120,7 @@ python3 -m deploy.generate_model_for_board STEDGEAI RUNS_REPO REVISION onnx/<tim
 
 | 引数 | 中身 |
 |---|---|
-| `STEDGEAI` | ST Edge AI Core のコマンドラインツール `stedgeai` |
+| `STEDGEAI` | ST Edge AI Core のコマンドラインツール `stedgeai`。Ubuntu では `/opt/ST/STEdgeAI/4.0/Utilities/linux/stedgeai` |
 | `RUNS_REPO` | 結果用のリポジトリ |
 | `REVISION` | ONNX を書き出したときに出た、結果用のリポジトリのコミット |
 | `onnx/<time>` | 4 で書き出された ONNX のフォルダ |

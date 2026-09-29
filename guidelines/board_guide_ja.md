@@ -5,22 +5,46 @@ NUCLEO-H533RE の上で μT-Kernel 3.0 ([mtk3_bsp2](https://github.com/tron-foru
 
 ## 必要なもの
 
-| もの | 型番、版 |
+| もの | 型番 |
 |---|---|
 | マイコンボード | STMicroelectronics NUCLEO-H533RE |
 | CAN トランシーバ | Microchip MCP2562FD-E/P (8 ピン DIP) |
 | USB-CAN アダプタ | DSD TECH SH-C31A (candleLight ファームウェア) |
 | 終端抵抗 | 120 Ω を 2 本 |
 | USB ハブ | USB 2.0 のもの。Apple シリコンの Mac に直接挿すと ST のツールが ST-LINK との通信でタイムアウトする |
-| STM32CubeMX | 6.17.0 (STM32CubeMX2 ではない) |
-| STM32Cube FW_H5 | V1.6.0 |
-| STM32CubeIDE | 2.1.1 |
-| STM32CubeProgrammer | コマンドラインの `STM32_Programmer_CLI` を使う |
-| ST Edge AI Core | 4.0.1。モデルの実行ライブラリを 8 の手順で使う |
-| Python | 3.9 |
-| libusb | `brew install libusb` |
 
-新品のボードは最初に ST-LINK のファームウェアを更新する。
+### ソフトウェア
+
+ST のツールはすべて st.com から OS 用の公式インストーラをダウンロードして入れる。
+ダウンロードには st.com へのログインが要る。Ubuntu の apt にはない。
+
+| もの | 版 | macOS | Ubuntu |
+|---|---|---|---|
+| STM32CubeMX | 6.17.0 (STM32CubeMX2 ではない) | macOS 用のインストーラ | `stm32cubemx-lin-v6-17-0.zip` の `SetupSTM32CubeMX-6.17.0` を開く |
+| STM32Cube FW_H5 | V1.6.0 | CubeMX の Help、Manage embedded software packages で入れる | macOS と同じ |
+| STM32CubeIDE | 2.1.1 | `st-stm32cubeide_2.1.1_28236_20260312_0043_aarch64.dmg.zip` | `st-stm32cubeide_2.1.1_28236_20260312_0043_amd64.deb_bundle.sh.zip` の中身を `sudo sh` で実行する |
+| STM32CubeProgrammer | 2.23.0。コマンドラインの `STM32_Programmer_CLI` を使う | macOS 用のインストーラ | `SetupSTM32CubeProgrammer_linux_64.zip` の `SetupSTM32CubeProgrammer-2.23.0.linux` を開く |
+| ST-LINK のファームウェア | 新品のボードは最初に更新する | CubeProgrammer の ST-LINK の Firmware upgrade で行う | macOS と同じ |
+| ST Edge AI Core | 4.0.1。モデルの実行ライブラリを 7.1 の手順で使う | macOS 用のインストーラで、STM32 MCU のコンポーネントを選ぶ | `stedgeai-lin.zip` の `stedgeai-linux-onlineinstaller` を開き、STM32 MCU のコンポーネントを選ぶ |
+| Python | 3.9 | [モデルを作る手順](pipeline_guide_ja.md#python-を用意する) で用意する | macOS と同じ |
+| libusb | | `brew install libusb` | 要らない |
+
+### Ubuntu で入れるときに気をつけること
+
+ST Edge AI Core のインストーラは、Ubuntu にない Qt の xcb のライブラリを使うので、先に入れる。
+
+```sh
+sudo apt install libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0
+```
+
+ST-LINK を root なしで使う udev ルールは CubeIDE のインストーラが入れる。入れた後に
+ボードを挿し直し、sudo なしで SWD につながることを確かめる。`Board : NUCLEO-H533RE` が出ればよい。
+
+```sh
+~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD
+```
+
+CubeMX は最初の起動で数分パッケージの一覧を取るので、その間に FW_H5 を入れようとすると `The update is already in use` と出る。待ってから開き直す。
 
 ## 1. CubeMX でプロジェクトを作る
 
@@ -111,14 +135,15 @@ VIO がロジックの電圧をボードの 3.3 V に合わせる。STBY を Hig
 
 ### macOS
 
-macOS にはこのアダプタのドライバがないので、`pyusb` と `gs_usb` を入れる。
+macOS にはこのアダプタのドライバがないので、リポジトリの送信スクリプトは
+`requirements.txt` で入る `pyusb` と `gs_usb` で USB から直接動かす。`pyusb` が使う
+libusb を入れておく。
 
 ```sh
 brew install libusb
-python3 -m pip install --user pyusb gs_usb
 ```
 
-リポジトリの送信スクリプトは、python-can を通さず `gs_usb` で 250 kbit/s のビットタイミングを直接設定する。
+送信スクリプトは、python-can を通さず `gs_usb` で 250 kbit/s のビットタイミングを直接設定する。
 
 ### Ubuntu
 
@@ -151,11 +176,29 @@ CubeIDE でプロジェクトを開いている間は実行しない。CubeIDE �
 ジェクトのファイルを書き換える。別のアプリケーションに替えるときは、CubeIDE で
 プロジェクトを閉じてから実行し直す。CubeMX でコードを生成し直したときも実行し直す。
 
+`board.prepare` はパッチを `git am` で当てるので、git に名前とメールアドレスが要る。
+設定していないと `Committer identity unknown` で止まる。
+
+```sh
+git config --global user.name "名前"
+git config --global user.email "メールアドレス"
+```
+
+`board/patches` のパッチが変わったときや、上のように途中で止まったときは、
+プロジェクトの mtk3_bsp2 に古いパッチが当たったままか、パッチが当たっていない。
+`board.prepare` は `mtk3_bsp2 lacks <パッチ名>` で止まる。mtk3_bsp2 を `1ab52cc` に
+戻してパッチを当て直し、`board.prepare` を実行し直す。
+
+```sh
+git -C ~/NUCLEO-H533RE/ai_can_detection/mtk3_bsp2 reset --hard 1ab52cc
+git -C ~/NUCLEO-H533RE/ai_can_detection/mtk3_bsp2 am --keep-cr board/patches/*.patch
+```
+
 ## 5. ビルドと書き込み
 
 書き込みはコマンドラインか CubeIDE のどちらかで行う。
 
-### コマンドラインで行う (macOS)
+### コマンドラインで行う
 
 CubeIDE と `STM32_Programmer_CLI` の場所を、`board/flash.json` に書いておく。
 
@@ -163,6 +206,15 @@ CubeIDE と `STM32_Programmer_CLI` の場所を、`board/flash.json` に書い�
 {
   "cubeide": "/Applications/STM32CubeIDE.app/Contents/MacOS/STM32CubeIDE",
   "programmer": "/path/to/STM32_Programmer_CLI"
+}
+```
+
+Ubuntu で既定の場所に入れたときは次のようになる。
+
+```json
+{
+  "cubeide": "/opt/st/stm32cubeide_2.1.1/stm32cubeide",
+  "programmer": "~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI"
 }
 ```
 
@@ -183,6 +235,25 @@ python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
 3. Run、Run As、STM32 C/C++ Application を選ぶ。初回は起動設定のダイアログが開く。
    Debug probe は `ST-LINK (ST-LINK GDB server)` のまま OK を押す。コンソールの最後に
    `Download verified successfully` が出る。
+
+### UART を見る
+
+ST-LINK の仮想 COM ポートを、別のターミナルで `screen` で開く。macOS では
+`/dev/cu.usbmodem` の後ろに番号が付き、挿し直すと変わることがある。
+
+```sh
+ls /dev/cu.usbmodem*
+screen /dev/cu.usbmodem11202 115200   # macOS。ls で出た名前にする
+screen /dev/ttyACM0 115200            # Ubuntu
+```
+
+`screen` を抜けるときは `Ctrl-A` を押してから `\`。
+
+Ubuntu では、CubeIDE が入れた ST-LINK の udev ルールにより、読み書きできるのは
+`plugdev` グループのユーザと、デスクトップにログインしているユーザになる。SSH で
+つないだときも読めるように、`groups` で `plugdev` に入っていることを確かめる。
+Ubuntu のインストール時に作ったユーザは最初から入っている。入っていなければ
+`sudo usermod -aG plugdev $USER` で入れてログインし直す。
 
 ## 6. CAN バスを確かめる
 
@@ -238,7 +309,13 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
 
 2. `ai_can_anomaly_detection` をプロジェクトに入れて書き込む。モデルの実行ライブラリを
    ST Edge AI Core から取るので、`/Applications/ST/STEdgeAI/4.0` 以外に入れたときは
-   `board.prepare` に `--stedgeai-root` で場所を渡す。
+   場所を渡す。環境変数 `STEDGEAI_ROOT` を実行するシェルで export しておくか、
+   `board.prepare` に `--stedgeai-root` で渡す。両方あるときは `--stedgeai-root` が
+   優先される。Ubuntu では `/opt/ST/STEdgeAI/4.0` に入る。
+
+   ```sh
+   export STEDGEAI_ROOT=/opt/ST/STEdgeAI/4.0   # Ubuntu
+   ```
 
    ```sh
    python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection ai_can_anomaly_detection

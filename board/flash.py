@@ -1,4 +1,4 @@
-"""Headless-build and flash an already prepared CubeIDE project on macOS."""
+"""Headless-build and flash an already prepared CubeIDE project."""
 
 import argparse
 import json
