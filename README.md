@@ -36,6 +36,18 @@ Rows and windows raise alarms in different ways.
 - Windows: an attack that changes how the signals move shows up in only a few windows,
   so one suspicious window is enough.
 
+Each model's threshold is taken from calibration rows the model never saw. It is the
+lowest score at which its alarm raises no more false alarms an hour than a target.
+
+- Rows: 1.5 an hour. The rows catch most attacks, so they take the larger share. The
+  rules' own false alarms count against it.
+- Windows: 0.5 an hour. The alarm raised is the row alarm or a window alarm, so the two
+  add up.
+
+[settings.md](common/docs/settings.md#the-split-and-calibration-parameters) says how
+the targets were set. [calibrate](models/docs/calibrate.md) and
+[calibrate_windows](models/docs/calibrate_windows.md) say how the thresholds are taken.
+
 Each autoencoder is compared with a linear model that reads the same input. PCA reads
 one row, so the row autoencoder's gain over it is what nonlinearity buys. VAR reads a
 window and shows what time alone buys, so the window autoencoder has to do better than
