@@ -3,6 +3,7 @@
 
 #include <tk/tkernel.h>
 #include "alarm_frames_mac.h"
+#include "alarm_kind.h"
 #include "flash_store.h"
 #include "frame_ring.h"
 
@@ -18,7 +19,8 @@
 typedef struct {
 	UW no;          /* the row alarm A started on */
 	UW frame_count; /* frames filled, from the first */
-	UW unused[2];   /* left 0, so the head fills one Flash write */
+	UW alarm;       /* ALARM_KIND_ALARM or ALARM_KIND_WINDOW_ALARM */
+	UW unused;      /* left 0, so the head fills one Flash write */
 	UB mac[ALARM_FRAMES_MAC_BYTES]; /* HMAC-SHA256 of the head, then the frames filled */
 	FrameRingEntry frames[ALARM_FRAMES_MAX]; /* oldest first */
 } AlarmFramesRecord;

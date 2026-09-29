@@ -48,6 +48,7 @@ LOCAL void pass_alarm_frame_positions(CopyAlarmFramesInput *copy_alarm_frames_in
 	if (row_count_since_gap < rows_back) {
 		rows_back = row_count_since_gap;
 	}
+	positions.alarm = ALARM_KIND_ALARM;
 	positions.no = row->no;
 	positions.frames_start = frames_starts[(row->no - rows_back) % ALARM_FRAMES_ROWS];
 	positions.frames_end = row->frames_end;

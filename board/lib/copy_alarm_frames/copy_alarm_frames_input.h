@@ -2,12 +2,14 @@
 #define COPY_ALARM_FRAMES_INPUT_H
 
 #include <tk/tkernel.h>
+#include "alarm_kind.h"
 
 /*
  * Where alarm A started, and the frame ring's positions of the frames behind the rows
  * that raised it.
  */
 typedef struct {
+	UW alarm;        /* ALARM_KIND_ALARM or ALARM_KIND_WINDOW_ALARM */
 	UW no;           /* the row alarm A started on */
 	UW frames_start; /* the frame ring's place at the tick before the oldest of those rows */
 	UW frames_end;   /* the frame ring's place at the tick of the row alarm A started on */

@@ -78,7 +78,8 @@ header. When every area is used, the oldest is erased. The record, all little en
 |---|---|
 | 0 to 3 | the row the alarm started on |
 | 4 to 7 | the frame count |
-| 8 to 15 | 0 |
+| 8 to 11 | 0 for the alarm, 1 for the window alarm |
+| 12 to 15 | 0 |
 | 16 to 47 | the HMAC-SHA256 of bytes 0 to 15 and then the frames |
 | then 16 per frame, oldest first, up to 2044 | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
 

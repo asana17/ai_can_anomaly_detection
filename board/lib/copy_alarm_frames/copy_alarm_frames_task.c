@@ -35,6 +35,7 @@ LOCAL void copy_alarm_frames_task(INT stacd, void *exinf)
 	for (;;) {
 		copy_alarm_frames_input_read(task->copy_alarm_frames_input, &positions);
 		task->alarm_frames.no = positions.no;
+		task->alarm_frames.alarm = positions.alarm;
 		copy_frames(task->frame_ring, positions.frames_start, positions.frames_end,
 			&task->alarm_frames);
 		store_alarm_frames_input_write(task->store_alarm_frames_input,

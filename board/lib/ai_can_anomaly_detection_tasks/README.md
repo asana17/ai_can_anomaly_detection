@@ -87,7 +87,8 @@ the latest positions are kept.
 The copy takes the latest `ALARM_FRAMES_MAX` of those frames, oldest first, without
 stopping interrupts. It then reads the ring's position again. When newer frames went
 over any of those it copied, it keeps none, and the record holds only the row. It hands
-the alarm frames on, again keeping only the latest. Their record is in
+the alarm frames on, again keeping only the latest. The record says which alarm it is
+for. Their record is in
 [store_alarm_frames_input.h](../store_alarm_frames/store_alarm_frames_input.h).
 
 ## Passing rows
