@@ -27,7 +27,7 @@ The frames become one row of 17 signals every 100 ms. Three detectors read the r
 
 The autoencoders learn normal rows only, on a PC. To test them, [attack](attack)
 changes normal logs into synthetic anomalies, such as signals copied from another
-moment or a bias that grows. These are not copies of real attacks.
+moment or a bias that grows.
 
 ## Priorities
 
@@ -60,6 +60,11 @@ Every stage uploads to these Hugging Face repos by default. Reading them needs n
 |---|---|
 | [asana17/ai_can_anomaly_detection_data](https://huggingface.co/datasets/asana17/ai_can_anomaly_detection_data) | the rows and sets built from the logs |
 | [asana17/ai_can_anomaly_detection_runs](https://huggingface.co/asana17/ai_can_anomaly_detection_runs) | the trained models, thresholds and results |
+
+## Limitations
+
+- The anomalies are synthetic, not copies of real attacks.
+- All the logs come from one truck.
 
 ## Layout
 
