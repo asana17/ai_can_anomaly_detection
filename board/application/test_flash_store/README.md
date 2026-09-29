@@ -1,8 +1,9 @@
 # Test flash store
 
 This application tests `board/lib/flash_store` on the board. At each start it prints
-the state of each sector of Flash bank 2, then writes two records of 64 bytes and reads
-each back.
+the state of each sector of Flash bank 2, then writes two records and reads each back.
+A record is 8,176 bytes, the most a sector holds after its header, as an alarm frames
+record at its largest. For each write it prints the cycles `flash_store_write` took.
 
 A sector holds one record and each start writes two, so the 32 sectors of bank 2 are
 full after 16 starts.
@@ -35,3 +36,15 @@ Reset the board over SWD to start it again:
 ```sh
 STM32_Programmer_CLI -c port=SWD -rst
 ```
+
+## Result
+
+On 2026-09-29 the Release build, at `-O2` and 32 MHz, wrote into sectors already
+erased and printed
+
+```
+sector 12: sequence 12 written in 609707 cycles at 32000000 Hz and read back
+sector 13: sequence 13 written in 611112 cycles at 32000000 Hz and read back
+```
+
+A record of 8,176 bytes took about 19.1 ms to write.
