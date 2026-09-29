@@ -25,6 +25,24 @@ The tasks after the slots are described in
 [their README](../../lib/ai_can_anomaly_detection_tasks/README.md). The application runs
 until the board is reset.
 
+## Priorities
+
+μT-Kernel runs the ready task with the smallest priority number first. Frames are
+received in the FDCAN1 interrupt, so no task holds them up.
+
+| priority | task | why it sits there |
+|---|---|---|
+| 6 | build a row every 0.1 s | every task after it reads the row |
+| 8 | score the row with the rules and the row model, raise the alarm | the alarm is decided before the next row |
+| 9 | send the alarm on FDCAN1 | the alarm goes out before anything slower |
+| 10 | copy the frames behind the alarm, send the window alarm, the backlog and the stored record | the frame ring overwrites frames not yet copied |
+| 11 | store the alarm frames in Flash bank 2 | the frames are kept before the window model runs |
+| 12 | score the window with the window model | it is the heaviest, so it gets the time left |
+
+When an alarm starts, the copy and the store run first and the window model waits. The
+rows it has not scored are kept for it, and it catches up after. When it falls further
+behind than the rows kept, the oldest are lost, and the backlog frame says how many.
+
 ## The alarm frame
 
 [report_can](../../lib/report_can/report_can_task.c) sends one frame when the alarm
