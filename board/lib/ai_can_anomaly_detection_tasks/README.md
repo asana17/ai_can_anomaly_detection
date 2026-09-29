@@ -19,7 +19,7 @@ flowchart LR
     sd -- latest positions --> copy["copy alarm frames 10<br/>frames behind alarm A"]
     frames[(frame ring)] --> copy
     copy -- latest alarm frames --> store["the application's store"]
-    sd -- shared ring --> win["score and detect by window 11<br/>window model on the last rows"]
+    sd -- shared ring --> win["score and detect by window 12<br/>window model on the last rows"]
     win -- latest window alarm --> window_report["window alarm report 10<br/>CAN or UART"]
 ```
 
@@ -57,7 +57,8 @@ buffer leaves a gap, and the model then scores a stretch of time that never happ
 
 Report sits below both guaranteed tasks and above the copy of the alarm frames. The
 copy sits above the windowed model, since the frame ring overwrites the frames it has
-not copied.
+not copied. Priority 11, between the copy and the windowed model, is left for work with
+a deadline of its own, as an ECU has besides detection.
 
 Score and detect by row hands report only the latest alarm state, as the CAN receive
 interrupt hands preprocessing the slots. A new state goes over the one before. So

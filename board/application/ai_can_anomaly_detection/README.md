@@ -16,7 +16,7 @@ flowchart LR
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
     frames --> tasks
     tasks -- latest report --> can["report_can 9<br/>FDCAN1"]
-    tasks -- latest alarm frames --> store["store alarm frames 12<br/>Flash bank 2"]
+    tasks -- latest alarm frames --> store["store alarm frames 13<br/>Flash bank 2"]
 ```
 
 The tasks after the slots are described in
@@ -42,7 +42,7 @@ still waiting, that frame is cancelled and the new one goes in.
 ## The alarm frames in Flash
 
 [store_alarm_frames](../../lib/store_alarm_frames/store_alarm_frames_task.c), the lowest
-task at 12, writes the frames the copy took at each alarm start to Flash bank 2 with
+task at 13, writes the frames the copy took at each alarm start to Flash bank 2 with
 [flash_store](../../lib/flash_store/flash_store.h). Erase bank 2 once before the first
 run, as [flash.md](../../docs/flash.md#erasing-bank-2-before-first-use) says. The start
 prints `flash store init error` and stops when the store cannot start.

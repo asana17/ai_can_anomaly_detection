@@ -93,7 +93,7 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	/* Flash writes are slow and nothing waits on them, so the store is lowest */
-	error = store_alarm_frames_task_create(&store_alarm_frames_task, 12,
+	error = store_alarm_frames_task_create(&store_alarm_frames_task, 13,
 		&store_alarm_frames_input, &flash_store);
 	if (error < E_OK) {
 		return error;
@@ -108,7 +108,7 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
-	/* above score and detect by window at 11, and below the alarm's report */
+	/* above score and detect by window at 12, and below the alarm's report */
 	error = report_uart_task_create(&window_report_uart_task, 10, &window_report_input,
 		WINDOW_ALARM_ID);
 	if (error < E_OK) {

@@ -11,7 +11,7 @@ flowchart LR
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
     frames --> tasks
     tasks -- latest report --> uart["report_uart 9<br/>UART"]
-    tasks -- latest alarm frames --> store["store alarm frames 12<br/>Flash bank 2"]
+    tasks -- latest alarm frames --> store["store alarm frames 13<br/>Flash bank 2"]
 ```
 
 The replay task stands in for the CAN receive interrupt. At each alarm start the

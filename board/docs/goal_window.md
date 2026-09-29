@@ -94,13 +94,13 @@ flowchart LR
     frames -. position at each tick .-> pre
     pre -- writes --> ring[(row ring<br/>and row flags)]
     ring --> sd["scoring and detect 8<br/>rules, instant model, alarm A<br/>writes the row flag"]
-    ring --> win["window scoring 11<br/>windowed model every S rows, alarm B"]
+    ring --> win["window scoring 12<br/>windowed model every S rows, alarm B"]
     sd -. wakes on a step row .-> win
     sd -- latest alarm A --> can["CAN send 9<br/>FDCAN1"]
     win -- latest alarm B --> can
     sd -- positions at alarm A start --> copy["copy alarm frames 10<br/>frames before alarm A"]
     frames --> copy
-    copy -- latest alarm frames --> store["store alarm frames 12<br/>Flash bank 2"]
+    copy -- latest alarm frames --> store["store alarm frames 13<br/>Flash bank 2"]
 ```
 
 The numbers are task priorities, smaller runs first.
