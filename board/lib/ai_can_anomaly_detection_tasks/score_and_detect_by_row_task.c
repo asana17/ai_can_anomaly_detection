@@ -36,22 +36,20 @@ LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST R
 
 /*
  * Tell the task that copies the alarm frames the row an alarm starts on, and the frames
- * behind the rows that raised it. Those are the last DETECT_BY_ROW_RECENT_FLAGS rows, or
- * fewer since the last gap.
+ * behind the last ALARM_FRAMES_ROWS rows, or fewer since the last gap.
  */
 LOCAL void pass_alarm_frame_positions(CopyAlarmFramesInput *copy_alarm_frames_input,
-	CONST Row *row, CONST UW frames_starts[DETECT_BY_ROW_RECENT_FLAGS],
+	CONST Row *row, CONST UW frames_starts[ALARM_FRAMES_ROWS],
 	UW row_count_since_gap)
 {
 	AlarmFramePositions positions;
-	UW rows_back = DETECT_BY_ROW_RECENT_FLAGS - 1u;
+	UW rows_back = ALARM_FRAMES_ROWS - 1u;
 
 	if (row_count_since_gap < rows_back) {
 		rows_back = row_count_since_gap;
 	}
 	positions.no = row->no;
-	positions.frames_start = frames_starts[(row->no - rows_back) %
-		DETECT_BY_ROW_RECENT_FLAGS];
+	positions.frames_start = frames_starts[(row->no - rows_back) % ALARM_FRAMES_ROWS];
 	positions.frames_end = row->frames_end;
 	copy_alarm_frames_input_write(copy_alarm_frames_input, &positions);
 }
@@ -67,7 +65,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	INT ringing = 0, alarmed;
 	bool flagged;
 	UW last_no = 0, row_count_since_gap = 0;
-	UW frames_starts[DETECT_BY_ROW_RECENT_FLAGS]; /* each recent row's frames_start */
+	UW frames_starts[ALARM_FRAMES_ROWS]; /* each recent row's frames_start */
 
 	detect_by_row_init(&state, MIN_FLAGGED_FOR_ALARM);
 	recent_rows_clear(&rows_before);
@@ -84,7 +82,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			recent_rows_clear(&rows_before);
 		}
 		last_no = row.no;
-		frames_starts[row.no % DETECT_BY_ROW_RECENT_FLAGS] = row.frames_start;
+		frames_starts[row.no % ALARM_FRAMES_ROWS] = row.frames_start;
 		if (scoring_row(row.physical, &rows_before, instant_model_mean,
 			instant_model_std, MIN_SPEED, &scored) != MODEL_OK) {
 			break;

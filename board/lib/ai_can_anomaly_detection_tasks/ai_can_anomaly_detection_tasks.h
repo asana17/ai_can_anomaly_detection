@@ -13,6 +13,8 @@
 #define MIN_FLAGGED_FOR_ALARM 10u /* flagged rows among the last DETECT_BY_ROW_RECENT_FLAGS an alarm needs */
 /* rows a flagged window ends on among the last DETECT_BY_ROW_RECENT_FLAGS the window alarm needs */
 #define MIN_FLAGGED_WINDOWS_FOR_ALARM 1u
+/* the rows before an alarm start whose frames are stored, fewer since the last gap */
+#define ALARM_FRAMES_ROWS 24u
 /* the ID the alarm is reported with, priority 3, PGN 0xFF00, source address 0x80 */
 #define ALARM_ID 0x0CFF0080u
 /* the ID the window alarm is reported with, priority 3, PGN 0xFF01, source address 0x80 */

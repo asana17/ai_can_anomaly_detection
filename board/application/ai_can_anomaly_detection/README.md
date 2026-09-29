@@ -75,8 +75,9 @@ at 11, writes the frames the copy took at each alarm start to Flash bank 2 with
 run, as [flash.md](../../docs/flash.md#erasing-bank-2-before-first-use) says. The start
 prints `flash store init error` and stops when the store cannot start.
 
-Each sector holds one record after the 16-byte header `flash_store` writes, its
-sequence and size. The record, all little endian:
+Bank 2 is split into 8 areas of 4 sectors, 32 KB each. Each area holds one record after
+the 16-byte header `flash_store` writes, its sequence and size. The record, all little
+endian:
 
 | bytes | value |
 |---|---|
@@ -84,7 +85,7 @@ sequence and size. The record, all little endian:
 | 4 to 7 | the frame count |
 | 8 to 15 | 0 |
 | 16 to 47 | the HMAC-SHA256 of bytes 0 to 15 and then the frames |
-| then 16 per frame, oldest first, up to 508 | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
+| then 16 per frame, oldest first, up to 2044 | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
 
 The store puts the MAC on before it writes the record. The key is the 32 bytes in
 [alarm_frames_mac_demo_key.h](../../lib/alarm_frames_mac/alarm_frames_mac_demo_key.h).
@@ -111,6 +112,12 @@ python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bi
 On 2026-09-29 the Mac sent `part_3/20210204093505241905.csv`. The board wrote one
 record, for row 629, with 508 frames. Its MAC matched the one computed on the PC.
 With one bit of the head or of the last frame changed, it did not.
+
+On 2026-09-29, with the frames of 24 rows kept, the board wrote the record for row 581
+into area 0, with 2041 frames. Its MAC matched, and it matched the log's frames 42838 to
+44878, 2.40 s from 1.46 s before the attack started. The stored record frame came 178 ms
+after the alarm start. Backlog frames came for the alarm's first row and the 21 after
+it, with no row lost. The alarm frames went out 0 ms after their tick.
 
 ## The model
 

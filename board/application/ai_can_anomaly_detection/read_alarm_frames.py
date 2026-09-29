@@ -3,7 +3,7 @@
     python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames BANK2 [--log LOG]
 
 BANK2 is bank 2 read with the programmer, as the README says. Each record prints the
-sector, the sequence, the row alarm A started on, the frame count and whether its MAC
+area, the sequence, the row alarm A started on, the frame count and whether its MAC
 matches the key in `alarm_frames_mac_demo_key.h`, then its frames.
 With LOG, a log of `fetched/frames/frames.parquet`, it prints instead where the frames
 match a run of the log's frames in ID, size and data, or that none does.
@@ -17,10 +17,10 @@ import struct
 from pathlib import Path
 
 from board.application.ai_can_anomaly_detection.expected import frames
-from board.pc_answer import LIB
+from board.pc_answer import LIB, defined
 
-SECTOR_BYTES = 8 * 1024
-SECTORS = 32
+SECTOR_BYTES = 8 * 1024  # FLASH_SECTOR_SIZE of the H533, from the HAL
+FLASH_STORE = LIB / "flash_store" / "flash_store.h"
 ERASED = 0xFFFFFFFF
 HEADER = struct.Struct("<II8x")  # sequence, size of the record after it
 HEAD = struct.Struct("<II8x")    # row alarm A started on, frame count
@@ -40,22 +40,23 @@ def demo_key():
 
 
 def records(bank, key):
-    """Each record as (sequence, sector, row, MAC matches, frames), oldest first. A
+    """Each record as (sequence, area, row, MAC matches, frames), oldest first. A
     frame is (us since the frame before, ID, data cut to its size)."""
-    if len(bank) != SECTOR_BYTES * SECTORS:
-        raise SystemExit(f"bank 2 is {SECTOR_BYTES * SECTORS} bytes, got {len(bank)}")
+    area_bytes = defined(FLASH_STORE, "FLASH_STORE_AREA_SECTORS") * SECTOR_BYTES
+    if len(bank) == 0 or len(bank) % area_bytes:
+        raise SystemExit(f"bank 2 is {len(bank)} bytes, not whole areas of {area_bytes}")
     found = []
-    for sector in range(SECTORS):
-        start = sector * SECTOR_BYTES
+    for area in range(len(bank) // area_bytes):
+        start = area * area_bytes
         sequence, size = HEADER.unpack_from(bank, start)
         if sequence == ERASED:
-            if any(byte != 0xFF for byte in bank[start:start + SECTOR_BYTES]):
-                print(f"sector {sector} broken, no header but not erased")
+            if any(byte != 0xFF for byte in bank[start:start + area_bytes]):
+                print(f"area {area} broken, no header but not erased")
             continue
         row, count = HEAD.unpack_from(bank, start + HEADER.size)
         if (size != HEAD.size + MAC_BYTES + count * FRAME.size or
-                HEADER.size + size > SECTOR_BYTES):
-            print(f"sector {sector} sequence {sequence} bad size {size} for {count} frames")
+                HEADER.size + size > area_bytes):
+            print(f"area {area} sequence {sequence} bad size {size} for {count} frames")
             continue
         head = start + HEADER.size
         mac = head + HEAD.size
@@ -69,7 +70,7 @@ def records(bank, key):
             delta_and_size, can_id, data = FRAME.unpack_from(bank, offset)
             record_frames.append((delta_and_size & DELTA_MASK, can_id,
                                   data[:delta_and_size >> 24]))
-        found.append((sequence, sector, row, mac_matches, record_frames))
+        found.append((sequence, area, row, mac_matches, record_frames))
     return sorted(found)
 
 
@@ -93,8 +94,8 @@ def main():
 
     found = records(Path(args.bank2).read_bytes(), demo_key())
     sent = frames(args.log) if args.log else None
-    for sequence, sector, row, mac_matches, record_frames in found:
-        print(f"sector {sector} sequence {sequence} row {row} frames {len(record_frames)}")
+    for sequence, area, row, mac_matches, record_frames in found:
+        print(f"area {area} sequence {sequence} row {row} frames {len(record_frames)}")
         if mac_matches:
             print("  the MAC matches the one computed with the key")
         else:

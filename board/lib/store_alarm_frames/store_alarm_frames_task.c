@@ -13,7 +13,7 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 	StoreAlarmFramesTask *task = exinf;
 	TMO wait = TMO_FEVR; /* no record is held at first */
 	StoredRecord stored_record;
-	UW size, sector;
+	UW size, area;
 	ER error;
 
 	for (;;) {
@@ -33,7 +33,7 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 		}
 		size = offsetof(AlarmFramesRecord, frames) +
 			task->alarm_frames.frame_count * (UW)sizeof(FrameRingEntry);
-		error = flash_store_write(task->flash_store, &task->alarm_frames, size, &sector);
+		error = flash_store_write(task->flash_store, &task->alarm_frames, size, &area);
 		if (error == E_BUSY) {
 			wait = (TMO)flash_store_ms_until_erase(task->flash_store);
 		} else if (error == E_OK) {

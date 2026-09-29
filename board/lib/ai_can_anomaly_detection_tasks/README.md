@@ -80,8 +80,8 @@ positions at the tick before and at its own. So each row names the frames that a
 since the tick before.
 
 When alarm A starts, score and detect by row passes the row it starts on and the
-positions of the frames behind the rows that raised it. Those are the last
-`DETECT_BY_ROW_RECENT_FLAGS` rows, or fewer since the last gap. As with report, only
+positions of the frames behind the last `ALARM_FRAMES_ROWS` rows, 2.4 s, or fewer since
+the last gap. As with report, only
 the latest positions are kept.
 
 The copy takes the latest `ALARM_FRAMES_MAX` of those frames, oldest first, without

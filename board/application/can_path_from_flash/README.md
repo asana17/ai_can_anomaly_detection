@@ -79,23 +79,34 @@ interrupt during a push adds to it. On 2026-09-29 the Release build, at `-O2`, p
 ```
 alarm 0x0CFF0180 start at row 70, 90 ms after its tick
 alarm 0x0CFF0080 start at row 79, 0 ms after its tick
-stored 0x0CFF0380 record of row 79 with 330 frames
+stored 0x0CFF0380 record of row 79 with 792 frames
 backlog 0x0CFF0280 at row 79, 0 rows lost before it
 backlog 0x0CFF0280 at row 80, 0 rows lost before it
-alarm 0x0CFF0180 end at row 80, 130 ms after its tick
+alarm 0x0CFF0180 end at row 80, 170 ms after its tick
 backlog 0x0CFF0280 at row 81, 0 rows lost before it
 backlog 0x0CFF0280 at row 82, 0 rows lost before it
 backlog 0x0CFF0280 at row 83, 0 rows lost before it
 backlog 0x0CFF0280 at row 84, 0 rows lost before it
 backlog 0x0CFF0280 at row 85, 0 rows lost before it
 backlog 0x0CFF0280 at row 86, 0 rows lost before it
+backlog 0x0CFF0280 at row 87, 0 rows lost before it
+backlog 0x0CFF0280 at row 88, 0 rows lost before it
+backlog 0x0CFF0280 at row 89, 0 rows lost before it
+backlog 0x0CFF0280 at row 90, 0 rows lost before it
+backlog 0x0CFF0280 at row 91, 0 rows lost before it
+backlog 0x0CFF0280 at row 92, 0 rows lost before it
+backlog 0x0CFF0280 at row 93, 0 rows lost before it
+backlog 0x0CFF0280 at row 94, 0 rows lost before it
+backlog 0x0CFF0280 at row 95, 0 rows lost before it
+backlog 0x0CFF0280 at row 96, 0 rows lost before it
 alarm 0x0CFF0080 end at row 115, 0 ms after its tick
 alarm 0x0CFF0180 start at row 115, 90 ms after its tick
 alarm 0x0CFF0180 end at row 125, 90 ms after its tick
-frame ring push 87 to 136 cycles at 32000000 Hz
+frame ring push 87 to 135 cycles at 32000000 Hz
 ```
 
-Bank 2 then holds one record, for row 79, with 330 frames. Its MAC matched the one
+Bank 2 then holds one record, for row 79, with 792 frames, the frames of the 24 rows
+before the alarm start. Its MAC matched the one
 computed on the PC, as
 [ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash)
 describes.

@@ -2,7 +2,7 @@
 
 - [`alive`](../application/alive/README.md): Blinks the green LED and prints a count over UART every 500 ms.
 - [`can_bus_debug`](../application/can_bus_debug/README.md): Prints every CAN frame received over UART and sends one J1939 frame every second.
-- [`test_flash_store`](../application/test_flash_store/README.md): Prints each sector of Flash bank 2, then writes two records and reads them back.
+- [`test_flash_store`](../application/test_flash_store/README.md): Prints each area of Flash bank 2, then writes two records and reads them back.
 - [`mbf_test`](../application/mbf_test/usermain.c): Tests message-buffer sending, oldest-row dropping, and receive order.
 - [`rule_check_from_flash`](../application/rule_check_from_flash/README.md): Sends Flash rows through a queue and reports reverse-gear, high-speed rule results over UART.
 - [`model_check_from_flash`](../application/model_check_from_flash/README.md): Scales Flash rows, runs the fixed st-ai autoencoder, and reports score, whether it is flagged, and inference cycles.
