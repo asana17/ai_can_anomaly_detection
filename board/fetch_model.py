@@ -28,15 +28,15 @@ from models.fits import as_dict, model_from
 
 LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")
 RUNS_REPO = "asana17/ai_can_anomaly_detection_runs"
-RUNS_REVISION = "22c1127a8d2a9628cd5659364d65da71a6a65c93"
+RUNS_REVISION = "2de72a52ba0c996cb0a6aa6300047448c5ebbd0c"
 BOARD = "board/20260928-200316"
 THRESHOLDS = "thresholds/20260928-114811"
 MODEL = "nonlinear_ae_k8_h128"
 # the sample applications' model, and the one the entry runs
 DESTINATIONS = ("active_model", "deployed_model")
-WINDOW_BOARD = "window_board/20260929-070505"
-WINDOW_MODEL = "window_delta_ae_r20_s3_k24_h128"
-WINDOW_THRESHOLDS = "window_thresholds/20260929-070632"
+WINDOW_BOARD = "window_board/20260929-113106"
+WINDOW_MODEL = "window_conv1d_ae_r50_s3_k16_h64"
+WINDOW_THRESHOLDS = "window_thresholds/20260929-113151"
 WINDOW_DESTINATION = "deployed_window_model"
 # the header each kind of model's scale goes in
 CONFIG_FILES = {"instant_model": "model_config.h", "window_model": "window_model_config.h"}

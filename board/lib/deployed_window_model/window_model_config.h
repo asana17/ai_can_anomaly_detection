@@ -1,11 +1,11 @@
 #ifndef WINDOW_MODEL_CONFIG_H
 #define WINDOW_MODEL_CONFIG_H
 
-/* window_delta_ae_r20_s3_k24_h128_int8 from window_board/20260929-070505, with the scale of the fit
- * it came from, window_models/20260929-004741. */
-#define WINDOW_MODEL_ID "window-delta-ae-r20-s3-k24-h128-int8"
+/* window_conv1d_ae_r50_s3_k16_h64_int8 from window_board/20260929-113106, with the scale of the fit
+ * it came from, window_models/20260929-082144. */
+#define WINDOW_MODEL_ID "window-conv1d-ae-r50-s3-k16-h64-int8"
 
-#define WINDOW_MODEL_ROWS 20u /* W, the rows of a window */
+#define WINDOW_MODEL_ROWS 50u /* W, the rows of a window */
 
 static const float window_model_mean[SIGNAL_COUNT] = {
 		0x1.0037300000000p+10f, 0x1.1d63200000000p+4f,

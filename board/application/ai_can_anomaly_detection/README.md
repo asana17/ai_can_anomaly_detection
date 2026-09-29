@@ -96,11 +96,11 @@ own copy from `board/lib/active_model/`, so changing one leaves the other alone.
 the threshold of `thresholds/20260928-114811`. They are kept here so that the application builds from a
 clone with nothing fetched.
 
-It also runs the window model `window_delta_ae_r20_s3_k24_h128` in int8, from
+It also runs the window model `window_conv1d_ae_r50_s3_k16_h64` in int8, from
 [`board/lib/deployed_window_model/`](../../lib/deployed_window_model), with the scale of
-its fit. fetch_model writes it from `window_board/20260929-070505/`, generated from the
-int8 files of `window_quantize/20260929-070447`, and the scale of
-`window_models/20260929-004741`. Its threshold is from `window_thresholds/20260929-070632`, taken on the int8 files.
+its fit. fetch_model writes it from `window_board/20260929-113106/`, generated from the
+int8 files of `window_quantize/20260929-113012`, and the scale of
+`window_models/20260929-082144`. Its threshold is from `window_thresholds/20260929-113151`, taken on the int8 files.
 
 ## Prepare, build and flash
 
