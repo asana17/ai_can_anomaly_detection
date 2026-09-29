@@ -10,11 +10,12 @@
 #include "threshold.h"
 
 /* Hand report the row an alarm starts or ends on. */
-LOCAL void report_alarm_change(ReportInput *report_input, UW no, INT alarm)
+LOCAL void report_alarm_change(ReportInput *report_input, CONST Row *row, INT alarm)
 {
 	Report report = {0};
 
-	report.no = no;
+	report.no = row->no;
+	report.tick_ms = row->tick_ms;
 	report.alarm = alarm;
 	report_input_write(report_input, &report);
 }
@@ -26,6 +27,7 @@ LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST R
 	RowRingEntry entry;
 
 	entry.no = row->no;
+	entry.tick_ms = row->tick_ms;
 	memcpy(entry.physical, row->physical, sizeof(entry.physical));
 	entry.flag = flag;
 	entry.row_count_since_gap = row_count_since_gap;
@@ -91,7 +93,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		detect_by_row_push_flag(&state, row.no, flagged);
 		alarmed = detect_by_row_alarmed(&state);
 		if (alarmed != ringing) {
-			report_alarm_change(task->report_input, row.no, alarmed);
+			report_alarm_change(task->report_input, &row, alarmed);
 			ringing = alarmed;
 			if (alarmed) {
 				pass_alarm_frame_positions(task->copy_alarm_frames_input, &row,

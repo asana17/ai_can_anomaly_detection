@@ -9,11 +9,13 @@
 #include "score_and_detect_by_window_task.h"
 
 /* Hand report the row the window alarm starts or ends on. */
-LOCAL void report_window_alarm_change(ReportInput *window_report_input, UW no, INT alarm)
+LOCAL void report_window_alarm_change(ReportInput *window_report_input,
+	CONST RowRingEntry *entry, INT alarm)
 {
 	Report report = {0};
 
-	report.no = no;
+	report.no = entry->no;
+	report.tick_ms = entry->tick_ms;
 	report.alarm = alarm;
 	report_input_write(window_report_input, &report);
 }
@@ -119,8 +121,7 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 			detect_by_row_push_flag(&state, entry->no, flagged);
 			alarmed = detect_by_row_alarmed(&state);
 			if (alarmed != ringing) {
-				report_window_alarm_change(task->window_report_input, entry->no,
-					alarmed);
+				report_window_alarm_change(task->window_report_input, entry, alarmed);
 				ringing = alarmed;
 			}
 		}

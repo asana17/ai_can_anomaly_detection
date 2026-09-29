@@ -6,6 +6,7 @@
 /* The alarm state after its last start or end, for the task that reports it. */
 typedef struct {
 	UW no; /* the row of the last change */
+	UW tick_ms; /* tk_get_otm's ms when preprocess woke on that row's tick */
 	INT alarm; /* the alarm is ringing */
 } Report;
 

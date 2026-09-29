@@ -19,9 +19,11 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	Row row;
 	UW number = 0, seen = 0, quiet = 0, frames, intsts, i;
 	UW frames_start, frames_end = 0;
+	SYSTIM woke;
 
 	while (tk_slp_tsk(TMO_FEVR) == E_OK) {
 		number++;
+		tk_get_otm(&woke);
 		/* the frames since the tick before, which a row built now reflects */
 		frames_start = frames_end;
 		frames_end = task->frame_ring->position;
@@ -57,6 +59,7 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 			continue;
 		}
 		row.no = number;
+		row.tick_ms = woke.lo;
 		row.frames_start = frames_start;
 		row.frames_end = frames_end;
 		if (score_and_detect_by_row_input_write(task->score_and_detect_by_row_input,

@@ -7,6 +7,7 @@ LOCAL void report_uart_task(INT stacd, void *exinf)
 {
 	ReportUartTask *task = exinf;
 	Report report;
+	SYSTIM now;
 	INT shown = 0; /* the alarm state printed last, not ringing at first */
 
 	for (;;) {
@@ -16,10 +17,13 @@ LOCAL void report_uart_task(INT stacd, void *exinf)
 			continue;
 		}
 		shown = report.alarm;
+		tk_get_otm(&now);
 		if (report.alarm) {
-			tm_printf((UB*)"alarm 0x%08X start at row %u\n", task->id, report.no);
+			tm_printf((UB*)"alarm 0x%08X start at row %u, %u ms after its tick\n",
+				task->id, report.no, now.lo - report.tick_ms);
 		} else {
-			tm_printf((UB*)"alarm 0x%08X end at row %u\n", task->id, report.no);
+			tm_printf((UB*)"alarm 0x%08X end at row %u, %u ms after its tick\n",
+				task->id, report.no, now.lo - report.tick_ms);
 		}
 	}
 }

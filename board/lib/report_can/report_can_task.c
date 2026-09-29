@@ -6,9 +6,27 @@
 #define ALARM_BYTES 8u
 #define ALARM_ROW_BYTES 4u
 
-/* The state in byte 0, the row number little endian in bytes 1 to 4, then 0xFF. */
+/* The ms from the report's tick to now, or 0xFFFF when it does not fit in 2 bytes. */
+LOCAL UH ms_since_tick(CONST Report *report)
+{
+	SYSTIM now;
+	UW ms;
+
+	tk_get_otm(&now);
+	ms = now.lo - report->tick_ms;
+	if (ms > 0xFFFFu) {
+		return 0xFFFFu;
+	}
+	return (UH)ms;
+}
+
+/*
+ * The state in byte 0, the row number little endian in bytes 1 to 4, the ms from the
+ * row's tick little endian in bytes 5 and 6, then 0xFF.
+ */
 LOCAL void alarm_data(UB data[ALARM_BYTES], CONST Report *report)
 {
+	UH ms = ms_since_tick(report);
 	UW i;
 
 	memset(data, 0xFF, ALARM_BYTES);
@@ -16,6 +34,8 @@ LOCAL void alarm_data(UB data[ALARM_BYTES], CONST Report *report)
 	for (i = 0; i < ALARM_ROW_BYTES; i++) {
 		data[1u + i] = (UB)(report->no >> (8u * i));
 	}
+	data[5] = (UB)ms;
+	data[6] = (UB)(ms >> 8);
 }
 
 /* Send the alarm frame with the task's ID. */

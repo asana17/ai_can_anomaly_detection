@@ -11,6 +11,7 @@
 /* One row in a RowRing, with what the windowed model needs about it. */
 typedef struct {
 	uint32_t no; /* the row's number, counting ticks */
+	uint32_t tick_ms; /* tk_get_otm's ms when preprocess woke on its tick */
 	float physical[SIGNAL_COUNT];
 	bool flag; /* a rule or the instant model flagged the row */
 	uint32_t row_count_since_gap; /* this row's place since the last gap, from 0 */
