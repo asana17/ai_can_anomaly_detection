@@ -164,22 +164,22 @@ to 694 cycles, 13 to 22 us. All 50,001 frames reached the frame ring.
 
 ### Size
 
-`arm-none-eabi-size` of the image built from `da6e8ec`.
+`arm-none-eabi-size` of the image built from `de0c849`.
 
 | what | bytes |
 |---|---|
-| text | 118,796 |
+| text | 119,312 |
 | data | 6,104 |
-| bss | 213,012 |
+| bss | 247,332 |
 
-The bss holds the kernel's control blocks in `.noinit`, 9,048 bytes, and the start
+The bss holds the kernel's control blocks in `.noinit`, 9,304 bytes, and the start
 stack and heap, 1,536 bytes. The largest objects in it, from the map:
 
 | what | bytes |
 |---|---|
 | frame ring | 65,548 |
-| the alarm frames record in the copy task, the store's input and the store task | 98,308 |
-| window model runtime, window task and its input | 36,424 |
+| the alarm frames record in the copy task, the store's two inputs and the store task | 131,092 |
+| window model runtime, window task and its input | 37,628 |
 | row model runtime | 640 |
 
 The kernel gives the task stacks, the row message buffer and the MAC's memory pool from
@@ -188,8 +188,8 @@ areas walked from `knl_imacb`.
 
 | what | bytes |
 |---|---|
-| 12 areas in use, 10 task stacks, the row message buffer and the MAC pool | 16,480 |
-| area headers | 104 |
-| free | 43,952 |
+| 13 areas in use, 11 task stacks, the row message buffer and the MAC pool | 17,632 |
+| area headers | 112 |
+| free | 8,472 |
 
-Of the 278,528 bytes of RAM, 43,952 are free.
+Of the 278,528 bytes of RAM, 8,472 are free.
