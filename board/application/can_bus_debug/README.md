@@ -34,6 +34,9 @@ python3 -m board.prepare CUBEIDE_PROJECT_DIR can_bus_debug
 python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```
 
+On macOS `python3 -m board.application.can_bus_debug.bus` sends one frame and prints the
+frames on the bus. On Ubuntu `cansend` and `candump` do the same.
+
 The UART should show `CAN TX: ID=0x18fef100 queued` every second, and the adapter
 should receive that frame. For each frame the adapter sends, the UART should show a
 line that starts with `CAN RX:` and holds the frame's ID and data.
