@@ -15,41 +15,51 @@ NUCLEO-H533RE の上で μT-Kernel 3.0 ([mtk3_bsp2](https://github.com/tron-foru
 
 ### ソフトウェア
 
-ST のツールはすべて st.com から OS 用の公式インストーラをダウンロードして入れる。
-ダウンロードには st.com へのログインが要る。Ubuntu の apt にはない。
+ST のツールは st.com からダウンロードし、展開してインストーラを開く。ダウンロードにはログインが要る。
 
 | もの | 版 | macOS | Ubuntu |
 |---|---|---|---|
-| STM32CubeMX | 6.17.0 (STM32CubeMX2 ではない) | macOS 用のインストーラ | `stm32cubemx-lin-v6-17-0.zip` の `SetupSTM32CubeMX-6.17.0` を開く |
-| STM32Cube FW_H5 | V1.6.0 | CubeMX の Help、Manage embedded software packages で入れる | macOS と同じ |
-| STM32CubeIDE | 2.1.1 | `st-stm32cubeide_2.1.1_28236_20260312_0043_aarch64.dmg.zip` | `st-stm32cubeide_2.1.1_28236_20260312_0043_amd64.deb_bundle.sh.zip` の中身を `sudo sh` で実行する |
-| STM32CubeProgrammer | 2.23.0。コマンドラインの `STM32_Programmer_CLI` を使う | macOS 用のインストーラ | `SetupSTM32CubeProgrammer_linux_64.zip` の `SetupSTM32CubeProgrammer-2.23.0.linux` を開く |
-| ST-LINK のファームウェア | 新品のボードは最初に更新する | CubeProgrammer の ST-LINK の Firmware upgrade で行う | macOS と同じ |
-| ST Edge AI Core | 4.0.1。モデルの実行ライブラリを 7.1 の手順で使う | macOS 用のインストーラで、STM32 MCU のコンポーネントを選ぶ | `stedgeai-lin.zip` の `stedgeai-linux-onlineinstaller` を開き、STM32 MCU のコンポーネントを選ぶ |
-| Python | 3.9 | [モデルを作る手順](pipeline_guide_ja.md#python-を用意する) で用意する | macOS と同じ |
+| STM32CubeMX | 6.17.0 (STM32CubeMX2 ではない) | `SetupSTM32CubeMX-6.17.0-Mac-ARM.app.tar.gz` の `SetupSTM32CubeMX-6.17.0` | `stm32cubemx-lin-v6-17-0.zip` の `SetupSTM32CubeMX-6.17.0` |
+| STM32Cube FW_H5 | V1.6.0 | CubeMX の Help、Manage embedded software packages。最初の起動の数分は `The update is already in use` と出るので待つ | 同じ |
+| STM32CubeIDE | 2.1.1 | `st-stm32cubeide_2.1.1_28236_20260312_0043_aarch64.dmg.zip` | `st-stm32cubeide_2.1.1_28236_20260312_0043_amd64.deb_bundle.sh.zip`。中身を `sudo sh` で実行する |
+| STM32CubeProgrammer | 2.23.0 | `SetupSTM32CubeProgrammer_macos_arm.zip` の `SetupSTM32CubeProgrammer-2.23.0` | `SetupSTM32CubeProgrammer_linux_64.zip` の `SetupSTM32CubeProgrammer-2.23.0.linux` |
+| ST-LINK のファームウェア | | 新品のボードは CubeProgrammer の Firmware upgrade で更新する | 同じ |
+| ST Edge AI Core | 4.0.1 | `stedgeai-macarm.zip` の `stedgeai-macarm-onlineinstaller.dmg`。STM32 MCU のコンポーネントを選ぶ | `stedgeai-lin.zip` の `stedgeai-linux-onlineinstaller`。STM32 MCU のコンポーネントを選ぶ |
+| Python | 3.9 | [下の手順](#python-を用意する) | 同じ |
 | libusb | | `brew install libusb` | 要らない |
+| Qt の xcb のライブラリ | | 要らない | ST Edge AI Core より先に `sudo apt install libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0` |
+| can-utils | | 要らない | `sudo apt install can-utils` |
+| screen | | 入っている | `sudo apt install screen` |
 
-### Ubuntu で入れるときに気をつけること
+### Python を用意する
 
-ST Edge AI Core のインストーラは、Ubuntu にない Qt の xcb のライブラリを使うので、先に入れる。
+ONNX Runtime 1.19.2 が入る最後の版なので 3.9 を使う。[uv](https://docs.astral.sh/uv/) で用意する。
 
 ```sh
-sudo apt install libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0
+brew install uv                                  # macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh  # Ubuntu
+uv venv --python 3.9 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 ```
 
-ST-LINK を root なしで使う udev ルールは CubeIDE のインストーラが入れる。入れた後に
-ボードを挿し直し、sudo なしで SWD につながることを確かめる。`Board : NUCLEO-H533RE` が出ればよい。
+新しいターミナルでは `source .venv/bin/activate` を実行してから使う。
+
+### Ubuntu の ST-LINK
+
+CubeIDE のインストーラが udev ルールを入れる。ボードを挿し直し、sudo なしで次が
+`Board : NUCLEO-H533RE` を出すことを確かめる。
 
 ```sh
 ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD
 ```
 
-CubeMX は最初の起動で数分パッケージの一覧を取るので、その間に FW_H5 を入れようとすると `The update is already in use` と出る。待ってから開き直す。
-
 ## 1. CubeMX でプロジェクトを作る
 
 できあがる設定は [board/cubemx/ai_can_detection.ioc](../board/cubemx/ai_can_detection.ioc)
-にある。この `.ioc` を CubeMX で開けば以下の操作は済んだ状態になる。
+にある。この `.ioc` を CubeMX で開き、File、Save Project As でリポジトリの外、例えば
+`~/NUCLEO-H533RE/ai_can_detection` に保存すれば、以下の操作は済んだ状態になる。
+`.ioc` を使ったときは、[コードを生成する](#コードを生成する) だけ行って [2. 配線](#2-配線) に進む。
 
 ### ボードを選ぶ
 
@@ -135,20 +145,13 @@ VIO がロジックの電圧をボードの 3.3 V に合わせる。STBY を Hig
 
 ### macOS
 
-macOS にはこのアダプタのドライバがないので、リポジトリの送信スクリプトは
-`requirements.txt` で入る `pyusb` と `gs_usb` で USB から直接動かす。`pyusb` が使う
-libusb を入れておく。
-
-```sh
-brew install libusb
-```
-
-送信スクリプトは、python-can を通さず `gs_usb` で 250 kbit/s のビットタイミングを直接設定する。
+macOS にはこのアダプタのドライバがない。[6](#6-can-バスを確かめる) の `bus` と
+[7.2](#72-実行) の `send_test_frames` が `gs_usb` で USB から直接動かし、250 kbit/s も
+自分で設定する。
 
 ### Ubuntu
 
-`can-utils` を入れ、アダプタを `can0` として 250 kbit/s で立ち上げる。最後の
-コマンドはバスに流れるフレームを表示する。
+アダプタを `can0` として 250 kbit/s で立ち上げる。最後のコマンドはバスのフレームを表示する。
 
 ```sh
 sudo ip link set can0 type can bitrate 250000 sample-point 0.875
@@ -158,41 +161,30 @@ candump -t d -e can0
 
 サンプルポイント 0.875 はボードの FDCAN1 の設定に合わせている。
 
-リポジトリの送信スクリプトは、立ち上げた `can0` から送る。
+[7.2](#72-実行) の `send_test_frames` は、立ち上げた `can0` から送る。
 
 ## 4. mtk3_bsp2 とアプリケーションをプロジェクトに入れる
 
 CubeMX が生成したプロジェクトに `board.prepare` で mtk3_bsp2 とアプリケーションを
-加える。最後の引数は `board/application/` の下のフォルダ名で、ビルドするアプリ
+加える。引数は `board/application/` の下のフォルダ名で、ビルドするアプリ
 ケーションを選ぶ。パッチを当てた mtk3_bsp2 `1ab52cc` を取得し、`main.c` に
 カーネルの起動を入れ、アプリケーションと `board/lib/` をプロジェクトにリンクする。
 
+`board.prepare` と `board.flash` は、プロジェクトとツールの場所を `board/paths.json`
+から読む。既定の場所に入れたときのものをコピーして始める。違う場所に入れたものは書き換える。
+
 ```sh
 cd ~/ai_can_detection
-python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection alive
+cp guidelines/paths.mac.json board/paths.json      # macOS
+cp guidelines/paths.ubuntu.json board/paths.json   # Ubuntu
+python3 -m board.prepare alive
 ```
 
 CubeIDE でプロジェクトを開いている間は実行しない。CubeIDE が開いている間にプロ
 ジェクトのファイルを書き換える。別のアプリケーションに替えるときは、CubeIDE で
 プロジェクトを閉じてから実行し直す。CubeMX でコードを生成し直したときも実行し直す。
 
-`board.prepare` はパッチを `git am` で当てるので、git に名前とメールアドレスが要る。
-設定していないと `Committer identity unknown` で止まる。
-
-```sh
-git config --global user.name "名前"
-git config --global user.email "メールアドレス"
-```
-
-`board/patches` のパッチが変わったときや、上のように途中で止まったときは、
-プロジェクトの mtk3_bsp2 に古いパッチが当たったままか、パッチが当たっていない。
-`board.prepare` は `mtk3_bsp2 lacks <パッチ名>` で止まる。mtk3_bsp2 を `1ab52cc` に
-戻してパッチを当て直し、`board.prepare` を実行し直す。
-
-```sh
-git -C ~/NUCLEO-H533RE/ai_can_detection/mtk3_bsp2 reset --hard 1ab52cc
-git -C ~/NUCLEO-H533RE/ai_can_detection/mtk3_bsp2 am --keep-cr board/patches/*.patch
-```
+`board.prepare` は `board/patches` のパッチを `git am` で当てるので、git の `user.name` と `user.email` を設定しておく。
 
 ## 5. ビルドと書き込み
 
@@ -200,28 +192,10 @@ git -C ~/NUCLEO-H533RE/ai_can_detection/mtk3_bsp2 am --keep-cr board/patches/*.p
 
 ### コマンドラインで行う
 
-CubeIDE と `STM32_Programmer_CLI` の場所を、`board/flash.json` に書いておく。
-
-```json
-{
-  "cubeide": "/Applications/STM32CubeIDE.app/Contents/MacOS/STM32CubeIDE",
-  "programmer": "/path/to/STM32_Programmer_CLI"
-}
-```
-
-Ubuntu で既定の場所に入れたときは次のようになる。
-
-```json
-{
-  "cubeide": "/opt/st/stm32cubeide_2.1.1/stm32cubeide",
-  "programmer": "~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI"
-}
-```
-
 CubeIDE を閉じてから、リポジトリのトップで実行する。
 
 ```sh
-python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
+python3 -m board.flash
 ```
 
 ビルドし、SWD で書き込んで照合し、マイコンをリセットする。
@@ -257,32 +231,50 @@ Ubuntu のインストール時に作ったユーザは最初から入ってい�
 
 ## 6. CAN バスを確かめる
 
-`can_bus_debug` は FDCAN1 が受けたフレームをすべて UART に出し、ID `0x18FEF100`
-のフレームを 1 秒ごとに送る。2 と 3 の手順でバスをつないでおき、4 と 5 の手順で
-`can_bus_debug` を書き込む。
+`can_bus_debug` で、ボードと PC の間でフレームが両方向に通ることを確かめる。
+`can_bus_debug` は受けたフレームを UART に出し、`18FEF100` を 1 秒ごとに送る。
 
-USB-CAN アダプタを Ubuntu で `can0` として立ち上げ、`candump` でバスを表示する。
-ボードが送る `18FEF100` が 1 秒ごとに出る。
+1. 2 と 3 の手順でバスをつなぐ。
+2. `can_bus_debug` を書き込み、別のターミナルで UART を開く。
 
-`cansend` でフレームを 1 つ送る。
+   ```sh
+   python3 -m board.prepare can_bus_debug
+   python3 -m board.flash
+   ```
 
-```sh
-cansend can0 18FEF200#1111111111111111
-```
+   ```sh
+   screen /dev/cu.usbmodem11202 115200   # macOS。ls /dev/cu.usbmodem* で出た名前にする
+   screen /dev/ttyACM0 115200            # Ubuntu
+   ```
 
-UART には、送ったフレームの ID とデータを持つ `CAN RX:` の行が出る。さらに 1 秒
-ごとに次の行が出る。
+3. PC から `18FEF200` を 1 つ送る。
 
-```
-CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec 0
-```
+   macOS では `bus` が送ったあと、Ctrl-C を押すまでバスのフレームを表示する。
 
-`taken` は受信したフレームの数、`printed` は UART に出した数、`fifo lost` と
-`ram failed` はフレームを捨てたとき 1、`rec` と `tec` は FDCAN1 のエラーカウンタ。
+   ```sh
+   python3 -m board.application.can_bus_debug.bus
+   ```
 
-`taken` と `printed` が送ったフレームの数と同じになり、残りが 0 のままなら
-バスは動いている。`FDCAN start error` が出たときは FDCAN1 が起動していない。
-`send failed` が出たときは、ボードが送信するフレームを送信キューに入れられなかった。
+   Ubuntu では 3 の手順の `candump` を開いたまま、別のターミナルで送る。
+
+   ```sh
+   cansend can0 18FEF200#1111111111111111
+   ```
+
+4. 次のように出ればバスは動いている。
+
+   | どこ | 出るもの |
+   |---|---|
+   | PC | ボードが送る `18FEF100` が 1 秒ごとに出る |
+   | UART | 送ったフレームの `CAN RX: ID=0x18fef200 (ext) DLC=8 data=11 11 11 11 11 11 11 11` |
+   | UART | 1 秒ごとの `CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec ...`。`taken` と `printed` が送った数になり、`fifo lost` と `ram failed` が 0 |
+
+   `tec` は PC がアダプタを開いていない間に上がり、開いている間は下がる。
+
+   | UART に出たもの | 意味 |
+   |---|---|
+   | `FDCAN start error` | FDCAN1 が起動していない |
+   | `send failed` | ボードが送るフレームを送信キューに入れられなかった |
 
 ## 7. 異常検知を動かす
 
@@ -296,7 +288,8 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
    記録として読むので、消さずに動かすと前のデータを記録と取り違える。
 
    ```sh
-   STM32_Programmer_CLI -c port=SWD -ob displ
+   /Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/STM32_Programmer_CLI -c port=SWD -ob displ   # macOS
+   ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD -ob displ   # Ubuntu
    ```
 
    出てくるオプションバイトの `SWAP_BANK` が 0 であることを確かめる。1 のときは
@@ -304,22 +297,15 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
    0 なら消す。セクタ番号は両方のバンクを通して数えるので、バンク 2 は 32 から 63 である。
 
    ```sh
-   STM32_Programmer_CLI -c port=SWD -e '[32' '63]'
+   /Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/STM32_Programmer_CLI -c port=SWD -e '[32' '63]'   # macOS
+   ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD -e '[32' '63]'   # Ubuntu
    ```
 
-2. `ai_can_anomaly_detection` をプロジェクトに入れて書き込む。モデルの実行ライブラリを
-   ST Edge AI Core から取るので、`/Applications/ST/STEdgeAI/4.0` 以外に入れたときは
-   場所を渡す。環境変数 `STEDGEAI_ROOT` を実行するシェルで export しておくか、
-   `board.prepare` に `--stedgeai-root` で渡す。両方あるときは `--stedgeai-root` が
-   優先される。Ubuntu では `/opt/ST/STEdgeAI/4.0` に入る。
+2. `ai_can_anomaly_detection` をプロジェクトに入れて書き込む。
 
    ```sh
-   export STEDGEAI_ROOT=/opt/ST/STEdgeAI/4.0   # Ubuntu
-   ```
-
-   ```sh
-   python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection ai_can_anomaly_detection
-   python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
+   python3 -m board.prepare ai_can_anomaly_detection
+   python3 -m board.flash
    ```
 
    6 の手順と同じく UART を開く。`reading FDCAN1` が出れば受信を始めている。警報は
@@ -393,8 +379,6 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
    python3 -m board.application.ai_can_anomaly_detection.board_frames received_frames.txt
    ```
 
-   ファイルの代わりに `-` を渡すと標準入力から読む。
-
    2026-09-29 に Release ビルド、32 MHz で動かしたときは次のように出た。
 
    ```
@@ -429,7 +413,8 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
 2. ボードを動かしたまま Flash のバンク 2 をファイルに読み出し、送ったログと突き合わせる。
 
    ```sh
-   STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
+   /Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin   # macOS
+   ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin   # Ubuntu
    python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093802472877.csv
    ```
 
