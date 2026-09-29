@@ -23,6 +23,11 @@
 #define WINDOW_BACKLOG_ID 0x0CFF0280u
 /* the ID a stored record is reported with, priority 3, PGN 0xFF03, source address 0x80 */
 #define STORED_RECORD_ID 0x0CFF0380u
+/*
+ * the ID a stored record of the window alarm is reported with, priority 3, PGN 0xFF04,
+ * source address 0x80
+ */
+#define WINDOW_STORED_RECORD_ID 0x0CFF0480u
 
 /*
  * Create preprocess, score and detect by row, the copy of the alarm frames, and score and

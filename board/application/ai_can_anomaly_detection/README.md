@@ -58,7 +58,8 @@ endian, and unused bytes are 0xFF.
 | alarm | 0x0CFF0080 | the alarm starts or ends | 0: 1 for start, 0 for end. 1 to 4: the row number. 5 and 6: the ms from the row's tick to the frame, 0xFFFF for more |
 | window alarm | 0x0CFF0180 | the window alarm starts or ends | as the alarm |
 | window backlog | 0x0CFF0280 | the window model finished a row after the next row came, or lost rows before it | 0 to 3: the row number. 4 and 5: the rows lost just before it, 0xFFFF for more |
-| stored record | 0x0CFF0380 | a record is written to Flash | 0 to 3: the row the alarm started on. 4 and 5: the frame count |
+| stored record | 0x0CFF0380 | a record of the alarm is written to Flash | 0 to 3: the row the alarm started on. 4 and 5: the frame count |
+| window stored record | 0x0CFF0480 | a record of the window alarm is written to Flash | as the stored record |
 
 The row number counts ticks from when the board started. When a new alarm state comes
 while the frame of the one before still waits to be sent, that frame is cancelled.

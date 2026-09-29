@@ -25,6 +25,7 @@ LOCAL ReportInput report_input;
 LOCAL ReportInput window_report_input;
 LOCAL WindowBacklogInput window_backlog_input;
 LOCAL StoredRecordInput stored_record_input;
+LOCAL StoredRecordInput window_stored_record_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL StoreAlarmFramesInput store_window_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
@@ -33,6 +34,7 @@ LOCAL ReportUartTask report_uart_task;
 LOCAL ReportUartTask window_report_uart_task;
 LOCAL WindowBacklogUartTask window_backlog_uart_task;
 LOCAL StoredRecordUartTask stored_record_uart_task;
+LOCAL StoredRecordUartTask window_stored_record_uart_task;
 
 /*
  * Store each Flash frame at its own time, as the CAN receive interrupt will. At the end,
@@ -100,6 +102,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = stored_record_input_create(&window_stored_record_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = store_alarm_frames_input_create(&store_alarm_frames_input,
 		&store_window_alarm_frames_input);
 	if (error < E_OK) {
@@ -113,7 +119,7 @@ EXPORT INT usermain(void)
 	/* above score and detect by window at 12, so the window model never holds back Flash */
 	error = store_alarm_frames_task_create(&store_alarm_frames_task, 11,
 		&store_alarm_frames_input, &store_window_alarm_frames_input, &flash_store,
-		&stored_record_input);
+		&stored_record_input, &window_stored_record_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -146,6 +152,11 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = stored_record_uart_task_create(&window_stored_record_uart_task, 10,
+		&window_stored_record_input, WINDOW_STORED_RECORD_ID);
+	if (error < E_OK) {
+		return error;
+	}
 	replay = tk_cre_tsk(&replay_ctsk);
 	if (replay < E_OK) {
 		return replay;
@@ -163,6 +174,10 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = stored_record_uart_task_start(&stored_record_uart_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = stored_record_uart_task_start(&window_stored_record_uart_task);
 	if (error < E_OK) {
 		return error;
 	}

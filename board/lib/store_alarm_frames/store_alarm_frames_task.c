@@ -50,7 +50,12 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 		} else if (error == E_OK) {
 			stored_record.no = task->alarm_frames.no;
 			stored_record.frame_count = task->alarm_frames.frame_count;
-			stored_record_input_write(task->stored_record_input, &stored_record);
+			if (task->alarm_frames.alarm == ALARM_KIND_WINDOW_ALARM) {
+				stored_record_input_write(task->window_stored_record_input,
+					&stored_record);
+			} else {
+				stored_record_input_write(task->stored_record_input, &stored_record);
+			}
 		}
 	}
 	tk_ext_tsk();
@@ -59,7 +64,8 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 EXPORT ER store_alarm_frames_task_create(StoreAlarmFramesTask *task, PRI priority,
 	StoreAlarmFramesInput *store_alarm_frames_input,
 	StoreAlarmFramesInput *store_window_alarm_frames_input, FlashStoreState *flash_store,
-	StoredRecordInput *stored_record_input)
+	StoredRecordInput *stored_record_input,
+	StoredRecordInput *window_stored_record_input)
 {
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 1024, .task = store_alarm_frames_task,
@@ -71,6 +77,7 @@ EXPORT ER store_alarm_frames_task_create(StoreAlarmFramesTask *task, PRI priorit
 	task->store_window_alarm_frames_input = store_window_alarm_frames_input;
 	task->flash_store = flash_store;
 	task->stored_record_input = stored_record_input;
+	task->window_stored_record_input = window_stored_record_input;
 	error = alarm_frames_mac_create(&task->mac);
 	if (error < E_OK) {
 		return error;

@@ -33,6 +33,7 @@ LOCAL ReportInput report_input;
 LOCAL ReportInput window_report_input;
 LOCAL WindowBacklogInput window_backlog_input;
 LOCAL StoredRecordInput stored_record_input;
+LOCAL StoredRecordInput window_stored_record_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL StoreAlarmFramesInput store_window_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
@@ -42,6 +43,7 @@ LOCAL ReportCanTask report_can_task;
 LOCAL ReportCanTask window_report_can_task;
 LOCAL WindowBacklogCanTask window_backlog_can_task;
 LOCAL StoredRecordCanTask stored_record_can_task;
+LOCAL StoredRecordCanTask window_stored_record_can_task;
 
 /*
  * Store each frame FDCAN received as the latest of its PGN, and copy it into the frame
@@ -115,6 +117,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = stored_record_input_create(&window_stored_record_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = store_alarm_frames_input_create(&store_alarm_frames_input,
 		&store_window_alarm_frames_input);
 	if (error < E_OK) {
@@ -128,7 +134,7 @@ EXPORT INT usermain(void)
 	/* above score and detect by window at 12, so the window model never holds back Flash */
 	error = store_alarm_frames_task_create(&store_alarm_frames_task, 11,
 		&store_alarm_frames_input, &store_window_alarm_frames_input, &flash_store,
-		&stored_record_input);
+		&stored_record_input, &window_stored_record_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -166,6 +172,11 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = stored_record_can_task_create(&window_stored_record_can_task, 10,
+		&window_stored_record_input, &can_sender, WINDOW_STORED_RECORD_ID);
+	if (error < E_OK) {
+		return error;
+	}
 	/* sends only on an alarm, which needs frames, so it may start before FDCAN1 */
 	error = report_can_task_start(&report_can_task);
 	if (error < E_OK) {
@@ -180,6 +191,10 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = stored_record_can_task_start(&stored_record_can_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = stored_record_can_task_start(&window_stored_record_can_task);
 	if (error < E_OK) {
 		return error;
 	}
