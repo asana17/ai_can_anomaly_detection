@@ -17,6 +17,8 @@ with the incoming frames. The design and the results on the board are in the
 
 ## Detection
 
+### Detectors
+
 The frames become one row of 17 signals every 100 ms. Three detectors read the rows.
 
 | detector | what it catches |
@@ -29,6 +31,8 @@ The autoencoders learn normal rows only, on a PC. To test them, [attack](attack)
 changes normal logs into synthetic anomalies, such as signals copied from another
 moment or a bias that grows.
 
+### Alarms
+
 Rows and windows raise alarms in different ways.
 
 - Rows: the alarm is raised when all of the last 10 rows are suspicious, 10 in a row.
@@ -37,6 +41,8 @@ Rows and windows raise alarms in different ways.
   synthetic attacks change how the signals move over a short time, so they show up in
   only a few windows. This is a choice made for those attacks, not a property of window
   models.
+
+### Thresholds
 
 Each model's threshold is taken from calibration rows the model never saw. It is the
 lowest score at which its alarm raises no more false alarms an hour than a target.
@@ -53,6 +59,8 @@ raise fewer false alarms than the sum.
 [settings.md](common/docs/settings.md#the-split-and-calibration-parameters) says how
 the targets were set. [calibrate](models/docs/calibrate.md) and
 [calibrate_windows](models/docs/calibrate_windows.md) say how the thresholds are taken.
+
+### Models
 
 Each autoencoder is compared with a linear model that reads the same input. PCA reads
 one row, so the row autoencoder's gain over it is what nonlinearity buys. VAR reads a
