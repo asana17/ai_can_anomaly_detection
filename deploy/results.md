@@ -4,11 +4,6 @@ Every nonlinear autoencoder of `results/20260916-001002`, quantized to int8 and 
 against the model it was quantized from. The export is `quantize/20260916-221145`, made
 at commit `8077570`.
 
-```
-python3 -u -m quantize.export "data/part_*/*.csv" out runs_clone 20260916-001002
-python3 -u -m evaluate.quantize.compare "data/part_*/*.csv" out runs_clone 20260916-221145
-```
-
 Quantizing all 24 took 14 s. Measuring all 24 took 58 s, at 7.17 GB peak.
 
 ## What the measurement settles
@@ -36,8 +31,7 @@ records in `meta.json`.
 ## Each model
 
 Attacks found at 10 rows held, out of 862. `held TARGET` is whether that fit's threshold
-held `TARGET` on the clean test rows of `results/20260916-001002`, from
-[evaluate/results.md](../evaluate/results.md).
+held `TARGET` on the clean test rows of `results/20260916-001002`.
 
 The rules find 373 of the 862 on their own, so what a fit adds is its `model` column
 less 373, and what survives quantizing is its `int8` column less 373.
