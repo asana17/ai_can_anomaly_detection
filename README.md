@@ -91,7 +91,8 @@ list every task in order.
 ## The board application
 
 [ai_can_anomaly_detection](board/application/ai_can_anomaly_detection) is the main
-application on the board. Its README has the frames it sends and the record in Flash.
+application on the board. Its README has the frames it sends, the record in Flash,
+the image size, the RAM left and the MCU's current.
 
 | doc | what it has |
 |---|---|

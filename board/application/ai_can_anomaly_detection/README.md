@@ -137,7 +137,8 @@ python3 -m board.flash
 
 ## Results
 
-All on 2026-09-29, the Release build at `-O2` and 32 MHz, with the models above.
+All on 2026-09-29 but the current, the Release build at `-O2` and 32 MHz, with the
+models above.
 
 ### Frames and records
 
@@ -208,3 +209,14 @@ areas walked from `knl_imacb`.
 | free | 8,472 |
 
 Of the 278,528 bytes of RAM, 8,472 are free.
+
+### Current
+
+The STM32H533's current, read on 2026-09-30 with a multimeter in place of the JP2
+(IDD) jumper. It is the MCU alone, not the ST-LINK, the LEDs or the CAN parts. With JP2
+open the MCU does not start, so all of its supply passes through JP2.
+
+| while | mA |
+|---|---|
+| no frames came | 4.54 |
+| the Mac sent `part_3/20210204093802472877.csv` | 4.97 to 5.58 |
