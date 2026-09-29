@@ -9,11 +9,7 @@
 #include "store_alarm_frames_task.h"
 #include "report_uart_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
-#include "load_task.h"
 #include "replay_frames.h"
-
-#define LOAD_PERIOD 10 /* ms between the load's wakes */
-#define LOAD_UNITS 0   /* the load's work units on each wake */
 
 /* What the CAN receive side writes with slots_store(). */
 EXPORT Slots slots;
@@ -28,19 +24,6 @@ LOCAL FlashStoreState flash_store;
 LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL ReportUartTask report_uart_task;
 LOCAL ReportUartTask window_report_uart_task;
-LOCAL LoadTask load_task;
-
-/* Print the cycles the load's work on one wake takes when nothing interrupts it. */
-LOCAL void print_load_cycles(void)
-{
-	UW started;
-
-	/* DWT counts cycles once model_init has run */
-	started = DWT->CYCCNT;
-	load_work(LOAD_UNITS);
-	tm_printf((UB*)"load %u units %u cycles every %u ms at %u Hz\n", LOAD_UNITS,
-		DWT->CYCCNT - started, LOAD_PERIOD, SystemCoreClock);
-}
 
 /*
  * Store each Flash frame at its own time, as the CAN receive interrupt will. At the end,
@@ -120,13 +103,6 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
-	/* before any task starts, so nothing interrupts it and the rows are not counting */
-	print_load_cycles();
-	/* between the copy of the alarm frames at 10 and score and detect by window at 12 */
-	error = load_task_create(&load_task, 11, LOAD_PERIOD, LOAD_UNITS);
-	if (error < E_OK) {
-		return error;
-	}
 	/* between score and detect by row at 8 and the copy of the alarm frames at 10 */
 	error = report_uart_task_create(&report_uart_task, 9, &report_input, ALARM_ID);
 	if (error < E_OK) {
@@ -155,10 +131,6 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = ai_can_anomaly_detection_tasks_start();
-	if (error < E_OK) {
-		return error;
-	}
-	error = load_task_start(&load_task);
 	if (error < E_OK) {
 		return error;
 	}

@@ -80,22 +80,3 @@ Bank 2 then holds one record, for row 29. On 2026-09-29 it held 330 frames. Its 
 matched the one computed on the PC, as
 [ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash)
 describes. With one bit of the head or of the last frame changed, it did not.
-
-## Load
-
-[load](../../lib/load/load_task.c) is a synthetic load that stands in for the work an
-ECU has besides detection. It runs at priority 11, below the copy of the alarm frames
-and above score and detect by window. Every `LOAD_PERIOD` ms it runs a CRC-32 over 64
-bytes `LOAD_UNITS` times. Both are in [usermain.c](usermain.c). `LOAD_UNITS` is 0, so
-the load does nothing until it is set. A wake that comes while it works makes it run
-again at once. Before the tasks start the board prints what one wake takes, such as
-
-```
-load 80 units 297592 cycles every 10 ms at 32000000 Hz
-```
-
-One unit took 3,752 cycles, 1.17% of a 10 ms period at 32 MHz. A load that comes now
-and then is a long period with many units.
-
-On 2026-09-29 with 80 units every 10 ms, about 93% of the CPU, the board printed the
-same alarm lines and frame ring push cycles as with none.

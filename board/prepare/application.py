@@ -50,8 +50,7 @@ APPLICATIONS = {
         ("mbf", "can_id", "spn_decode", "signal_state", "slots", "frame_ring", "moving",
          "signals", "rules", "scale", "model", "scoring", "detect", "window_model",
          DEPLOYED_WINDOW_MODEL, "alarm_frames_mac", "copy_alarm_frames", "flash_store",
-         "store_alarm_frames", "ai_can_anomaly_detection_tasks", "report_uart", "load",
-         MODEL),
+         "store_alarm_frames", "ai_can_anomaly_detection_tasks", "report_uart", MODEL),
         True, True),
 }
 
