@@ -24,9 +24,10 @@ slots are described in [their README](../../lib/ai_can_anomaly_detection_tasks/R
 
 ## Frames
 
-`replay_frames.h` holds the frames of the log behind the rows of
-`rule_check_from_flash/raw_rows.h`, with the same replay attack in. It keeps the PGNs
-the board decodes, from 1 s before the first of those rows.
+`replay_frames.h` holds the frames of `part_3/20210204093802472877.csv`, with its
+replay attack in, as `ai_can_anomaly_detection/fetched/frames` holds it. It keeps the
+PGNs the board decodes, from 42.4 s to 56.0 s after the log's first frame. The attack
+starts at 49.4 s, so the window model has 50 rows before it.
 
 ## Prepare, build and flash
 
@@ -60,25 +61,41 @@ The window alarm runs the window model's int8 ONNX file in
 does. On 2026-09-29 it printed:
 
 ```
-rows: 88, from row 1 to row 88, moving 88, segments 1
-rule hits 60, above the threshold 60
-alarm 0x0CFF0080 start at row 29
-alarm 0x0CFF0080 end at row 80
-alarm 0x0CFF0180 start at row 20
-alarm 0x0CFF0180 end at row 30
-alarm 0x0CFF0180 start at row 80
+rows: 135, from row 1 to row 135, moving 135, segments 1
+rule hits 45, above the threshold 0
+alarm 0x0CFF0080 start at row 79
+alarm 0x0CFF0080 end at row 115
+alarm 0x0CFF0180 start at row 70
+alarm 0x0CFF0180 end at row 80
+alarm 0x0CFF0180 start at row 115
+alarm 0x0CFF0180 end at row 125
 ```
 
-The board should print the five alarm lines, the two alarms' lines mixed in the order
-they happen. After the replay it prints the fewest and
-most cycles one push into the frame ring took, and the core clock. An interrupt during
-a push adds to it. On 2026-09-29 the Release build, at `-O2`, printed
+The window alarm starts 9 rows before the alarm. The board should print the six alarm
+lines, the two alarms' lines mixed in the order they happen. After the replay it prints
+the fewest and most cycles one push into the frame ring took, and the core clock. An
+interrupt during a push adds to it. On 2026-09-29 the Release build, at `-O2`, printed
 
 ```
-frame ring push 87 to 133 cycles at 32000000 Hz
+alarm 0x0CFF0180 start at row 70, 90 ms after its tick
+alarm 0x0CFF0080 start at row 79, 0 ms after its tick
+stored 0x0CFF0380 record of row 79 with 330 frames
+backlog 0x0CFF0280 at row 79, 0 rows lost before it
+backlog 0x0CFF0280 at row 80, 0 rows lost before it
+alarm 0x0CFF0180 end at row 80, 130 ms after its tick
+backlog 0x0CFF0280 at row 81, 0 rows lost before it
+backlog 0x0CFF0280 at row 82, 0 rows lost before it
+backlog 0x0CFF0280 at row 83, 0 rows lost before it
+backlog 0x0CFF0280 at row 84, 0 rows lost before it
+backlog 0x0CFF0280 at row 85, 0 rows lost before it
+backlog 0x0CFF0280 at row 86, 0 rows lost before it
+alarm 0x0CFF0080 end at row 115, 0 ms after its tick
+alarm 0x0CFF0180 start at row 115, 90 ms after its tick
+alarm 0x0CFF0180 end at row 125, 90 ms after its tick
+frame ring push 87 to 136 cycles at 32000000 Hz
 ```
 
-Bank 2 then holds one record, for row 29. On 2026-09-29 it held 330 frames. Its MAC
-matched the one computed on the PC, as
+Bank 2 then holds one record, for row 79, with 330 frames. Its MAC matched the one
+computed on the PC, as
 [ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash)
-describes. With one bit of the head or of the last frame changed, it did not.
+describes.
