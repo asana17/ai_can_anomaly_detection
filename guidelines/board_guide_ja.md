@@ -182,29 +182,7 @@ python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
    Debug probe は `ST-LINK (ST-LINK GDB server)` のまま OK を押す。コンソールの最後に
    `Download verified successfully` が出る。
 
-## 6. ボードが動くことを確かめる
-
-`alive` は緑の LED を点滅させ、500 ms ごとに数を UART に出す。4 と 5 の手順で
-`alive` を書き込み、ST-LINK の仮想 COM ポートを 115200 bps で開く。
-
-```sh
-ls /dev/cu.usbmodem*
-screen /dev/cu.usbmodem11202 115200
-```
-
-`cu.usbmodem` の後ろの番号はボードをつなぎ直すと変わるので、`ls` が出したものを使う。
-
-緑の LED が点滅し、次のように 1 行ずつ出れば動いている。
-
-```
-usermain 1
-usermain 2
-```
-
-LED が消えたままで何も出ないときは、アプリケーションではなく mtk3_bsp2 の空の
-`usermain` がビルドされている。
-
-## 7. CAN バスを確かめる
+## 6. CAN バスを確かめる
 
 `can_bus_debug` は FDCAN1 が受けたフレームをすべて UART に出し、ID `0x18FEF100`
 のフレームを 1 秒ごとに送る。2 と 3 の手順でバスをつないでおき、4 と 5 の手順で
@@ -233,125 +211,152 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
 バスは動いている。`FDCAN start error` が出たときは FDCAN1 が起動していない。
 `send failed` が出たときは、ボードが送信するフレームを送信キューに入れられなかった。
 
-## 8. 異常検知を動かす
+## 7. 異常検知を動かす
 
-`ai_can_anomaly_detection` は受信したフレームから 0.1 秒ごとに行を作り、ルールと
-オートエンコーダで判定し、警報の始まりと終わりを FDCAN1 に送る。窓モデルの警報も
-同じように送る。警報が始まるたびに、その前のフレームを Flash のバンク 2 に書く。
+2 と 3 の手順でバスと USB-CAN アダプタをつないでおく。
 
-### Flash のバンク 2 を消す
+タスクの構成は [スライドの 9 枚目](https://docs.google.com/presentation/d/1hwYTSuzBjXj9xMCqELzK-VM9VE5GtPjH6FCRop7E4cI/edit#slide=id.p7) にある。
 
-最初に一度だけ、SWD でバンク 2 を消す。書き込みの処理はバンク 2 に残っているものを
-記録として読む。
+### 7.1 準備
 
-```sh
-STM32_Programmer_CLI -c port=SWD -ob displ
-STM32_Programmer_CLI -c port=SWD -e '[32' '63]'
-```
+1. Flash のバンク 2 を消す。最初に一度だけでよい。ボードはバンク 2 に残っているものを
+   記録として読むので、消さずに動かすと前のデータを記録と取り違える。
 
-1 つ目のコマンドで出るオプションバイトの SWAP_BANK が 0 であることを確かめてから
-消す。1 だと消去がプログラムに当たる。セクタ番号は両方のバンクを通して数える
-ので、バンク 2 は 32 から 63 になる。
+   ```sh
+   STM32_Programmer_CLI -c port=SWD -ob displ
+   ```
 
-### 書き込む
+   出てくるオプションバイトの `SWAP_BANK` が 0 であることを確かめる。1 のときは
+   バンクが入れ替わっていて、次の消去がプログラムを消してしまうので、ここで止める。
+   0 なら消す。セクタ番号は両方のバンクを通して数えるので、バンク 2 は 32 から 63 である。
 
-4 と 5 の手順で `ai_can_anomaly_detection` を書き込む。モデルの実行ライブラリを
-ST Edge AI Core から取るので、`/Applications/ST/STEdgeAI/4.0` 以外に入れたときは
-`--stedgeai-root` で場所を渡す。
+   ```sh
+   STM32_Programmer_CLI -c port=SWD -e '[32' '63]'
+   ```
 
-```sh
-python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection ai_can_anomaly_detection
-python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
-```
+2. `ai_can_anomaly_detection` をプロジェクトに入れて書き込む。モデルの実行ライブラリを
+   ST Edge AI Core から取るので、`/Applications/ST/STEdgeAI/4.0` 以外に入れたときは
+   `board.prepare` に `--stedgeai-root` で場所を渡す。
 
-UART に `reading FDCAN1` が出れば受信を始めている。`FDCAN start error` は FDCAN1
-が起動していない。`flash store init error` はバンク 2 の記録を読めず、そこで止まって
-いる。警報は UART ではなく CAN に出る。
+   ```sh
+   python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection ai_can_anomaly_detection
+   python3 board/flash.py ~/NUCLEO-H533RE/ai_can_detection
+   ```
 
-### 送るフレームを取ってくる
+   6 の手順と同じく UART を開く。`reading FDCAN1` が出れば受信を始めている。警報は
+   UART ではなく CAN に出る。
 
-攻撃を入れたテスト用のフレームを Hugging Face のデータ用リポジトリから取ってくる。
-約 2 GB ある。ログインは要らない。
+   | UART に出たもの | 意味 |
+   |---|---|
+   | `FDCAN start error` | FDCAN1 が起動していない |
+   | `flash store init error` | バンク 2 を読めず、そこで止まった |
 
-```sh
-python3 -m board.application.ai_can_anomaly_detection.fetch
-```
+3. 送るフレームを Hugging Face のデータ用リポジトリから取ってくる。約 2 GB あり、
+   ログインは要らない。
 
-`board/application/ai_can_anomaly_detection/fetched/frames/` に `frames.parquet`
-と `attacked.json` が入る。`attacked.json` は各ログに入れた攻撃で、`log` が
-ログの名前、`pgn` が攻撃した PGN である。ログ 1 つは約 1 分のフレームである。
+   ```sh
+   python3 -m board.application.ai_can_anomaly_detection.fetch
+   ```
 
-### PC での答えを出す
+   `board/application/ai_can_anomaly_detection/fetched/frames/` に次の 2 つが入る。
 
-ログを 1 つ選び、PC で同じモデルを動かしたときに警報が始まる行と終わる行を出す。
+   | ファイル | 中身 |
+   |---|---|
+   | `frames.parquet` | 攻撃を入れたログのフレーム。ログ 1 つは約 1 分 |
+   | `attacked.json` | 各ログに入れた攻撃。`log` がログの名前、`pgn` が攻撃した PGN |
 
-```sh
-python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204094457960567.csv
-```
+### 7.2 実行
 
-`alarm 0x0CFF0080 start at row` と `alarm 0x0CFF0080 end at row` の後に行番号が出る。行は送り始めから
-0.1 秒ごとに数える。
+ここでは `part_3/20210204093505241905.csv` を使う。ほかのログは `attacked.json` の
+`log` から選ぶ。
 
-### フレームを送って警報を受ける
+1. PC で同じモデルを動かし、警報が始まる行と終わる行を出す。行は送り始めから 0.1 秒
+   ごとに数える。
 
-3 の手順の macOS で、同じログのフレームを記録された時刻の間隔で送る。
+   ```sh
+   python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093505241905.csv
+   ```
 
-```sh
-python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204094457960567.csv
-```
+   ```
+   alarm 0x0CFF0080 start at row 531
+   alarm 0x0CFF0080 end at row 575
+   ```
 
-ボードが送った警報のフレームは、受け取った時刻とともに次のように出る。
+2. 3 の手順の macOS から、同じログのフレームを記録された時刻の間隔で送る。約 1 分
+   かかる。ボードが CAN に送ったフレームは `received at` の行に受け取った時刻とともに
+   出る。7.3 で読むので `received_frames.txt` にも残す。
 
-```
-received at 1790602535.128  CFF0080   [8]  01 82 02 00 00 00 00 FF
-```
+   ```sh
+   python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204093505241905.csv | tee received_frames.txt
+   ```
 
-| バイト | 中身 |
-|---|---|
-| ID | 0x0CFF0080、拡張 ID。優先度 3、PGN 0xFF00、送信元アドレス 0x80 |
-| 0 | 1 なら始まり、0 なら終わり |
-| 1 から 4 | 行番号、リトルエンディアン |
-| 5 と 6 | その行の tick からフレームを送るまでのミリ秒、リトルエンディアン |
-| 7 | 0xFF |
+   ```
+   sending 50001 frames from 1790657590.783
+   received at 1790657643.832  CFF0080   [8]  01 45 02 00 00 00 00 FF
+   received at 1790657644.010  CFF0380   [8]  45 02 00 00 F9 07 FF FF
+   ...
+   sent 50001, echoed 50001, late ms median 0.000, p99 0.017, max 5.143
+   ```
 
-ボードはほかに次のフレームも送る。どれも拡張 ID で、優先度 3、送信元アドレス 0x80
-である。値はリトルエンディアンである。
+   最後の行の `echoed` が `sent` と同じなら、アダプタはすべてのフレームを送っている。
+   `echoed` が 0 のときはアダプタが何も読めていないので、USB から抜き差しして送り直す。
 
-| ID | いつ送るか | 中身 |
-|---|---|---|
-| 0x0CFF0180 | 窓モデルの警報が始まったときと終わったとき | 警報のフレームと同じ形 |
-| 0x0CFF0280 | 窓モデルが次の行が届いた後に採点を終えた行ごとと、行を失った後の最初の行 | 0 から 3 に行番号、4 と 5 に直前に失った行の数 |
-| 0x0CFF0380 | 警報の前のフレームを Flash に書き終えたとき | 0 から 3 に警報が始まった行番号、4 と 5 にフレームの数 |
+### 7.3 結果
 
-ボードの行番号はボードが起動してから数えるので、PC の行番号に一定の差を足したもの
-になる。最初の警報で差を求め、残りの警報をその差で PC の答えと比べる。ボードの tick
-は送り始めと揃っていないので、1 行ずれることがある。
+1. `board_frames` で `received_frames.txt` の `received at` の行を読み、ボードが送った
+   フレームを 1 つずつ中身に直して出す。ほかの行は読み飛ばす。
 
-### Flash に書いた記録を読む
+   ```sh
+   python3 -m board.application.ai_can_anomaly_detection.board_frames received_frames.txt
+   ```
 
-ボードを動かしたまま、バンク 2 をファイルに読み出す。
+   ファイルの代わりに `-` を渡すと標準入力から読む。
 
-```sh
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
-```
+   2026-09-29 に Release ビルド、32 MHz で動かしたときは次のように出た。
 
-バンク 2 は 4 セクタ、32 KB の区画 8 つに分けてあり、1 区画に記録が 1 つ入る。
-各区画の先頭 16 バイトは書き込み順の番号と大きさのヘッダで、その後に記録が続く。
-値はすべてリトルエンディアンである。
+   ```
+   row 581: alarm start, 0 ms after the row was made
+   row 581: alarm frames stored, 178 ms after the alarm start, 2041 frames
+   row 581: window model late, finished 269 ms after the row was made, 0 rows lost before it
+   ...
+   row 602: window model late, finished 104 ms after the row was made, 0 rows lost before it
+   rows 581 to 602: window model late on 22 rows, 0 rows lost
+   row 625: alarm end, 0 ms after the row was made
+   ```
 
-| バイト | 中身 |
-|---|---|
-| 0 から 3 | 警報が始まった行番号。警報のフレームと同じもの |
-| 4 から 7 | フレームの数 |
-| 8 から 15 | 0 |
-| 16 から 47 | MAC。0 から 15 と、その後のフレームの HMAC-SHA256。鍵は `board/lib/alarm_frames_mac/alarm_frames_mac_demo_key.h` |
-| その後 16 バイトずつ、古い順 | 前のフレームからのマイクロ秒 3 バイト、データの長さ 1 バイト、ID 4 バイト、データ 8 バイト。長さより後は 0 |
+   | 見るところ | 正しいとき |
+   |---|---|
+   | `alarm start` と `alarm end` の行 | ボードの行はボードが起動してから数えるので、PC の行に一定の差を足したものになる。上の例では始まりも終わりも差が 50。ボードが行を作る時刻は送り始めと揃っていないので、1 行ずれることはある |
+   | `alarm start` の ms | 0。警報は窓モデルと保存に待たされていない |
+   | `alarm frames stored` | 警報の前のフレームを Flash に書き終えた |
+   | `window model late` | 窓モデルが次の行が来るまでに採点を終えられなかった行。遅れていない行は出ない |
+   | `window model late on ... rows` | 窓モデルは遅れた後に追いついた。`0 rows lost` なら行を 1 つも失っていない |
 
-記録のフレームが、送ったフレームの一続きの部分と ID、長さ、データで一致すれば、
-正しく書けている。送ったログと突き合わせるには次を動かす。
+   窓モデルが遅れる理由は [スライドの 11 枚目](https://docs.google.com/presentation/d/1hwYTSuzBjXj9xMCqELzK-VM9VE5GtPjH6FCRop7E4cI/edit?slide=id.p_realtime_conv#slide=id.p_realtime_conv) の優先度にある。
 
-```sh
-python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204094457960567.csv
-```
+2. ボードを動かしたまま Flash のバンク 2 をファイルに読み出し、送ったログと突き合わせる。
 
-記録ごとに、MAC が鍵と合うかと、一致した送ったフレームの番号が出る。`--log` を付けなければ記録のフレームが出る。
+   ```sh
+   STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
+   python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093505241905.csv
+   ```
+
+   ```
+   area 0 sequence 0 row 581 frames 2041
+     the MAC matches the one computed with the key
+     matches log frames 42838 to 44878
+   ```
+
+   記録ごとに、MAC が鍵と合うかと、送ったログのどのフレームと一致したかが出る。MAC が
+   合い、ログのフレームと一致すれば正しく書けている。鍵は
+   `board/lib/alarm_frames_mac/alarm_frames_mac_demo_key.h` にある。`--log` を付けなければ
+   記録のフレームが出る。
+
+   何を記録するかは [スライドの 8 枚目](https://docs.google.com/presentation/d/1hwYTSuzBjXj9xMCqELzK-VM9VE5GtPjH6FCRop7E4cI/edit#slide=id.p6) にある。
+
+フレームと記録の形は
+[ai_can_anomaly_detection の README](../board/application/ai_can_anomaly_detection/README.md)
+にある。
+
+Note: `ai_can_anomaly_detection` は、1 日 8 時間の使用で Flash のバンク 2 が 5 年もつ
+ように、消去の間隔を自分で空けて書き込む。
