@@ -14,6 +14,7 @@
 LOCAL ScoreAndDetectByRowInput score_and_detect_by_row_input;
 LOCAL ScoreAndDetectByWindowInput score_and_detect_by_window_input;
 LOCAL CopyAlarmFramesInput copy_alarm_frames_input;
+LOCAL CopyAlarmFramesInput copy_window_alarm_frames_input;
 LOCAL PreprocessTask preprocess_task;
 LOCAL ScoreAndDetectByRowTask score_and_detect_by_row_task;
 LOCAL ScoreAndDetectByWindowTask score_and_detect_by_window_task;
@@ -23,7 +24,8 @@ LOCAL CopyAlarmFramesTask copy_alarm_frames_task;
 EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_ring,
 	ReportInput *report_input, ReportInput *window_report_input,
 	WindowBacklogInput *window_backlog_input,
-	StoreAlarmFramesInput *store_alarm_frames_input)
+	StoreAlarmFramesInput *store_alarm_frames_input,
+	StoreAlarmFramesInput *store_window_alarm_frames_input)
 {
 	ER error;
 
@@ -45,7 +47,8 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 	if (error < E_OK) {
 		return error;
 	}
-	error = copy_alarm_frames_input_create(&copy_alarm_frames_input);
+	error = copy_alarm_frames_input_create(&copy_alarm_frames_input,
+		&copy_window_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -62,7 +65,8 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 	 * and below the alarm outputs
 	 */
 	error = copy_alarm_frames_task_create(&copy_alarm_frames_task, 10,
-		&copy_alarm_frames_input, frame_ring, store_alarm_frames_input);
+		&copy_alarm_frames_input, &copy_window_alarm_frames_input, frame_ring,
+		store_alarm_frames_input, store_window_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}

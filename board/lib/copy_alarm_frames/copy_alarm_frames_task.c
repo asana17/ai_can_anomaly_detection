@@ -31,21 +31,28 @@ LOCAL void copy_alarm_frames_task(INT stacd, void *exinf)
 {
 	CopyAlarmFramesTask *task = exinf;
 	AlarmFramePositions positions;
+	StoreAlarmFramesInput *store_input;
 
 	for (;;) {
-		copy_alarm_frames_input_read(task->copy_alarm_frames_input, &positions);
+		copy_alarm_frames_input_read(task->copy_alarm_frames_input,
+			task->copy_window_alarm_frames_input, &positions);
 		task->alarm_frames.no = positions.no;
 		task->alarm_frames.alarm = positions.alarm;
 		copy_frames(task->frame_ring, positions.frames_start, positions.frames_end,
 			&task->alarm_frames);
-		store_alarm_frames_input_write(task->store_alarm_frames_input,
-			&task->alarm_frames);
+		store_input = task->store_alarm_frames_input;
+		if (positions.alarm == ALARM_KIND_WINDOW_ALARM) {
+			store_input = task->store_window_alarm_frames_input;
+		}
+		store_alarm_frames_input_write(store_input, &task->alarm_frames);
 	}
 }
 
 EXPORT ER copy_alarm_frames_task_create(CopyAlarmFramesTask *task, PRI priority,
-	CopyAlarmFramesInput *copy_alarm_frames_input, FrameRing *frame_ring,
-	StoreAlarmFramesInput *store_alarm_frames_input)
+	CopyAlarmFramesInput *copy_alarm_frames_input,
+	CopyAlarmFramesInput *copy_window_alarm_frames_input, FrameRing *frame_ring,
+	StoreAlarmFramesInput *store_alarm_frames_input,
+	StoreAlarmFramesInput *store_window_alarm_frames_input)
 {
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 1024, .task = copy_alarm_frames_task,
@@ -53,8 +60,10 @@ EXPORT ER copy_alarm_frames_task_create(CopyAlarmFramesTask *task, PRI priority,
 	};
 
 	task->copy_alarm_frames_input = copy_alarm_frames_input;
+	task->copy_window_alarm_frames_input = copy_window_alarm_frames_input;
 	task->frame_ring = frame_ring;
 	task->store_alarm_frames_input = store_alarm_frames_input;
+	task->store_window_alarm_frames_input = store_window_alarm_frames_input;
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }
