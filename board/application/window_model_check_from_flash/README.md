@@ -42,8 +42,8 @@ The 80 rows are one stretch of 8 s around one attack in one log, as for
 ## Run
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR window_model_check_from_flash
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare window_model_check_from_flash
+python3 -m board.flash
 ```
 
 Save the UART output to a file, as in [flash.md](../../docs/flash.md#viewing-uart-output),

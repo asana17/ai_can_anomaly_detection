@@ -1,0 +1,7 @@
+{
+  "project": "~/NUCLEO-H533RE/ai_can_detection",
+  "cubeide": "/opt/st/stm32cubeide_2.1.1/stm32cubeide",
+  "programmer": "~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI",
+  "stedgeai": "/opt/ST/STEdgeAI/4.0",
+  "mbed_crypto": "~/STM32Cube/Repository/STM32Cube_FW_H5_V1.6.0/Middlewares/Third_Party/mbed-crypto"
+}

@@ -32,8 +32,8 @@ starts at 49.4 s, so the window model has 50 rows before it.
 ## Prepare, build and flash
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR can_path_from_flash
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare can_path_from_flash
+python3 -m board.flash
 ```
 
 ## Check on the board

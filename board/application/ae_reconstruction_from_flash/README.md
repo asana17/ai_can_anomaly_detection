@@ -48,8 +48,8 @@ of each signal's range. A match on them does not show a match on rows far from t
 ## Run
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR ae_reconstruction_from_flash
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare ae_reconstruction_from_flash
+python3 -m board.flash
 ```
 
 Save the UART output to a file, as in [flash.md](../../docs/flash.md#viewing-uart-output),

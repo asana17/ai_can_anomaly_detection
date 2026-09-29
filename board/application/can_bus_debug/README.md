@@ -30,8 +30,8 @@ It needs the CAN bus that [connecting_can_bus.md](../../docs/connecting_can_bus.
 describes, with the USB-CAN adapter on a PC.
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR can_bus_debug
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare can_bus_debug
+python3 -m board.flash
 ```
 
 On macOS `python3 -m board.application.can_bus_debug.bus` sends one frame and prints the

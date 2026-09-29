@@ -6,8 +6,8 @@ application to flash, to see that flashing and the UART work.
 ## Check on the board
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR alive
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare alive
+python3 -m board.flash
 ```
 
 Read the UART as in [flash.md](../../docs/flash.md#viewing-uart-output). Expected:

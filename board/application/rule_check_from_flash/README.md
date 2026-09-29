@@ -12,8 +12,8 @@ The rule is written in `usermain.c` of this application. The rules in
 ## Check on the board
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR rule_check_from_flash
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare rule_check_from_flash
+python3 -m board.flash
 ```
 
 On the PC the same rule flags rows 1253 to 1312, 60 rows in all. The last UART line

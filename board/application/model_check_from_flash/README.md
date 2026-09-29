@@ -39,12 +39,11 @@ symbol contract. Fetching and conversion remain outside `board.prepare`.
 
 ## Prepare, build and flash
 
-ST Edge AI v4.0 is read from `/Applications/ST/STEdgeAI/4.0` by default. Override it
-with `STEDGEAI_ROOT` or `--stedgeai-root`.
+ST Edge AI v4.0 is read from `stedgeai` in `board/paths.json`.
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR model_check_from_flash
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare model_check_from_flash
+python3 -m board.flash
 ```
 
 Prepare adds ST Edge AI's `Middlewares/ST/AI/Inc` headers and links

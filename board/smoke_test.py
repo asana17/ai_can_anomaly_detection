@@ -14,7 +14,6 @@ import tty
 APPLICATION = "model_check_from_flash"
 EXPECTED_UART = ("model: processed 80/80", "dropped 0, errors 0")
 TIMEOUT_SECONDS = 15
-HERE = Path(__file__).resolve().parent
 
 
 def uart_port(given):
@@ -58,20 +57,15 @@ def read_uart(fd):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("project_dir", type=Path)
     parser.add_argument("--port", type=Path)
-    parser.add_argument("--config", type=Path, default=HERE / "flash.json")
     args = parser.parse_args()
 
-    project_dir = args.project_dir.expanduser().resolve()
-    subprocess.run([sys.executable, "-m", "board.prepare", str(project_dir), APPLICATION],
-                   check=True)
+    subprocess.run([sys.executable, "-m", "board.prepare", APPLICATION], check=True)
     port = uart_port(args.port)
     print(f"UART: {port} at 115200 baud", flush=True)
     fd = open_uart(port)
     try:
-        subprocess.run([sys.executable, str(HERE / "flash.py"), str(project_dir),
-                        "--config", str(args.config.expanduser())], check=True)
+        subprocess.run([sys.executable, "-m", "board.flash"], check=True)
         read_uart(fd)
     finally:
         os.close(fd)

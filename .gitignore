@@ -7,5 +7,5 @@ st_ai_ws/
 __pycache__/
 .venv/
 board/application/rows/rows.h
-board/flash.json
+board/paths.json
 board/application/ai_can_anomaly_detection/fetched/

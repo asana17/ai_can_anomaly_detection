@@ -126,8 +126,8 @@ with nothing fetched. The sample applications use their own copy in
 ## Prepare, build and flash
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR ai_can_anomaly_detection
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare ai_can_anomaly_detection
+python3 -m board.flash
 ```
 
 ## Results

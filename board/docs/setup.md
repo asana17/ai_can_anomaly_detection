@@ -58,13 +58,14 @@ Windows. Whether the upgrade works from macOS is not known.
 
 ## 2. Add mtk3_bsp2 and our application
 
-The last argument is the application to build, a folder of `board/application/`. Run
+The project is `project` in `board/paths.json`, as [flash.md](flash.md) gives it. The
+argument is the application to build, a folder of `board/application/`. Run
 this before the project is opened in CubeIDE, which rewrites the project files while it
 is open. Running it again changes nothing.
 
 ```
 cd ~/ai_can_detection
-python3 -m board.prepare ~/NUCLEO-H533RE/ai_can_detection alive
+python3 -m board.prepare alive
 ```
 
 It also copies the project's `.ioc` into `board/cubemx/`. The CubeMX settings live
@@ -89,7 +90,7 @@ Where this differs from the BSP2 document:
 - Applications that put a MAC on the alarm frames get the folder `mbed-crypto`. It
   links the four mbed-crypto sources HMAC-SHA256 needs from
   `~/STM32Cube/Repository/STM32Cube_FW_H5_V1.6.0/Middlewares/Third_Party/mbed-crypto`,
-  which CubeMX downloads with FW_H5. `--mbed-crypto-root` points elsewhere.
+  which CubeMX downloads with FW_H5. `mbed_crypto` in `board/paths.json` gives the place.
 
 After CubeMX generates again, run `board.prepare` again. To build another application,
 close the project in CubeIDE, run `python3 -m board.prepare` with that folder, and open it again.

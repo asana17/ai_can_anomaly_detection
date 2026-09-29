@@ -157,8 +157,8 @@ The CAN logs themselves, normal traffic with no attack, come from the Turku data
 Prepare, build and flash. [setup.md](setup.md) and [flash.md](flash.md) give the steps.
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR ai_can_anomaly_detection
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare ai_can_anomaly_detection
+python3 -m board.flash
 ```
 
 Open the ST-LINK virtual COM port at 115200 bps. The board prints `reading FDCAN1`.

@@ -28,8 +28,8 @@ Erase bank 2 once, as [flash.md](../../docs/flash.md) describes.
 ## Prepare, build and flash
 
 ```sh
-python3 -m board.prepare CUBEIDE_PROJECT_DIR test_flash_store
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.prepare test_flash_store
+python3 -m board.flash
 ```
 
 Reset the board over SWD to start it again:

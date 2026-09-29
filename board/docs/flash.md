@@ -1,6 +1,6 @@
 # Flash from the command line
 
-`board/flash.py` builds an already prepared CubeIDE project without opening the GUI,
+`python3 -m board.flash` builds an already prepared CubeIDE project without opening the GUI,
 then writes, verifies and resets the connected board. Application selection belongs to
 `board.prepare` and is a separate command.
 
@@ -8,35 +8,29 @@ then writes, verifies and resets the connected board. Application selection belo
 
 The script runs on macOS and Ubuntu. Windows has not been tested.
 
-Put both machine-specific executable paths in the untracked `board/flash.json`:
+Put the machine-specific paths in the untracked `board/paths.json`. `board.prepare`
+reads the same file. Start from a copy of
+[`guidelines/paths.mac.json`](../../guidelines/paths.mac.json) or
+[`guidelines/paths.ubuntu.json`](../../guidelines/paths.ubuntu.json), which hold the
+default install places.
 
-```json
-{
-  "cubeide": "/Applications/STM32CubeIDE.app/Contents/MacOS/STM32CubeIDE",
-  "programmer": "/path/to/STM32_Programmer_CLI"
-}
-```
-
-Both entries are required. A different config file can be selected with `--config
-PATH`.
+| entry | what it is | needed by |
+|---|---|---|
+| `project` | the generated CubeIDE project, with `.project` and `.cproject` | `board.prepare`, `board.flash` |
+| `cubeide` | the STM32CubeIDE executable | `board.flash` |
+| `programmer` | `STM32_Programmer_CLI` | `board.flash` |
+| `stedgeai` | the ST Edge AI v4.0 root | `board.prepare`, for an application with a model |
+| `mbed_crypto` | the FW_H5 V1.6.0 mbed-crypto root | `board.prepare`, for an application that puts a MAC on the alarm frames |
 
 ## Usage
 
 Close STM32CubeIDE before running the script. From the repository root, run:
 
 ```sh
-python3 board/flash.py CUBEIDE_PROJECT_DIR
+python3 -m board.flash
 ```
 
-For example:
-
-```sh
-python3 board/flash.py \
-  /Users/asana/NUCLEO-H533RE/ai_can_detection
-```
-
-The project directory is the generated CubeIDE project containing `.project` and
-`.cproject`. Select its application first with `python3 -m board.prepare`.
+Select the application first with `python3 -m board.prepare`.
 
 The script performs these steps:
 
@@ -83,7 +77,7 @@ Automatic UART capture and result detection are deliberately not part of
 Run the fixed `model_check_from_flash` smoke test with:
 
 ```sh
-python3 board/smoke_test.py CUBEIDE_PROJECT_DIR
+python3 -m board.smoke_test
 ```
 
 It prepares that application, opens the ST-LINK UART before reset, invokes

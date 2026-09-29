@@ -11,9 +11,6 @@ BSP_BASE = "1ab52cc"
 UNITY_URL = "https://github.com/ThrowTheSwitch/Unity.git"
 UNITY_BASE = "b6763fb"
 PATCHES = sorted(glob.glob(os.path.join(HERE, "patches", "*.patch")))
-DEFAULT_STEDGEAI = "/Applications/ST/STEdgeAI/4.0"
-DEFAULT_MBED_CRYPTO = ("~/STM32Cube/Repository/STM32Cube_FW_H5_V1.6.0/Middlewares/"
-                       "Third_Party/mbed-crypto")
 MBED_CRYPTO_SOURCES = ("md.c", "platform.c", "platform_util.c", "sha256.c")
 
 
@@ -67,10 +64,9 @@ def add_unity(project_dir):
     return "already there"
 
 
-def stedgeai_runtime(root=None):
+def stedgeai_runtime(root):
     """Locate the v4.0 st-ai headers and Cortex-M33 GCC runtime."""
-    root = os.path.abspath(os.path.expanduser(
-        root or os.environ.get("STEDGEAI_ROOT", DEFAULT_STEDGEAI)))
+    root = os.path.abspath(root)
     include_dir = os.path.join(root, "Middlewares", "ST", "AI", "Inc")
     library_dir = os.path.join(root, "Middlewares", "ST", "AI", "Lib", "GCC",
                                "ARMCortexM33")
@@ -82,9 +78,9 @@ def stedgeai_runtime(root=None):
     return EdgeAIRuntime(include_dir, library_dir, library)
 
 
-def mbed_crypto(root=None):
+def mbed_crypto(root):
     """Locate the mbed-crypto headers and the sources HMAC-SHA256 needs."""
-    root = os.path.abspath(os.path.expanduser(root or DEFAULT_MBED_CRYPTO))
+    root = os.path.abspath(root)
     include_dir = os.path.join(root, "include")
     sources = tuple(os.path.join(root, "library", name) for name in MBED_CRYPTO_SOURCES)
     required = (os.path.join(include_dir, "mbedtls", "md.h"), *sources)

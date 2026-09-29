@@ -1,15 +1,13 @@
 """Headless-build and flash an already prepared CubeIDE project."""
 
 import argparse
-import json
 from pathlib import Path
 import shlex
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-HERE = Path(__file__).resolve().parent
-CONFIG = HERE / "flash.json"
+from board.paths import read_paths
 
 
 def project_name(project_dir):
@@ -31,15 +29,8 @@ def commands(project_dir, workspace, cubeide, programmer):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("project_dir", type=Path)
-    parser.add_argument("--config", type=Path, default=CONFIG)
-    args = parser.parse_args()
-
-    project_dir = args.project_dir.expanduser().resolve()
-    config = json.loads(args.config.expanduser().read_text())
-    cubeide = Path(config["cubeide"]).expanduser()
-    programmer = Path(config["programmer"]).expanduser()
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    project_dir, cubeide, programmer = read_paths("project", "cubeide", "programmer")
     with tempfile.TemporaryDirectory(prefix="cubeide-headless-") as workspace:
         for command in commands(project_dir, Path(workspace), cubeide, programmer):
             print("+", shlex.join(command), flush=True)

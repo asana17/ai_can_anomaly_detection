@@ -1,0 +1,7 @@
+{
+  "project": "~/NUCLEO-H533RE/ai_can_detection",
+  "cubeide": "/Applications/STM32CubeIDE.app/Contents/MacOS/STM32CubeIDE",
+  "programmer": "/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/STM32_Programmer_CLI",
+  "stedgeai": "/Applications/ST/STEdgeAI/4.0",
+  "mbed_crypto": "~/STM32Cube/Repository/STM32Cube_FW_H5_V1.6.0/Middlewares/Third_Party/mbed-crypto"
+}
