@@ -13,6 +13,7 @@ nonlinear autoencoder alone.
 ```
 python3 -m evaluate.run_test_set REPO REVISION TEST_SET LOCAL_DIR RUNS_REPO REVISION THRESHOLDS RUNS_DIR
 python3 -m evaluate.run_window_test_set RUNS_REPO REVISION TEST_RUN REVISION WINDOW_THRESHOLDS LOCAL_DIR RUNS_DIR
+python3 -m evaluate.detection_table RUNS_REPO REVISION LISTED LOCAL_DIR RUNS_DIR OUT
 ```
 
 The stages it comes after, each writing one directory of the Hub.
@@ -51,6 +52,8 @@ Documented under [docs/](docs).
   attacked test rows.
 - [run_window_test_set](docs/run_window_test_set.md) counts what each window model
   adds to the alarm on every tick.
+- [detection_table](docs/detection_table.md) puts the test runs and window test runs
+  it is given side by side as Markdown tables.
 
 ## Tests
 
