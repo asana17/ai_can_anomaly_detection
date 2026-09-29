@@ -31,18 +31,24 @@ moment or a bias that grows.
 
 Rows and windows raise alarms in different ways.
 
-- Rows: an attack makes many rows look wrong, and a normal row now and then looks
-  wrong too. So the alarm waits for several suspicious rows among the last 10.
-- Windows: an attack that changes how the signals move shows up in only a few windows,
-  so one suspicious window is enough.
+- Rows: the alarm is raised when all of the last 10 rows are suspicious, 10 in a row.
+  A normal row now and then looks wrong too, and one such row alone raises nothing.
+- Windows: the alarm is on while one of the last 10 rows has a suspicious window. The
+  synthetic attacks change how the signals move over a short time, so they show up in
+  only a few windows. This is a choice made for those attacks, not a property of window
+  models.
 
 Each model's threshold is taken from calibration rows the model never saw. It is the
 lowest score at which its alarm raises no more false alarms an hour than a target.
 
 - Rows: 1.5 an hour. The rows catch most attacks, so they take the larger share. The
   rules' own false alarms count against it.
-- Windows: 0.5 an hour. The alarm raised is the row alarm or a window alarm, so the two
-  add up.
+- Windows: 0.5 an hour.
+
+The two targets share out one budget. The
+[evaluation](evaluate/docs/run_window_test_set.md) joins the row alarm and a window
+alarm with OR, and counts alarm stretches that overlap as one. So the two together can
+raise fewer false alarms than the sum.
 
 [settings.md](common/docs/settings.md#the-split-and-calibration-parameters) says how
 the targets were set. [calibrate](models/docs/calibrate.md) and
@@ -54,15 +60,8 @@ window and shows what time alone buys, so the window autoencoder has to do bette
 it. The window autoencoder uses 1D convolutions, which share weights along time. A long
 window then still fits in the board's Flash.
 
-Models not used, and why.
-
-- A classifier needs labelled attacks. The only attacks are the synthetic ones, so it
-  would learn those instead of unknown anomalies.
-- Isolation Forest reads one row like PCA but splits one signal at a time. The attacks
-  break how signals relate, which PCA reads.
-- A recurrent model such as an LSTM carries a state from row to row, so it has to read
-  every row in order. The window model runs last and catches up from the kept rows,
-  which a model with no state can do from any window.
+No classifier is used. It needs labelled attacks, and the only attacks are the synthetic
+ones, so it would learn those instead of unknown anomalies.
 
 ## Priorities
 

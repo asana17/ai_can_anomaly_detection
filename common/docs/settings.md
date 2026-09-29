@@ -23,8 +23,9 @@ The values a stage used are in its `meta.json`.
 | `train_set` | `GAP` | 5 s | the time either side of a calibration block or the test span where train rows are dropped |
 
 - **`ROW_TARGET`** and **`WINDOW_TARGET`** are the false alarms an hour the thresholds
-  aim at. The alarm raised is the alarm on every tick OR a window model's, so the two
-  add up. The rows take the larger share, as they catch most attacks, and the rules'
+  aim at. They share out one budget. The evaluation joins the alarm on every tick and
+  a window model's with OR, and counts alarm stretches that overlap as one. So the two
+  together can raise fewer than the sum. The rows take the larger share, as they catch most attacks, and the rules'
   own false alarms count against it. Raising either lowers its thresholds, which
   catches more attacks and raises more false alarms. A stated choice, not a
   calculation.

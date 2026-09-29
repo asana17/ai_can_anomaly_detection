@@ -11,9 +11,8 @@ An alarm is raised on a row when `k` of the last `n` rows are flagged.
 `segment`, since the rows either side of one can be hours apart. Near the start of a
 segment it counts the rows the segment has so far.
 
-## Why not consecutive flags
+## k of the last n and consecutive flags
 
-A count of consecutive flagged rows starts again at every unflagged row. One unflagged
-row in the middle of an attack resets it. An attack with one unflagged row in every ten
-never reaches ten consecutive flagged rows. k of the last n keeps the flags before that
-row.
+With `k` equal to `n` the alarm needs `n` consecutive flagged rows, and one unflagged
+row starts the count again. A smaller `k` keeps the flags before an unflagged row, so an
+attack with one unflagged row in every ten still raises it.
