@@ -48,7 +48,7 @@ Installed from [requirements.txt](requirements.txt).
 `send_test_frames.py` in
 [board/application/ai_can_anomaly_detection](board/application/ai_can_anomaly_detection)
 loads [libusb](https://libusb.info) 1.0, LGPL-2.1-or-later, installed on its own, at run
-time through pyusb.
+time through pyusb on macOS.
 
 ## Data
 

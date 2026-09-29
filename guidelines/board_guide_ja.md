@@ -133,6 +133,8 @@ candump -t d -e can0
 
 サンプルポイント 0.875 はボードの FDCAN1 の設定に合わせている。
 
+リポジトリの送信スクリプトは、立ち上げた `can0` から送る。
+
 ## 4. mtk3_bsp2 とアプリケーションをプロジェクトに入れる
 
 CubeMX が生成したプロジェクトに `board.prepare` で mtk3_bsp2 とアプリケーションを
@@ -286,7 +288,7 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
    alarm 0x0CFF0180 end at row 549
    ```
 
-2. 3 の手順の macOS から、同じログのフレームを記録された時刻の間隔で送る。約 1 分
+2. 3 の手順の USB-CAN アダプタから、同じログのフレームを記録された時刻の間隔で送る。約 1 分
    かかる。ボードが CAN に送ったフレームは `received at` の行に受け取った時刻とともに
    出る。7.3 で読むので `received_frames.txt` にも残す。
 

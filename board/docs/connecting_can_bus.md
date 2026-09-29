@@ -21,7 +21,7 @@ flowchart LR
 | part | what it is | state |
 |---|---|---|
 | wiring | PB8 and PB7 to an MCP2562FD transceiver, CANH and CANL to the USB-CAN adapter, 120 Ω at both ends of the bus, a common ground | built |
-| PC sender | sends frames through the USB-CAN adapter at their own timestamps | [`send_test_frames.py`](../application/ai_can_anomaly_detection/send_test_frames.py), on macOS |
+| PC sender | sends frames through the USB-CAN adapter at their own timestamps | [`send_test_frames.py`](../application/ai_can_anomaly_detection/send_test_frames.py), on macOS and Ubuntu |
 | first run | flash the application and see alarms while the PC sends | [done](#checking-it) |
 
 The hardware on hand is a DSD TECH SH-C31A USB-CAN adapter and a Microchip
@@ -70,6 +70,11 @@ candump -t d -e can0
 
 `cansend can0 18FEF200#1111111111111111` sends one frame.
 `ip -details -statistics link show can0` shows the adapter's error counts and bus state.
+
+On Ubuntu [`send_test_frames.py`](../application/ai_can_anomaly_detection/send_test_frames.py)
+sends through `can0`, or the interface `--interface` names, which must be up already. It
+reads its own frames back with `CAN_RAW_RECV_OWN_MSGS`. The kernel flags each one
+`MSG_CONFIRM` once the adapter has sent it, and the script counts those as echoes.
 
 ## FDCAN1 in CubeMX
 
