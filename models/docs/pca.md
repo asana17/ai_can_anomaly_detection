@@ -48,5 +48,5 @@ fit the attacks too.
 
 ## Its threshold
 
-The threshold is set so that `TARGET`, 0.1%, of the calibration rows have a residual
-above it. PCA is not fitted on those rows. See [calibrate](calibrate.md).
+The threshold is set as for any model, by the alarm on every tick on the calibration
+rows. PCA is not fitted on those rows. See [calibrate](calibrate.md).

@@ -115,12 +115,6 @@
       "description": "km/h, the speed a row has to exceed to be scored.",
       "type": "number",
       "minimum": 0
-    },
-    "target": {
-      "description": "Share of normal rows the threshold cuts off.",
-      "type": "number",
-      "exclusiveMinimum": 0,
-      "exclusiveMaximum": 1
     }
   }
 }

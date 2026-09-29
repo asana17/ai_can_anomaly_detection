@@ -5,7 +5,8 @@ the model's threshold. `calibrate` sets those thresholds.
 
 It runs [score](../../scoring/docs/score.md) on the calibration set the models'
 train set names, or reuses the scores the runs repository already holds for it. It puts each model's
-threshold where `TARGET` of those scores sit above it. It then uploads one threshold
+threshold as low as the alarm on every tick allows on those rows at `ROW_TARGET`
+false alarms an hour. It then uploads one threshold
 per model, as a directory of the runs repository. No model is fitted here.
 
 ## Running it
@@ -49,6 +50,16 @@ Every moving row counts.
 
 ## The threshold
 
-A model's threshold is the score that `TARGET` of those rows sit above. At `TARGET`
-0.001, one calibration row in a thousand is over it, and a detector that flags rows
-above it raises about that many false positives on traffic like the calibration rows.
+A model's threshold is the lowest of its scores at which the alarm on every tick rises
+no more than `ROW_TARGET` times an hour on the calibration rows, 1.5. The alarm is the
+one [run_test_set](../../evaluate/docs/run_test_set.md) counts, on where the model or a
+rule flags `ROW_K` of the last N rows, 10 of `TestRunSettings.N` 10. Rises within one
+stretch of alarm count once, and a new segment starts a new one. The hours are the
+moving calibration rows at 0.1 s each.
+
+The rules raise some of those alarms on their own, and they count against the target.
+When the rules alone raise more, the threshold is the model's highest score, and the
+model flags nothing.
+
+The alarm is held to its target at `ROW_K`, and counted by run_test_set at every k. At
+a k below `ROW_K` it raises more.

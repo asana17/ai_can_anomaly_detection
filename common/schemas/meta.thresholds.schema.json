@@ -16,8 +16,20 @@
           "type": "string",
           "pattern": "^models/[0-9]{8}-[0-9]{6}$"
         },
-        "target": {
-          "$ref": "meta.schema.json#/$defs/target"
+        "row_target": {
+          "description": "False alarms an hour the alarm on every tick may raise on the calibration set.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "row_k": {
+          "description": "The k of the last `n` rows that alarm is held to its target at.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "n": {
+          "description": "The rows the alarm looks back over.",
+          "type": "integer",
+          "minimum": 1
         },
         "onnx_files": {
           "description": "The `onnx/<time>` or `quantize/<time>` directory the models scored as, or null for torch.",
@@ -37,7 +49,9 @@
       },
       "required": [
         "models",
-        "target",
+        "row_target",
+        "row_k",
+        "n",
         "onnx_files",
         "precision"
       ],
