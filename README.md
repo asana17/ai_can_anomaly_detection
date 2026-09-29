@@ -114,9 +114,6 @@ J1939's own terms, frame, PGN and SPN, are described in
   `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
   `evaluate`, all done 2026-09-22.
 
-- Measure the board entry's memory footprint with what the kernel gives the tasks and
-  message buffers. The frame ring is written apart from what detection needs. Due
-  2026-09-30.
 - Slides for the TRON Programming Contest 2026 entry, and the source published. Due
   2026-09-30.
 

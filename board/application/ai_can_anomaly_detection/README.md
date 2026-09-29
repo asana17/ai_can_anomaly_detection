@@ -163,11 +163,34 @@ the frame ring.
 
 ## Size
 
-`arm-none-eabi-size` of the image, built on 2026-09-29 with `nonlinear_ae_k8_h128` in the
-Release configuration, which compiles at `-O2`.
+`arm-none-eabi-size` of the image, built on 2026-09-29 from `da6e8ec` with
+`nonlinear_ae_k8_h128` in the Release configuration, which compiles at `-O2`.
 
 | what | bytes |
 |---|---|
-| text | 76,276 |
-| data | 2,520 |
-| bss | 107,188 |
+| text | 118,796 |
+| data | 6,104 |
+| bss | 213,012 |
+
+The bss holds the kernel's control blocks in `.noinit`, 9,048 bytes, and the start
+stack and heap, 1,536 bytes. The largest objects in it, from the map:
+
+| what | bytes |
+|---|---|
+| frame ring | 65,548 |
+| the alarm frames record in the copy task, the store's input and the store task | 98,308 |
+| window model runtime, window task and its input | 36,424 |
+| instant model runtime | 640 |
+
+The kernel gives the task stacks, the row message buffer and the MAC's memory pool from
+the RAM after the bss. On 2026-09-29 the board ran this image, and its RAM was read over
+SWD without a reset, and the kernel's areas walked from `knl_imacb`.
+
+| what | bytes |
+|---|---|
+| 12 areas in use, 10 task stacks, the row message buffer and the MAC pool | 16,480 |
+| area headers | 104 |
+| free | 43,952 |
+
+Of the 278,528 bytes of RAM, 43,952 are free. Detection by row needs little of it. The
+frame ring and the alarm frames record take 163,856 bytes, and the window model 36,424.
