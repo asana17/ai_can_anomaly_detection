@@ -175,7 +175,7 @@ received at 1790602535.128  CFF0080   [8]  01 82 02 00 00 FF FF FF
 ```
 
 The fields are in
-[the application's README](../application/ai_can_anomaly_detection/README.md#the-alarm-frame).
+[the application's README](../application/ai_can_anomaly_detection/README.md#frames-it-sends).
 The board's rows count from when it started. So they are the PC's plus one offset, the
 rows between start and sending. The offset is found from the first alarm, and the other
 rows are checked against it. A row can differ by one, since the board's tick is not in

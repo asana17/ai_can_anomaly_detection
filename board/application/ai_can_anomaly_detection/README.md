@@ -1,159 +1,114 @@
 # ai_can_anomaly_detection
 
-The application the entry runs. It builds a row from the slots every 0.1 s, scores it
-with the rules and the autoencoder, and sends each start and end of the alarm on
-FDCAN1. At each alarm start it writes the frames behind it to Flash bank 2.
+The main application on the board. It builds a row from the received frames every
+0.1 s and scores it with the rules, the row model and the window model. It sends each
+start and end of the alarm and the window alarm on FDCAN1. At each alarm start it
+stores the frames before it in Flash bank 2, with an HMAC. It runs until the board is
+reset.
 
-FDCAN1 receives the frames, and its receive callback stores each one in the slots with
-`slots_store` and copies it into the frame ring with `frame_ring_push`. [connecting_can_bus.md](../../docs/connecting_can_bus.md) has the FDCAN
-settings, and how to send test frames from a PC and check the alarms against the PC
-answer.
+[board_guide_ja.md](../../../guidelines/board_guide_ja.md) builds it, sends it a log
+from a PC and reads what it sends back.
+
+## Tasks and priorities
+
+The numbers are task priorities. μT-Kernel runs the ready task with the smallest
+number first.
 
 ```mermaid
 flowchart LR
-    irq["FDCAN1 receive callback"] -- slots_store --> slots[(slots)]
-    irq -- frame_ring_push --> frames[(frame ring)]
-    slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
-    frames --> tasks
-    tasks -- latest report --> can["report_can 9<br/>FDCAN1"]
-    tasks -- latest backlog --> backlog_can["window_backlog_can 10<br/>FDCAN1"]
-    tasks -- latest alarm frames --> store["store alarm frames 11<br/>Flash bank 2"]
-    store -- latest stored record --> record_can["stored_record_can 10<br/>FDCAN1"]
+    irq["FDCAN1 receive interrupt"] --> slots[(slots)]
+    irq --> ring[(frame ring)]
+    tick["every 0.1 s"] -. wakes .-> pre
+    slots --> pre["6 build a row"]
+    pre --> row["8 rules and row model<br/>alarm"]
+    row --> report["9 send the alarm"]
+    row -- at alarm start --> copy["10 copy the frames<br/>before the alarm"]
+    ring --> copy
+    copy --> store["11 store in Flash bank 2<br/>with HMAC"]
+    store --> record["10 send the stored record"]
+    row -- rows --> win["12 window model<br/>window alarm"]
+    win --> window_report["10 send the window alarm"]
+    win --> backlog["10 send the backlog"]
 ```
-
-The tasks after the slots are described in
-[their README](../../lib/ai_can_anomaly_detection_tasks/README.md). The application runs
-until the board is reset.
-
-## Priorities
-
-μT-Kernel runs the ready task with the smallest priority number first. Frames are
-received in the FDCAN1 interrupt, so no task holds them up.
 
 | priority | task | why it sits there |
 |---|---|---|
 | 6 | build a row every 0.1 s | every task after it reads the row |
 | 8 | score the row with the rules and the row model, raise the alarm | the alarm is decided before the next row |
-| 9 | send the alarm on FDCAN1 | the alarm goes out before anything slower |
-| 10 | copy the frames behind the alarm, send the window alarm, the backlog and the stored record | the frame ring overwrites frames not yet copied |
-| 11 | store the alarm frames in Flash bank 2 | the frames are kept before the window model runs |
+| 9 | send the alarm | the alarm goes out before anything slower |
+| 10 | copy the frames before the alarm, send the window alarm, the backlog and the stored record | the frame ring overwrites frames not yet copied |
+| 11 | store the frames in Flash bank 2 | the frames are kept before the window model runs |
 | 12 | score the window with the window model | it is the heaviest, so it gets the time left |
 
-When an alarm starts, the copy and the store run first and the window model waits. The
-rows it has not scored are kept for it, and it catches up after. When it falls further
-behind than the rows kept, the oldest are lost, and the backlog frame says how many.
+Frames are received in the interrupt, so no task holds them up. When an alarm starts,
+the copy and the store run first and the window model waits. The rows it has not
+scored are kept for it, and it catches up after. When it falls further behind than
+the rows kept, the oldest are lost, and the backlog frame says how many.
 
-## The alarm frame
+Building the row, both scorings and the copy are described in
+[ai_can_anomaly_detection_tasks](../../lib/ai_can_anomaly_detection_tasks/README.md).
 
-[report_can](../../lib/report_can/report_can_task.c) sends one frame when the alarm
-or the window alarm starts or ends.
+## Frames it sends
 
-| field | value |
-|---|---|
-| ID | 0x0CFF0080 for the alarm, 0x0CFF0180 for the window alarm, extended. Priority 3, PGN 0xFF00 and 0xFF01, source address 0x80 |
-| byte 0 | 1 for start, 0 for end |
-| bytes 1 to 4 | the row number, little endian |
-| bytes 5 and 6 | the ms from the row's tick to the frame, little endian, 0xFFFF for more |
-| byte 7 | 0xFF |
+Every frame is extended, J1939 priority 3, source address 0x80. Numbers are little
+endian, and unused bytes are 0xFF.
 
-The row number counts ticks from when the board started. It is there to check the
-board against the PC answer. The ms count from when preprocess woke on the row's tick,
-by `tk_get_otm`, to when report puts the frame in the transmit FIFO. When a change comes while the frame of the one before is
-still waiting, that frame is cancelled and the new one goes in.
+| frame | ID | sent when | bytes |
+|---|---|---|---|
+| alarm | 0x0CFF0080 | the alarm starts or ends | 0: 1 for start, 0 for end. 1 to 4: the row number. 5 and 6: the ms from the row's tick to the frame, 0xFFFF for more |
+| window alarm | 0x0CFF0180 | the window alarm starts or ends | as the alarm |
+| window backlog | 0x0CFF0280 | the window model finished a row after the next row came, or lost rows before it | 0 to 3: the row number. 4 and 5: the rows lost just before it, 0xFFFF for more |
+| stored record | 0x0CFF0380 | a record is written to Flash | 0 to 3: the row the alarm started on. 4 and 5: the frame count |
 
-## The backlog and stored record frames
+The row number counts ticks from when the board started. When a new alarm state comes
+while the frame of the one before still waits to be sent, that frame is cancelled.
+[board_frames](board_frames.py) turns what the PC received into one line per frame.
 
-[window_backlog_can](../../lib/report_can/window_backlog_can_task.c) sends one frame for
-each row score and detect by window finished while the next row was already waiting,
-and for the first row after rows it lost.
-[stored_record_can](../../lib/report_can/stored_record_can_task.c) sends one frame for
-each record the store has written to Flash. Both are extended, at priority 3 and source
-address 0x80, and are sent as the alarm frame is.
+## Frames stored in Flash
 
-| frame | ID | bytes 0 to 3 | bytes 4 and 5 | bytes 6 and 7 |
-|---|---|---|---|---|
-| window backlog | 0x0CFF0280, PGN 0xFF02 | the row number | the rows lost just before it, 0xFFFF for more | 0xFF |
-| stored record | 0x0CFF0380, PGN 0xFF03 | the row alarm A started on | the frame count | 0xFF |
+[store_alarm_frames](../../lib/store_alarm_frames/store_alarm_frames_task.c) writes each
+record with [flash_store](../../lib/flash_store/flash_store.h). Erase bank 2 once
+before the first run, as [flash.md](../../docs/flash.md#erasing-bank-2-before-first-use)
+says. The board prints `flash store init error` and stops when the store cannot start.
 
-All numbers are little endian. How late a row was scored is the time its backlog frame
-came, less the time of an alarm frame and 0.1 s for each row between them.
-
-On 2026-09-29 the Mac sent `part_3/20210204093505241905.csv` to the Release build at
-`-O2` and 32 MHz, running `window_conv1d_ae_r50_s3_k16_h64` on every row. The alarm
-frames at its start and end went out 0 ms after their tick. The stored record frame came
-45 ms after the alarm start, for 508 frames. Backlog frames came for the alarm's first
-row and the 5 after it, about 92 ms apart, with no row lost. The first was scored about
-137 ms after its row and the last about 99 ms after.
-
-## The alarm frames in Flash
-
-[store_alarm_frames](../../lib/store_alarm_frames/store_alarm_frames_task.c), the task
-at 11, writes the frames the copy took at each alarm start to Flash bank 2 with
-[flash_store](../../lib/flash_store/flash_store.h). Erase bank 2 once before the first
-run, as [flash.md](../../docs/flash.md#erasing-bank-2-before-first-use) says. The start
-prints `flash store init error` and stops when the store cannot start.
-
-Bank 2 is split into 8 areas of 4 sectors, 32 KB each. Each area holds one record after
-the 16-byte header `flash_store` writes, its sequence and size. The record, all little
-endian:
+Bank 2 is 8 areas of 4 sectors, 32 KB each. Each area holds one record after a 16-byte
+header. When every area is used, the oldest is erased. The record, all little endian:
 
 | bytes | value |
 |---|---|
-| 0 to 3 | the row alarm A started on, as in the alarm frame |
+| 0 to 3 | the row the alarm started on |
 | 4 to 7 | the frame count |
 | 8 to 15 | 0 |
 | 16 to 47 | the HMAC-SHA256 of bytes 0 to 15 and then the frames |
 | then 16 per frame, oldest first, up to 2044 | the microseconds since the frame before in 3 bytes, the size in 1 byte, the ID in 4 bytes, the data in 8 bytes, 0 past the size |
 
-The store puts the MAC on before it writes the record. The key is the 32 bytes in
+The key is in
 [alarm_frames_mac_demo_key.h](../../lib/alarm_frames_mac/alarm_frames_mac_demo_key.h).
-It is in the code for the demo, so anyone who reads the code can make a valid MAC. To
-check a record, compute the MAC with that key and compare it with bytes 16 to 47.
+It is a demo key, so anyone who reads the code can make a valid MAC.
 
 ```python
 hmac.new(key, record[:16] + record[48:48 + 16 * count], hashlib.sha256).digest()
 ```
 
-Read bank 2 with the programmer while the board runs:
+Read bank 2 while the board runs, then check it with
+[read_alarm_frames](read_alarm_frames.py). With `--log` it also finds each record's
+frames in the log sent.
 
 ```sh
 STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
+python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093505241905.csv
 ```
 
-[read_alarm_frames](read_alarm_frames.py) prints the records in it and whether each MAC
-matches the key, or with `--log` where each matches the frames sent.
+## Models
 
-```sh
-python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204094457960567.csv
-```
+| model | files | from the runs repository |
+|---|---|---|
+| row model `nonlinear_ae_k8_h128`, float | [deployed_model](../../lib/deployed_model) | `board/20260928-200316/nonlinear_ae_k8_h128/`, scale of `models/20260928-112526`, threshold of `thresholds/20260928-114811` |
+| window model `window_conv1d_ae_r50_s3_k16_h64`, int8 | [deployed_window_model](../../lib/deployed_window_model) | `window_board/20260929-113106/` from `window_quantize/20260929-113012`, scale of `window_models/20260929-082144`, threshold of `window_thresholds/20260929-113151` |
 
-On 2026-09-29 the Mac sent `part_3/20210204093505241905.csv`. The board wrote one
-record, for row 629, with 508 frames. Its MAC matched the one computed on the PC.
-With one bit of the head or of the last frame changed, it did not.
-
-On 2026-09-29, with the frames of 24 rows kept, the board wrote the record for row 581
-into area 0, with 2041 frames. Its MAC matched, and it matched the log's frames 42838 to
-44878, 2.40 s from 1.46 s before the attack started. The stored record frame came 178 ms
-after the alarm start. Backlog frames came for the alarm's first row and the 21 after
-it, with no row lost. The alarm frames went out 0 ms after their tick.
-
-## The model
-
-It runs `nonlinear_ae_k8_h128` from
-[`board/lib/deployed_model/`](../../lib/deployed_model), with the scale of the fit it
-came from and the threshold `calibrate` took for it. The sample applications run their
-own copy from `board/lib/active_model/`, so changing one leaves the other alone.
-
-[fetch_model](../../fetch_model.py) writes the files from the runs repository,
-`board/20260928-200316/nonlinear_ae_k8_h128/`, the scale of `models/20260928-112526` and
-the threshold of `thresholds/20260928-114811`. They are kept here so that the application builds from a
-clone with nothing fetched.
-
-It also runs the window model `window_conv1d_ae_r50_s3_k16_h64` in int8, from
-[`board/lib/deployed_window_model/`](../../lib/deployed_window_model), with the scale of
-its fit. fetch_model writes it from `window_board/20260929-113106/`, generated from the
-int8 files of `window_quantize/20260929-113012`, and the scale of
-`window_models/20260929-082144`. Its threshold is from `window_thresholds/20260929-113151`, taken on the int8 files.
+[fetch_model](../../fetch_model.py) writes them. They are kept in git so a clone builds
+with nothing fetched. The sample applications use their own copy in
+`board/lib/active_model/`.
 
 ## Prepare, build and flash
 
@@ -162,27 +117,45 @@ python3 -m board.prepare CUBEIDE_PROJECT_DIR ai_can_anomaly_detection
 python3 board/flash.py CUBEIDE_PROJECT_DIR
 ```
 
-## Receive callback time
+## Results
+
+All on 2026-09-29, the Release build at `-O2` and 32 MHz, with the models above.
+
+### Frames and records
+
+The Mac sent `part_3/20210204093505241905.csv`.
+
+With the frames of fewer rows kept, the board wrote one record, for row 629, with 508
+frames. Its MAC matched the one computed on the PC, and with one bit of the head or of
+the last frame changed it did not. The stored record frame came 45 ms after the alarm
+start. Backlog frames came for the alarm's first row and the 5 after it, with no row
+lost. The first was scored about 137 ms after its row and the last about 99 ms after.
+
+With the frames of 24 rows kept, the board wrote the record for row 581 into area 0,
+with 2041 frames. Its MAC matched, and it matched the log's frames 42838 to 44878, 2.40 s
+from 1.46 s before the attack started. The stored record frame came 178 ms after the
+alarm start. Backlog frames came for the alarm's first row and the 21 after it, with no
+row lost.
+
+In both, the alarm frames went out 0 ms after their tick.
+
+### Receive interrupt time
 
 `HAL_FDCAN_RxFifo0Callback` keeps the fewest and most cycles one call took in
-`fewest_receive_cycles` and `most_receive_cycles`. The board prints nothing, so they are
-read with the programmer while it runs. Their addresses are in the map file.
+`fewest_receive_cycles` and `most_receive_cycles`. They are read over SWD while the
+board runs, at the addresses in the map file.
 
 ```sh
 STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 ADDRESS 4
 ```
 
-The time starts inside the callback. It leaves out the HAL interrupt handler that calls
-it and the CPU's interrupt entry and exit. An interrupt during the callback adds to it.
+The count leaves out the HAL handler that calls the callback and the CPU's interrupt
+entry and exit. While the Mac sent `part_3/20210204094457960567.csv`, one call took 430
+to 694 cycles, 13 to 22 us. All 50,001 frames reached the frame ring.
 
-On 2026-09-29 the Release build, at `-O2` and 32 MHz, took 430 to 694 cycles, 13 to
-22 us, while the Mac sent `part_3/20210204094457960567.csv`. All 50,001 frames reached
-the frame ring.
+### Size
 
-## Size
-
-`arm-none-eabi-size` of the image, built on 2026-09-29 from `da6e8ec` with
-`nonlinear_ae_k8_h128` in the Release configuration, which compiles at `-O2`.
+`arm-none-eabi-size` of the image built from `da6e8ec`.
 
 | what | bytes |
 |---|---|
@@ -198,11 +171,11 @@ stack and heap, 1,536 bytes. The largest objects in it, from the map:
 | frame ring | 65,548 |
 | the alarm frames record in the copy task, the store's input and the store task | 98,308 |
 | window model runtime, window task and its input | 36,424 |
-| instant model runtime | 640 |
+| row model runtime | 640 |
 
 The kernel gives the task stacks, the row message buffer and the MAC's memory pool from
-the RAM after the bss. On 2026-09-29 the board ran this image, and its RAM was read over
-SWD without a reset, and the kernel's areas walked from `knl_imacb`.
+the RAM after the bss. The board's RAM was read over SWD while it ran, and the kernel's
+areas walked from `knl_imacb`.
 
 | what | bytes |
 |---|---|
@@ -210,5 +183,4 @@ SWD without a reset, and the kernel's areas walked from `knl_imacb`.
 | area headers | 104 |
 | free | 43,952 |
 
-Of the 278,528 bytes of RAM, 43,952 are free. Detection by row needs little of it. The
-frame ring and the alarm frames record take 163,856 bytes, and the window model 36,424.
+Of the 278,528 bytes of RAM, 43,952 are free.

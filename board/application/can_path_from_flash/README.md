@@ -18,7 +18,7 @@ flowchart LR
 
 The replay task stands in for the CAN receive interrupt. At each alarm start the
 frames behind it go to Flash bank 2, as in
-[ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash). With no bus, the alarms go
+[ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#frames-stored-in-flash). With no bus, the alarms go
 over UART from [report_uart](../../lib/report_uart/report_uart_task.c) at priority 9. The tasks after the
 slots are described in [their README](../../lib/ai_can_anomaly_detection_tasks/README.md).
 
@@ -108,5 +108,5 @@ frame ring push 87 to 135 cycles at 32000000 Hz
 Bank 2 then holds one record, for row 79, with 792 frames, the frames of the 24 rows
 before the alarm start. Its MAC matched the one
 computed on the PC, as
-[ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#the-alarm-frames-in-flash)
+[ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#frames-stored-in-flash)
 describes.

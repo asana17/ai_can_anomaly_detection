@@ -33,7 +33,7 @@ moment or a bias that grows. These are not copies of real attacks.
 
 The window model is the heaviest, so it runs last. When an alarm starts, the frames
 are stored first and the window model catches up later. The
-[priorities of the board application](board/application/ai_can_anomaly_detection/README.md#priorities)
+[priorities of the board application](board/application/ai_can_anomaly_detection/README.md#tasks-and-priorities)
 list every task in order.
 
 ## The board application
