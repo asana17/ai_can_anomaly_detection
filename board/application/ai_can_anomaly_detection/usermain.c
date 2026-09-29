@@ -8,9 +8,11 @@
 #include "store_alarm_frames_input.h"
 #include "store_alarm_frames_task.h"
 #include "stored_record_input.h"
+#include "window_backlog_input.h"
 #include "can_sender.h"
 #include "report_can_task.h"
 #include "stored_record_can_task.h"
+#include "window_backlog_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
 #define CAN_BYTES 8u /* a classic CAN frame's payload, which DLC 9 to 15 also mean */
@@ -29,6 +31,7 @@ EXPORT UW most_receive_cycles = 0;
 
 LOCAL ReportInput report_input;
 LOCAL ReportInput window_report_input;
+LOCAL WindowBacklogInput window_backlog_input;
 LOCAL StoredRecordInput stored_record_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
@@ -36,6 +39,7 @@ LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL CanSender can_sender;
 LOCAL ReportCanTask report_can_task;
 LOCAL ReportCanTask window_report_can_task;
+LOCAL WindowBacklogCanTask window_backlog_can_task;
 LOCAL StoredRecordCanTask stored_record_can_task;
 
 /*
@@ -102,6 +106,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = window_backlog_input_create(&window_backlog_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = stored_record_input_create(&stored_record_input);
 	if (error < E_OK) {
 		return error;
@@ -122,7 +130,7 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
-		&window_report_input, &store_alarm_frames_input);
+		&window_report_input, &window_backlog_input, &store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -142,6 +150,12 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	/* above score and detect by window at 12, so a backlog goes out while it lasts */
+	error = window_backlog_can_task_create(&window_backlog_can_task, 10,
+		&window_backlog_input, &can_sender, WINDOW_BACKLOG_ID);
+	if (error < E_OK) {
+		return error;
+	}
 	/* above the store at 11, so a record goes out as soon as it is written */
 	error = stored_record_can_task_create(&stored_record_can_task, 10, &stored_record_input,
 		&can_sender, STORED_RECORD_ID);
@@ -154,6 +168,10 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = report_can_task_start(&window_report_can_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = window_backlog_can_task_start(&window_backlog_can_task);
 	if (error < E_OK) {
 		return error;
 	}

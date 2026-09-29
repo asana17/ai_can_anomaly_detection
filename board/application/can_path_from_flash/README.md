@@ -11,6 +11,7 @@ flowchart LR
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
     frames --> tasks
     tasks -- latest report --> uart["report_uart 9<br/>UART"]
+    tasks -- latest backlog --> backlog_uart["window_backlog_uart 10<br/>UART"]
     tasks -- latest alarm frames --> store["store alarm frames 11<br/>Flash bank 2"]
     store -- latest stored record --> record_uart["stored_record_uart 10<br/>UART"]
 ```

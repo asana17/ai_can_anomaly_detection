@@ -4,6 +4,7 @@ The tasks that turn the slots into alarms. ai_can_anomaly_detection and
 can_path_from_flash both run them. They differ in what fills the slots and in the tasks
 that report the alarms, which the application makes. It makes one for the alarm, at 9,
 and one for the window alarm, at 10, with the alarm's ID, `ALARM_ID` or `WINDOW_ALARM_ID`.
+It makes one for the window backlog, at 10, with `WINDOW_BACKLOG_ID`.
 
 | application | reports with |
 |---|---|
@@ -21,6 +22,7 @@ flowchart LR
     copy -- latest alarm frames --> store["the application's store"]
     sd -- shared ring --> win["score and detect by window 12<br/>window model on the last rows"]
     win -- latest window alarm --> window_report["window alarm report 10<br/>CAN or UART"]
+    win -- latest backlog --> backlog_report["window backlog report 10<br/>CAN or UART"]
 ```
 
 The numbers are task priorities, smaller runs first.
@@ -60,6 +62,12 @@ copy sits above the windowed model, since the frame ring overwrites the frames i
 not copied. The applications put the store of the alarm frames at 11, between the copy and the
 windowed model. Below the windowed model it would get only the time that model leaves,
 and the alarm frames would wait in RAM.
+
+Score and detect by window hands its report a row when it finishes the row while the
+next row is already waiting, since the window model then runs late. It also hands the
+first row after rows the ring overwrote, with the number lost. Rows are lost only there,
+so a jump in `row_count_since_gap` within a run counts them. When the first row taken
+starts a new run, the rows of that run before it count as lost.
 
 Score and detect by row hands report only the latest alarm state, as the CAN receive
 interrupt hands preprocessing the slots. A new state goes over the one before. So

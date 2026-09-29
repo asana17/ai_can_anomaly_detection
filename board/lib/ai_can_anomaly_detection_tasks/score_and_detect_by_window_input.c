@@ -31,6 +31,16 @@ EXPORT void score_and_detect_by_window_input_write(ScoreAndDetectByWindowInput *
 	tk_set_flg(score_and_detect_by_window_input->wake_reader_flag, 1);
 }
 
+EXPORT bool score_and_detect_by_window_input_has_rows(ScoreAndDetectByWindowInput *score_and_detect_by_window_input)
+{
+	bool has_rows;
+
+	tk_loc_mtx(score_and_detect_by_window_input->mutex, TMO_FEVR);
+	has_rows = row_ring_count(&score_and_detect_by_window_input->row_ring) > 0u;
+	tk_unl_mtx(score_and_detect_by_window_input->mutex);
+	return has_rows;
+}
+
 EXPORT void score_and_detect_by_window_input_read(ScoreAndDetectByWindowInput *score_and_detect_by_window_input,
 	RowRing *dest_row_ring)
 {

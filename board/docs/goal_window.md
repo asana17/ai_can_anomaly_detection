@@ -101,6 +101,7 @@ flowchart LR
     sd -- positions at alarm A start --> copy["copy alarm frames 10<br/>frames before alarm A"]
     frames --> copy
     copy -- latest alarm frames --> store["store alarm frames 11<br/>Flash bank 2"]
+    win -- latest backlog --> can
     store -- latest stored record --> can
 ```
 

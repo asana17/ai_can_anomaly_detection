@@ -16,6 +16,7 @@ flowchart LR
     slots --> tasks["the tasks in board/lib/ai_can_anomaly_detection_tasks"]
     frames --> tasks
     tasks -- latest report --> can["report_can 9<br/>FDCAN1"]
+    tasks -- latest backlog --> backlog_can["window_backlog_can 10<br/>FDCAN1"]
     tasks -- latest alarm frames --> store["store alarm frames 11<br/>Flash bank 2"]
     store -- latest stored record --> record_can["stored_record_can 10<br/>FDCAN1"]
 ```
@@ -40,22 +41,28 @@ The row number counts ticks from when the board started. It is there to check th
 board against the PC answer. When a change comes while the frame of the one before is
 still waiting, that frame is cancelled and the new one goes in.
 
-## The stored record frame
+## The backlog and stored record frames
 
+[window_backlog_can](../../lib/report_can/window_backlog_can_task.c) sends one frame for
+each row score and detect by window finished while the next row was already waiting,
+and for the first row after rows it lost.
 [stored_record_can](../../lib/report_can/stored_record_can_task.c) sends one frame for
-each record the store has written to Flash. It is extended, at priority 3 and source
-address 0x80, and is sent as the alarm frame is.
+each record the store has written to Flash. Both are extended, at priority 3 and source
+address 0x80, and are sent as the alarm frame is.
 
-| field | value |
-|---|---|
-| ID | 0x0CFF0380, PGN 0xFF03 |
-| bytes 0 to 3 | the row alarm A started on, little endian |
-| bytes 4 and 5 | the frame count, little endian |
-| bytes 6 and 7 | 0xFF |
+| frame | ID | bytes 0 to 3 | bytes 4 and 5 | bytes 6 and 7 |
+|---|---|---|---|---|
+| window backlog | 0x0CFF0280, PGN 0xFF02 | the row number | the rows lost just before it, 0xFFFF for more | 0xFF |
+| stored record | 0x0CFF0380, PGN 0xFF03 | the row alarm A started on | the frame count | 0xFF |
+
+All numbers are little endian. How late a row was scored is the time its backlog frame
+came, less the time of an alarm frame and 0.1 s for each row between them.
 
 On 2026-09-29 the Mac sent `part_3/20210204093505241905.csv` to the Release build at
-`-O2` and 32 MHz. The stored record frame came 44 ms after the alarm start, for 508
-frames.
+`-O2` and 32 MHz, running `window_conv1d_ae_r50_s3_k16_h64` on every row. The stored
+record frame came 44 ms after the alarm start, for 508 frames. Backlog frames came for
+the alarm's first row and the 4 after it, about 92 ms apart, with no row lost. The first
+was scored about 138 ms after its row and the fifth about 108 ms after.
 
 ## The alarm frames in Flash
 

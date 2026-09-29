@@ -19,6 +19,33 @@ LOCAL void report_window_alarm_change(ReportInput *window_report_input, UW no, I
 }
 
 /*
+ * The rows lost just before entry. Rows are lost only when the ring overwrites them, which
+ * leaves a jump in row_count_since_gap. A row with a smaller count than the row taken
+ * before starts a new run, and the rows of that run before it were lost.
+ */
+LOCAL UW missing_rows_before(CONST RowRingEntry *entry, bool taken_before,
+	UW last_count_since_gap)
+{
+	if (!taken_before) {
+		return 0;
+	}
+	if (entry->row_count_since_gap > last_count_since_gap) {
+		return entry->row_count_since_gap - last_count_since_gap - 1u;
+	}
+	return entry->row_count_since_gap;
+}
+
+/* Hand report the row no, with the rows lost just before it. */
+LOCAL void report_backlog(WindowBacklogInput *window_backlog_input, UW no, UW missing_rows)
+{
+	WindowBacklog window_backlog;
+
+	window_backlog.no = no;
+	window_backlog.missing_rows = missing_rows;
+	window_backlog_input_write(window_backlog_input, &window_backlog);
+}
+
+/*
  * Score the complete window: z-score each row with the window model's scale, run the
  * model, and take the error on the last row, as the PC does.
  */
@@ -58,6 +85,10 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 	UW index;
 	float score;
 	uint32_t cycles;
+	UW missing_rows;
+	UW last_count_since_gap = 0; /* row_count_since_gap of the last row taken */
+	bool taken_before = false;   /* a row has been taken */
+	bool waiting;                /* the next row came before this one was done */
 
 	detect_by_row_init(&state, MIN_FLAGGED_WINDOWS_FOR_ALARM);
 	row_ring_as_window_clear(&task->row_ring_as_window);
@@ -66,6 +97,7 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 			&task->row_ring);
 		for (index = 0; index < row_ring_count(&task->row_ring); index++) {
 			entry = row_ring_entry(&task->row_ring, index);
+			missing_rows = missing_rows_before(entry, taken_before, last_count_since_gap);
 			row_ring_as_window_push(&task->row_ring_as_window, entry);
 			flagged = false;
 			if (row_ring_as_window_is_complete(&task->row_ring_as_window)) {
@@ -75,6 +107,14 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 				} else {
 					tk_ext_tsk();
 				}
+			}
+			last_count_since_gap = entry->row_count_since_gap;
+			taken_before = true;
+			waiting = index + 1u < row_ring_count(&task->row_ring)
+				|| score_and_detect_by_window_input_has_rows(
+					task->score_and_detect_by_window_input);
+			if (waiting || missing_rows > 0u) {
+				report_backlog(task->window_backlog_input, entry->no, missing_rows);
 			}
 			detect_by_row_push_flag(&state, entry->no, flagged);
 			alarmed = detect_by_row_alarmed(&state);
@@ -89,7 +129,7 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 
 EXPORT ER score_and_detect_by_window_task_create(ScoreAndDetectByWindowTask *task,
 	PRI priority, ScoreAndDetectByWindowInput *score_and_detect_by_window_input,
-	ReportInput *window_report_input)
+	ReportInput *window_report_input, WindowBacklogInput *window_backlog_input)
 {
 	/* The stack holds the st-ai inference, as score and detect by row's does. */
 	T_CTSK ctsk = {
@@ -99,6 +139,7 @@ EXPORT ER score_and_detect_by_window_task_create(ScoreAndDetectByWindowTask *tas
 
 	task->score_and_detect_by_window_input = score_and_detect_by_window_input;
 	task->window_report_input = window_report_input;
+	task->window_backlog_input = window_backlog_input;
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }

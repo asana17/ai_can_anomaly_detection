@@ -8,8 +8,10 @@
 #include "store_alarm_frames_input.h"
 #include "store_alarm_frames_task.h"
 #include "stored_record_input.h"
+#include "window_backlog_input.h"
 #include "report_uart_task.h"
 #include "stored_record_uart_task.h"
+#include "window_backlog_uart_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 #include "replay_frames.h"
 
@@ -21,12 +23,14 @@ LOCAL FrameRing frame_ring;
 
 LOCAL ReportInput report_input;
 LOCAL ReportInput window_report_input;
+LOCAL WindowBacklogInput window_backlog_input;
 LOCAL StoredRecordInput stored_record_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
 LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL ReportUartTask report_uart_task;
 LOCAL ReportUartTask window_report_uart_task;
+LOCAL WindowBacklogUartTask window_backlog_uart_task;
 LOCAL StoredRecordUartTask stored_record_uart_task;
 
 /*
@@ -87,6 +91,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = window_backlog_input_create(&window_backlog_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = stored_record_input_create(&stored_record_input);
 	if (error < E_OK) {
 		return error;
@@ -107,7 +115,7 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = ai_can_anomaly_detection_tasks_create(&slots, &frame_ring, &report_input,
-		&window_report_input, &store_alarm_frames_input);
+		&window_report_input, &window_backlog_input, &store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -119,6 +127,12 @@ EXPORT INT usermain(void)
 	/* above score and detect by window at 12, and below the alarm's report */
 	error = report_uart_task_create(&window_report_uart_task, 10, &window_report_input,
 		WINDOW_ALARM_ID);
+	if (error < E_OK) {
+		return error;
+	}
+	/* above score and detect by window at 12, so a backlog is printed while it lasts */
+	error = window_backlog_uart_task_create(&window_backlog_uart_task, 10,
+		&window_backlog_input, WINDOW_BACKLOG_ID);
 	if (error < E_OK) {
 		return error;
 	}
@@ -137,6 +151,10 @@ EXPORT INT usermain(void)
 		return error;
 	}
 	error = report_uart_task_start(&window_report_uart_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = window_backlog_uart_task_start(&window_backlog_uart_task);
 	if (error < E_OK) {
 		return error;
 	}

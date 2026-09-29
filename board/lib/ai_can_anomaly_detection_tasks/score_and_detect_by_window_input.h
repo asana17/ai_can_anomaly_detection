@@ -1,6 +1,7 @@
 #ifndef SCORE_AND_DETECT_BY_WINDOW_INPUT_H
 #define SCORE_AND_DETECT_BY_WINDOW_INPUT_H
 
+#include <stdbool.h>
 #include <tk/tkernel.h>
 #include "row_ring.h"
 
@@ -31,6 +32,15 @@ IMPORT ER score_and_detect_by_window_input_create(ScoreAndDetectByWindowInput *s
  */
 IMPORT void score_and_detect_by_window_input_write(ScoreAndDetectByWindowInput *score_and_detect_by_window_input,
 	CONST RowRingEntry *entry);
+
+/**
+ * @brief Check whether a row is waiting in the ring.
+ *
+ * @param[in,out] score_and_detect_by_window_input The ring.
+ * @retval true A row was written and not taken yet.
+ * @retval false None is waiting.
+ */
+IMPORT bool score_and_detect_by_window_input_has_rows(ScoreAndDetectByWindowInput *score_and_detect_by_window_input);
 
 /**
  * @brief Wait for a write, then take every row out of the ring.
