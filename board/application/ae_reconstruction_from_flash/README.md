@@ -20,7 +20,9 @@ reconstruction error, and the mean and largest cycles.
 
 Measured on 2026-09-22 with `nonlinear_ae_k8_h64_float` from runs repo
 `board/20260916-232708`, against `quantize/20260916-221145/nonlinear_ae_k8_h64_float.onnx`.
-The CPU ran at 32 MHz, HSI divided by 2 with no PLL, as set in the CubeIDE project.
+The CPU ran at 32 MHz, HSI divided by 2 with no PLL, as set in the CubeIDE project. The
+build was the Debug configuration at `-O0`, before `board/flash.py` built Release at
+`-O2`.
 
 | what | result |
 |---|---|
@@ -42,8 +44,6 @@ error.
 
 The 80 rows are one stretch of 8 s around one attack in one log, so they cover little
 of each signal's range. A match on them does not show a match on rows far from them.
-More rows wait until they can be fetched from the dataset instead of the fixed
-`raw_rows.h`.
 
 ## Run
 

@@ -48,8 +48,8 @@ The logs go in `data/`, see [can_data/can_data.md](can_data/can_data.md#getting-
 - [deploy/](deploy) writes the models out as ONNX for the NUCLEO-H533RE.
 - [board/](board) holds our μT-Kernel applications for the NUCLEO-H533RE, one folder
   each. [board/docs/setup.md](board/docs/setup.md) builds and flashes one from nothing.
-  [board/docs/goal.md](board/docs/goal.md) is what the board is building towards, the
-  TRON Programming Contest 2026 entry, and the order it is built in.
+  [ai_can_anomaly_detection](board/application/ai_can_anomaly_detection) is the TRON
+  Programming Contest 2026 entry.
 - [common/](common) holds the settings of a run and reads and writes the Hub
   directories every stage uses. [common/docs/settings.md](common/docs/settings.md)
   says how each parameter was set. [common/schemas](common/schemas)
@@ -114,21 +114,11 @@ J1939's own terms, frame, PGN and SPN, are described in
   `models`, `score` into `scoring`, and `run_test_set` and `count_alarms` left in
   `evaluate`, all done 2026-09-22.
 
-- Build the board application in the order of [board/docs/goal.md](board/docs/goal.md),
-  due 2026-09-30. Step 3 there, the model, runs on the board and matches ONNX Runtime
-  on 80 rows. Counting the calibration rows its difference moves across the threshold
-  waits for `score`, and more rows wait for fetching them from the dataset. Step 4
-  runs on the board. `can_path_from_flash` replays CAN frames through the slots, a
-  preprocess task on a 0.1 s cyclic handler, scoring and detect, and report. FDCAN1 is
-  on PB7 and PB8, and `can_bus_debug` prints what the bus receives and sends a frame
-  every second. `can_bus_debug` sends and receives frames over the bus. Then steps 2,
-  5 and 6.
-- On the board, put the rows in one ring in place of the row queue. preprocess writes
-  it, and scoring and detect and a window scoring task read it under one mutex. Row
-  flags go in an array beside it. Window scoring only copies windows for now. W and S
-  belong in the window model's config header.
-- Send alarm B on CAN as its own frame, once alarm B is built.
-- A script that compares scores.
+- Measure the board entry's memory footprint with what the kernel gives the tasks and
+  message buffers. The frame ring is written apart from what detection needs. Due
+  2026-09-30.
+- Slides for the TRON Programming Contest 2026 entry, and the source published. Due
+  2026-09-30.
 
 ## Tests
 
