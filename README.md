@@ -29,6 +29,29 @@ The autoencoders learn normal rows only, on a PC. To test them, [attack](attack)
 changes normal logs into synthetic anomalies, such as signals copied from another
 moment or a bias that grows.
 
+Rows and windows raise alarms in different ways.
+
+- Rows: an attack makes many rows look wrong, and a normal row now and then looks
+  wrong too. So the alarm waits for several suspicious rows among the last 10.
+- Windows: an attack that changes how the signals move shows up in only a few windows,
+  so one suspicious window is enough.
+
+Each autoencoder is compared with a linear model that reads the same input. PCA reads
+one row, so the row autoencoder's gain over it is what nonlinearity buys. VAR reads a
+window and shows what time alone buys, so the window autoencoder has to do better than
+it. The window autoencoder uses 1D convolutions, which share weights along time. A long
+window then still fits in the board's Flash.
+
+Models not used, and why.
+
+- A classifier needs labelled attacks. The only attacks are the synthetic ones, so it
+  would learn those instead of unknown anomalies.
+- Isolation Forest reads one row like PCA but splits one signal at a time. The attacks
+  break how signals relate, which PCA reads.
+- A recurrent model such as an LSTM carries a state from row to row, so it has to read
+  every row in order. The window model runs last and catches up from the kept rows,
+  which a model with no state can do from any window.
+
 ## Priorities
 
 The window model is the heaviest, so it runs last. When an alarm starts, the frames
