@@ -22,14 +22,24 @@ flowchart LR
     slots --> pre["6 build a row"]
     pre --> row["8 rules and row model<br/>alarm"]
     row --> report["9 send the alarm"]
-    row -- at alarm start --> copy["10 copy the frames<br/>before the alarm"]
+    row -- at alarm start --> copy["10 copy the frames"]
     ring --> copy
-    copy --> store["11 store in Flash bank 2<br/>with HMAC"]
+    copy --> alarm_frames[(frames before<br/>the alarm)]
+    copy --> window_alarm_frames[(frames before<br/>the window alarm)]
+    alarm_frames --> store["11 store the frames<br/>with HMAC"]
+    window_alarm_frames --> store
+    store --> flash[(Flash bank 2)]
     store --> record["10 send the stored record"]
+    store --> window_record["10 send the window stored record"]
     row -- rows --> win["12 window model<br/>window alarm"]
     win -- at window alarm start --> copy
     win --> window_report["10 send the window alarm"]
     win --> backlog["10 send the backlog"]
+    report --> bus["FDCAN1 send"]
+    window_report --> bus
+    backlog --> bus
+    record --> bus
+    window_record --> bus
 ```
 
 | priority | task | why it sits there |
