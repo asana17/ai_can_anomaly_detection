@@ -56,7 +56,8 @@ EXPORT ER ai_can_anomaly_detection_tasks_create(Slots *slots, FrameRing *frame_r
 	preprocess_task.frame_ring = frame_ring;
 	/* the windowed model is best effort, so it sits below the alarm outputs */
 	error = score_and_detect_by_window_task_create(&score_and_detect_by_window_task, 12,
-		&score_and_detect_by_window_input, window_report_input, window_backlog_input);
+		&score_and_detect_by_window_input, window_report_input, window_backlog_input,
+		&copy_window_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
 	}

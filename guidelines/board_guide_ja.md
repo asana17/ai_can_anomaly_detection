@@ -267,19 +267,23 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
 
 ### 7.2 実行
 
-ここでは `part_3/20210204093505241905.csv` を使う。ほかのログは `attacked.json` の
-`log` から選ぶ。
+ここでは `part_3/20210204093802472877.csv` を使う。行の警報も窓の警報も出るログである。
+ほかのログは `attacked.json` の `log` から選ぶ。
 
 1. PC で同じモデルを動かし、警報が始まる行と終わる行を出す。行は送り始めから 0.1 秒
    ごとに数える。
 
    ```sh
-   python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093505241905.csv
+   python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093802472877.csv
    ```
 
    ```
-   alarm 0x0CFF0080 start at row 531
-   alarm 0x0CFF0080 end at row 575
+   alarm 0x0CFF0080 start at row 503
+   alarm 0x0CFF0080 end at row 539
+   alarm 0x0CFF0180 start at row 494
+   alarm 0x0CFF0180 end at row 504
+   alarm 0x0CFF0180 start at row 539
+   alarm 0x0CFF0180 end at row 549
    ```
 
 2. 3 の手順の macOS から、同じログのフレームを記録された時刻の間隔で送る。約 1 分
@@ -287,15 +291,15 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
    出る。7.3 で読むので `received_frames.txt` にも残す。
 
    ```sh
-   python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204093505241905.csv | tee received_frames.txt
+   python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204093802472877.csv | tee received_frames.txt
    ```
 
    ```
-   sending 50001 frames from 1790657590.783
-   received at 1790657643.832  CFF0080   [8]  01 45 02 00 00 00 00 FF
-   received at 1790657644.010  CFF0380   [8]  45 02 00 00 F9 07 FF FF
+   sending 50001 frames from 1790683524.751
+   received at 1790683574.256  CFF0180   [8]  01 7C 02 00 00 5A 00 FF
+   received at 1790683574.434  CFF0480   [8]  7C 02 00 00 E2 07 FF FF
    ...
-   sent 50001, echoed 50001, late ms median 0.000, p99 0.017, max 5.143
+   sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 4.565
    ```
 
    最後の行の `echoed` が `sent` と同じなら、アダプタはすべてのフレームを送っている。
@@ -315,20 +319,29 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
    2026-09-29 に Release ビルド、32 MHz で動かしたときは次のように出た。
 
    ```
-   row 581: alarm start, 0 ms after the row was made
-   row 581: alarm frames stored, 178 ms after the alarm start, 2041 frames
-   row 581: window model late, finished 269 ms after the row was made, 0 rows lost before it
+   row 636: window alarm start, 90 ms after the row was made
+   row 636: window alarm frames stored, 178 ms after the window alarm start, 2018 frames
+   row 637: window model late, finished 260 ms after the row was made, 0 rows lost before it
    ...
-   row 602: window model late, finished 104 ms after the row was made, 0 rows lost before it
-   rows 581 to 602: window model late on 22 rows, 0 rows lost
-   row 625: alarm end, 0 ms after the row was made
+   row 646: alarm start, 0 ms after the row was made
+   row 646: alarm frames stored, 175 ms after the alarm start, 2020 frames
+   ...
+   row 646: window alarm end, 360 ms after the row was made
+   ...
+   rows 647 to 679: window model late on 33 rows, 0 rows lost
+   row 681: alarm end, 0 ms after the row was made
+   row 681: window alarm start, 90 ms after the row was made
+   row 681: window alarm frames stored, 179 ms after the window alarm start, 2019 frames
+   ...
+   row 691: window alarm end, 190 ms after the row was made
+   ...
    ```
 
    | 見るところ | 正しいとき |
    |---|---|
-   | `alarm start` と `alarm end` の行 | ボードの行はボードが起動してから数えるので、PC の行に一定の差を足したものになる。上の例では始まりも終わりも差が 50。ボードが行を作る時刻は送り始めと揃っていないので、1 行ずれることはある |
+   | `alarm` と `window alarm` の `start` と `end` の行 | ボードの行はボードが起動してから数えるので、PC の行に一定の差を足したものになる。上の例では差が 142 で、行の警報の始まりだけ 143。ボードが行を作る時刻は送り始めと揃っていないので、1 行ずれることはある |
    | `alarm start` の ms | 0。警報は窓モデルと保存に待たされていない |
-   | `alarm frames stored` | 警報の前のフレームを Flash に書き終えた |
+   | `alarm frames stored` と `window alarm frames stored` | その警報の前のフレームを Flash に書き終えた。警報が始まるたびに 1 つ出る |
    | `window model late` | 窓モデルが次の行が来るまでに採点を終えられなかった行。遅れていない行は出ない |
    | `window model late on ... rows` | 窓モデルは遅れた後に追いついた。`0 rows lost` なら行を 1 つも失っていない |
 
@@ -338,16 +351,23 @@ CAN RX status: taken 1, printed 1, fifo 0, fifo lost 0, ram failed 0, rec 0, tec
 
    ```sh
    STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
-   python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093505241905.csv
+   python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093802472877.csv
    ```
 
    ```
-   area 0 sequence 0 row 581 frames 2041
+   area 0 sequence 0 window alarm row 636 frames 2018
      the MAC matches the one computed with the key
-     matches log frames 42838 to 44878
+     matches log frames 39551 to 41568
+   area 1 sequence 1 alarm row 646 frames 2020
+     the MAC matches the one computed with the key
+     matches log frames 40390 to 42409
+   area 2 sequence 2 window alarm row 681 frames 2019
+     the MAC matches the one computed with the key
+     matches log frames 43333 to 45351
    ```
 
-   記録ごとに、MAC が鍵と合うかと、送ったログのどのフレームと一致したかが出る。MAC が
+   記録ごとに、どちらの警報の記録か、MAC が鍵と合うか、送ったログのどのフレームと
+   一致したかが出る。MAC が
    合い、ログのフレームと一致すれば正しく書けている。鍵は
    `board/lib/alarm_frames_mac/alarm_frames_mac_demo_key.h` にある。`--log` を付けなければ
    記録のフレームが出る。

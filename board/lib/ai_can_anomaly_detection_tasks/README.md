@@ -17,10 +17,11 @@ flowchart LR
     tick[cyclic handler 0.1 s] -. wakes .-> pre
     pre -- row queue --> sd["score and detect by row 8<br/>rules, autoencoder, k of the last N"]
     sd -- latest report --> report["report 9<br/>CAN or UART"]
-    sd -- latest positions --> copy["copy alarm frames 10<br/>frames behind alarm A"]
+    sd -- latest positions --> copy["copy alarm frames 10<br/>frames behind each alarm"]
     frames[(frame ring)] --> copy
     copy -- latest alarm frames --> store["the application's store"]
     sd -- shared ring --> win["score and detect by window 12<br/>window model on the last rows"]
+    win -- latest positions --> copy
     win -- latest window alarm --> window_report["window alarm report 10<br/>CAN or UART"]
     win -- latest backlog --> backlog_report["window backlog report 10<br/>CAN or UART"]
 ```
@@ -73,16 +74,18 @@ Score and detect by row hands report only the latest alarm state, as the CAN rec
 interrupt hands preprocessing the slots. A new state goes over the one before. So
 writing never waits for report, and report always gets the current state.
 
-## Copying the frames behind alarm A
+## Copying the frames behind each alarm
 
 On each tick preprocess reads the frame ring's position once, and gives the row the
 positions at the tick before and at its own. So each row names the frames that arrived
 since the tick before.
 
-When alarm A starts, score and detect by row passes the row it starts on and the
-positions of the frames behind the last `ALARM_FRAMES_ROWS` rows, 2.4 s, or fewer since
-the last gap. As with report, only
-the latest positions are kept.
+For each row, score and detect by row takes the positions of the frames behind the last
+`ALARM_FRAMES_ROWS` rows, 2.4 s, or fewer since the last gap. When the alarm starts, it
+passes the row it starts on and those positions. It also passes them with the row to
+score and detect by window, which passes them when the window alarm starts on that row.
+So both alarms take the same frames for a row. As with report, only the latest
+positions of each alarm are kept.
 
 The copy takes the latest `ALARM_FRAMES_MAX` of those frames, oldest first, without
 stopping interrupts. It then reads the ring's position again. When newer frames went

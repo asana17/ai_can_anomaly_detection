@@ -21,6 +21,22 @@ LOCAL void report_window_alarm_change(ReportInput *window_report_input,
 }
 
 /*
+ * Tell the task that copies the alarm frames the row the window alarm starts on, and the
+ * frames score and detect by row chose for it.
+ */
+LOCAL void pass_window_alarm_frame_positions(
+	CopyAlarmFramesInput *copy_window_alarm_frames_input, CONST RowRingEntry *entry)
+{
+	AlarmFramePositions positions;
+
+	positions.alarm = ALARM_KIND_WINDOW_ALARM;
+	positions.no = entry->no;
+	positions.frames_start = entry->frames_start;
+	positions.frames_end = entry->frames_end;
+	copy_alarm_frames_input_write(copy_window_alarm_frames_input, &positions);
+}
+
+/*
  * The rows lost just before entry. Rows are lost only when the ring overwrites them, which
  * leaves a jump in row_count_since_gap. A row with a smaller count than the row taken
  * before starts a new run, and the rows of that run before it were lost.
@@ -123,6 +139,10 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 			if (alarmed != ringing) {
 				report_window_alarm_change(task->window_report_input, entry, alarmed);
 				ringing = alarmed;
+				if (alarmed) {
+					pass_window_alarm_frame_positions(
+						task->copy_window_alarm_frames_input, entry);
+				}
 			}
 		}
 	}
@@ -130,7 +150,8 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 
 EXPORT ER score_and_detect_by_window_task_create(ScoreAndDetectByWindowTask *task,
 	PRI priority, ScoreAndDetectByWindowInput *score_and_detect_by_window_input,
-	ReportInput *window_report_input, WindowBacklogInput *window_backlog_input)
+	ReportInput *window_report_input, WindowBacklogInput *window_backlog_input,
+	CopyAlarmFramesInput *copy_window_alarm_frames_input)
 {
 	/* The stack holds the st-ai inference, as score and detect by row's does. */
 	T_CTSK ctsk = {
@@ -141,6 +162,7 @@ EXPORT ER score_and_detect_by_window_task_create(ScoreAndDetectByWindowTask *tas
 	task->score_and_detect_by_window_input = score_and_detect_by_window_input;
 	task->window_report_input = window_report_input;
 	task->window_backlog_input = window_backlog_input;
+	task->copy_window_alarm_frames_input = copy_window_alarm_frames_input;
 	task->task_id = tk_cre_tsk(&ctsk);
 	return task->task_id;
 }

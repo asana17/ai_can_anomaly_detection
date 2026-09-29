@@ -16,8 +16,8 @@ flowchart LR
     store -- latest stored record --> record_uart["stored_record_uart 10<br/>UART"]
 ```
 
-The replay task stands in for the CAN receive interrupt. At each alarm start the
-frames behind it go to Flash bank 2, as in
+The replay task stands in for the CAN receive interrupt. At each start of the alarm or
+the window alarm the frames behind it go to Flash bank 2, as in
 [ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#frames-stored-in-flash). With no bus, the alarms go
 over UART from [report_uart](../../lib/report_uart/report_uart_task.c) at priority 9. The tasks after the
 slots are described in [their README](../../lib/ai_can_anomaly_detection_tasks/README.md).
@@ -72,17 +72,27 @@ alarm 0x0CFF0180 end at row 125
 ```
 
 The window alarm starts 9 rows before the alarm. The board should print the six alarm
-lines, the two alarms' lines mixed in the order they happen. After the replay it prints
+lines, the two alarms' lines mixed in the order they happen, and a stored record line
+after each start. After the replay it prints
 the fewest and most cycles one push into the frame ring took, and the core clock. An
 interrupt during a push adds to it. On 2026-09-29 the Release build, at `-O2`, printed
 
 ```
 alarm 0x0CFF0180 start at row 70, 90 ms after its tick
+stored 0x0CFF0480 record of row 70 with 792 frames
+backlog 0x0CFF0280 at row 71, 0 rows lost before it
+backlog 0x0CFF0280 at row 72, 0 rows lost before it
+backlog 0x0CFF0280 at row 73, 0 rows lost before it
+backlog 0x0CFF0280 at row 74, 0 rows lost before it
+backlog 0x0CFF0280 at row 75, 0 rows lost before it
+backlog 0x0CFF0280 at row 76, 0 rows lost before it
+backlog 0x0CFF0280 at row 77, 0 rows lost before it
 alarm 0x0CFF0080 start at row 79, 0 ms after its tick
 stored 0x0CFF0380 record of row 79 with 792 frames
+backlog 0x0CFF0280 at row 78, 0 rows lost before it
 backlog 0x0CFF0280 at row 79, 0 rows lost before it
 backlog 0x0CFF0280 at row 80, 0 rows lost before it
-alarm 0x0CFF0180 end at row 80, 170 ms after its tick
+alarm 0x0CFF0180 end at row 80, 210 ms after its tick
 backlog 0x0CFF0280 at row 81, 0 rows lost before it
 backlog 0x0CFF0280 at row 82, 0 rows lost before it
 backlog 0x0CFF0280 at row 83, 0 rows lost before it
@@ -99,14 +109,42 @@ backlog 0x0CFF0280 at row 93, 0 rows lost before it
 backlog 0x0CFF0280 at row 94, 0 rows lost before it
 backlog 0x0CFF0280 at row 95, 0 rows lost before it
 backlog 0x0CFF0280 at row 96, 0 rows lost before it
+backlog 0x0CFF0280 at row 97, 0 rows lost before it
+backlog 0x0CFF0280 at row 98, 0 rows lost before it
+backlog 0x0CFF0280 at row 99, 0 rows lost before it
+backlog 0x0CFF0280 at row 100, 0 rows lost before it
+backlog 0x0CFF0280 at row 101, 0 rows lost before it
+backlog 0x0CFF0280 at row 102, 0 rows lost before it
+backlog 0x0CFF0280 at row 103, 0 rows lost before it
+backlog 0x0CFF0280 at row 104, 0 rows lost before it
+backlog 0x0CFF0280 at row 105, 0 rows lost before it
 alarm 0x0CFF0080 end at row 115, 0 ms after its tick
 alarm 0x0CFF0180 start at row 115, 90 ms after its tick
-alarm 0x0CFF0180 end at row 125, 90 ms after its tick
-frame ring push 87 to 135 cycles at 32000000 Hz
+stored 0x0CFF0480 record of row 115 with 792 frames
+backlog 0x0CFF0280 at row 116, 0 rows lost before it
+backlog 0x0CFF0280 at row 117, 0 rows lost before it
+backlog 0x0CFF0280 at row 118, 0 rows lost before it
+backlog 0x0CFF0280 at row 119, 0 rows lost before it
+backlog 0x0CFF0280 at row 120, 0 rows lost before it
+backlog 0x0CFF0280 at row 121, 0 rows lost before it
+backlog 0x0CFF0280 at row 122, 0 rows lost before it
+backlog 0x0CFF0280 at row 123, 0 rows lost before it
+backlog 0x0CFF0280 at row 124, 0 rows lost before it
+backlog 0x0CFF0280 at row 125, 0 rows lost before it
+alarm 0x0CFF0180 end at row 125, 130 ms after its tick
+backlog 0x0CFF0280 at row 126, 0 rows lost before it
+backlog 0x0CFF0280 at row 127, 0 rows lost before it
+backlog 0x0CFF0280 at row 128, 0 rows lost before it
+backlog 0x0CFF0280 at row 129, 0 rows lost before it
+backlog 0x0CFF0280 at row 130, 0 rows lost before it
+backlog 0x0CFF0280 at row 131, 0 rows lost before it
+backlog 0x0CFF0280 at row 132, 0 rows lost before it
+backlog 0x0CFF0280 at row 133, 0 rows lost before it
+frame ring push 87 to 136 cycles at 32000000 Hz
 ```
 
-Bank 2 then holds one record, for row 79, with 792 frames, the frames of the 24 rows
-before the alarm start. Its MAC matched the one
-computed on the PC, as
+Bank 2 then holds three records, for the window alarm at row 70, the alarm at row 79
+and the window alarm at row 115, each with 792 frames, the frames of the 24 rows before
+the start. Their MACs matched the one computed on the PC, as
 [ai_can_anomaly_detection](../ai_can_anomaly_detection/README.md#frames-stored-in-flash)
 describes.

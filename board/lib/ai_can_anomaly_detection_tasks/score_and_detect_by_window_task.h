@@ -3,6 +3,7 @@
 
 #include <tk/tkernel.h>
 #include "ai_can_anomaly_detection_tasks.h"
+#include "copy_alarm_frames_input.h"
 #include "report_input.h"
 #include "window_backlog_input.h"
 #include "row_ring.h"
@@ -17,6 +18,7 @@ typedef struct {
 	ScoreAndDetectByWindowInput *score_and_detect_by_window_input;
 	ReportInput *window_report_input;     /* where the window alarm goes */
 	WindowBacklogInput *window_backlog_input; /* where the backlogs go */
+	CopyAlarmFramesInput *copy_window_alarm_frames_input; /* window alarm starts */
 	ID task_id;
 	RowRing row_ring;                     /* the rows of one read */
 	RowRingAsWindow row_ring_as_window;   /* the rows it builds windows from */
@@ -27,11 +29,13 @@ typedef struct {
 /*
  * Create score and detect by window, reading score_and_detect_by_window_input. The window
  * alarm goes to window_report_input. A row it finishes while the next is waiting, or
- * the first after rows it lost, goes to window_backlog_input.
+ * the first after rows it lost, goes to window_backlog_input. The frame ring's positions
+ * behind each window alarm start go to copy_window_alarm_frames_input.
  */
 IMPORT ER score_and_detect_by_window_task_create(ScoreAndDetectByWindowTask *task,
 	PRI priority, ScoreAndDetectByWindowInput *score_and_detect_by_window_input,
-	ReportInput *window_report_input, WindowBacklogInput *window_backlog_input);
+	ReportInput *window_report_input, WindowBacklogInput *window_backlog_input,
+	CopyAlarmFramesInput *copy_window_alarm_frames_input);
 
 /* Start score and detect by window. */
 IMPORT ER score_and_detect_by_window_task_start(ScoreAndDetectByWindowTask *task);

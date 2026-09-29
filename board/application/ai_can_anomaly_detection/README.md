@@ -2,8 +2,8 @@
 
 The main application on the board. It builds a row from the received frames every
 0.1 s and scores it with the rules, the row model and the window model. It sends each
-start and end of the alarm and the window alarm on FDCAN1. At each alarm start it
-stores the frames before it in Flash bank 2, with an HMAC. It runs until the board is
+start and end of the alarm and the window alarm on FDCAN1. At each start of either
+alarm it stores the frames before it in Flash bank 2, with an HMAC. It runs until the board is
 reset.
 
 [board_guide_ja.md](../../../guidelines/board_guide_ja.md) builds it, sends it a log
@@ -27,6 +27,7 @@ flowchart LR
     copy --> store["11 store in Flash bank 2<br/>with HMAC"]
     store --> record["10 send the stored record"]
     row -- rows --> win["12 window model<br/>window alarm"]
+    win -- at window alarm start --> copy
     win --> window_report["10 send the window alarm"]
     win --> backlog["10 send the backlog"]
 ```
@@ -36,7 +37,7 @@ flowchart LR
 | 6 | build a row every 0.1 s | every task after it reads the row |
 | 8 | score the row with the rules and the row model, raise the alarm | the alarm is decided before the next row |
 | 9 | send the alarm | the alarm goes out before anything slower |
-| 10 | copy the frames before the alarm, send the window alarm, the backlog and the stored record | the frame ring overwrites frames not yet copied |
+| 10 | copy the frames before the alarm or the window alarm, send the window alarm, the backlog and the stored records | the frame ring overwrites frames not yet copied |
 | 11 | store the frames in Flash bank 2 | the frames are kept before the window model runs |
 | 12 | score the window with the window model | it is the heaviest, so it gets the time left |
 
@@ -140,6 +141,12 @@ alarm start. Backlog frames came for the alarm's first row and the 21 after it, 
 row lost.
 
 In both, the alarm frames went out 0 ms after their tick.
+
+The Mac also sent `part_3/20210204093802472877.csv`, where both alarms start. The board
+wrote three records, for the window alarm at row 636 with 2018 frames, for the alarm at
+row 646 with 2020 and for the window alarm at row 681 with 2019. Each MAC matched, and
+each record matched a run of the log's frames. Each stored record frame came 175 to
+179 ms after its alarm start.
 
 ### Receive interrupt time
 
