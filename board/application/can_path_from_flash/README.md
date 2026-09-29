@@ -12,6 +12,7 @@ flowchart LR
     frames --> tasks
     tasks -- latest report --> uart["report_uart 9<br/>UART"]
     tasks -- latest alarm frames --> store["store alarm frames 11<br/>Flash bank 2"]
+    store -- latest stored record --> record_uart["stored_record_uart 10<br/>UART"]
 ```
 
 The replay task stands in for the CAN receive interrupt. At each alarm start the

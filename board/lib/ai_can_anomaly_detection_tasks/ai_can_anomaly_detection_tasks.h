@@ -16,6 +16,8 @@
 #define ALARM_ID 0x0CFF0080u
 /* the ID the window alarm is reported with, priority 3, PGN 0xFF01, source address 0x80 */
 #define WINDOW_ALARM_ID 0x0CFF0180u
+/* the ID a stored record is reported with, priority 3, PGN 0xFF03, source address 0x80 */
+#define STORED_RECORD_ID 0x0CFF0380u
 
 /*
  * Create preprocess, score and detect by row, the copy of the alarm frames, and score and

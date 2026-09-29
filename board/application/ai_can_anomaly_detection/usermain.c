@@ -7,8 +7,10 @@
 #include "flash_store.h"
 #include "store_alarm_frames_input.h"
 #include "store_alarm_frames_task.h"
+#include "stored_record_input.h"
 #include "can_sender.h"
 #include "report_can_task.h"
+#include "stored_record_can_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 
 #define CAN_BYTES 8u /* a classic CAN frame's payload, which DLC 9 to 15 also mean */
@@ -27,12 +29,14 @@ EXPORT UW most_receive_cycles = 0;
 
 LOCAL ReportInput report_input;
 LOCAL ReportInput window_report_input;
+LOCAL StoredRecordInput stored_record_input;
 LOCAL StoreAlarmFramesInput store_alarm_frames_input;
 LOCAL FlashStoreState flash_store;
 LOCAL StoreAlarmFramesTask store_alarm_frames_task;
 LOCAL CanSender can_sender;
 LOCAL ReportCanTask report_can_task;
 LOCAL ReportCanTask window_report_can_task;
+LOCAL StoredRecordCanTask stored_record_can_task;
 
 /*
  * Store each frame FDCAN received as the latest of its PGN, and copy it into the frame
@@ -98,6 +102,10 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	error = stored_record_input_create(&stored_record_input);
+	if (error < E_OK) {
+		return error;
+	}
 	error = store_alarm_frames_input_create(&store_alarm_frames_input);
 	if (error < E_OK) {
 		return error;
@@ -109,7 +117,7 @@ EXPORT INT usermain(void)
 	}
 	/* above score and detect by window at 12, so the window model never holds back Flash */
 	error = store_alarm_frames_task_create(&store_alarm_frames_task, 11,
-		&store_alarm_frames_input, &flash_store);
+		&store_alarm_frames_input, &flash_store, &stored_record_input);
 	if (error < E_OK) {
 		return error;
 	}
@@ -134,12 +142,22 @@ EXPORT INT usermain(void)
 	if (error < E_OK) {
 		return error;
 	}
+	/* above the store at 11, so a record goes out as soon as it is written */
+	error = stored_record_can_task_create(&stored_record_can_task, 10, &stored_record_input,
+		&can_sender, STORED_RECORD_ID);
+	if (error < E_OK) {
+		return error;
+	}
 	/* sends only on an alarm, which needs frames, so it may start before FDCAN1 */
 	error = report_can_task_start(&report_can_task);
 	if (error < E_OK) {
 		return error;
 	}
 	error = report_can_task_start(&window_report_can_task);
+	if (error < E_OK) {
+		return error;
+	}
+	error = stored_record_can_task_start(&stored_record_can_task);
 	if (error < E_OK) {
 		return error;
 	}

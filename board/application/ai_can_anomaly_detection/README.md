@@ -17,6 +17,7 @@ flowchart LR
     frames --> tasks
     tasks -- latest report --> can["report_can 9<br/>FDCAN1"]
     tasks -- latest alarm frames --> store["store alarm frames 11<br/>Flash bank 2"]
+    store -- latest stored record --> record_can["stored_record_can 10<br/>FDCAN1"]
 ```
 
 The tasks after the slots are described in
@@ -38,6 +39,23 @@ or the window alarm starts or ends.
 The row number counts ticks from when the board started. It is there to check the
 board against the PC answer. When a change comes while the frame of the one before is
 still waiting, that frame is cancelled and the new one goes in.
+
+## The stored record frame
+
+[stored_record_can](../../lib/report_can/stored_record_can_task.c) sends one frame for
+each record the store has written to Flash. It is extended, at priority 3 and source
+address 0x80, and is sent as the alarm frame is.
+
+| field | value |
+|---|---|
+| ID | 0x0CFF0380, PGN 0xFF03 |
+| bytes 0 to 3 | the row alarm A started on, little endian |
+| bytes 4 and 5 | the frame count, little endian |
+| bytes 6 and 7 | 0xFF |
+
+On 2026-09-29 the Mac sent `part_3/20210204093505241905.csv` to the Release build at
+`-O2` and 32 MHz. The stored record frame came 44 ms after the alarm start, for 508
+frames.
 
 ## The alarm frames in Flash
 
