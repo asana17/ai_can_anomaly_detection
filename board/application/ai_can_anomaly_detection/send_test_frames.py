@@ -7,8 +7,9 @@ candleLight gs_usb one, such as the DSD TECH SH-C31A, run at 250 kbit/s. On macO
 script opens it over USB and sets the bit rate itself. On Linux it sends through the
 SocketCAN interface the kernel made for it, `can0` unless `--interface` names another,
 which must be up at 250 kbit/s already. It prints the time sending started, as epoch
-seconds, and how late the frames were handed to the adapter. Each frame another node
-sends, such as the board's alarm frame, is printed with the epoch seconds it came.
+seconds, and how late the frames were handed to the adapter, both to stderr. Each frame
+another node sends, such as the board's alarm frame, is printed to stdout with the epoch
+seconds it came.
 """
 
 import argparse
@@ -146,7 +147,7 @@ def main():
     reader.start()
     try:
         start = time.perf_counter()
-        print(f"sending {len(sent)} frames from {time.time():.3f}", flush=True)
+        print(f"sending {len(sent)} frames from {time.time():.3f}", file=sys.stderr)
         for i, frame in enumerate(sent):
             target = frame.timestamp - first
             while True:
@@ -164,7 +165,7 @@ def main():
         adapter.close()
     ms = late * 1e3
     print(f"sent {len(sent)}, echoed {echoes[0]}, late ms median {np.median(ms):.3f}, "
-          f"p99 {np.percentile(ms, 99):.3f}, max {ms.max():.3f}")
+          f"p99 {np.percentile(ms, 99):.3f}, max {ms.max():.3f}", file=sys.stderr)
 
 
 if __name__ == "__main__":
