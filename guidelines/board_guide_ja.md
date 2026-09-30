@@ -302,8 +302,17 @@ Ubuntu のインストール時に作ったユーザは最初から入ってい�
 にある。Flash に保存する警報の記録の形は [README の Frames stored in Flash](../board/application/ai_can_anomaly_detection/README.md#frames-stored-in-flash)
 にある。
 
-ここでは `part_3/20210204093802472877.csv` を送る。行の警報も窓の警報も出るログである。
-ほかのログは `attacked.json` の `log` から選ぶ。
+ここでは `guidelines/` にある 2 本のログを送る。どちらもモデルを学習したデータには入って
+いないテスト用のログに攻撃を 1 つ入れたものである。
+
+| ファイル | ログ | 出る警報 |
+|---|---|---|
+| `both_alarms.parquet` | `part_3/20210204093901892161.csv` | 行の警報と窓の警報 |
+| `window_alarm.parquet` | `part_3/20210204110654673616.csv` | 窓の警報だけ |
+
+コピー元は [THIRD_PARTY.md の Data](../THIRD_PARTY.md#data) にある。ほかのログを送るときは
+[README の fetch](../board/application/ai_can_anomaly_detection/README.md#fetch)
+のとおりに取ってくる。
 
 ### 7.1 デモの準備
 
@@ -322,41 +331,39 @@ UART ではなく CAN に出る。
 | `FDCAN start error` | FDCAN1 が起動していない |
 | `flash store init error` | バンク 2 を読めずに止まった |
 
-#### 7.1.2 送るフレームを取ってくる
-
-Hugging Face のデータ用リポジトリから取ってくる。約 2 GB ある。ログインは要らない。
-
-```sh
-python3 -m board.application.ai_can_anomaly_detection.fetch
-```
-
-`board/application/ai_can_anomaly_detection/fetched/frames/` に次の 2 つが入る。
-
-| ファイル | 中身 |
-|---|---|
-| `frames.parquet` | 攻撃を入れたログのフレーム。ログ 1 つは約 1 分 |
-| `attacked.json` | 各ログに入れた攻撃。`log` がログの名前、`pgn` が攻撃した PGN |
-
-#### 7.1.3 PC で同じモデルを動かす
+#### 7.1.2 PC で同じモデルを動かす
 
 警報が始まる行と終わる行を出す。行は送り始めから 0.1 秒ごとに数える。
 
 ```sh
-python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093802472877.csv
+python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093901892161.csv --frames guidelines/both_alarms.parquet
 ```
 
 ```
-alarm 0x0CFF0080 start at row 503
-alarm 0x0CFF0080 end at row 539
-alarm 0x0CFF0180 start at row 494
-alarm 0x0CFF0180 end at row 504
-alarm 0x0CFF0180 start at row 539
-alarm 0x0CFF0180 end at row 549
+alarm 0x0CFF0080 start at row 210
+alarm 0x0CFF0080 end at row 295
+alarm 0x0CFF0180 start at row 201
+alarm 0x0CFF0180 end at row 211
+alarm 0x0CFF0180 start at row 295
+alarm 0x0CFF0180 end at row 305
 ```
 
 `0x0CFF0080` は行の警報で `0x0CFF0180` は窓の警報である。それぞれ 7.2.1 の `alarm` と `window alarm` にあたる。
 
-#### 7.1.4 Flash のバンク 2 を消す
+`window_alarm.parquet` では窓の警報だけが出る。
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204110654673616.csv --frames guidelines/window_alarm.parquet
+```
+
+```
+alarm 0x0CFF0180 start at row 446
+alarm 0x0CFF0180 end at row 457
+alarm 0x0CFF0180 start at row 545
+alarm 0x0CFF0180 end at row 556
+```
+
+#### 7.1.3 Flash のバンク 2 を消す
 
 ボードは警報の前のフレームをバンク 2 の 8 つの場所に 1 つずつ記録する。
 
@@ -365,8 +372,8 @@ alarm 0x0CFF0180 end at row 549
 
 デモでは送る前に毎回消す。8 つが埋まるといちばん古い場所を消して書く。ただし 1 日
 8 時間の使用で 5 年もつように、一度消すと次に消すまで約 11 分待つ。待つ間の警報は
-記録しない。このログは 1 回送ると 3 つ記録するので、消さずに続けて送ると 3 回目から
-記録が抜ける。
+記録しない。`both_alarms.parquet` は 1 回送ると 3 つ、`window_alarm.parquet` は 2 つ
+記録するので、消さずに続けて送ると 8 つを超えたところから記録が抜ける。
 
 1. オプションバイトを表示する。
 
@@ -394,29 +401,44 @@ alarm 0x0CFF0180 end at row 549
 かかる。ボードが CAN に送ったフレームは `board_frames` が届くたびに中身に直して画面に出す。
 
 ```sh
-python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204093802472877.csv | tee received_frames.txt | python3 -m board.application.ai_can_anomaly_detection.board_frames -
+python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20210204093901892161.csv --frames guidelines/both_alarms.parquet | tee received_frames.txt | python3 -m board.application.ai_can_anomaly_detection.board_frames -
 ```
 
 2026-09-30 に動かしたときは次のように出た。
 
 ```
-sending 50001 frames from 1790761388.680
-row 571: window alarm start, 90 ms after the row was made
-row 571: window alarm frames stored, 176 ms after the window alarm start, 2017 frames
-row 572: window model late, finished 260 ms after the row was made, 0 rows lost before it
+sending 50001 frames from 1790768464.899
+row 230: window alarm start, 90 ms after the row was made
+row 230: window alarm frames stored, 178 ms after the window alarm start, 2019 frames
+row 231: window model late, finished 260 ms after the row was made, 0 rows lost before it
 ...
-rows 572 to 578: window model late on 7 rows, 0 rows lost
-row 581: alarm start, 0 ms after the row was made
-row 581: alarm frames stored, 175 ms after the alarm start, 2018 frames
+rows 231 to 236: window model late on 6 rows, 0 rows lost
+row 239: alarm start, 0 ms after the row was made
+row 239: alarm frames stored, 174 ms after the alarm start, 2019 frames
 ...
-row 581: window alarm end, 270 ms after the row was made
-row 616: alarm end, 0 ms after the row was made
-row 616: window alarm start, 90 ms after the row was made
-row 616: window alarm frames stored, 178 ms after the window alarm start, 2017 frames
+row 239: window alarm end, 280 ms after the row was made
 ...
-row 626: window alarm end, 180 ms after the row was made
+row 323: alarm end, 0 ms after the row was made
+row 323: window alarm start, 90 ms after the row was made
+row 323: window alarm frames stored, 177 ms after the window alarm start, 2019 frames
 ...
-sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 1.772
+row 333: window alarm end, 190 ms after the row was made
+...
+sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 0.639
+```
+
+`window_alarm.parquet` を送ったときは窓の警報だけが出た。
+
+```
+row 475: window alarm start, 90 ms after the row was made
+row 475: window alarm frames stored, 178 ms after the window alarm start, 2044 frames
+...
+row 485: window alarm end, 190 ms after the row was made
+...
+row 574: window alarm start, 90 ms after the row was made
+row 574: window alarm frames stored, 177 ms after the window alarm start, 2031 frames
+...
+row 585: window alarm end, 180 ms after the row was made
 ```
 
 最初の行と最後の行は `send_test_frames` が出す。最後の行の `echoed` が `sent` と同じなら
@@ -431,7 +453,7 @@ sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 1.772
 
 | 見るところ | 正しいとき |
 |---|---|
-| `alarm` と `window alarm` の `start` と `end` の行 | ボードの行はボードが起動してから数えるので 7.1.3 の PC の行に一定の差を足したものになる。上の例では差が 78 である。ボードが行を作る時刻は送り始めと揃っていないので、1 行程度ずれることがある。ただし窓の警報は行の警報が鳴っている行では鳴らない。PC の 504 行で終わる窓の警報はボードでは行の警報が始まる行で終わる |
+| `alarm` と `window alarm` の `start` と `end` の行 | ボードの行はボードが起動してから数えるので 7.1.2 の PC の行に一定の差を足したものになる。上の例では差が 29 である。ボードが行を作る時刻は送り始めと揃っていないので、1 行程度ずれることがある。ただし窓の警報は行の警報が鳴っている行では鳴らない。PC の 211 行で終わる窓の警報はボードでは行の警報が始まる行で終わる |
 | `alarm start` の ms | 0。警報は窓モデルと保存に待たされていない |
 | `alarm frames stored` と `window alarm frames stored` | その警報の前のフレームを Flash に書き終えた。警報が始まるたびに 1 つ出る |
 | `window model late` | 窓モデルが次の行が来るまでに採点を終えられなかった行。遅れていない行は出ない |
@@ -451,9 +473,9 @@ sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 1.772
 届いた生のフレームが受け取った時刻とともに残る。
 
 ```
-received at 1790740247.228  CFF0180   [8]  01 65 02 00 00 5A 00 FF
-received at 1790740247.404  CFF0480   [8]  65 02 00 00 E2 07 FF FF
-received at 1790740247.497  CFF0280   [8]  66 02 00 00 00 00 FF FF
+received at 1790768485.131  CFF0180   [8]  01 E6 00 00 00 5A 00 FF
+received at 1790768485.309  CFF0480   [8]  E6 00 00 00 E3 07 FF FF
+received at 1790768485.401  CFF0280   [8]  E7 00 00 00 00 00 FF FF
 ```
 
 あとから `board_frames` に読ませると画面と同じ行が出る。
@@ -469,19 +491,19 @@ python3 -m board.application.ai_can_anomaly_detection.board_frames received_fram
 ```sh
 /Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin   # macOS
 ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin   # Ubuntu
-python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093802472877.csv
+python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093901892161.csv --frames guidelines/both_alarms.parquet
 ```
 
 ```
-area 0 sequence 0 window alarm row 613 frames 2018
+area 0 sequence 0 window alarm row 230 frames 2019
   the MAC matches the one computed with the key
-  matches log frames 39540 to 41557
-area 1 sequence 1 alarm row 622 frames 2020
+  matches log frames 14900 to 16918
+area 1 sequence 1 alarm row 239 frames 2019
   the MAC matches the one computed with the key
-  matches log frames 40293 to 42312
-area 2 sequence 2 window alarm row 658 frames 2018
+  matches log frames 15654 to 17672
+area 2 sequence 2 window alarm row 323 frames 2019
   the MAC matches the one computed with the key
-  matches log frames 43322 to 45339
+  matches log frames 22710 to 24728
 ```
 
 記録ごとに次の 3 つが出る。どちらの警報の記録か。MAC が鍵と合うか。送ったログのどのフレームと

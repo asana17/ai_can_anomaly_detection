@@ -53,7 +53,20 @@ time through pyusb on macOS.
 ## Data
 
 The CAN logs are the [University of Turku J1939 truck dataset](https://etsin.fairdata.fi/dataset/7586f24f-c91b-41df-92af-283524de8b3e/data),
-under CC BY 4.0. They are not in this repo.
+under CC BY 4.0. This repo holds only frames and rows cut from a few of them, with attack
+frames this repo put in, in
+[replay_frames.h](board/application/can_path_from_flash/replay_frames.h),
+[raw_rows.h](board/application/rule_check_from_flash/raw_rows.h) and
+the two logs `guidelines/` keeps for the board demo.
+
+| file | log | copied from `asana17/ai_can_anomaly_detection_data` |
+|---|---|---|
+| [both_alarms.parquet](guidelines/both_alarms.parquet) | `part_3/20210204093901892161.csv` with a replay on PGN 61442 | `test_sets/20260925-203444/frames` at `23c3a7cbe8` |
+| [window_alarm.parquet](guidelines/window_alarm.parquet) | `part_3/20210204110654673616.csv` with an all_pgn_replay | `test_sets/20260930-121107/frames` at `20f20e7f37` |
+
+The rows and sets built from every log are in the Hugging Face dataset
+[asana17/ai_can_anomaly_detection_data](https://huggingface.co/datasets/asana17/ai_can_anomaly_detection_data),
+whose card credits the source.
 
 ## Rights
 
