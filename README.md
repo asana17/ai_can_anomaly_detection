@@ -155,12 +155,33 @@ all_pgn_replay, and 0.5 to 0.8 more on the other attacks.
 The all_pgn_replay row is read at `23e21b0`. On the other attacks the nonlinear AE alone
 at 2.0 is read at `c62fba2`, and the pair at `7da0b66`.
 
+### Other nonlinear AE sizes, for reference
+
+The board's nonlinear AE was chosen without looking at any attack, as [Models](#models)
+says, not by this table. It shows how the size changes what the nonlinear AE catches,
+on fold 3 at seed 0 only.
+Each column joins the rules and one nonlinear AE with `k` 8, at the row target in
+[Thresholds](#thresholds).
+
+| attack | worth catching | rules | hidden 32 | hidden 128, the board's | hidden 256 |
+|---|---|---|---|---|---|
+| all_pgn_replay | 1352 | 7, 0.2/h | 7, 0.5/h | 11, 1.2/h | 12, 1.5/h |
+| jittered_frozen_replay | 465 | 128, 0.6/h | 154, 0.8/h | 231, 1.6/h | 252, 1.7/h |
+| matched_replay | 379 | 84, 0.4/h | 108, 0.6/h | 200, 1.4/h | 205, 1.7/h |
+| repeated_replay | 512 | 172, 1.0/h | 191, 1.1/h | 275, 1.9/h | 287, 2.1/h |
+| replay | 1010 | 576, 0.8/h | 700, 0.9/h | 846, 1.9/h | 850, 1.6/h |
+| frozen_replay | 439 | 319, 0.5/h | 334, 0.6/h | 392, 1.4/h | 392, 1.6/h |
+| playback | 453 | 110, 0.6/h | 160, 0.9/h | 267, 1.7/h | 286, 1.9/h |
+| ramp | 194 | 36, 0.3/h | 57, 0.5/h | 111, 1.2/h | 120, 1.5/h |
+
+hidden 32 catches much less, and also raises fewer false alarms on the test logs.
+hidden 256 catches a little more than hidden 128. It is read at `8398816`.
+
 ### Other conv1d sizes, for reference
 
-The board's conv1d is chosen by the rule in [Models](#models), not by this table. It
-shows how the size changes what conv1d catches, on fold 3 at seed 0 only. Each column
-joins the rules, the nonlinear AE and one conv1d, at the targets in
-[Thresholds](#thresholds).
+The board's conv1d was also chosen without looking at any attack, not by this table. It
+is on fold 3 at seed 0 only. Each column joins the rules, the
+nonlinear AE and one conv1d, at the targets in [Thresholds](#thresholds).
 
 | attack | worth catching | h32 k8 | h64 k16, the board's | h128 k32 |
 |---|---|---|---|---|
