@@ -4,8 +4,12 @@
 #include <tk/tkernel.h>
 #include "model.h"
 
-/* A row preprocess built. */
+/*
+ * A row preprocess built, or with gap set the first tick it built none on, which ends the
+ * stretch of rows before and holds no values.
+ */
 typedef struct {
+	BOOL gap;
 	UW no; /* the tick it was built on */
 	UW tick_ms;       /* tk_get_otm's ms when preprocess woke on that tick */
 	UW frames_start; /* the frame ring's place at the tick before */

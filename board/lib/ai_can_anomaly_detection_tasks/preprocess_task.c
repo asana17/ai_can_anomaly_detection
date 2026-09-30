@@ -63,6 +63,7 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 	Row row;
 	UW number = 0, seen = 0, quiet = 0;
 	UW frames_start, frames_end = 0, started;
+	BOOL sent = FALSE; /* a row went on at the tick before */
 	SYSTIM woke;
 
 	while (tk_slp_tsk(TMO_FEVR) == E_OK) {
@@ -72,7 +73,8 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 		/* the frames since the tick before, which a row built now reflects */
 		frames_start = frames_end;
 		frames_end = task->frame_ring->position;
-		if (build_row(task, &seen, &quiet, &row)) {
+		row.gap = !build_row(task, &seen, &quiet, &row);
+		if (!row.gap || sent) {
 			row.no = number;
 			row.tick_ms = woke.lo;
 			row.frames_start = frames_start;
@@ -82,6 +84,7 @@ LOCAL void preprocess_task(INT stacd, void *exinf)
 				break;
 			}
 		}
+		sent = !row.gap;
 		section_cycles_end(SECTION_PREPROCESS, started);
 	}
 	tk_ext_tsk();

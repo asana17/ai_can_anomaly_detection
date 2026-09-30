@@ -88,29 +88,89 @@ LOCAL ModelStatus score_window(ScoreAndDetectByWindowTask *task, float *score,
 	return MODEL_OK;
 }
 
+/* What score and detect by window carries from one row to the next. */
+typedef struct {
+	DetectByRow state;
+	INT ringing;
+	UW last_count_since_gap; /* row_count_since_gap of the last row taken */
+	bool taken_before;       /* a row has been taken */
+} WindowProgress;
+
 /*
- * Add each row read to the window, and score the window when it is complete. A row is
- * flagged when the window ending on it scores above the threshold, and a row no window
- * ends on is not. The window alarm rings while enough of the last rows are flagged, as
- * on the PC. On rows the alarm by row rings on, the window is not scored and the window
- * alarm stays silent.
+ * End the stretch of rows at a gap, where the PC's window alarm ends as its count starts
+ * again.
  */
+LOCAL void end_window_rows(ScoreAndDetectByWindowTask *task, WindowProgress *progress,
+	CONST RowRingEntry *entry)
+{
+	detect_by_row_clear_ring(&progress->state);
+	if (progress->ringing) {
+		report_window_alarm_change(task->window_report_input, entry, 0);
+		progress->ringing = 0;
+	}
+}
+
+/*
+ * Add the row to the window, and score the window when it is complete. A row is flagged
+ * when the window ending on it scores above the threshold, and a row no window ends on is
+ * not. The window alarm rings while enough of the last rows are flagged, as on the PC. On
+ * rows the alarm by row rings on, the window is not scored and the window alarm stays
+ * silent. more_in_ring tells that a row read with this one waits after it.
+ */
+LOCAL void score_and_detect_window_row(ScoreAndDetectByWindowTask *task,
+	WindowProgress *progress, CONST RowRingEntry *entry, bool more_in_ring)
+{
+	INT alarmed;
+	bool flagged;
+	float score;
+	uint32_t cycles;
+	UW missing_rows;
+	bool waiting; /* the next row came before this one was done */
+
+	missing_rows = missing_rows_before(entry, progress->taken_before,
+		progress->last_count_since_gap);
+	row_ring_as_window_push(&task->row_ring_as_window, entry);
+	flagged = false;
+	if (row_ring_as_window_is_complete(&task->row_ring_as_window)
+		&& !entry->alarm_ringing) {
+		if (score_window(task, &score, &cycles) == MODEL_OK) {
+			section_cycles_add(SECTION_WINDOW_MODEL, cycles);
+			flagged = detect_by_row_flagged(score, WINDOW_THRESHOLD_SCORE, false);
+		} else {
+			tk_ext_tsk();
+		}
+	}
+	progress->last_count_since_gap = entry->row_count_since_gap;
+	progress->taken_before = true;
+	waiting = more_in_ring || score_and_detect_by_window_input_has_rows(
+		task->score_and_detect_by_window_input);
+	if (waiting || missing_rows > 0u) {
+		report_backlog(task->window_backlog_input, entry->no, missing_rows);
+	}
+	detect_by_row_push_flag(&progress->state, entry->no, flagged);
+	alarmed = detect_by_row_alarmed(&progress->state) && !entry->alarm_ringing;
+	if (alarmed != progress->ringing) {
+		report_window_alarm_change(task->window_report_input, entry, alarmed);
+		progress->ringing = alarmed;
+		if (alarmed) {
+			pass_window_alarm_frame_positions(task->copy_window_alarm_frames_input,
+				entry);
+		}
+	}
+}
+
+/* Take each row read, or the gap after the last row. */
 LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 {
 	ScoreAndDetectByWindowTask *task = exinf;
-	DetectByRow state;
+	WindowProgress progress;
 	CONST RowRingEntry *entry;
-	INT ringing = 0, alarmed;
-	bool flagged;
-	UW index;
-	float score;
-	uint32_t cycles;
-	UW missing_rows, started;
-	UW last_count_since_gap = 0; /* row_count_since_gap of the last row taken */
-	bool taken_before = false;   /* a row has been taken */
-	bool waiting;                /* the next row came before this one was done */
+	UW index, started;
 
-	detect_by_row_init(&state, MIN_FLAGGED_WINDOWS_FOR_ALARM);
+	detect_by_row_init(&progress.state, MIN_FLAGGED_WINDOWS_FOR_ALARM);
+	progress.ringing = 0;
+	progress.last_count_since_gap = 0;
+	progress.taken_before = false;
 	row_ring_as_window_clear(&task->row_ring_as_window);
 	for (;;) {
 		score_and_detect_by_window_input_read(task->score_and_detect_by_window_input,
@@ -118,36 +178,11 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 		for (index = 0; index < row_ring_count(&task->row_ring); index++) {
 			started = section_cycles_start();
 			entry = row_ring_entry(&task->row_ring, index);
-			missing_rows = missing_rows_before(entry, taken_before, last_count_since_gap);
-			row_ring_as_window_push(&task->row_ring_as_window, entry);
-			flagged = false;
-			if (row_ring_as_window_is_complete(&task->row_ring_as_window)
-				&& !entry->alarm_ringing) {
-				if (score_window(task, &score, &cycles) == MODEL_OK) {
-					section_cycles_add(SECTION_WINDOW_MODEL, cycles);
-					flagged = detect_by_row_flagged(score, WINDOW_THRESHOLD_SCORE,
-						false);
-				} else {
-					tk_ext_tsk();
-				}
-			}
-			last_count_since_gap = entry->row_count_since_gap;
-			taken_before = true;
-			waiting = index + 1u < row_ring_count(&task->row_ring)
-				|| score_and_detect_by_window_input_has_rows(
-					task->score_and_detect_by_window_input);
-			if (waiting || missing_rows > 0u) {
-				report_backlog(task->window_backlog_input, entry->no, missing_rows);
-			}
-			detect_by_row_push_flag(&state, entry->no, flagged);
-			alarmed = detect_by_row_alarmed(&state) && !entry->alarm_ringing;
-			if (alarmed != ringing) {
-				report_window_alarm_change(task->window_report_input, entry, alarmed);
-				ringing = alarmed;
-				if (alarmed) {
-					pass_window_alarm_frame_positions(
-						task->copy_window_alarm_frames_input, entry);
-				}
+			if (entry->gap) {
+				end_window_rows(task, &progress, entry);
+			} else {
+				score_and_detect_window_row(task, &progress, entry,
+					index + 1u < row_ring_count(&task->row_ring));
 			}
 			section_cycles_end(SECTION_SCORE_AND_DETECT_BY_WINDOW, started);
 		}

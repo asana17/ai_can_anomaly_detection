@@ -10,6 +10,7 @@
 
 /* One row in a RowRing, with what the windowed model needs about it. */
 typedef struct {
+	bool gap; /* no row on this tick, which ends the stretch of rows before, no values */
 	uint32_t no; /* the row's number, counting ticks */
 	uint32_t tick_ms; /* tk_get_otm's ms when preprocess woke on its tick */
 	float physical[SIGNAL_COUNT];

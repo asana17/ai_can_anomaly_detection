@@ -49,6 +49,7 @@ LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST R
 {
 	RowRingEntry entry;
 
+	entry.gap = false;
 	entry.no = row->no;
 	entry.tick_ms = row->tick_ms;
 	memcpy(entry.physical, row->physical, sizeof(entry.physical));
@@ -59,57 +60,111 @@ LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST R
 	score_and_detect_by_window_input_write(window_input, &entry);
 }
 
+/* Hand score and detect by window the gap on row, so its window alarm ends there too. */
+LOCAL void pass_gap_to_window(ScoreAndDetectByWindowInput *window_input, CONST Row *row)
+{
+	RowRingEntry entry = {0};
+
+	entry.gap = true;
+	entry.no = row->no;
+	entry.tick_ms = row->tick_ms;
+	score_and_detect_by_window_input_write(window_input, &entry);
+}
+
+/* What score and detect by row carries from one row to the next. */
+typedef struct {
+	DetectByRow state;
+	RecentRows rows_before; /* the rows before the row, back to the last gap */
+	INT ringing;
+	UW last_no;
+	UW row_count_since_gap;
+	UW frames_starts[ALARM_FRAMES_ROWS]; /* each recent row's frames_start */
+} RowProgress;
+
+/*
+ * End the stretch of rows at a gap, where the PC's alarms end as their counts start again.
+ */
+LOCAL void end_rows(ScoreAndDetectByRowTask *task, RowProgress *progress, CONST Row *row)
+{
+	detect_by_row_clear_ring(&progress->state);
+	if (progress->ringing) {
+		report_alarm_change(task->report_input, row, 0);
+		progress->ringing = 0;
+	}
+	pass_gap_to_window(task->score_and_detect_by_window_input, row);
+}
+
+/*
+ * Score the row, report where the alarm starts and ends, and pass the row on to score and
+ * detect by window.
+ */
+LOCAL ModelStatus score_and_detect_row(ScoreAndDetectByRowTask *task,
+	RowProgress *progress, CONST Row *row)
+{
+	ScoringRow scored;
+	INT alarmed;
+	bool flagged;
+	AlarmFramePositions positions;
+	ModelStatus error;
+
+	/*
+	 * A row whose number is not one more than the last row's starts again from 0.
+	 * Score and detect by window places its windows by this, as the PC does.
+	 */
+	if (recent_rows_count(&progress->rows_before) > 0u
+		&& row->no == progress->last_no + 1u) {
+		progress->row_count_since_gap++;
+	} else {
+		progress->row_count_since_gap = 0;
+		recent_rows_clear(&progress->rows_before);
+	}
+	progress->last_no = row->no;
+	progress->frames_starts[row->no % ALARM_FRAMES_ROWS] = row->frames_start;
+	alarm_frame_positions(row, progress->frames_starts, progress->row_count_since_gap,
+		&positions);
+	error = scoring_row(row->physical, &progress->rows_before, instant_model_mean,
+		instant_model_std, MIN_SPEED, &scored);
+	if (error != MODEL_OK) {
+		return error;
+	}
+	section_cycles_add(SECTION_ROW_MODEL, scored.cycles);
+	flagged = detect_by_row_flagged(scored.score, THRESHOLD_SCORE, scored.rule_hit);
+	detect_by_row_push_flag(&progress->state, row->no, flagged);
+	alarmed = detect_by_row_alarmed(&progress->state);
+	if (alarmed != progress->ringing) {
+		report_alarm_change(task->report_input, row, alarmed);
+		progress->ringing = alarmed;
+		if (alarmed) {
+			copy_alarm_frames_input_write(task->copy_alarm_frames_input, &positions);
+		}
+	}
+	pass_row_to_window(task->score_and_detect_by_window_input, row, progress->ringing,
+		progress->row_count_since_gap, &positions);
+	recent_rows_push(&progress->rows_before, row->physical);
+	return MODEL_OK;
+}
+
 /* Score each row and report where alarms start and end. */
 LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 {
 	ScoreAndDetectByRowTask *task = exinf;
-	DetectByRow state;
-	ScoringRow scored;
+	RowProgress progress;
 	Row row;
-	RecentRows rows_before; /* the rows before row, back to the last gap */
-	INT ringing = 0, alarmed;
-	bool flagged;
-	UW last_no = 0, row_count_since_gap = 0, started;
-	UW frames_starts[ALARM_FRAMES_ROWS]; /* each recent row's frames_start */
-	AlarmFramePositions positions;
+	UW started;
 
-	detect_by_row_init(&state, MIN_FLAGGED_FOR_ALARM);
-	recent_rows_clear(&rows_before);
+	detect_by_row_init(&progress.state, MIN_FLAGGED_FOR_ALARM);
+	recent_rows_clear(&progress.rows_before);
+	progress.ringing = 0;
+	progress.last_no = 0;
+	progress.row_count_since_gap = 0;
 	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
 		== E_OK) {
 		started = section_cycles_start();
-		/*
-		 * A row whose number is not one more than the last row's starts again from 0.
-		 * Score and detect by window places its windows by this, as the PC does.
-		 */
-		if (recent_rows_count(&rows_before) > 0u && row.no == last_no + 1u) {
-			row_count_since_gap++;
-		} else {
-			row_count_since_gap = 0;
-			recent_rows_clear(&rows_before);
-		}
-		last_no = row.no;
-		frames_starts[row.no % ALARM_FRAMES_ROWS] = row.frames_start;
-		alarm_frame_positions(&row, frames_starts, row_count_since_gap, &positions);
-		if (scoring_row(row.physical, &rows_before, instant_model_mean,
-			instant_model_std, MIN_SPEED, &scored) != MODEL_OK) {
+		if (row.gap) {
+			end_rows(task, &progress, &row);
+		} else if (score_and_detect_row(task, &progress, &row) != MODEL_OK) {
 			break;
 		}
-		section_cycles_add(SECTION_ROW_MODEL, scored.cycles);
-		flagged = detect_by_row_flagged(scored.score, THRESHOLD_SCORE, scored.rule_hit);
-		detect_by_row_push_flag(&state, row.no, flagged);
-		alarmed = detect_by_row_alarmed(&state);
-		if (alarmed != ringing) {
-			report_alarm_change(task->report_input, &row, alarmed);
-			ringing = alarmed;
-			if (alarmed) {
-				copy_alarm_frames_input_write(task->copy_alarm_frames_input,
-					&positions);
-			}
-		}
-		pass_row_to_window(task->score_and_detect_by_window_input, &row,
-			ringing, row_count_since_gap, &positions);
-		recent_rows_push(&rows_before, row.physical);
 		section_cycles_end(SECTION_SCORE_AND_DETECT_BY_ROW, started);
 	}
 	tk_ext_tsk();
@@ -121,7 +176,10 @@ EXPORT ER score_and_detect_by_row_task_create(ScoreAndDetectByRowTask *task,
 	ScoreAndDetectByWindowInput *score_and_detect_by_window_input,
 	CopyAlarmFramesInput *copy_alarm_frames_input)
 {
-	/* The stack holds rows_before, RECENT_ROWS_ROWS rows of SIGNAL_COUNT floats. */
+	/*
+	 * The stack holds RowProgress, whose rows_before is RECENT_ROWS_ROWS rows of
+	 * SIGNAL_COUNT floats.
+	 */
 	T_CTSK ctsk = {
 		.itskpri = priority, .stksz = 3072, .task = score_and_detect_by_row_task,
 		.exinf = task, .tskatr = TA_HLNG | TA_RNG3,
