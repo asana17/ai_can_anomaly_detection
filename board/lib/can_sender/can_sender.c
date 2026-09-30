@@ -1,6 +1,7 @@
 #include <tk/tkernel.h>
 #include "stm32h5xx_hal.h"
 #include "can_sender.h"
+#include "section_cycles.h"
 
 /* The number of the transmit buffer whose bit HAL gives, FDCAN_TX_BUFFER0 as 0. */
 LOCAL UW buffer_number_from_bit(UW bit)
@@ -39,9 +40,10 @@ EXPORT ER can_sender_create(CanSender *sender, FDCAN_HandleTypeDef *can)
 EXPORT void can_sender_send(CanSender *sender,
 	CONST FDCAN_TxHeaderTypeDef *header, CONST UB *data)
 {
-	UW buffer, bit;
+	UW buffer, bit, started;
 
 	tk_loc_mtx(sender->mutex, TMO_FEVR);
+	started = section_cycles_start();
 	for (buffer = 0; buffer < CAN_SENDER_TX_BUFFERS; buffer++) {
 		bit = 1u << buffer;
 		if (sender->buffer_ids[buffer] == header->Identifier
@@ -53,5 +55,6 @@ EXPORT void can_sender_send(CanSender *sender,
 		bit = HAL_FDCAN_GetLatestTxFifoQRequestBuffer(sender->can);
 		sender->buffer_ids[buffer_number_from_bit(bit)] = header->Identifier;
 	}
+	section_cycles_end(SECTION_CAN_SEND, started);
 	tk_unl_mtx(sender->mutex);
 }

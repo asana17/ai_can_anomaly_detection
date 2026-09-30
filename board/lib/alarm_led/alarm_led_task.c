@@ -1,6 +1,7 @@
 #include <tk/tkernel.h>
 #include "main.h"
 #include "alarm_led_task.h"
+#include "section_cycles.h"
 
 #define STEP_MS 125     /* the fast blink's half period */
 #define SLOW_STEPS 4u   /* steps in the slow blink's half period */
@@ -41,10 +42,11 @@ LOCAL void alarm_led_task(INT stacd, void *exinf)
 {
 	AlarmLedTask *task = exinf;
 	Report report, window_report;
-	UW step = 0, alarm_left = 0, window_alarm_left = 0;
+	UW step = 0, alarm_left = 0, window_alarm_left = 0, started;
 	BOOL alarm, window_alarm;
 
 	for (;;) {
+		started = section_cycles_start();
 		report_input_peek(task->report_input, &report);
 		report_input_peek(task->window_report_input, &window_report);
 		alarm = shown(report.alarm, &alarm_left);
@@ -55,6 +57,7 @@ LOCAL void alarm_led_task(INT stacd, void *exinf)
 			BSP_LED_Off(LED_GREEN);
 		}
 		step++;
+		section_cycles_end(SECTION_ALARM_LED, started);
 		tk_dly_tsk(STEP_MS);
 	}
 }
