@@ -81,6 +81,32 @@ longest window that fits the 100 ms period at 32 MHz.
 No classifier is used. It needs labelled attacks, and the only attacks are the synthetic
 ones, so it would learn those instead of unknown anomalies.
 
+### Results
+
+The window model is worth its share of the budget only if the rows cannot catch as much
+with it. So the rows alone at a target of 2.0 an hour are set against the rows at 1.5
+with the window model at 0.5. Both use the rules, the row autoencoder and k 10. The
+counts are summed over folds 0 to 3 at seed 0.
+
+| attack | worth catching | rows alone | rows and window model |
+|---|---|---|---|
+| jittered_frozen_replay | 1992 | 1030, 2.6/h | 1078, 3.1/h |
+| matched_replay | 1557 | 791, 2.5/h | 857, 3.3/h |
+| repeated_replay | 2174 | 1173, 2.8/h | 1243, 3.4/h |
+| replay | 3788 | 3141, 2.5/h | 3191, 3.1/h |
+| frozen_replay | 1889 | 1658, 2.4/h | 1653, 3.0/h |
+| playback | 1892 | 1091, 2.6/h | 1069, 3.2/h |
+| ramp | 779 | 417, 2.2/h | 400, 2.8/h |
+
+Each cell is the attacks caught and the false alarms an hour on the test logs. The
+window model adds 48 to 70 on the four attacks that change how signals move over time.
+It adds nothing where a value itself goes wrong. On the test logs the pair raises about
+0.6 more false alarms an hour than the rows alone.
+
+[detection_table](evaluate/detection_table.py) made both columns from
+`asana17/ai_can_anomaly_detection_runs`. The rows alone are read at `c62fba2`, and the
+rows and window model at `7da0b66`.
+
 ## Priorities
 
 The window model is the heaviest, so it runs last. When an alarm starts, the frames
