@@ -22,7 +22,7 @@ generates the drivers and CMSIS there.
 | [μT-Kernel 3.0 BSP2](https://github.com/tron-forum/mtk3_bsp2) with μT-Kernel 3.0 | `1ab52cc`, μT-Kernel v3.00.07, with [board/patches](board/patches) applied | Ken Sakamura | cloned from GitHub by `board/prepare` | the kernel every board application runs on | T-License 2.2 |
 | [Unity](https://github.com/ThrowTheSwitch/Unity) | `b6763fb` | Mike Karlesky, Mark VanderVoord and Greg Williams | cloned from GitHub by `board/prepare` | the board unit tests | MIT |
 | STM32H5xx HAL and BSP STM32H5xx_Nucleo | STM32Cube FW_H5 V1.6.0 | STMicroelectronics | STM32Cube FW_H5 from STM32CubeMX | drivers | BSD-3-Clause |
-| CMSIS and CMSIS Device | STM32Cube FW_H5 V1.6.0 | Arm Limited for CMSIS, STMicroelectronics for CMSIS Device | STM32Cube FW_H5 from STM32CubeMX | Cortex-M33 core and device headers | Apache-2.0 |
+| CMSIS and CMSIS Device | STM32Cube FW_H5 V1.6.0 | Arm Limited for CMSIS, Arm Limited and STMicroelectronics for CMSIS Device | STM32Cube FW_H5 from STM32CubeMX | Cortex-M33 core and device headers | Apache-2.0 |
 | mbed-crypto, `md.c`, `platform.c`, `platform_util.c` and `sha256.c` and its headers | Mbed TLS 3.6.4 in STM32Cube FW_H5 V1.6.0 | The Mbed TLS Contributors | STM32Cube FW_H5 from STM32CubeMX | the HMAC-SHA256 on the alarm frames | Apache-2.0 |
 | ST Edge AI Core runtime, `NetworkRuntime1201_CM33_GCC.a` and its headers | 4.0.1 | STMicroelectronics | ST Edge AI Core from st.com | runs the model on the board | STMicroelectronics SLA0104 |
 
