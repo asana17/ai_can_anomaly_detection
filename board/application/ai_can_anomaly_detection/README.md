@@ -303,13 +303,13 @@ On 2026-09-30 at `d5ee35a`, from a reset through the Mac sending
 
 ### Size
 
-`arm-none-eabi-size` of the image built from `de0c849`.
+`arm-none-eabi-size` of the image built from `05d0c87`.
 
 | what | bytes |
 |---|---|
-| text | 119,312 |
+| text | 120,588 |
 | data | 6,104 |
-| bss | 247,332 |
+| bss | 248,116 |
 
 The bss holds the kernel's control blocks in `.noinit`, 9,304 bytes, and the start
 stack and heap, 1,536 bytes. The largest objects in it, from the map:
@@ -318,7 +318,7 @@ stack and heap, 1,536 bytes. The largest objects in it, from the map:
 |---|---|
 | frame ring | 65,548 |
 | the alarm frames record in the copy task, the store's two inputs and the store task | 131,092 |
-| window model runtime, window task and its input | 37,628 |
+| window model runtime, window task and its input | 38,228 |
 | row model runtime | 640 |
 
 The kernel gives the task stacks, the row message buffer and the MAC's memory pool from
@@ -327,11 +327,11 @@ areas walked from `knl_imacb`.
 
 | what | bytes |
 |---|---|
-| 13 areas in use, 11 task stacks, the row message buffer and the MAC pool | 17,632 |
-| area headers | 112 |
-| free | 8,472 |
+| 14 areas in use, 12 task stacks, the row message buffer and the MAC pool | 18,800 |
+| area headers | 120 |
+| free | 6,512 |
 
-Of the 278,528 bytes of RAM, 8,472 are free.
+Of the 278,528 bytes of RAM, 6,512 are free.
 
 ### Current
 
