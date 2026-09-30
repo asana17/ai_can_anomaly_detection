@@ -79,15 +79,16 @@ window and shows what time alone buys, so the window autoencoder has to do bette
 it.
 
 The row autoencoder uses `hidden` 128 and `k` 8, chosen without looking at any attack.
-`hidden` 128 because the board runs the heaviest model, which shows its load best. At
-`k` 2 it rebuilds normal rows poorly. At `k` 16 only one of the 17 dimensions is
-dropped, so a row passes through almost unchanged.
+Most sizes fit the board, so `hidden` was simply set to 128. At `k` 2 it rebuilds
+normal rows poorly. At `k` 16 only one of the 17 dimensions is dropped, so a row passes
+through almost unchanged.
 [fit](models/docs/fit.md#the-models-this-repository-fits) gives the thresholds behind
 this.
 
 The window autoencoder uses 1D convolutions, which share weights along time. A long
-window then still fits in the board's Flash. At `hidden` 64 and `k` 16, 50 rows is the
-longest window that fits the 100 ms period at 32 MHz.
+window then still fits in the board's Flash. It uses `hidden` 64 and `k` 16, chosen
+without looking at any attack. They were simply set to a size that fits the board. At
+these, 50 rows is the longest window that fits the 100 ms period at 32 MHz.
 
 No classifier is used. It needs labelled attacks, and the only attacks are the synthetic
 ones, so it would learn those instead of unknown anomalies.
