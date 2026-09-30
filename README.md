@@ -33,14 +33,19 @@ moment or a bias that grows.
 
 ### Alarms
 
-Rows and windows raise alarms in different ways.
+Rows and windows raise alarms in different ways, because one anomaly lasts a different
+time in each. Take a signal that jumps and then holds the new value.
 
-- Rows: the alarm is raised when all of the last 10 rows are suspicious, 10 in a row.
-  A normal row now and then looks wrong too, and one such row alone raises nothing.
-- Windows: the alarm is on while one of the last 10 rows has a suspicious window. The
-  synthetic attacks change how the signals move over a short time, so they show up in
-  only a few windows. This is a choice made for those attacks, not a property of window
-  models.
+- Rows: the row model scores how the signals of the current row relate. The broken
+  relation stays in the rows that follow. The alarm is raised when all of the last 10
+  rows are suspicious, 10 in a row. This checks that the anomaly lasts, and a normal
+  row that now and then looks wrong raises nothing.
+- Windows: the window model is given the changes from row to row over the window and
+  scores how well it rebuilds the change into the last row. The jump shows up as a
+  change, but once the value holds the changes are normal again. The window can still
+  score high for a while since the jump is in its past rows, but 10 in a row may not be
+  reached. So one suspicious window is enough, and the alarm is on while one of the last
+  10 rows has a suspicious window.
 
 ### Thresholds
 
