@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: asana17 <kei17.kaight084@gmail.com>
+Date: Wed, 30 Sep 2026 18:40:39 +0900
+Subject: stm32_cube: sleep in low_pow
+
+---
+ sysdepend/stm32_cube/power_save.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/sysdepend/stm32_cube/power_save.c b/sysdepend/stm32_cube/power_save.c
+index 4f7f0ca..3b419ca 100644
+--- a/sysdepend/stm32_cube/power_save.c
++++ b/sysdepend/stm32_cube/power_save.c
+@@ -24,9 +24,21 @@
+ 
+ /*
+  * Switch to power-saving mode
++ *	The dispatcher calls this with BASEPRI masking the interrupts, and an interrupt
++ *	masked by BASEPRI does not wake WFI. So PRIMASK masks them instead while waiting.
++ *	Any interrupt then wakes WFI, and is taken once BASEPRI is cleared.
+  */
+ EXPORT void low_pow( void )
+ {
++	UW	basepri;
++
++	basepri = get_basepri();
++	Asm("cpsid i");
++	set_basepri(0);
++	Asm("dsb");
++	Asm("wfi");
++	set_basepri(basepri);
++	Asm("cpsie i");
+ }
+ 
+ /*
