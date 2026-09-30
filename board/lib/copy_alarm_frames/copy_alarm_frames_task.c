@@ -1,5 +1,6 @@
 #include <tk/tkernel.h>
 #include "copy_alarm_frames_task.h"
+#include "section_cycles.h"
 
 /*
  * Copy the frames from start to end, the latest ALARM_FRAMES_MAX of them, oldest first.
@@ -32,10 +33,12 @@ LOCAL void copy_alarm_frames_task(INT stacd, void *exinf)
 	CopyAlarmFramesTask *task = exinf;
 	AlarmFramePositions positions;
 	StoreAlarmFramesInput *store_input;
+	UW started;
 
 	for (;;) {
 		copy_alarm_frames_input_read(task->copy_alarm_frames_input,
 			task->copy_window_alarm_frames_input, &positions);
+		started = section_cycles_start();
 		task->alarm_frames.no = positions.no;
 		task->alarm_frames.alarm = positions.alarm;
 		copy_frames(task->frame_ring, positions.frames_start, positions.frames_end,
@@ -45,6 +48,7 @@ LOCAL void copy_alarm_frames_task(INT stacd, void *exinf)
 			store_input = task->store_window_alarm_frames_input;
 		}
 		store_alarm_frames_input_write(store_input, &task->alarm_frames);
+		section_cycles_end(SECTION_COPY_ALARM_FRAMES, started);
 	}
 }
 

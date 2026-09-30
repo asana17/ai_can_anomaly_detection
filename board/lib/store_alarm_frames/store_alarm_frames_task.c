@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <tk/tkernel.h>
 #include "store_alarm_frames_task.h"
+#include "section_cycles.h"
 
 /*
  * Put the MAC on each alarm frames record and write it to Flash. When no sector may be
@@ -16,7 +17,7 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 	StoreAlarmFramesInput *alarm_input = task->store_alarm_frames_input; /* read next */
 	StoreAlarmFramesInput *window_alarm_input = task->store_window_alarm_frames_input;
 	StoredRecord stored_record;
-	UW size, area;
+	UW size, area, started;
 	ER error;
 
 	for (;;) {
@@ -26,6 +27,7 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 		if (error < E_OK && error != E_TMOUT) {
 			break;
 		}
+		started = section_cycles_start();
 		wait = TMO_FEVR;
 		alarm_input = task->store_alarm_frames_input;
 		window_alarm_input = task->store_window_alarm_frames_input;
@@ -57,6 +59,7 @@ LOCAL void store_alarm_frames_task(INT stacd, void *exinf)
 				stored_record_input_write(task->stored_record_input, &stored_record);
 			}
 		}
+		section_cycles_end(SECTION_STORE_ALARM_FRAMES, started);
 	}
 	tk_ext_tsk();
 }
