@@ -1,3 +1,4 @@
+#include <string.h>
 #include "stm32h5xx.h"
 #include "window_model_run.h"
 #include "window_model.h"
@@ -10,10 +11,20 @@ _Static_assert(STAI_WINDOW_MODEL_IN_1_SIZE == WINDOW_MODEL_VALUES,
 	"window model input must hold one window");
 _Static_assert(STAI_WINDOW_MODEL_OUT_1_SIZE == WINDOW_MODEL_VALUES,
 	"window model output must hold one window");
+
+/* An int8 model comes with the scale of its input, a float one does not. */
+#ifdef STAI_WINDOW_MODEL_IN_1_SCALE
+#define WINDOW_MODEL_INT8
 _Static_assert(STAI_WINDOW_MODEL_IN_1_FORMAT == STAI_FORMAT_S8,
 	"window model input must be int8");
 _Static_assert(STAI_WINDOW_MODEL_OUT_1_FORMAT == STAI_FORMAT_S8,
 	"window model output must be int8");
+#else
+_Static_assert(STAI_WINDOW_MODEL_IN_1_FORMAT == STAI_FORMAT_FLOAT32,
+	"window model input must be float");
+_Static_assert(STAI_WINDOW_MODEL_OUT_1_FORMAT == STAI_FORMAT_FLOAT32,
+	"window model output must be float");
+#endif
 
 /* ST Edge AI requires aligned context and activation storage. */
 typedef struct {
@@ -28,6 +39,7 @@ typedef struct {
 
 static WindowModelRuntime runtime;
 
+#ifdef WINDOW_MODEL_INT8
 /* value on the input's int8 grid, rounded to the nearest step and held in int8 */
 static int8_t quantized(float value)
 {
@@ -47,6 +59,7 @@ static int8_t quantized(float value)
 	}
 	return (int8_t)rounded;
 }
+#endif
 
 ModelStatus window_model_init(void)
 {
@@ -78,22 +91,31 @@ ModelStatus window_model_init(void)
 ModelStatus window_model_run(const float input[WINDOW_MODEL_VALUES],
 	float output[WINDOW_MODEL_VALUES], uint32_t *cycles)
 {
+	uint32_t started;
+#ifdef WINDOW_MODEL_INT8
 	int8_t *in = (int8_t *)runtime.inputs[0];
 	const int8_t *out = (const int8_t *)runtime.outputs[0];
-	uint32_t started, index;
+	uint32_t index;
 
 	for (index = 0; index < WINDOW_MODEL_VALUES; index++) {
 		in[index] = quantized(input[index]);
 	}
+#else
+	memcpy(runtime.inputs[0], input, WINDOW_MODEL_VALUES * sizeof(float));
+#endif
 	/* Measure synchronous inference only. */
 	started = DWT->CYCCNT;
 	if (stai_window_model_run(runtime.context, STAI_MODE_SYNC) != STAI_SUCCESS) {
 		return MODEL_ERROR_RUN;
 	}
 	*cycles = DWT->CYCCNT - started;
+#ifdef WINDOW_MODEL_INT8
 	for (index = 0; index < WINDOW_MODEL_VALUES; index++) {
 		output[index] = (float)(out[index] - STAI_WINDOW_MODEL_OUT_1_ZERO_POINT)
 			* STAI_WINDOW_MODEL_OUT_1_SCALE;
 	}
+#else
+	memcpy(output, runtime.outputs[0], WINDOW_MODEL_VALUES * sizeof(float));
+#endif
 	return MODEL_OK;
 }
