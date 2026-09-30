@@ -3,8 +3,8 @@ log's frames.
 
     python3 -m board.application.ai_can_anomaly_detection.expected LOG [--frames FRAMES]
 
-LOG is a log of FRAMES, `fetched/frames/frames.parquet` unless given, as `attacked.json`
-names it. `fetch.py` downloads both. FRAMES can be a log `guidelines/` keeps. Row 1
+LOG is a log of FRAMES, what `fetch.py` downloads unless given, as the `injected.json`
+beside it names it. FRAMES can be a log `guidelines/` keeps. Row 1
 is the row 0.1 s after the first frame, so the rows count from when sending starts.
 """
 

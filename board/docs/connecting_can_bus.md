@@ -134,9 +134,9 @@ This is read from the port's source and not yet checked on the board.
 
 ## Fetching the frames to send
 
-The frames to send are attacked test frames. They are in the dataset repository on
-Hugging Face, `asana17/ai_can_anomaly_detection_data`, which needs no login, as
-`frames/frames.parquet` with each log's attack in `frames/attacked.json`. The PC answer
+The frames to send are the frames of one test set in the dataset repository on Hugging
+Face, `asana17/ai_can_anomaly_detection_data`, which needs no login, with each log's
+attack in its `injected.json`. The PC answer
 runs the float model in `board/lib/deployed_model/`, the one the board's C was generated
 from.
 
@@ -165,7 +165,7 @@ Open the ST-LINK virtual COM port at 115200 bps. The board prints `reading FDCAN
 `FDCAN start error` after it means FDCAN1 did not start. The alarms go out on CAN, not
 over UART.
 
-Pick a log from `attacked.json`, print the PC answer for it, and send it:
+Pick a log from `injected.json`, print the PC answer for it, and send it:
 
 ```sh
 python3 -m board.application.ai_can_anomaly_detection.expected part_3/20210204093505241905.csv

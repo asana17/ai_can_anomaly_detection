@@ -136,8 +136,9 @@ Each runs on the PC from the top of the repo.
 
 ### fetch
 
-[fetch](fetch.py) downloads the frames of every attacked test log, about 2 GB, into
-`fetched/frames/`. No login is needed.
+[fetch](fetch.py) downloads the frames of every log of one test set, matched_replay on
+the test logs of the log split both models were fit on, about 2 GB, into
+`fetched/test_sets/20260927-081801/`. No login is needed.
 
 ```sh
 python3 -m board.application.ai_can_anomaly_detection.fetch
@@ -145,11 +146,11 @@ python3 -m board.application.ai_can_anomaly_detection.fetch
 
 | file | holds |
 |---|---|
-| `frames.parquet` | the frames, with the log each came from in `log` |
-| `attacked.json` | the attack put in each log, the log in `log` and the PGN in `pgn` |
+| `frames/` | parquet files of the frames, with the log each came from in `log` |
+| `injected.json` | the attack put in each log, the log in `log`, the PGN in `pgn` and its epoch seconds in `start` and `stop` |
 
-The tools below read a log from `frames.parquet` unless `--frames` names another parquet
-file with the same columns.
+The tools below read a log from `frames/` unless `--frames` names another parquet file
+or folder with the same columns.
 
 ### expected
 
