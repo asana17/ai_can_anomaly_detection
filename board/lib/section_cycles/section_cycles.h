@@ -4,8 +4,8 @@
 #include <tk/tkernel.h>
 
 /*
- * The sections whose fewest, most and total DWT cycles are kept. Each is written from
- * one interrupt or task, or under one mutex, so no write cuts into another.
+ * The sections whose fewest and most DWT cycles are kept. Each is written from one
+ * interrupt or task, or under one mutex, so no write cuts into another.
  */
 typedef enum {
 	SECTION_RECEIVE,                    /* one FDCAN receive callback */
@@ -25,7 +25,6 @@ typedef enum {
 typedef struct {
 	UW fewest;
 	UW most;
-	UD total; /* over every time the section ran, for its share of the CPU */
 } SectionCycles;
 
 /* Read with the programmer while the board runs. */
@@ -44,14 +43,14 @@ IMPORT void section_cycles_clear(void);
 IMPORT UW section_cycles_start(void);
 
 /**
- * @brief Add the cycles since @p started to @p section.
+ * @brief Keep the cycles since @p started if they are the fewest or most of @p section.
  * @param[in] section The section that ends.
  * @param[in] started What section_cycles_start() returned when it began.
  */
 IMPORT void section_cycles_end(Section section, UW started);
 
 /**
- * @brief Add @p cycles to @p section.
+ * @brief Keep @p cycles if they are the fewest or most of @p section.
  * @param[in] section The section measured.
  * @param[in] cycles The DWT cycles it took.
  */

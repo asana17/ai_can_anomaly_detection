@@ -11,7 +11,6 @@ EXPORT void section_cycles_clear(void)
 	for (i = 0; i < SECTION_COUNT; i++) {
 		section_cycles[i].fewest = 0xFFFFFFFFu;
 		section_cycles[i].most = 0;
-		section_cycles[i].total = 0;
 	}
 }
 
@@ -33,5 +32,4 @@ EXPORT void section_cycles_add(Section section, UW cycles)
 	if (cycles > section_cycles[section].most) {
 		section_cycles[section].most = cycles;
 	}
-	section_cycles[section].total += cycles;
 }

@@ -214,8 +214,9 @@ row 239: alarm start, 0 ms after the row was made
 ### read_alarm_frames
 
 [read_alarm_frames](read_alarm_frames.py) prints the records in a copy of bank 2 read
-while the board runs, and whether each MAC matches the demo key. With `--log` it prints
-where each record's frames are in that log instead of the frames.
+while the board runs, after sending ends as for read_section_cycles, and whether each MAC
+matches the demo key. With `--log` it prints where each record's frames are in that log
+instead of the frames.
 
 ```sh
 STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
@@ -232,11 +233,12 @@ area 0 sequence 0 window alarm row 230 frames 2019
 
 [read_section_cycles](read_section_cycles.py) prints the fewest and most cycles of each
 part [section_cycles](../../lib/section_cycles/section_cycles.h) keeps, read over SWD
-while the board runs with the `STM32_Programmer_CLI` of `board/paths.json`. With
-`--over SECONDS` it also prints each part's share of the CPU over that many seconds.
+while the board runs with the `STM32_Programmer_CLI` of `board/paths.json`. Run it
+after sending ends. Connected over SWD while frames come, the board stops taking them
+until it is reset.
 
 ```sh
-python3 -m board.application.ai_can_anomaly_detection.read_section_cycles [--over SECONDS]
+python3 -m board.application.ai_can_anomaly_detection.read_section_cycles
 ```
 
 ```
@@ -275,8 +277,8 @@ each record matched a run of the log's frames. Each stored record frame came 175
 
 ### Time of each part
 
-[section_cycles](../../lib/section_cycles/section_cycles.h) keeps the fewest, most and
-total DWT cycles of each part in `section_cycles`, in the order of `Section`.
+[section_cycles](../../lib/section_cycles/section_cycles.h) keeps the fewest and most
+DWT cycles of each part in `section_cycles`, in the order of `Section`.
 [read_section_cycles](#read_section_cycles) prints them.
 
 A task's time holds the interrupts and the higher priority tasks that ran inside it. The
