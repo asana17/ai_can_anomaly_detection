@@ -372,8 +372,10 @@ alarm 0x0CFF0180 end at row 556
 
 デモでは送る前に毎回消す。8 つが埋まるといちばん古い場所を消して書く。ただし 1 日
 8 時間の使用で 5 年もつように、一度消すと次に消すまで約 11 分待つ。待つ間の警報は
-記録しない。`both_alarms.parquet` は 1 回送ると 3 つ、`window_alarm.parquet` は 2 つ
-記録するので、消さずに続けて送ると 8 つを超えたところから記録が抜ける。
+記録しない。起動してから最初の 1 回だけは待たずに消す。ボードは前に消した時刻を RAM
+にしか持たず起動すると分からなくなるので、起動の直後の警報を記録できるようにしている。
+`both_alarms.parquet` は 1 回送ると 3 つ、`window_alarm.parquet` は 2 つ記録する。消さずに
+続けて送ると、8 つが埋まったあとの 2 つ目の記録から抜ける。
 
 1. オプションバイトを表示する。
 
@@ -487,6 +489,8 @@ python3 -m board.application.ai_can_anomaly_detection.board_frames received_fram
 #### 7.2.2 Flash の記録を見る
 
 ボードを動かしたまま Flash のバンク 2 をファイルに読み出して送ったログと突き合わせる。
+送り終えてから読む。フレームが来ている間に SWD でつなぐと、ボードはリセットするまで
+フレームを受け取らなくなる。次に送るときは 7.1.3 でバンク 2 を消してリセットする。
 
 ```sh
 /Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin   # macOS
