@@ -116,7 +116,7 @@ hmac.new(key, record[:16] + record[48:48 + 16 * count], hashlib.sha256).digest()
 
 | model | files | from the runs repository |
 |---|---|---|
-| row model `nonlinear_ae_k8_h128`, float | [deployed_model](../../lib/deployed_model) | `board/20260928-200316/nonlinear_ae_k8_h128/`, scale of `models/20260928-112526`, threshold of `thresholds/20260928-114811` |
+| row model `nonlinear_ae_k8_h128`, float | [deployed_model](../../lib/deployed_model) | `board/20260930-185248/nonlinear_ae_k8_h128/`, scale of `models/20260927-144150`, threshold of `thresholds/20260929-212110` |
 | window model `window_conv1d_ae_r50_s3_k16_h64`, int8 | [deployed_window_model](../../lib/deployed_window_model) | `window_board/20260929-113106/` from `window_quantize/20260929-113012`, scale of `window_models/20260929-082144`, threshold of `window_thresholds/20260929-113151` |
 
 [fetch_model](../../fetch_model.py) writes them. They are kept in git so a clone builds
