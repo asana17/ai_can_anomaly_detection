@@ -17,7 +17,7 @@ import re
 import struct
 from pathlib import Path
 
-from board.application.ai_can_anomaly_detection.expected import frames
+from board.application.ai_can_anomaly_detection.frames_common import frames_of_log
 from board.pc_answer import LIB, alarm_kind_name, defined
 
 SECTOR_BYTES = 8 * 1024  # FLASH_SECTOR_SIZE of the H533, from the HAL
@@ -94,7 +94,7 @@ def main():
     args = parser.parse_args()
 
     found = records(Path(args.bank2).read_bytes(), demo_key())
-    sent = frames(args.log) if args.log else None
+    sent = frames_of_log(args.log) if args.log else None
     for sequence, area, alarm, row, mac_matches, record_frames in found:
         print(f"area {area} sequence {sequence} {alarm_kind_name(alarm)} row {row} "
               f"frames {len(record_frames)}")

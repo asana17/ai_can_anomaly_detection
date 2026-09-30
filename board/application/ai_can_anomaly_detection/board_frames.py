@@ -17,27 +17,16 @@ of how many rows it was late on and how many it lost.
 """
 
 import argparse
-import re
 import sys
 
+from board.application.ai_can_anomaly_detection.frames_common import received_frames
 from board.pc_answer import TASKS, defined
 from common.settings import GridSettings
-
-RECEIVED = re.compile(r"received at ([\d.]+)\s+([0-9A-F]+)\s+\[(\d)\]\s+((?:[0-9A-F]{2} ?)*)")
 
 
 def little(data, first, size):
     """The unsigned integer in `size` bytes of `data` from `first`, little endian."""
     return int.from_bytes(data[first:first + size], "little")
-
-
-def frames(lines):
-    """Each frame line as (seconds it came, ID, data)."""
-    for line in lines:
-        found = RECEIVED.match(line.strip())
-        if found:
-            yield (float(found.group(1)), int(found.group(2), 16),
-                   bytes.fromhex(found.group(4)))
 
 
 def main():
@@ -64,7 +53,7 @@ def main():
                   f"{sum(lost for _, lost in late)} rows lost")
             late.clear()
 
-    for came, can_id, data in frames(lines):
+    for came, can_id, data in received_frames(lines):
         if can_id != backlog_id:
             end_late()
         if can_id in (alarm_id, window_alarm_id):

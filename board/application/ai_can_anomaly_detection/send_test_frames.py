@@ -27,16 +27,12 @@ from gs_usb.constants import CAN_EFF_FLAG
 from gs_usb.gs_usb import GsUsb
 from gs_usb.gs_usb_frame import GS_USB_NONE_ECHO_ID, GsUsbFrame
 
-from board.application.ai_can_anomaly_detection.expected import frames
+from board.application.ai_can_anomaly_detection.frames_common import (frame_text, frames_of_log,
+                                                                    received_line)
 
 LIBUSB = "/opt/homebrew/lib/libusb-1.0.dylib"
 SPIN = 0.002  # s before a frame's time to stop sleeping and spin
 CAN_FRAME = struct.Struct("=IB3x8s")  # struct can_frame of <linux/can.h>
-
-
-def frame_text(can_id, data):
-    """A frame as gs_usb prints it, which board_frames reads."""
-    return "{: >8X}   [{}]  {}".format(can_id, len(data), " ".join(f"{b:02X}" for b in data))
 
 
 class GsUsbAdapter:
@@ -126,7 +122,7 @@ def read_frames(adapter, stop, echoes):
         if ours:
             echoes[0] += 1
         else:
-            print(f"received at {time.time():.3f} {text}", flush=True)
+            print(received_line(time.time(), text), flush=True)
 
 
 def main():
@@ -137,7 +133,7 @@ def main():
                         help="the SocketCAN interface on Linux (default can0)")
     args = parser.parse_args()
 
-    sent = frames(args.log)
+    sent = frames_of_log(args.log)
     first = sent[0].timestamp
     late = np.empty(len(sent))
     echoes = [0]
