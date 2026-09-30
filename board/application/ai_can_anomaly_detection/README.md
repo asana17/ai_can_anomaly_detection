@@ -180,22 +180,22 @@ python3 -m board.application.ai_can_anomaly_detection.read_section_cycles
 A task's time holds the interrupts and the higher priority tasks that ran inside it. The
 receive callback's leaves out the HAL handler and the CPU's interrupt entry and exit.
 
-On 2026-09-30 with the working tree on `6ea5beb`, from a reset through the Mac sending
-`part_3/20210204093802472877.csv`:
+On 2026-09-30 at `d5ee35a`, from a reset through the Mac sending
+`part_3/20210204093901892161.csv` of `test_sets/20260925-203444`:
 
 | part | cycles | us |
 |---|---|---|
-| receive callback | 432 to 699 | 13.5 to 21.8 |
-| cyclic handler | 158 to 217 | 4.9 to 6.8 |
-| preprocess, one tick | 89 to 9,763 | 2.8 to 305.1 |
-| score and detect by row, one row | 59,318 to 64,936 | 1,853.7 to 2,029.2 |
-| row model inference | 55,642 to 59,238 | 1,738.8 to 1,851.2 |
-| score and detect by window, one row | 828 to 8,540,590 | 25.9 to 266,893.4 |
-| window model inference | 2,737,259 to 8,471,305 | 85,539.3 to 264,728.3 |
-| copy the alarm frames | 199,676 to 273,058 | 6,239.9 to 8,533.1 |
-| store the alarm frames | 5,223,780 to 5,230,138 | 163,243.1 to 163,441.8 |
-| CAN send | 180 to 283 | 5.6 to 8.8 |
-| alarm LED, one step | 520 to 1,434 | 16.2 to 44.8 |
+| receive callback | 432 to 702 | 13.5 to 21.9 |
+| cyclic handler | 148 to 218 | 4.6 to 6.8 |
+| preprocess, one tick | 98 to 9,213 | 3.1 to 287.9 |
+| score and detect by row, one row | 1,700 to 64,788 | 53.1 to 2,024.6 |
+| row model inference | 55,663 to 59,333 | 1,739.5 to 1,854.2 |
+| score and detect by window, one row | 44 to 8,541,745 | 1.4 to 266,929.5 |
+| window model inference | 2,737,404 to 8,460,285 | 85,543.9 to 264,383.9 |
+| copy the alarm frames | 199,588 to 200,504 | 6,237.1 to 6,265.8 |
+| store the alarm frames | 5,215,005 to 5,226,422 | 162,968.9 to 163,325.7 |
+| CAN send | 152 to 991 | 4.8 to 31.0 |
+| alarm LED, one step | 531 to 1,457 | 16.6 to 45.5 |
 
 ### Size
 
