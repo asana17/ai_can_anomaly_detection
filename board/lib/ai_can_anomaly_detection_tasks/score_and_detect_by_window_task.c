@@ -2,6 +2,7 @@
 #include "detect_by_row.h"
 #include "scale.h"
 #include "scoring_error.h"
+#include "section_cycles.h"
 #include "signals.h"
 #include "window_model_config.h"
 #include "window_model_run.h"
@@ -103,7 +104,7 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 	UW index;
 	float score;
 	uint32_t cycles;
-	UW missing_rows;
+	UW missing_rows, started;
 	UW last_count_since_gap = 0; /* row_count_since_gap of the last row taken */
 	bool taken_before = false;   /* a row has been taken */
 	bool waiting;                /* the next row came before this one was done */
@@ -114,12 +115,14 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 		score_and_detect_by_window_input_read(task->score_and_detect_by_window_input,
 			&task->row_ring);
 		for (index = 0; index < row_ring_count(&task->row_ring); index++) {
+			started = section_cycles_start();
 			entry = row_ring_entry(&task->row_ring, index);
 			missing_rows = missing_rows_before(entry, taken_before, last_count_since_gap);
 			row_ring_as_window_push(&task->row_ring_as_window, entry);
 			flagged = false;
 			if (row_ring_as_window_is_complete(&task->row_ring_as_window)) {
 				if (score_window(task, &score, &cycles) == MODEL_OK) {
+					section_cycles_add(SECTION_WINDOW_MODEL, cycles);
 					flagged = detect_by_row_flagged(score, WINDOW_THRESHOLD_SCORE,
 						false);
 				} else {
@@ -144,6 +147,7 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 						task->copy_window_alarm_frames_input, entry);
 				}
 			}
+			section_cycles_end(SECTION_SCORE_AND_DETECT_BY_WINDOW, started);
 		}
 	}
 }
