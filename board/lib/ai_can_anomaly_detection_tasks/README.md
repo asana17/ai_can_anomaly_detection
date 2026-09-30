@@ -127,5 +127,5 @@ a row no window ends on is not. The window alarm rings while
 flagged, and a gap in the row numbers starts the count again, as for the alarm. This is
 the window model's alarm `evaluate.run_window_test_set` counts.
 
-The window alarm stays silent on rows the alarm rings on, so an attack the alarm
-catches raises only the alarm. This is an output rule only, and the PC does not apply it.
+On rows the alarm rings on, the window is not scored and the window alarm stays silent.
+So an attack the alarm catches raises only the alarm. The PC scores every window.
