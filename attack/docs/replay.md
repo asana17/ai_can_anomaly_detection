@@ -156,3 +156,21 @@ of the PGN. Gears move in whole steps and are left out, so ETC2 is never picked.
 Only the signal picked is copied. The other signals of the PGN keep their real values,
 so the row holds one signal from another moment beside the rest from now. A reserved
 value, in the frame or in the one copied from, is left as it is.
+
+## all_pgn_replay.replay
+
+Replays every PGN together from another moment of the same log. It stands for a taken
+over gateway, which can send every PGN at once.
+
+```python
+all_pgn_replay.replay(frames, rng, spans=spans)
+# -> (frames, {pgns, start, stop, source}), or None
+```
+
+It picks the start time, the length of the window and the moment to copy from as
+`playback.replay` does. Every PGN of `PGNS` the log carries is copied from that moment,
+and `pgns` lists them.
+
+The row holds the signals of one moment together, so the signals agree with each other
+as a normal row's do. What is wrong is the time. The window jumps to another moment at
+its start and back at its stop.
