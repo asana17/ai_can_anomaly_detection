@@ -8,7 +8,7 @@ belong to others and keep their own licenses.
 | what | rights holder | how to get | used for | license |
 |---|---|---|---|---|
 | C code and ONNX files that ST Edge AI Core generated, in [board/lib/active_model](board/lib/active_model), [board/lib/deployed_model](board/lib/deployed_model) and [board/lib/deployed_window_model](board/lib/deployed_window_model) | STMicroelectronics | in this repo | the models the board runs | STMicroelectronics SLA0104, in the `LICENSE.txt` next to them |
-| [mtk3bsp2_samples](https://github.com/mox692/mtk3bsp2_samples), a git submodule on branch `can_driver`, forked from [tron-forum/mtk3bsp2_samples](https://github.com/tron-forum/mtk3bsp2_samples) | Ken Sakamura for μT-Kernel 3.0 and BSP2, STMicroelectronics for the IDE generated code | `git submodule update --init` | the CAN task in `board/application/can_bus_debug` is modelled on its `task_can` | as its README states, μT-Kernel 3.0 under T-License 2.2 and IDE generated code under the terms in its archive |
+| [mtk3bsp2_samples](https://github.com/mox692/mtk3bsp2_samples), a git submodule on branch `can_driver`, forked from [tron-forum/mtk3bsp2_samples](https://github.com/tron-forum/mtk3bsp2_samples) | Ken Sakamura for μT-Kernel 3.0 and BSP2, STMicroelectronics for the IDE generated code | `git submodule update --init` | the CAN task in `board/application/can_bus_debug` is modelled on its `task_can` | μT-Kernel 3.0 and BSP2 under T-License 2.2, as `mtk3_bsp2/README.md` in its archive states. IDE generated code by STMicroelectronics, provided AS-IS as its file headers state, with Drivers under BSD-3-Clause and Apache-2.0 |
 
 ## Fetched or generated when a board project is prepared
 
