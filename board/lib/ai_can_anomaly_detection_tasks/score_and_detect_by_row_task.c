@@ -5,6 +5,7 @@
 #include "model_config.h"
 #include "recent_rows.h"
 #include "scoring.h"
+#include "section_cycles.h"
 #include "score_and_detect_by_row_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
 #include "threshold.h"
@@ -68,7 +69,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	RecentRows rows_before; /* the rows before row, back to the last gap */
 	INT ringing = 0, alarmed;
 	bool flagged;
-	UW last_no = 0, row_count_since_gap = 0;
+	UW last_no = 0, row_count_since_gap = 0, started;
 	UW frames_starts[ALARM_FRAMES_ROWS]; /* each recent row's frames_start */
 	AlarmFramePositions positions;
 
@@ -76,6 +77,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 	recent_rows_clear(&rows_before);
 	while (score_and_detect_by_row_input_read(task->score_and_detect_by_row_input, &row)
 		== E_OK) {
+		started = section_cycles_start();
 		/*
 		 * A row whose number is not one more than the last row's starts again from 0.
 		 * Score and detect by window places its windows by this, as the PC does.
@@ -93,6 +95,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			instant_model_std, MIN_SPEED, &scored) != MODEL_OK) {
 			break;
 		}
+		section_cycles_add(SECTION_ROW_MODEL, scored.cycles);
 		flagged = detect_by_row_flagged(scored.score, THRESHOLD_SCORE, scored.rule_hit);
 		detect_by_row_push_flag(&state, row.no, flagged);
 		alarmed = detect_by_row_alarmed(&state);
@@ -107,6 +110,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 		pass_row_to_window(task->score_and_detect_by_window_input, &row,
 			flagged, row_count_since_gap, &positions);
 		recent_rows_push(&rows_before, row.physical);
+		section_cycles_end(SECTION_SCORE_AND_DETECT_BY_ROW, started);
 	}
 	tk_ext_tsk();
 }
