@@ -1,7 +1,8 @@
 """The frames of the logs sent to the board, and the lines the frames the board sends back
 are printed as.
 
-`fetch.py` downloads the frames of every log into `FRAMES`.
+`fetch.py` downloads the frames of every log into `FRAMES`. A log `guidelines/` keeps
+has the same columns.
 """
 
 import re
@@ -16,9 +17,9 @@ FRAMES = FETCHED / "frames" / "frames.parquet"
 RECEIVED = re.compile(r"received at ([\d.]+)\s+([0-9A-F]+)\s+\[(\d)\]\s+((?:[0-9A-F]{2} ?)*)")
 
 
-def frames_of_log(log):
-    """The frames of `log` in `FRAMES`, as the PC sends them."""
-    table = pq.read_table(FRAMES, columns=["timestamp", "can_id", "data"],
+def frames_of_log(log, source=FRAMES):
+    """The frames of `log` in the parquet file `source`, as the PC sends them."""
+    table = pq.read_table(source, columns=["timestamp", "can_id", "data"],
                           filters=[("log", "=", log)])
     return [CanFrame(time, can_id, data) for time, can_id, data in
             zip(*(table[name].to_pylist() for name in table.column_names))]

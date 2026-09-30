@@ -1,12 +1,12 @@
 """Print the alarm frames records in a copy of Flash bank 2, oldest first.
 
-    python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames BANK2 [--log LOG]
+    python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames BANK2 [--log LOG] [--frames FRAMES]
 
 BANK2 is bank 2 read with the programmer, as the README says. Each record prints the
 area, the sequence, the alarm it is for, the row that alarm started on, the frame
 count and whether its MAC matches the key in `alarm_frames_mac_demo_key.h`, then its
 frames.
-With LOG, a log of `fetched/frames/frames.parquet`, it prints instead where the frames
+With LOG, a log of FRAMES as for `expected.py`, it prints instead where the frames
 match a run of the log's frames in ID, size and data, or that none does.
 """
 
@@ -17,7 +17,7 @@ import re
 import struct
 from pathlib import Path
 
-from board.application.ai_can_anomaly_detection.frames_common import frames_of_log
+from board.application.ai_can_anomaly_detection.frames_common import FRAMES, frames_of_log
 from board.pc_answer import LIB, alarm_kind_name, defined
 
 SECTOR_BYTES = 8 * 1024  # FLASH_SECTOR_SIZE of the H533, from the HAL
@@ -91,10 +91,11 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("bank2")
     parser.add_argument("--log")
+    parser.add_argument("--frames", type=Path, default=FRAMES)
     args = parser.parse_args()
 
     found = records(Path(args.bank2).read_bytes(), demo_key())
-    sent = frames_of_log(args.log) if args.log else None
+    sent = frames_of_log(args.log, args.frames) if args.log else None
     for sequence, area, alarm, row, mac_matches, record_frames in found:
         print(f"area {area} sequence {sequence} {alarm_kind_name(alarm)} row {row} "
               f"frames {len(record_frames)}")

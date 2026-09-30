@@ -1,8 +1,8 @@
 """Send one log's frames from the USB-CAN adapter, each at its time.
 
-    python3 -m board.application.ai_can_anomaly_detection.send_test_frames LOG
+    python3 -m board.application.ai_can_anomaly_detection.send_test_frames LOG [--frames FRAMES]
 
-LOG is a log of `fetched/frames/frames.parquet`, as for `expected.py`. The adapter is a
+LOG and FRAMES are as for `expected.py`. The adapter is a
 candleLight gs_usb one, such as the DSD TECH SH-C31A, run at 250 kbit/s. On macOS the
 script opens it over USB and sets the bit rate itself. On Linux it sends through the
 SocketCAN interface the kernel made for it, `can0` unless `--interface` names another,
@@ -19,6 +19,7 @@ import struct
 import sys
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
 import usb.backend.libusb1
@@ -27,7 +28,8 @@ from gs_usb.constants import CAN_EFF_FLAG
 from gs_usb.gs_usb import GsUsb
 from gs_usb.gs_usb_frame import GS_USB_NONE_ECHO_ID, GsUsbFrame
 
-from board.application.ai_can_anomaly_detection.frames_common import (frame_text, frames_of_log,
+from board.application.ai_can_anomaly_detection.frames_common import (FRAMES, frame_text,
+                                                                    frames_of_log,
                                                                     received_line)
 
 LIBUSB = "/opt/homebrew/lib/libusb-1.0.dylib"
@@ -129,11 +131,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("log")
+    parser.add_argument("--frames", type=Path, default=FRAMES)
     parser.add_argument("--interface", default="can0",
                         help="the SocketCAN interface on Linux (default can0)")
     args = parser.parse_args()
 
-    sent = frames_of_log(args.log)
+    sent = frames_of_log(args.log, args.frames)
     first = sent[0].timestamp
     late = np.empty(len(sent))
     echoes = [0]
