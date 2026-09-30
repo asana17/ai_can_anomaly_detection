@@ -11,6 +11,15 @@
         "type": "integer",
         "minimum": 0
       },
+      "pgns": {
+        "description": "The PGNs an all PGN replay replays together.",
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minItems": 1
+      },
       "start": {
         "description": "When the replay starts, in epoch seconds.",
         "type": "number"
@@ -51,8 +60,11 @@
         "minimum": 0
       }
     },
+    "oneOf": [
+      {"required": ["pgn"]},
+      {"required": ["pgns"]}
+    ],
     "required": [
-      "pgn",
       "start",
       "stop",
       "log",
