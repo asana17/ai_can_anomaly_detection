@@ -34,7 +34,8 @@
             "jittered_frozen_replay",
             "repeated_replay",
             "ramp",
-            "playback"
+            "playback",
+            "all_pgn_replay"
           ]
         }
       },

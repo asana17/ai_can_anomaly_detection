@@ -14,8 +14,8 @@ import random
 import numpy as np
 
 from attack.ramp import ramp
-from attack.replay import (frozen_replay, jittered_frozen_replay, matched_replay,
-                           playback, random_replay, repeated_replay)
+from attack.replay import (all_pgn_replay, frozen_replay, jittered_frozen_replay,
+                           matched_replay, playback, random_replay, repeated_replay)
 from assemble.grid import read_grid, starts_segment, to_arrays
 from assemble.injected_frames import write_and_pass_frames
 from assemble.split_test_logs import read_log_split
@@ -62,6 +62,8 @@ def inject_frames(logs, rng: random.Random, source_logs=(), *, rows_before_attac
             made = ramp(frames, rng, spans=spans)
         elif attack == "playback":
             made = playback.replay(frames, rng, spans=spans)
+        elif attack == "all_pgn_replay":
+            made = all_pgn_replay.replay(frames, rng, spans=spans)
         else:
             donor, donor_rows = rng.choice(pool) if source_logs else (frames, before)
             made = random_replay.replay(

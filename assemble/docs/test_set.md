@@ -60,7 +60,8 @@ jittered by the log's own steps, and `repeated_replay` repeats a stretch before 
 start.
 They take the payloads from the log itself and use no donor. `ramp` adds a bias to one
 signal that grows over the attack, as [ramp](../../attack/docs/ramp.md) describes, and
-`playback` copies one signal from another moment of the log.
+`playback` copies one signal from another moment of the log. `all_pgn_replay` copies
+every PGN together from another moment of the log.
 
 Nothing is thrown away for tripping a rule. [evaluate](../../evaluate) runs the rules
 over the rows it scores, so it can report what the rules catch and what a model adds
