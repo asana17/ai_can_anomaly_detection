@@ -167,11 +167,12 @@ each record matched a run of the log's frames. Each stored record frame came 175
 ### Receive interrupt time
 
 `HAL_FDCAN_RxFifo0Callback` keeps the fewest and most cycles one call took in
-`fewest_receive_cycles` and `most_receive_cycles`. They are read over SWD while the
-board runs, at the addresses in the map file.
+`section_cycles[SECTION_RECEIVE]` of
+[section_cycles](../../lib/section_cycles/section_cycles.h). They are read over SWD
+while the board runs, at the address of `section_cycles` in the map file.
 
 ```sh
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 ADDRESS 4
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 ADDRESS 8
 ```
 
 The count leaves out the HAL handler that calls the callback and the CPU's interrupt

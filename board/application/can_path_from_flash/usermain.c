@@ -13,6 +13,7 @@
 #include "stored_record_uart_task.h"
 #include "window_backlog_uart_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
+#include "section_cycles.h"
 #include "replay_frames.h"
 
 /* What the CAN receive side writes with slots_store(). */
@@ -85,6 +86,7 @@ EXPORT INT usermain(void)
 	INT error;
 
 	tm_printf((UB*)"replaying %d frames\n", REPLAY_FRAMES);
+	section_cycles_clear();
 	frame_ring_clear(&frame_ring, 1u); /* the replay's times are in us */
 	error = report_input_create(&report_input);
 	if (error < E_OK) {

@@ -15,6 +15,7 @@
 #include "window_backlog_can_task.h"
 #include "alarm_led_task.h"
 #include "ai_can_anomaly_detection_tasks.h"
+#include "section_cycles.h"
 
 #define CAN_BYTES 8u /* a classic CAN frame's payload, which DLC 9 to 15 also mean */
 
@@ -25,10 +26,6 @@ EXPORT Slots slots;
 
 /* The frames the receive interrupt copies for the cut. */
 LOCAL FrameRing frame_ring;
-
-/* The fewest and most cycles one receive callback took, read with the programmer. */
-EXPORT UW fewest_receive_cycles = 0xFFFFFFFFu;
-EXPORT UW most_receive_cycles = 0;
 
 LOCAL ReportInput report_input;
 LOCAL ReportInput window_report_input;
@@ -55,9 +52,9 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 {
 	FDCAN_RxHeaderTypeDef header;
 	uint8_t data[CAN_BYTES];
-	uint32_t size, time, started, cycles;
+	uint32_t size, time, started;
 
-	started = DWT->CYCCNT;
+	started = section_cycles_start();
 	while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &header, data) == HAL_OK) {
 		if (header.IdType != FDCAN_EXTENDED_ID) {
 			continue; /* J1939 uses 29-bit IDs only */
@@ -71,13 +68,7 @@ EXPORT void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFi
 		slots_store(&slots, header.Identifier, data, size, time);
 		frame_ring_push(&frame_ring, header.Identifier, data, size, time);
 	}
-	cycles = DWT->CYCCNT - started;
-	if (cycles < fewest_receive_cycles) {
-		fewest_receive_cycles = cycles;
-	}
-	if (cycles > most_receive_cycles) {
-		most_receive_cycles = cycles;
-	}
+	section_cycles_end(SECTION_RECEIVE, started);
 }
 
 /* Accept every frame into RX FIFO 0, interrupt on each, and start the bus. */
@@ -102,6 +93,7 @@ EXPORT INT usermain(void)
 	INT error;
 
 	tm_printf((UB*)"reading FDCAN1\n");
+	section_cycles_clear();
 	frame_ring_clear(&frame_ring, SystemCoreClock / 1000000u);
 	error = report_input_create(&report_input);
 	if (error < E_OK) {
