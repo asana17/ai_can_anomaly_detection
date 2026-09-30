@@ -44,8 +44,10 @@ Rows and windows raise alarms in different ways.
 
 ### Thresholds
 
-Each model's threshold is taken from calibration rows the model never saw. It is the
-lowest score at which its alarm raises no more false alarms an hour than a target.
+A target is the false alarms an hour an alarm may raise on the calibration rows. These
+rows come from the training logs, but the model never saw them. Each model's threshold
+is the lowest score that keeps its alarm within its target there. The false alarms on
+the test logs are not set by the target. They are measured.
 
 - Rows: 1.5 an hour. The rows catch most attacks, so they take the larger share. The
   rules' own false alarms count against it.
@@ -55,6 +57,10 @@ The two targets share out one budget. The
 [evaluation](evaluate/docs/run_window_test_set.md) joins the row alarm and a window
 alarm with OR, and counts alarm stretches that overlap as one. So the two together can
 raise fewer false alarms than the sum.
+
+On the test logs the alarms raise more than their targets. With the rows at 1.5 they
+raise 2.0 to 2.6 an hour, and with the window autoencoder added 2.8 to 3.4, averaged
+over folds 0 to 3 for each attack.
 
 [settings.md](common/docs/settings.md#the-split-and-calibration-parameters) says how
 the targets were set. [calibrate](models/docs/calibrate.md) and
