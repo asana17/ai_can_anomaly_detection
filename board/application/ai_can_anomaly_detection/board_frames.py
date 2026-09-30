@@ -19,7 +19,7 @@ of how many rows it was late on and how many it lost.
 import argparse
 import sys
 
-from board.application.ai_can_anomaly_detection.frames_common import received_frames
+from board.can_adapter import received_frames
 from board.pc_answer import TASKS, defined
 from common.settings import GridSettings
 

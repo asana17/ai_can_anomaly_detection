@@ -9,7 +9,7 @@ On Ubuntu `cansend` and `candump` do the same.
 import threading
 import time
 
-from board.application.ai_can_anomaly_detection.send_test_frames import GsUsbAdapter, read_frames
+from board.can_adapter import GsUsbAdapter, read_frames
 
 CAN_ID = 0x18FEF200
 DATA = bytes([0x11] * 8)
