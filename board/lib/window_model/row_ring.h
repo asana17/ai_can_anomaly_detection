@@ -13,7 +13,7 @@ typedef struct {
 	uint32_t no; /* the row's number, counting ticks */
 	uint32_t tick_ms; /* tk_get_otm's ms when preprocess woke on its tick */
 	float physical[SIGNAL_COUNT];
-	bool flag; /* a rule or the instant model flagged the row */
+	bool alarm_ringing; /* the alarm by row rings on the row */
 	uint32_t row_count_since_gap; /* this row's place since the last gap, from 0 */
 	/* the frame ring's places of the frames to store if an alarm starts on this row */
 	uint32_t frames_start;

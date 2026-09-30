@@ -101,8 +101,8 @@ large to keep several waiting in RAM in the order they came.
 
 ## Passing rows
 
-Score and detect by row puts each row in a shared ring, with whether the row was
-flagged, the row's place since the last gap, 0 for the first row after it, and the
+Score and detect by row puts each row in a shared ring, with whether the alarm rings on
+it, the row's place since the last gap, 0 for the first row after it, and the
 positions of the frames to copy if the window alarm starts on it.
 
 Score and detect by window first copies every row in the shared ring at once, and the
@@ -126,3 +126,6 @@ a row no window ends on is not. The window alarm rings while
 `MIN_FLAGGED_WINDOWS_FOR_ALARM` of the last `DETECT_BY_ROW_RECENT_FLAGS` rows are
 flagged, and a gap in the row numbers starts the count again, as for the alarm. This is
 the window model's alarm `evaluate.run_window_test_set` counts.
+
+The window alarm stays silent on rows the alarm rings on, so an attack the alarm
+catches raises only the alarm. This is an output rule only, and the PC does not apply it.

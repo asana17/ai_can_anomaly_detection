@@ -92,7 +92,7 @@ LOCAL ModelStatus score_window(ScoreAndDetectByWindowTask *task, float *score,
  * Add each row read to the window, and score the window when it is complete. A row is
  * flagged when the window ending on it scores above the threshold, and a row no window
  * ends on is not. The window alarm rings while enough of the last rows are flagged, as
- * on the PC.
+ * on the PC. It stays silent on rows the alarm by row rings on.
  */
 LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 {
@@ -138,7 +138,7 @@ LOCAL void score_and_detect_by_window_task(INT stacd, void *exinf)
 				report_backlog(task->window_backlog_input, entry->no, missing_rows);
 			}
 			detect_by_row_push_flag(&state, entry->no, flagged);
-			alarmed = detect_by_row_alarmed(&state);
+			alarmed = detect_by_row_alarmed(&state) && !entry->alarm_ringing;
 			if (alarmed != ringing) {
 				report_window_alarm_change(task->window_report_input, entry, alarmed);
 				ringing = alarmed;

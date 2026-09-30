@@ -41,18 +41,18 @@ LOCAL void alarm_frame_positions(CONST Row *row,
 }
 
 /*
- * Hand score and detect by window the row, its flag, its count since the last gap and the
- * positions of the frames to store if the window alarm starts on it.
+ * Hand score and detect by window the row, whether the alarm rings on it, its count since
+ * the last gap and the positions of the frames to store if the window alarm starts on it.
  */
 LOCAL void pass_row_to_window(ScoreAndDetectByWindowInput *window_input, CONST Row *row,
-	bool flag, UW row_count_since_gap, CONST AlarmFramePositions *positions)
+	INT ringing, UW row_count_since_gap, CONST AlarmFramePositions *positions)
 {
 	RowRingEntry entry;
 
 	entry.no = row->no;
 	entry.tick_ms = row->tick_ms;
 	memcpy(entry.physical, row->physical, sizeof(entry.physical));
-	entry.flag = flag;
+	entry.alarm_ringing = ringing != 0;
 	entry.row_count_since_gap = row_count_since_gap;
 	entry.frames_start = positions->frames_start;
 	entry.frames_end = positions->frames_end;
@@ -108,7 +108,7 @@ LOCAL void score_and_detect_by_row_task(INT stacd, void *exinf)
 			}
 		}
 		pass_row_to_window(task->score_and_detect_by_window_input, &row,
-			flagged, row_count_since_gap, &positions);
+			ringing, row_count_since_gap, &positions);
 		recent_rows_push(&rows_before, row.physical);
 		section_cycles_end(SECTION_SCORE_AND_DETECT_BY_ROW, started);
 	}
