@@ -2,7 +2,8 @@
 
 The main application on the board. It builds a row from the received frames every
 0.1 s and scores it with the rules, the row model and the window model. It sends each
-start and end of the alarm and the window alarm on FDCAN1. At each start of either
+start and end of the alarm and the window alarm on FDCAN1. On rows the alarm rings on,
+the window model does not run and the window alarm stays silent. At each start of either
 alarm it stores the frames before it in Flash bank 2, with an HMAC. It runs until the board is
 reset.
 
@@ -55,6 +56,7 @@ flowchart LR
 
 The green LED blinks fast while only the alarm rings and slowly while only the window
 alarm rings. It stays on while both ring. Each alarm is shown for 2 s more after it ends.
+Both ring at once only until the window model reaches the row the alarm started on.
 
 Frames are received in the interrupt, so no task holds them up. When an alarm starts,
 the copy and the store run first and the window model waits. The rows it has not
@@ -233,7 +235,11 @@ The STM32H533's current, read on 2026-09-30 with a multimeter in place of the JP
 (IDD) jumper. It is the MCU alone, not the ST-LINK, the LEDs or the CAN parts. With JP2
 open the MCU does not start, so all of its supply passes through JP2.
 
-| while | mA |
-|---|---|
-| no frames came | 4.54 |
-| the Mac sent `part_3/20210204093802472877.csv` | 4.97 to 5.58 |
+The kernel calls `low_pow` when no task is ready. The first column is before
+[0003](../../patches/0003-stm32_cube-sleep-in-low_pow.patch), when it returned at once.
+The second is with it, when the CPU sleeps in `wfi` until the next interrupt.
+
+| while | mA, spinning | mA, sleeping |
+|---|---|---|
+| no frames came | 4.54 | 3.06 |
+| the Mac sent `part_3/20210204093802472877.csv` | 4.97 to 5.58 | 3.14 to 3.36 |

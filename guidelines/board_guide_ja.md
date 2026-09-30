@@ -400,25 +400,23 @@ python3 -m board.application.ai_can_anomaly_detection.send_test_frames part_3/20
 2026-09-30 に動かしたときは次のように出た。
 
 ```
-sending 50001 frames from 1790740197.734
-row 613: window alarm start, 90 ms after the row was made
-row 613: window alarm frames stored, 176 ms after the window alarm start, 2018 frames
-row 614: window model late, finished 259 ms after the row was made, 0 rows lost before it
+sending 50001 frames from 1790761388.680
+row 571: window alarm start, 90 ms after the row was made
+row 571: window alarm frames stored, 176 ms after the window alarm start, 2017 frames
+row 572: window model late, finished 260 ms after the row was made, 0 rows lost before it
 ...
-rows 614 to 619: window model late on 6 rows, 0 rows lost
-row 622: alarm start, 0 ms after the row was made
-row 622: alarm frames stored, 174 ms after the alarm start, 2020 frames
+rows 572 to 578: window model late on 7 rows, 0 rows lost
+row 581: alarm start, 0 ms after the row was made
+row 581: alarm frames stored, 175 ms after the alarm start, 2018 frames
 ...
-row 623: window alarm end, 360 ms after the row was made
+row 581: window alarm end, 270 ms after the row was made
+row 616: alarm end, 0 ms after the row was made
+row 616: window alarm start, 90 ms after the row was made
+row 616: window alarm frames stored, 178 ms after the window alarm start, 2017 frames
 ...
-rows 624 to 656: window model late on 33 rows, 0 rows lost
-row 658: alarm end, 0 ms after the row was made
-row 658: window alarm start, 90 ms after the row was made
-row 658: window alarm frames stored, 176 ms after the window alarm start, 2018 frames
+row 626: window alarm end, 180 ms after the row was made
 ...
-row 668: window alarm end, 180 ms after the row was made
-...
-sent 50001, echoed 50001, late ms median 0.000, p99 0.010, max 57.743
+sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 1.772
 ```
 
 最初の行と最後の行は `send_test_frames` が出す。最後の行の `echoed` が `sent` と同じなら
@@ -433,7 +431,7 @@ sent 50001, echoed 50001, late ms median 0.000, p99 0.010, max 57.743
 
 | 見るところ | 正しいとき |
 |---|---|
-| `alarm` と `window alarm` の `start` と `end` の行 | ボードの行はボードが起動してから数えるので 7.1.3 の PC の行に一定の差を足したものになる。上の例では差が 119 である。ボードが行を作る時刻は送り始めと揃っていないので、1 行程度ずれることがある |
+| `alarm` と `window alarm` の `start` と `end` の行 | ボードの行はボードが起動してから数えるので 7.1.3 の PC の行に一定の差を足したものになる。上の例では差が 78 である。ボードが行を作る時刻は送り始めと揃っていないので、1 行程度ずれることがある。ただし窓の警報は行の警報が鳴っている行では鳴らない。PC の 504 行で終わる窓の警報はボードでは行の警報が始まる行で終わる |
 | `alarm start` の ms | 0。警報は窓モデルと保存に待たされていない |
 | `alarm frames stored` と `window alarm frames stored` | その警報の前のフレームを Flash に書き終えた。警報が始まるたびに 1 つ出る |
 | `window model late` | 窓モデルが次の行が来るまでに採点を終えられなかった行。遅れていない行は出ない |
