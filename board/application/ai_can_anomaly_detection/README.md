@@ -164,20 +164,36 @@ row 646 with 2020 and for the window alarm at row 681 with 2019. Each MAC matche
 each record matched a run of the log's frames. Each stored record frame came 175 to
 179 ms after its alarm start.
 
-### Receive interrupt time
+### Time of each part
 
-`HAL_FDCAN_RxFifo0Callback` keeps the fewest and most cycles one call took in
-`section_cycles[SECTION_RECEIVE]` of
-[section_cycles](../../lib/section_cycles/section_cycles.h). They are read over SWD
-while the board runs, at the address of `section_cycles` in the map file.
+[section_cycles](../../lib/section_cycles/section_cycles.h) keeps the fewest and most
+DWT cycles of each part in `section_cycles`, two words per part in the order of
+`Section`. [read_section_cycles](read_section_cycles.py) reads it over SWD while the
+board runs and prints each part in cycles and us.
 
 ```sh
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 ADDRESS 8
+python3 -m board.application.ai_can_anomaly_detection.read_section_cycles
 ```
 
-The count leaves out the HAL handler that calls the callback and the CPU's interrupt
-entry and exit. While the Mac sent `part_3/20210204094457960567.csv`, one call took 430
-to 694 cycles, 13 to 22 us. All 50,001 frames reached the frame ring.
+A task's time holds the interrupts and the higher priority tasks that ran inside it. The
+receive callback's leaves out the HAL handler and the CPU's interrupt entry and exit.
+
+On 2026-09-30 with the working tree on `6ea5beb`, from a reset through the Mac sending
+`part_3/20210204093802472877.csv`:
+
+| part | cycles | us |
+|---|---|---|
+| receive callback | 432 to 699 | 13.5 to 21.8 |
+| cyclic handler | 158 to 217 | 4.9 to 6.8 |
+| preprocess, one tick | 89 to 9,763 | 2.8 to 305.1 |
+| score and detect by row, one row | 59,318 to 64,936 | 1,853.7 to 2,029.2 |
+| row model inference | 55,642 to 59,238 | 1,738.8 to 1,851.2 |
+| score and detect by window, one row | 828 to 8,540,590 | 25.9 to 266,893.4 |
+| window model inference | 2,737,259 to 8,471,305 | 85,539.3 to 264,728.3 |
+| copy the alarm frames | 199,676 to 273,058 | 6,239.9 to 8,533.1 |
+| store the alarm frames | 5,223,780 to 5,230,138 | 163,243.1 to 163,441.8 |
+| CAN send | 180 to 283 | 5.6 to 8.8 |
+| alarm LED, one step | 520 to 1,434 | 16.2 to 44.8 |
 
 ### Size
 
