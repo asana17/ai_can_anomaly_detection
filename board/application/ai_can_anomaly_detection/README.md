@@ -7,8 +7,8 @@ the window model does not run and the window alarm stays silent. At each start o
 alarm it stores the frames before it in Flash bank 2, with an HMAC. It runs until the board is
 reset.
 
-[board_guide_ja.md](../../../guidelines/board_guide_ja.md) builds it, sends it a log
-from a PC and reads what it sends back.
+[Prepare, build and flash](#prepare-build-and-flash) builds it, and the [tools](#tools)
+send it a log from a PC and read what it sends back.
 
 ## Tasks and priorities
 
@@ -110,14 +110,7 @@ It is a demo key, so anyone who reads the code can make a valid MAC.
 hmac.new(key, record[:16] + record[48:48 + 16 * count], hashlib.sha256).digest()
 ```
 
-Read bank 2 while the board runs, then check it with
-[read_alarm_frames](read_alarm_frames.py). With `--log` it also finds each record's
-frames in the log sent.
-
-```sh
-STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
-python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204093505241905.csv
-```
+[read_alarm_frames](#read_alarm_frames) prints the records and checks them.
 
 ## Models
 
@@ -135,6 +128,120 @@ with nothing fetched. The sample applications use their own copy in
 ```sh
 python3 -m board.prepare ai_can_anomaly_detection
 python3 -m board.flash
+```
+
+## Tools
+
+Each runs on the PC from the top of the repo.
+
+### fetch
+
+[fetch](fetch.py) downloads the frames of every attacked test log, about 2 GB, into
+`fetched/frames/`. No login is needed.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.fetch
+```
+
+| file | holds |
+|---|---|
+| `frames.parquet` | the frames, with the log each came from in `log` |
+| `attacked.json` | the attack put in each log, the log in `log` and the PGN in `pgn` |
+
+The tools below read a log from `frames.parquet` unless `--frames` names another parquet
+file with the same columns.
+
+### expected
+
+[expected](expected.py) runs one log through the models the board runs, the ONNX files
+its C code was generated from with the same scale and thresholds, and prints the rows
+each alarm starts and ends on. Row 1 is 0.1 s after the first frame.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.expected LOG [--frames FRAMES]
+```
+
+```
+alarm 0x0CFF0080 start at row 210
+alarm 0x0CFF0080 end at row 295
+alarm 0x0CFF0180 start at row 201
+alarm 0x0CFF0180 end at row 211
+```
+
+`0x0CFF0080` is the alarm and `0x0CFF0180` the window alarm. It prints the window alarm
+also on rows the alarm rings on, where the board keeps it silent.
+
+### send_test_frames
+
+[send_test_frames](send_test_frames.py) sends one log's frames, each at its time, from a
+candleLight gs_usb adapter at 250 kbit/s. On macOS it opens the adapter over USB. On
+Linux it sends through a SocketCAN interface already up at 250 kbit/s, `can0` unless
+`--interface` names another.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.send_test_frames LOG [--frames FRAMES] [--interface IFACE] | tee received_frames.txt
+```
+
+It prints each frame the board sends to stdout, with the epoch seconds it came, and the
+time sending started and at the end what was sent to stderr.
+
+```
+received at 1790768485.131  CFF0180   [8]  01 E6 00 00 00 5A 00 FF
+sent 50001, echoed 50001, late ms median 0.000, p99 0.000, max 0.639
+```
+
+`echoed` counts the frames the adapter handed back as queued. Stop it with Ctrl-C, after
+which it closes the adapter. Killed, it leaves the adapter open, and the adapter reads
+nothing until plugged in again.
+
+### board_frames
+
+[board_frames](board_frames.py) turns the `received at` lines into one line per frame
+the board sent, as the frame means, from a file or from `-` for stdin.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.send_test_frames LOG | python3 -m board.application.ai_can_anomaly_detection.board_frames -
+python3 -m board.application.ai_can_anomaly_detection.board_frames received_frames.txt
+```
+
+```
+row 230: window alarm start, 90 ms after the row was made
+row 230: window alarm frames stored, 178 ms after the window alarm start, 2019 frames
+rows 231 to 236: window model late on 6 rows, 0 rows lost
+row 239: alarm start, 0 ms after the row was made
+```
+
+### read_alarm_frames
+
+[read_alarm_frames](read_alarm_frames.py) prints the records in a copy of bank 2 read
+while the board runs, and whether each MAC matches the demo key. With `--log` it prints
+where each record's frames are in that log instead of the frames.
+
+```sh
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin
+python3 -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin [--log LOG] [--frames FRAMES]
+```
+
+```
+area 0 sequence 0 window alarm row 230 frames 2019
+  the MAC matches the one computed with the key
+  matches log frames 14900 to 16918
+```
+
+### read_section_cycles
+
+[read_section_cycles](read_section_cycles.py) prints the fewest and most cycles of each
+part [section_cycles](../../lib/section_cycles/section_cycles.h) keeps, read over SWD
+while the board runs with the `STM32_Programmer_CLI` of `board/paths.json`. With
+`--over SECONDS` it also prints each part's share of the CPU over that many seconds.
+
+```sh
+python3 -m board.application.ai_can_anomaly_detection.read_section_cycles [--over SECONDS]
+```
+
+```
+core clock 32000000 Hz
+receive                             432 to        702 cycles         13.5 to         21.9 us
 ```
 
 ## Results
@@ -168,17 +275,14 @@ each record matched a run of the log's frames. Each stored record frame came 175
 
 ### Time of each part
 
-[section_cycles](../../lib/section_cycles/section_cycles.h) keeps the fewest and most
-DWT cycles of each part in `section_cycles`, two words per part in the order of
-`Section`. [read_section_cycles](read_section_cycles.py) reads it over SWD while the
-board runs and prints each part in cycles and us.
-
-```sh
-python3 -m board.application.ai_can_anomaly_detection.read_section_cycles
-```
+[section_cycles](../../lib/section_cycles/section_cycles.h) keeps the fewest, most and
+total DWT cycles of each part in `section_cycles`, in the order of `Section`.
+[read_section_cycles](#read_section_cycles) prints them.
 
 A task's time holds the interrupts and the higher priority tasks that ran inside it. The
 receive callback's leaves out the HAL handler and the CPU's interrupt entry and exit.
+Both scorings count the tick after the last row too, which only ends the alarms, and
+their fewest is that tick.
 
 On 2026-09-30 at `d5ee35a`, from a reset through the Mac sending
 `part_3/20210204093901892161.csv` of `test_sets/20260925-203444`:
