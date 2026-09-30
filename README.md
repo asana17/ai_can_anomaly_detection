@@ -87,14 +87,42 @@ longest window that fits the 100 ms period at 32 MHz.
 No classifier is used. It needs labelled attacks, and the only attacks are the synthetic
 ones, so it would learn those instead of unknown anomalies.
 
-### Results
+## Results
 
-The window model is worth its share of the budget only if the rows cannot catch as much
-with it. So the rows alone at a target of 2.0 an hour are set against the rows at 1.5
-with the window model at 0.5. Both use the rules, the row autoencoder and k 10. The
-counts are summed over folds 0 to 3 at seed 0.
+The counts are summed over folds 0 to 3 at seed 0, at k 10. Each cell is the attacks
+caught and the false alarms an hour on the test logs.
+[detection_table](evaluate/detection_table.py) made the tables from
+`asana17/ai_can_anomaly_detection_runs`.
 
-| attack | worth catching | rows alone | rows and window model |
+### What each detector catches
+
+Each column joins models to the rules. Every threshold is set at the targets meant for
+the board, in [Thresholds](#thresholds): 1.5 false alarms an hour for the row models
+and 0.5 for the window models. PCA and the nonlinear AE are two row models. VAR and conv1d are two window models,
+each added to the nonlinear AE.
+
+| attack | what it does | worth catching | rules | rules + PCA | rules + nonlinear AE | rules + nonlinear AE + VAR | rules + nonlinear AE + conv1d |
+|---|---|---|---|---|---|---|---|
+| jittered_frozen_replay | holds one PGN's payload, jittered by steps the log itself took | 1992 | 569, 1.0/h | 603, 2.0/h | 985, 2.5/h | 994, 2.8/h | 1078, 3.1/h |
+| matched_replay | copies one PGN from a log driven at the same speed and gear | 1557 | 370, 0.7/h | 393, 1.6/h | 760, 2.3/h | 770, 2.7/h | 857, 3.3/h |
+| repeated_replay | sends a short stretch of one PGN again and again | 2174 | 696, 1.1/h | 723, 2.1/h | 1129, 2.6/h | 1135, 3.0/h | 1243, 3.4/h |
+| replay | copies one PGN from another moment of another log | 3788 | 2156, 1.0/h | 2244, 2.0/h | 3091, 2.4/h | 3094, 2.7/h | 3191, 3.1/h |
+| frozen_replay | holds the payload one PGN had at a random moment | 1889 | 1368, 0.7/h | 1393, 1.6/h | 1644, 2.2/h | 1644, 2.5/h | 1653, 3.0/h |
+| playback | overwrites one signal with its values from another moment | 1892 | 455, 0.8/h | 498, 1.7/h | 1057, 2.4/h | 1060, 2.7/h | 1069, 3.2/h |
+| ramp | adds a bias to one signal that grows over the attack | 779 | 136, 0.4/h | 138, 1.3/h | 393, 2.0/h | 393, 2.3/h | 400, 2.8/h |
+
+PCA catches little more than the rules. The nonlinear AE catches 257 to 935 more. VAR
+adds at most 10 to the nonlinear AE.
+
+The table is read at `7da0b66`.
+
+### Whether conv1d is worth its false alarms
+
+conv1d is worth its share of the budget only if the nonlinear AE given the whole budget
+catches less. So the nonlinear AE alone at a target of 2.0 an hour is set against the
+nonlinear AE at 1.5 with conv1d at 0.5.
+
+| attack | worth catching | rules + nonlinear AE at 2.0 | rules + nonlinear AE at 1.5 + conv1d at 0.5 |
 |---|---|---|---|
 | jittered_frozen_replay | 1992 | 1030, 2.6/h | 1078, 3.1/h |
 | matched_replay | 1557 | 791, 2.5/h | 857, 3.3/h |
@@ -104,14 +132,10 @@ counts are summed over folds 0 to 3 at seed 0.
 | playback | 1892 | 1091, 2.6/h | 1069, 3.2/h |
 | ramp | 779 | 417, 2.2/h | 400, 2.8/h |
 
-Each cell is the attacks caught and the false alarms an hour on the test logs. The
-window model adds 48 to 70 on the four attacks that change how signals move over time.
-It adds nothing where a value itself goes wrong. On the test logs the pair raises about
-0.6 more false alarms an hour than the rows alone.
+conv1d adds 48 to 70 on the four attacks that change how signals move over time. It
+adds nothing where a value itself goes wrong.
 
-[detection_table](evaluate/detection_table.py) made both columns from
-`asana17/ai_can_anomaly_detection_runs`. The rows alone are read at `c62fba2`, and the
-rows and window model at `7da0b66`.
+The nonlinear AE alone at 2.0 is read at `c62fba2`, and the pair at `7da0b66`.
 
 ## Priorities
 
