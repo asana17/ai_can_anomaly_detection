@@ -210,8 +210,9 @@ Every stage uploads to these Hugging Face repos by default. Reading them needs n
   submodule.
 - [tests/](tests) holds the tests, run with `python3 -m pytest` from the top.
 - `data/` holds the raw logs and is not tracked in git.
-- [THIRD_PARTY.md](THIRD_PARTY.md) lists the software and data from others and their
-  licenses.
+- [THIRD_PARTY.md](THIRD_PARTY.md) lists the software and data from others with their
+  rights holders, how to get them and their licenses, and states that their rights are
+  cleared.
 
 ## Words
 
