@@ -28,9 +28,9 @@ from models.fits import as_dict, model_from
 
 LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")
 RUNS_REPO = "asana17/ai_can_anomaly_detection_runs"
-RUNS_REVISION = "2de72a52ba0c996cb0a6aa6300047448c5ebbd0c"
-BOARD = "board/20260928-200316"
-THRESHOLDS = "thresholds/20260928-114811"
+RUNS_REVISION = "a38cb69d551b1dbc6a7adc7ee259b1b0aff33f11"
+BOARD = "board/20260930-185248"
+THRESHOLDS = "thresholds/20260929-212110"
 MODEL = "nonlinear_ae_k8_h128"
 # the sample applications' model, and the one the entry runs
 DESTINATIONS = ("active_model", "deployed_model")

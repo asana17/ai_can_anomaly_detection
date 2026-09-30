@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    instant_model.c
   * @author  AST Embedded Analytics Research Platform
-  * @date    2026-09-28T20:03:29+0900
+  * @date    2026-09-30T18:53:05+0900
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * @attention
@@ -25,9 +25,9 @@
 #include "instant_model_data.h"
 #include "stai_events.h"
 
-#include "lite_operators.h"
-
 #include "ai_lite_inspect.h"
+
+#include "lite_operators.h"
 /*****************************************************************************/
 #define STAI_INTERNAL_API_MAJOR               (1)
 #define STAI_INTERNAL_API_MINOR               (0)
@@ -152,8 +152,8 @@
 
 
 /*****************************************************************************/
-#define _STAI_INSTANT_MODEL_MODEL_SIGNATURE     "0x60f2cd43855eebf3c51a21ee2aca33b3"
-#define _STAI_INSTANT_MODEL_DATETIME            "2026-09-28T20:03:29+0900"
+#define _STAI_INSTANT_MODEL_MODEL_SIGNATURE     "0xe3b1a7ceb8114dd0ba00d85a94dc02c6"
+#define _STAI_INSTANT_MODEL_DATETIME            "2026-09-30T18:53:05+0900"
 #define _STAI_INSTANT_MODEL_COMPILE_DATETIME    __DATE__ " " __TIME__
 
 #define _STAI_CONTEXT_ALIGNMENT        STAI_INSTANT_MODEL_CONTEXT_ALIGNMENT
