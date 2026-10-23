@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.ui.externaltools.ProgramLaunchConfigurationType">
+    <booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="/bin/sh"/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value='-c "export PATH=$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH PYTHONUNBUFFERED=1; .venv/bin/python -m board.application.ai_can_anomaly_detection.expected part_3/20210204110654673616.csv --frames guidelines/window_alarm.parquet"'/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY" value="${project_loc:/ai_can_anomaly_detection}/../.."/>
+</launchConfiguration>

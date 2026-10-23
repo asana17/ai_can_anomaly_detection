@@ -2,3 +2,7 @@
 	path = mtk3bsp2_samples
 	url = https://github.com/mox692/mtk3bsp2_samples.git
 	branch = can_driver
+[submodule "cubeide/ai_can_anomaly_detection/mtk3_bsp2"]
+	path = cubeide/ai_can_anomaly_detection/mtk3_bsp2
+	url = https://github.com/asana17/mtk3_bsp2.git
+	branch = ai_can_detection

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.ui.externaltools.ProgramLaunchConfigurationType">
+    <booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="/bin/sh"/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-c &quot;export PATH=$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH PYTHONUNBUFFERED=1; '${cubeide_cubeprogrammer_path}/STM32_Programmer_CLI' -c port=SWD mode=HOTPLUG -u 0x08040000 0x40000 bank2.bin &amp;&amp; .venv/bin/python -m board.application.ai_can_anomaly_detection.read_alarm_frames bank2.bin --log part_3/20210204110654673616.csv --frames guidelines/window_alarm.parquet&quot;"/>
+    <stringAttribute key="org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY" value="${project_loc:/ai_can_anomaly_detection}/../.."/>
+</launchConfiguration>
