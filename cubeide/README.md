@@ -28,6 +28,12 @@ File、Import、General、Existing Projects into Workspace を選ぶ。ルート
 2. Project、Build Configurations、Set Active で Release を選ぶ。4 の書き込みも Release でビルドする。
 3. Project、Build Project を選ぶ。コンソールの最後に `Build Finished. 0 errors` が出る。
 
+ボードに書き込めることを確かめる。バンク 2 は消さない。
+
+1. Run、Run Configurations を開く。
+2. 左の一覧の STM32 C/C++ Application の下にある `ai_can_anomaly_detection` を選び、右下の Run を押す。
+3. コンソールの最後に `Download verified successfully` が出る。
+
 ## 3. SWAP_BANK を確かめる
 
 Run、External Tools、External Tools Configurations を開く。左の一覧の Program の下にある
