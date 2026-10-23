@@ -9,3 +9,5 @@ __pycache__/
 board/application/rows/rows.h
 board/paths.json
 board/application/ai_can_anomaly_detection/fetched/
+/bank2.bin
+/received_frames.txt
